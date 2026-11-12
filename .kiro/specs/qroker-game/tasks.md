@@ -28,41 +28,41 @@ Rules for every milestone:
 
 ## Tasks
 
-- [ ] 0. Project scaffolding
+- [x] 0. Project scaffolding
   - Dependencies: none.
   - Deliverables: `package.json` (`"type": "module"`, `npm test` = `vitest --run`, devDependencies `typescript`, `vitest`, `fast-check`, `tsx` or equivalent script runner only if needed for `scripts/`), strict `tsconfig.json`, Vitest config, `node_modules` added to `.gitignore`, `docs/optical/results/.gitkeep`. Do not add UI folders or folders for other modules.
   - Acceptance criteria: `npm test` runs an empty or smoke test and exits successfully.
   - Tests: one smoke test `src/optical/smoke.test.ts` (including one trivial fast-check property to confirm the library loads).
   - _Requirements: 12.1_
 
-  - [ ] 0.1 Create the project files listed in Deliverables
+  - [x] 0.1 Create the project files listed in Deliverables
     - Create the files above and install dependencies. Add no runtime dependencies.
     - _Requirements: 12.1_
 
-  - [ ] 0.2 Add the smoke test, run tests, and record results
+  - [x] 0.2 Add the smoke test, run tests, and record results
     - Run `npm test` and save the real output to `docs/optical/results/m0-test-output.txt`. Record failures; do not hide them.
     - _Requirements: 12.1, 12.7_
 
-- [ ] 1. Deterministic 52-card codebook generation
+- [x] 1. Deterministic 52-card codebook generation
   - Dependencies: task 0.
   - Deliverables: `src/optical/prng.ts` (mulberry32), `src/optical/codebook.ts` (greedy deterministic generator with attempt cap that fails hard, balance and self-distance filters, SHA-256 of the frozen content), `scripts/generate-codebook.ts` (writes `src/optical/codebook.v1.json` with algorithm version, seed, 52 patterns in the card order above, measured d_id and d_self, SHA-256), `scripts/verify-bound.ts` (re-derives the enumeration values over all 2^25 patterns and writes `docs/optical/results/bound.json`).
   - Acceptance criteria: the 52 patterns are distinct, each has weight in [9, 16], and generation is deterministic. The frozen file equals a fresh regeneration byte for byte. `bound.json` holds the measured |F|, V(25,4), the bound, balance/self-distance/either fail counts, and per-transform self-distance fails. If any measured number differs from the stated value, the bound test fails and the discrepancy is recorded in `docs/optical/results/bound.json` and the Markdown report.
   - Tests (Properties 13, 22): exactly 52 distinct patterns; weight range [9, 16]; two generations are byte-identical; frozen file matches regeneration; attempt-cap exhaustion throws; SHA-256 is recorded and matches the content; bound numbers compared against the stated values.
   - _Requirements: 5.3, 12.7_
 
-  - [ ] 1.1 Implement `prng.ts`, `codebook.ts`, and `scripts/generate-codebook.ts`, then generate and freeze `codebook.v1.json`
+  - [x] 1.1 Implement `prng.ts`, `codebook.ts`, and `scripts/generate-codebook.ts`, then generate and freeze `codebook.v1.json`
     - Use a fixed seed and an attempt cap. Exceeding the cap is a hard error.
     - _Requirements: 5.3_
 
-  - [ ] 1.2 Implement `scripts/verify-bound.ts` and the bound test
+  - [x] 1.2 Implement `scripts/verify-bound.ts` and the bound test
     - Enumerate all 2^25 patterns. Write `bound.json`. The test compares each number to the stated value and records any mismatch.
     - _Requirements: 5.3, 12.7_
 
-  - [ ] 1.3 Write codebook tests (Properties 13, 22)
+  - [x] 1.3 Write codebook tests (Properties 13, 22)
     - Cover the list in Tests above, including the attempt-cap failure path.
     - _Requirements: 5.3_
 
-  - [ ] 1.4 Run tests and record results
+  - [x] 1.4 Run tests and record results
     - Run `npm test` and the bound script. Save output and a short Markdown report to `docs/optical/results/m1-*.txt|md`. Record failures; do not hide them.
     - _Requirements: 12.7_
 

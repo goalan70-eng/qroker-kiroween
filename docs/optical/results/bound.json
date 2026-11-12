@@ -1,0 +1,88 @@
+{
+  "note": "expected = values stated in tasks.md/design.md (unverified claims); measured = exhaustive enumeration of 2^25 patterns.",
+  "runtimeSeconds": 1.857,
+  "expected": {
+    "balanceFail": 3615562,
+    "selfDistanceFail": 7152896,
+    "eitherFail": 9456896,
+    "F": 24097536,
+    "V4": 15276,
+    "bound": 198,
+    "d6Bound": 45,
+    "d7Bound": 7,
+    "perTransform.R90": 74624,
+    "perTransform.R270": 74624,
+    "perTransform.R180": 647168,
+    "perTransform.Fh": 1835008,
+    "perTransform.Fv": 1835008,
+    "perTransform.Dm": 1835008,
+    "perTransform.Da": 1835008
+  },
+  "measured": {
+    "balanceFail": 3615562,
+    "selfDistanceFail": 7152896,
+    "eitherFail": 9456896,
+    "F": 24097536,
+    "V4": 15276,
+    "bound": 198,
+    "d6Bound": 45,
+    "d7Bound": 7,
+    "perTransform.R90": 74624,
+    "perTransform.R180": 647168,
+    "perTransform.R270": 74624,
+    "perTransform.Fh": 1835008,
+    "perTransform.Fv": 1835008,
+    "perTransform.Dm": 1835008,
+    "perTransform.Da": 1835008
+  },
+  "matches": {
+    "balanceFail": true,
+    "selfDistanceFail": true,
+    "eitherFail": true,
+    "F": true,
+    "V4": true,
+    "bound": true,
+    "d6Bound": true,
+    "d7Bound": true,
+    "perTransform.R90": true,
+    "perTransform.R270": true,
+    "perTransform.R180": true,
+    "perTransform.Fh": true,
+    "perTransform.Fv": true,
+    "perTransform.Dm": true,
+    "perTransform.Da": true
+  },
+  "allMatch": true,
+  "detail": {
+    "total": 33554432,
+    "balanceFail": 3615562,
+    "selfDistanceFail": 7152896,
+    "perTransformSelfDistanceFail": {
+      "R90": 74624,
+      "R180": 647168,
+      "R270": 74624,
+      "Fh": 1835008,
+      "Fv": 1835008,
+      "Dm": 1835008,
+      "Da": 1835008
+    },
+    "eitherFail": 9456896,
+    "F": 24097536,
+    "V4": 15276,
+    "bound": 198,
+    "d6": {
+      "selfDistanceFail": 7152896,
+      "eitherFail": 9456896,
+      "F": 24097536,
+      "V": 68406,
+      "bound": 45
+    },
+    "d7": {
+      "selfDistanceFail": 18979072,
+      "eitherFail": 19808256,
+      "F": 13746176,
+      "V": 245506,
+      "bound": 7
+    }
+  }
+}

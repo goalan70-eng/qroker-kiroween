@@ -1,0 +1,21 @@
+﻿=== npm test ===
+
+> qroker-kiroween@0.0.0 test
+> vitest --run
+
+
+ RUN  v5.1.0 D:/Project/QRoker/qroker-kiroween
+
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  03:50:06
+   Duration  295ms (import 49%, transform 33%, worker 9%, tests 8%)
+
+
+EXIT CODE: 0
+
+=== npx tsc --noEmit ===
+
+EXIT CODE: 0
+

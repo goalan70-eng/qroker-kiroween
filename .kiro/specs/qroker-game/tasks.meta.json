@@ -1,0 +1,96 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "0.1 Create the project files listed in Deliverables": [
+      {
+        "executionId": "1c5c0722-93d8-44df-a990-4fde4d29a2b7",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794422606104
+      },
+      {
+        "executionId": "1c5c0722-93d8-44df-a990-4fde4d29a2b7",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794422940080
+      }
+    ],
+    "0.2 Add the smoke test, run tests, and record results": [
+      {
+        "executionId": "1c5c0722-93d8-44df-a990-4fde4d29a2b7",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794422943685
+      },
+      {
+        "executionId": "1c5c0722-93d8-44df-a990-4fde4d29a2b7",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794423023612
+      }
+    ],
+    "0. Project scaffolding": [
+      {
+        "executionId": "1c5c0722-93d8-44df-a990-4fde4d29a2b7",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794423023671
+      }
+    ],
+    "1.1 Implement `prng.ts`, `codebook.ts`, and `scripts/generate-codebook.ts`, then generate and freeze `codebook.v1.json`": [
+      {
+        "executionId": "1c5c0722-93d8-44df-a990-4fde4d29a2b7",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794423042294
+      },
+      {
+        "executionId": "1c5c0722-93d8-44df-a990-4fde4d29a2b7",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794423689284
+      }
+    ],
+    "1.2 Implement `scripts/verify-bound.ts` and the bound test": [
+      {
+        "executionId": "1c5c0722-93d8-44df-a990-4fde4d29a2b7",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794423693201
+      },
+      {
+        "executionId": "1c5c0722-93d8-44df-a990-4fde4d29a2b7",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794423847975
+      }
+    ],
+    "1.3 Write codebook tests (Properties 13, 22)": [
+      {
+        "executionId": "1c5c0722-93d8-44df-a990-4fde4d29a2b7",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794423866147
+      },
+      {
+        "executionId": "1c5c0722-93d8-44df-a990-4fde4d29a2b7",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794424716170
+      }
+    ],
+    "1.4 Run tests and record results": [
+      {
+        "executionId": "1c5c0722-93d8-44df-a990-4fde4d29a2b7",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794424720029
+      },
+      {
+        "executionId": "e5ad1f85-cb4c-47f5-82f4-f01762c7f57c",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794491984023
+      },
+      {
+        "executionId": "e5ad1f85-cb4c-47f5-82f4-f01762c7f57c",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794492501822
+      }
+    ],
+    "1. Deterministic 52-card codebook generation": [
+      {
+        "executionId": "e5ad1f85-cb4c-47f5-82f4-f01762c7f57c",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794492501930
+      }
+    ]
+  }
+}
