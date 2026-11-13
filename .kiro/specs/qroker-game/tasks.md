@@ -149,7 +149,7 @@ Rules for every milestone:
     - Cluster four markers around the center, run the 8 hypotheses, classify the passing set per design.md section 7 step 6, and sum Card_Values. Internal error when the passing-hypothesis count is not 0, 2, or 4.
     - _Requirements: 5.6, 13.1, 13.5, 13.9_
 
-  - [ ] 5.2 Implement `reference-check.ts`
+  - [x] 5.2 Implement `reference-check.ts`
     - `ReferenceCheck.compare(result, referenceCards)` returns REFERENCE_MISMATCH on a differing card set and does not alter the result.
     - _Requirements: 13.2, 13.3, 13.9_
 
