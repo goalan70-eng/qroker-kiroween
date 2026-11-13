@@ -157,7 +157,7 @@ Rules for every milestone:
     - Cover the list in Tests above.
     - _Requirements: 13.2, 13.7, 13.9, 14.7_
 
-  - [ ] 5.4 Implement the physical card composer and containment function (test support)
+  - [x] 5.4 Implement the physical card composer and containment function (test support)
     - Dependencies: 5.1–5.3. Deliverables: `src/optical/testing/physical-card.ts` with `PhysicalGeometry { cardWidthMm: 63.5, cardHeightMm: 88.9, moduleMm: 1.5875, cornerRadiusMm: 3.175, insetModules: 1, quietMarginModules: 1, gapMm: 0, tableGray }`, `renderPhysicalCard`, `composeBoard` (zero intended gap, per-card shift/rotation errors, 2×2 and 3×3 boards with Distractor_Markers), and `markerContainment(geometry)` implementing the analytic formulas in design.md. Do not modify `render.ts` or the frozen codebook.
     - Tests (Property 27, Property 28 setup): clearance formula vs rasterized rounded-corner mask over a sweep grid (radius 0, 2.0, 3.0, 3.175, 3.6, 4.0, 5.0, 6.0 mm × inset 0.5, 1, 1.5, 2 modules); every printed marker pixel lies inside the mask at baseline; at 6 mm radius with inset 1 the containment is reported as invalid; zero-gap composition has seam white separation of 2(inset+margin) modules and the black squares of adjacent cards form separate connected components; central void area matches 4(1−π/4)r² within raster tolerance; deterministic output for fixed inputs.
     - _Requirements: 15.1, 15.2, 15.3, 15.5_
