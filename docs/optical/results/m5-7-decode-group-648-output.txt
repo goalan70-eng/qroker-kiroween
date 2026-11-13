@@ -1,0 +1,14 @@
+Synthetic images, not real cameras. Raw command output of Milestone 5 task 5.7 (HEAD b57d62e, Node 24, vitest 5.1.0).
+Normalization applied to the raw output: wall-clock fields (Start at, Duration, per-test and per-file milliseconds, "in N s" timings), the absolute repository path (replaced by <repo>) and temporary-file lines are removed. Nothing else is edited.
+Skipped-test lines (43 other tests of the file, deselected by -t) are removed.
+
+$ npx vitest --run src/optical/decode-group.test.ts -t "648 images" --reporter=verbose --disableConsoleIntercept
+exit code: 0
+
+ RUN  v5.1.0 <repo>
+
+decode-group exhaustive summary: {"images":648,"NOT_REFLECTED":260,"REFLECTED":260,"AMBIGUOUS":128,"interp2":520,"interp4":128}
+ ✓ src/optical/decode-group.test.ts > 2. all 81 observed arrangements x 8 image transforms > 648 images: IDENTIFIED, right cards/sum/interpretation count, reflection 260 / 260 / 128
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 43 skipped (44)

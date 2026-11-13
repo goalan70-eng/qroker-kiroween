@@ -1,0 +1,5 @@
+Synthetic images, not real cameras. Raw command output of Milestone 5 task 5.7 (HEAD b57d62e, Node 24, vitest 5.1.0).
+
+$ npx tsc --noEmit
+(no output: no diagnostics)
+exit code: 0

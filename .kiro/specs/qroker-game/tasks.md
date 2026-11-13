@@ -137,7 +137,7 @@ Rules for every milestone:
     - Save output to `docs/optical/results/m4-*`. Record failures; do not hide them.
     - _Requirements: 12.7_
 
-- [ ] 5. Four-card identification and exact sum
+- [x] 5. Four-card identification and exact sum
   - Dependencies: task 4.
   - Deliverables: `src/optical/decode-group.ts` (corner clustering, 8-hypothesis check (4 rotations × 2 reflection states) against the slot table, reflection reporting, sum), `src/optical/reference-check.ts` (`ReferenceCheck.compare` returning REFERENCE_MISMATCH, plus an independent reference sum from a Card_Value table lookup). The decoder signature accepts only a grayscale image. Physical-geometry support code lives in `src/optical/testing/` (not production).
   - Note on Hidden_Sum bounds: the bounds 4 and 52 do not require four cards of equal rank. Both are achievable with four distinct cards using the four suits: A♥ A♦ A♣ A♠ gives 1+1+1+1 = 4, and K♥ K♦ K♣ K♠ gives 13×4 = 52. Both arrangements are valid under the slot table and both get a test.
@@ -172,7 +172,7 @@ Rules for every milestone:
     - Acceptance: baseline results and the effect of each geometry adjustment are recorded; no claim of real-camera performance; n, correct, rejection and false-acceptance counts and rates are reported per cell without pooling, with the exact one-sided 95% upper bound 1 − 0.05^(1/n) for every cell whose false-acceptance count is 0 (0 is an observation under the sampled conditions, not a mathematical guarantee, and says nothing about real cameras). Registration/cut tolerances are evaluated before any change to card shape (Requirement 15.7, 16.8).
     - _Requirements: 15.4, 15.6, 15.7, 15.8, 15.9, 16.8_
 
-  - [ ] 5.7 Run tests and record results
+  - [x] 5.7 Run tests and record results
     - Save output and the 520/128 counts to `docs/optical/results/m5-*`. Record failures; do not hide them.
     - _Requirements: 12.7_
 

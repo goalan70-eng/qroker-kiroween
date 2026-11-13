@@ -1,0 +1,43 @@
+Synthetic images, not real cameras. Raw command output of Milestone 5 task 5.7 (HEAD b57d62e, Node 24, vitest 5.1.0).
+Normalization applied to the raw output: wall-clock fields (Start at, Duration, per-test and per-file milliseconds, "in N s" timings), the absolute repository path (replaced by <repo>) and temporary-file lines are removed. Nothing else is edited.
+
+$ npm run verify:geometry
+exit code: 0
+
+> qroker-kiroween@0.0.0 verify:geometry
+> tsx scripts/verify-geometry-results.ts
+
+PASS  plan enumerates 824 cells  (824)
+PASS  planned cell ids are unique
+PASS  result json has 824 distinct cells  (824/824)
+PASS  result cell ids equal planned cell ids (none missing, none extra)
+PASS  result json completeness.complete is true
+PASS  stored per-cell files: 824, smoke files 0  (824, 0)
+PASS  every planned cell has a stored per-cell file
+PASS  sum of n over cells is 168000  (168000)
+PASS  sum of planned trials is 168000  (168000)
+PASS  every cell n equals its planned trial count
+PASS  n equals plannedTrials in every cell
+PASS  correct + rejected + falseAccepts = n in every cell  (0 bad)
+PASS  sum of rejectionKinds = rejected in every cell  (0 bad)
+PASS  sum of failureCauses = failing rejected (IDENTIFY cells) + false accepts in every cell  (0 bad)
+PASS  falseAcceptSeeds.length = falseAccepts in every cell  (0 bad)
+PASS  stored rates equal count / n in every cell  (0 bad)
+PASS  bound equals 1 - 0.05^(1/n) exactly (pow) and within 1e-14 of the expm1/log form in every zero-FA cell  (824 cells, max |pow - expm1| = 3.56e-17, 0 bad)
+PASS  every cell with false accepts lists its failing seeds and has no bound  (0 cells with false accepts)
+PASS  cells with an absent card have correct = 0 (rejection is counted as rejected, not correct)  (48 cells)
+PASS  merged json equals the stored per-cell files (n, correct, rejected, false accepts, bound)  (0 mismatches)
+PASS  synthetic limitation stated in docs/optical/results/geometry-experiments-plan.md
+PASS  synthetic limitation stated in docs/optical/results/geometry-experiments.md
+PASS  synthetic limitation stated in docs/optical/results/geometry-experiments.json
+PASS  synthetic limitation stated in docs/optical/results/geometry-failure-diagnostics.json
+PASS  synthetic limitation stated in docs/optical/results/geometry-bench.json
+PASS  synthetic limitation stated in docs/optical/results/m5-6-tier1-output.txt
+PASS  synthetic limitation stated in docs/optical/results/m5-6-tier2-output.txt
+PASS  synthetic limitation stated in docs/optical/results/m5-6-tier3-output.txt
+PASS  synthetic limitation stated in docs/optical/results/m5-6-tier4-output.txt
+PASS  every stored per-cell file carries the synthetic disclaimer  (0 without)
+PASS  json disclaimer limits the zero-event bound to the sampled synthetic distribution
+PASS  frozen codebook SHA256 unchanged  (515ECEB318648C14A47574496788236A2B1BBDFC7062387DB09303CB717CC2D4)
+
+all checks passed
