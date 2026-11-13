@@ -168,6 +168,49 @@
         "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
         "timestamp": 1794494875696
       }
+    ],
+    "3.1 Implement `fragments.ts` and `render.ts`": [
+      {
+        "executionId": "1bdc4d3c-d48a-4624-ac54-06213ab4df25",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794533476102
+      },
+      {
+        "executionId": "1bdc4d3c-d48a-4624-ac54-06213ab4df25",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794533613526
+      }
+    ],
+    "3.2 Write symmetry, orbit, blank-corner, and placement tests (Property 14)": [
+      {
+        "executionId": "1bdc4d3c-d48a-4624-ac54-06213ab4df25",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794533617589
+      },
+      {
+        "executionId": "1bdc4d3c-d48a-4624-ac54-06213ab4df25",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794533792583
+      }
+    ],
+    "3.3 Run tests and record results": [
+      {
+        "executionId": "1bdc4d3c-d48a-4624-ac54-06213ab4df25",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794533796738
+      },
+      {
+        "executionId": "1bdc4d3c-d48a-4624-ac54-06213ab4df25",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794534044605
+      }
+    ],
+    "3. Suit-specific two-dimensional symmetry generation": [
+      {
+        "executionId": "1bdc4d3c-d48a-4624-ac54-06213ab4df25",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794534044665
+      }
     ]
   }
 }

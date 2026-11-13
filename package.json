@@ -8,6 +8,7 @@
     "generate:codebook": "tsx scripts/generate-codebook.ts",
     "verify:bound": "tsx scripts/verify-bound.ts",
     "verify:codebook": "tsx scripts/verify-codebook.ts",
+    "render:samples": "tsx scripts/render-samples.ts",
     "check:codebook": "tsx scripts/generate-codebook.ts --check"
   },
   "devDependencies": {

@@ -1,0 +1,85 @@
+{
+  "files": [
+    {
+      "file": "H-A-0.png",
+      "width": 320,
+      "height": 448,
+      "card": "H-A",
+      "orientation": 0,
+      "modulePx": 8,
+      "sha256": "664eecb01f0ce3ced9a88726d0642aeacd7375beec9970e441b944fc071f5e28"
+    },
+    {
+      "file": "H-A-180.png",
+      "width": 320,
+      "height": 448,
+      "card": "H-A",
+      "orientation": 180,
+      "modulePx": 8,
+      "sha256": "664eecb01f0ce3ced9a88726d0642aeacd7375beec9970e441b944fc071f5e28"
+    },
+    {
+      "file": "D-K-0.png",
+      "width": 320,
+      "height": 448,
+      "card": "D-K",
+      "orientation": 0,
+      "modulePx": 8,
+      "sha256": "6f7b53721321f5a0f9add45342398256f0aed79ab01d8b8fa7f56b6f6e2bb007"
+    },
+    {
+      "file": "D-K-180.png",
+      "width": 320,
+      "height": 448,
+      "card": "D-K",
+      "orientation": 180,
+      "modulePx": 8,
+      "sha256": "6f7b53721321f5a0f9add45342398256f0aed79ab01d8b8fa7f56b6f6e2bb007"
+    },
+    {
+      "file": "C-7-0.png",
+      "width": 320,
+      "height": 448,
+      "card": "C-7",
+      "orientation": 0,
+      "modulePx": 8,
+      "sha256": "3a84d54e051023264f4f767c6dbd4fb7426d5afe402de7ebad139ad7f9a7bf7a"
+    },
+    {
+      "file": "C-7-180.png",
+      "width": 320,
+      "height": 448,
+      "card": "C-7",
+      "orientation": 180,
+      "modulePx": 8,
+      "sha256": "7efdf8f1d69c02e5977d61675a18cc683a649e114de1a4f3d45d1c2cd019e4a8"
+    },
+    {
+      "file": "S-Q-0.png",
+      "width": 320,
+      "height": 448,
+      "card": "S-Q",
+      "orientation": 0,
+      "modulePx": 8,
+      "sha256": "b54b1261f51ffad2898a74179c112de01096dcceb72adbd9a53686c9056f33dd"
+    },
+    {
+      "file": "S-Q-180.png",
+      "width": 320,
+      "height": 448,
+      "card": "S-Q",
+      "orientation": 180,
+      "modulePx": 8,
+      "sha256": "28593f31cae8254aa6af4c91d96444eddd477f5f165de579c234f2610908c3d5"
+    },
+    {
+      "file": "contact-sheet-0deg.png",
+      "width": 1096,
+      "height": 468,
+      "card": null,
+      "orientation": 0,
+      "modulePx": 2,
+      "sha256": "e7ea1468bba4b9b08b2b99a2b4ec6f8c6eea31ba680f3c1a636caaee734d5399"
+    }
+  ]
+}

@@ -1,0 +1,276 @@
+﻿=== SECTION 0: SHA256 BEFORE (2026-11-13T10:36:59.8094543+09:00) ===
+515ECEB318648C14A47574496788236A2B1BBDFC7062387DB09303CB717CC2D4  src/optical/codebook.v1.json
+B331EC5E5499BA6831A23880F977A6C7EB2219323F15B8FEDD0BD819DAF1EF36  docs/optical/results/codebook-verification.json
+5698693E994EA3229FE30DDC63A160A9A1C9AC0F13B117A0040CA93D5068EE66  docs/optical/results/codebook-verification.md
+3A84D54E051023264F4F767C6DBD4FB7426D5AFE402DE7EBAD139AD7F9A7BF7A  docs/optical/samples/C-7-0.png
+7EFDF8F1D69C02E5977D61675A18CC683A649E114DE1A4F3D45D1C2CD019E4A8  docs/optical/samples/C-7-180.png
+E7EA1468BBA4B9B08B2B99A2B4EC6F8C6EEA31BA680F3C1A636CAAEE734D5399  docs/optical/samples/contact-sheet-0deg.png
+6F7B53721321F5A0F9ADD45342398256F0AED79AB01D8B8FA7F56B6F6E2BB007  docs/optical/samples/D-K-0.png
+6F7B53721321F5A0F9ADD45342398256F0AED79AB01D8B8FA7F56B6F6E2BB007  docs/optical/samples/D-K-180.png
+664EECB01F0CE3CED9A88726D0642AEACD7375BEEC9970E441B944FC071F5E28  docs/optical/samples/H-A-0.png
+664EECB01F0CE3CED9A88726D0642AEACD7375BEEC9970E441B944FC071F5E28  docs/optical/samples/H-A-180.png
+927DDD6F4E844209115F0AE258053F798899517B763C5E353B5D4B29A30AB18F  docs/optical/samples/manifest.json
+7D3923C65ED321F9701E9FA4E8BC254AC2D3EE8300B0B55B7639B208E4D975A7  docs/optical/samples/README.md
+B54B1261F51FFAD2898A74179C112DE01096DCCEB72ADBD9A53686C9056F33DD  docs/optical/samples/S-Q-0.png
+28593F31CAE8254AA6AF4C91D96444EDDD477F5F165DE579C234F2610908C3D5  docs/optical/samples/S-Q-180.png
+
+=== SECTION: 1. npm test (run 1) ===
+$ npm test
+
+> qroker-kiroween@0.0.0 test
+> vitest --run
+
+
+ RUN  v5.1.0 D:/Project/QRoker/qroker-kiroween
+
+
+ Test Files  8 passed (8)
+      Tests  108 passed (108)
+   Start at  10:37:07
+   Duration  11.82s (tests 96%, import 3%, transform 1%)
+
+EXIT CODE: 0
+
+=== SECTION: 2. tsc --noEmit ===
+$ npx tsc --noEmit
+EXIT CODE: 0
+
+=== SECTION: 3. check:codebook ===
+$ npm run check:codebook
+
+> qroker-kiroween@0.0.0 check:codebook
+> tsx scripts/generate-codebook.ts --check
+
+check ok: regenerated codebook is byte-identical to codebook.v1.json
+EXIT CODE: 0
+
+=== SECTION: 4. verify:codebook ===
+$ npm run verify:codebook
+
+> qroker-kiroween@0.0.0 verify:codebook
+> tsx scripts/verify-codebook.ts
+
+codebook verification PASS (dId=5, dSelf=6, minDistance=5)
+EXIT CODE: 0
+
+=== SECTION: 5. render:samples ===
+$ npm run render:samples
+
+> qroker-kiroween@0.0.0 render:samples
+> tsx scripts/render-samples.ts
+
+wrote 9 PNGs to D:\Project\QRoker\qroker-kiroween\docs\optical\samples\
+EXIT CODE: 0
+NOTE: the batch invocation stopped after this header without recording output (tool-side, no output captured). Section re-run below.
+
+=== SECTION: 2. tsc --noEmit (re-run) ===
+$ npx tsc --noEmit
+EXIT CODE: 0
+
+CORRECTION: the NOTE above is wrong. The first batch had in fact completed sections 1-5 (their output is above); only the console display was empty. The 'tsc re-run' section is a redundant second run of tsc (exit 0).
+
+=== SECTION: 5c. render:samples (2nd run) ===
+$ npm run render:samples
+
+> qroker-kiroween@0.0.0 render:samples
+> tsx scripts/render-samples.ts
+
+wrote 9 PNGs to D:\Project\QRoker\qroker-kiroween\docs\optical\samples\
+EXIT CODE: 0
+
+=== SECTION: 6. npm test (run 2, reproducibility) ===
+$ npm test
+
+> qroker-kiroween@0.0.0 test
+> vitest --run
+
+
+ RUN  v5.1.0 D:/Project/QRoker/qroker-kiroween
+
+
+ Test Files  8 passed (8)
+      Tests  108 passed (108)
+   Start at  10:37:52
+   Duration  11.61s (tests 97%, import 2%, transform 1%)
+
+EXIT CODE: 0
+
+=== SECTION: 7. npx vitest --run --reporter=verbose ===
+$ npx vitest --run --reporter=verbose
+
+ RUN  v5.1.0 D:/Project/QRoker/qroker-kiroween
+
+ ✓ src/optical/smoke.test.ts > smoke > runs a plain test 3ms
+ ✓ src/optical/smoke.test.ts > smoke > loads fast-check: addition commutes 5ms
+ ✓ src/optical/fragments.test.ts > printedFragments > holds exactly the expected corners with base from JSON and derived via own transform 19ms
+ ✓ src/optical/fragments.test.ts > placedFragments / visibleCorners > visible corners match the table at 0 and 180 7ms
+ ✓ src/optical/fragments.test.ts > placedFragments / visibleCorners > 180 content follows visible[Y] = R180(printed[opposite(Y)]) and the per-suit derivation 7ms
+ ✓ src/optical/fragments.test.ts > placedFragments / visibleCorners > club and spade patterns differ by >= 5 bits at every shared corner (suit identifiable) 12ms
+ ✓ src/optical/fragments.test.ts > rejection > orientation 90 throws RangeError 1ms
+ ✓ src/optical/fragments.test.ts > rejection > orientation 270 throws RangeError 0ms
+ ✓ src/optical/fragments.test.ts > rejection > orientation -90 throws RangeError 0ms
+ ✓ src/optical/fragments.test.ts > rejection > orientation 360 throws RangeError 0ms
+ ✓ src/optical/fragments.test.ts > rejection > orientation 1 throws RangeError 0ms
+ ✓ src/optical/fragments.test.ts > rejection > orientation NaN throws RangeError 0ms
+ ✓ src/optical/fragments.test.ts > rejection > orientation 0 throws RangeError 0ms
+ ✓ src/optical/fragments.test.ts > rejection > orientation 180 throws RangeError 0ms
+ ✓ src/optical/fragments.test.ts > rejection > orientation null throws RangeError 0ms
+ ✓ src/optical/fragments.test.ts > rejection > orientation undefined throws RangeError 0ms
+ ✓ src/optical/fragments.test.ts > rejection > card key "JK" throws 1ms
+ ✓ src/optical/fragments.test.ts > rejection > card key "JOKER" throws 0ms
+ ✓ src/optical/fragments.test.ts > rejection > card key "X-JOKER" throws 0ms
+ ✓ src/optical/fragments.test.ts > rejection > card key "" throws 0ms
+ ✓ src/optical/fragments.test.ts > rejection > card key "H-1" throws 0ms
+ ✓ src/optical/fragments.test.ts > rejection > card key "H-11" throws 0ms
+ ✓ src/optical/fragments.test.ts > rejection > card key "X-A" throws 0ms
+ ✓ src/optical/fragments.test.ts > rejection > card key "h-a" throws 0ms
+ ✓ src/optical/fragments.test.ts > rejection > ALL_CARDS has 52 unique keys and no joker 1ms
+ ✓ src/optical/fragments.test.ts > rejection > every placed corner is derived from printed patterns (no substitute pattern) 3ms
+ ✓ src/optical/fragments.test.ts > frozen codebook integrity > using the module does not change the frozen JSON bytes 2ms
+ ✓ src/optical/transforms.test.ts > D4 cell maps > each map is a bijection on the 25 cells 7ms
+ ✓ src/optical/transforms.test.ts > D4 cell maps > the 8 maps are distinct, closed under composition, and have inverses in the set 3ms
+ ✓ src/optical/transforms.test.ts > D4 cell maps > known cell checks 3ms
+ ✓ src/optical/transforms.test.ts > equivalence with 2D matrix operations (Property 21 partial) > applyTransform matches the independent matrix op for 52 base patterns x 8 transforms 31ms
+ ✓ src/optical/transforms.test.ts > algebra on patterns > R180^2 = Fh^2 = R90^4 = identity 6ms
+ ✓ src/optical/transforms.test.ts > algebra on patterns > every transform preserves popcount 3ms
+ ✓ src/optical/transforms.test.ts > symmetry rules > R180-symmetric patterns satisfy R180.P == P 2ms
+ ✓ src/optical/transforms.test.ts > symmetry rules > Fh-symmetric patterns satisfy Fh.P == P 4ms
+ ✓ src/optical/transforms.test.ts > symmetry rules > frozen base patterns are not invariant under any non-identity transform 9ms
+ ✓ scripts/render-samples.test.ts > PNG encoder > has signature and IHDR matching the input 4ms
+ ✓ scripts/render-samples.test.ts > PNG encoder > CRC32 of "123456789" is 0xCBF43926 0ms
+ ✓ scripts/render-samples.test.ts > PNG encoder > IDAT inflates to filter-0 rows reproducing the raster; encoding is deterministic 2ms
+ ✓ scripts/render-samples.test.ts > committed samples manifest > lists the 8 samples plus contact sheet, no timestamps, files exist 3ms
+ ✓ scripts/render-samples.test.ts > committed samples manifest > disk bytes, manifest hash and freshly encoded bytes agree for the card samples 42ms
+ ✓ scripts/render-samples.test.ts > committed samples manifest > contact sheet: hash matches manifest and disk 18ms
+ ✓ scripts/render-samples.test.ts > committed samples manifest > contact sheet: each of the 52 cells has exactly two non-white marker footprints 29ms
+ ✓ src/optical/render.test.ts > renderMarker geometry > modulePx 1: size, margin ring, border ring, data cells 111ms
+ ✓ src/optical/codebook.test.ts > frozen codebook structure > has exactly the 52 expected keys in order, no jokers, valid 25-bit integers 9ms
+ ✓ src/optical/codebook.test.ts > frozen codebook structure > has 52 pairwise distinct base patterns 0ms
+ ✓ src/optical/codebook.test.ts > frozen codebook structure > has base popcount in [9, 16] 2ms
+ ✓ src/optical/codebook.test.ts > 416 templates > are pairwise distinct with all 86,320 pairs at Hamming distance >= 5; stored dId/dSelf match 10ms
+ ✓ src/optical/codebook.test.ts > 416 templates > property: any two distinct (card, transform) pairs differ in >= 5 bits 13ms
+ ✓ src/optical/codebook.test.ts > suit-specific second fragment (pattern level) > is R180.P for hearts/diamonds and Fh.P for clubs/spades, distinct from P by >= 5, within the orbit 6ms
+ ✓ src/optical/codebook.test.ts > determinism and generation > two generations are byte-identical and equal the frozen file 12ms
+ ✓ src/optical/codebook.test.ts > determinism and generation > a different seed yields a different, still valid codebook 9ms
+ ✓ src/optical/codebook.test.ts > determinism and generation > throws when the attempt cap is exhausted instead of returning a partial codebook 1ms
+ ✓ src/optical/codebook.test.ts > SHA-256 > matches the compact JSON of the content without the sha256 field 1ms
+ ✓ src/optical/verify-codebook.test.ts > A. positive cases > frozen codebook passes with full measurements 128ms
+ ✓ src/optical/render.test.ts > renderMarker geometry > modulePx 2: size, margin ring, border ring, data cells 157ms
+ ✓ src/optical/verify-codebook.test.ts > A. positive cases > freshly generated codebooks (default seed and seed+1) pass 219ms
+ ✓ src/optical/verify-codebook.test.ts > A. positive cases > is deterministic for the same input 188ms
+ ✓ src/optical/verify-codebook.test.ts > B. verifier independence > verifier imports only node:crypto 2ms
+ ✓ src/optical/verify-codebook.test.ts > B. verifier independence > CLI script does not import generator modules 3ms
+ ✓ src/optical/verify-codebook.test.ts > C. negative cases > 1. identical base patterns -> base-distinct 109ms
+ ✓ src/optical/render.test.ts > renderMarker geometry > modulePx 4: size, margin ring, border ring, data cells 506ms
+ ✓ src/optical/verify-codebook.test.ts > C. negative cases > 2. card replaced by another card template under another transform -> min-distance, d-id 104ms
+ ✓ src/optical/verify-codebook.test.ts > C. negative cases > 3. another card template with 1-3 bits flipped -> min-distance with distance < 5 870ms
+ ✓ src/optical/verify-codebook.test.ts > C. negative cases > 4. weight out of range -> weight-range 384ms
+ ✓ src/optical/verify-codebook.test.ts > C. negative cases > 5. R180-symmetric and Fh-symmetric patterns with weight in range -> d-self / min-distance 186ms
+ ✓ scripts/verify-bound.test.ts > codebook capacity bound (exhaustive 2^25 enumeration) > measured values equal the stated claims and bound >= 52 2296ms
+ ✓ src/optical/render.test.ts > renderMarker geometry > modulePx 8: size, margin ring, border ring, data cells 1515ms
+ ✓ src/optical/verify-codebook.test.ts > C. negative cases > 6. card key set / order problems -> card-keys 169ms
+ ✓ src/optical/render.test.ts > raster-level transform equivalence (Property 21) > render(applyTransform(g,P)) == ownTransform(g, render(P)) == applyImageTransform, modulePx 1 17ms
+ ✓ src/optical/render.test.ts > raster-level transform equivalence (Property 21) > render(applyTransform(g,P)) == ownTransform(g, render(P)) == applyImageTransform, modulePx 2 17ms
+ ✓ src/optical/render.test.ts > raster-level transform equivalence (Property 21) > render(applyTransform(g,P)) == ownTransform(g, render(P)) == applyImageTransform, modulePx 3 25ms
+ ✓ src/optical/render.test.ts > card layer symmetry (Property 14) > modulePx 2: H/D point symmetric, C/S reflection symmetric, and not the other 8ms
+ ✓ src/optical/render.test.ts > card layer symmetry (Property 14) > modulePx 2: physical rotation law layer(180) == rot180(layer(0)) 12ms
+ ✓ src/optical/render.test.ts > card layer symmetry (Property 14) > modulePx 4: H/D point symmetric, C/S reflection symmetric, and not the other 13ms
+ ✓ src/optical/render.test.ts > card layer symmetry (Property 14) > modulePx 4: physical rotation law layer(180) == rot180(layer(0)) 27ms
+ ✓ src/optical/render.test.ts > blank corners and layer size > modulePx 1 20ms
+ ✓ src/optical/render.test.ts > blank corners and layer size > modulePx 2 29ms
+ ✓ src/optical/render.test.ts > blank corners and layer size > modulePx 4 27ms
+ ✓ src/optical/render.test.ts > slot geometry > modulePx 1: TL/BR point-symmetric, TL/BL and TR/BR mirror about horizontal axis 1ms
+ ✓ src/optical/render.test.ts > slot geometry > modulePx 2: TL/BR point-symmetric, TL/BL and TR/BR mirror about horizontal axis 0ms
+ ✓ src/optical/render.test.ts > slot geometry > modulePx 3: TL/BR point-symmetric, TL/BL and TR/BR mirror about horizontal axis 0ms
+ ✓ src/optical/render.test.ts > slot geometry > modulePx 4: TL/BR point-symmetric, TL/BL and TR/BR mirror about horizontal axis 0ms
+ ✓ src/optical/render.test.ts > slot geometry > modulePx 5: TL/BR point-symmetric, TL/BL and TR/BR mirror about horizontal axis 0ms
+ ✓ src/optical/render.test.ts > slot geometry > modulePx 6: TL/BR point-symmetric, TL/BL and TR/BR mirror about horizontal axis 1ms
+ ✓ src/optical/render.test.ts > slot geometry > modulePx 7: TL/BR point-symmetric, TL/BL and TR/BR mirror about horizontal axis 0ms
+ ✓ src/optical/render.test.ts > slot geometry > modulePx 8: TL/BR point-symmetric, TL/BL and TR/BR mirror about horizontal axis 0ms
+ ✓ src/optical/render.test.ts > marker readback against the model (not a decoder test) > sampleMarkerBits at each printed corner equals placedFragments 11ms
+ ✓ src/optical/render.test.ts > determinism and input validation > renders are byte-identical and hashes repeat 8ms
+ ✓ src/optical/render.test.ts > determinism and input validation > modulePx 0 throws RangeError 1ms
+ ✓ src/optical/render.test.ts > determinism and input validation > modulePx -1 throws RangeError 0ms
+ ✓ src/optical/render.test.ts > determinism and input validation > modulePx 1.5 throws RangeError 0ms
+ ✓ src/optical/render.test.ts > determinism and input validation > modulePx null throws RangeError 0ms
+ ✓ src/optical/render.test.ts > determinism and input validation > modulePx "2" throws RangeError 0ms
+ ✓ src/optical/render.test.ts > fast-check properties > layer(card,180) == ownRot180(layer(card,0)) and layer(card,0) == ownRot180(layer(card,180)) 42ms
+ ✓ src/optical/render.test.ts > fast-check properties > suit symmetry invariants hold 58ms
+ ✓ src/optical/render.test.ts > fast-check properties > club/spade shared corners differ by >= 5 bits 4ms
+ ✓ src/optical/verify-codebook.test.ts > C. negative cases > 7. invalid pattern values -> pattern-values 3ms
+ ✓ src/optical/verify-codebook.test.ts > C. negative cases > 8. metadata lies -> metadata-agreement or sha256 595ms
+ ✓ src/optical/verify-codebook.test.ts > C. negative cases > 9. non-object inputs -> shape failure, no throw 2ms
+ ✓ src/optical/verify-codebook.test.ts > C. negative cases > 10. deep-frozen input does not throw and nothing is mutated 83ms
+ ✓ src/optical/verify-codebook.test.ts > C. negative cases > 11. property: verifier.ok equals brute-force verdict after random 1-4 bit corruption 8567ms
+ ✓ src/optical/verify-codebook.test.ts > D. runVerification > is deterministic, writes exactly what it returns, and does not touch the frozen file 167ms
+ ✓ src/optical/verify-codebook.test.ts > D. runVerification > reports failure for a corrupted temp copy and leaves the frozen file untouched 85ms
+ ✓ src/optical/verify-codebook.test.ts > D. runVerification > reports failure for unparsable input without throwing 3ms
+ ✓ src/optical/verify-codebook.test.ts > E. verifier template bits vs applyTransform > verifier transform names equal TRANSFORM_NAMES exactly 0ms
+ ✓ src/optical/verify-codebook.test.ts > E. verifier template bits vs applyTransform > verifier transform matches applyTransform for 52 base patterns x 8 transforms (416) 5ms
+ ✓ src/optical/verify-codebook.test.ts > E. verifier template bits vs applyTransform > helper throws on an unknown transform name 0ms
+
+ Test Files  8 passed (8)
+      Tests  108 passed (108)
+   Start at  10:38:05
+   Duration  12.26s (tests 96%, import 3%, transform 1%)
+
+EXIT CODE: 0
+
+=== SECTION 8: SHA256 AFTER (codebook & verification) ===
+515ECEB318648C14A47574496788236A2B1BBDFC7062387DB09303CB717CC2D4  src/optical/codebook.v1.json
+B331EC5E5499BA6831A23880F977A6C7EB2219323F15B8FEDD0BD819DAF1EF36  docs/optical/results/codebook-verification.json
+5698693E994EA3229FE30DDC63A160A9A1C9AC0F13B117A0040CA93D5068EE66  docs/optical/results/codebook-verification.md
+
+CORRECTIONS (appended after the fact, verbatim facts):
+- The sections above labeled 'NOTE'/'CORRECTION' about tsc are explained: the first batch completed sections 1-5; only console display was empty. The 'tsc re-run' is a redundant second tsc run (exit 0).
+- In the second batch the hash sections 5b/5d were NOT written (PowerShell alias 'H' = Get-History). Sections 5c (render:samples 2nd run), 6 (npm test run 2) and 7 (verbose) ran and are recorded above.
+- A third batch (hash/compare) hit a file lock because the second batch was still running; its render:samples (3rd run) executed but its output was not written to this file. Console result of that batch: all 11 files in docs/optical/samples were IDENTICAL to BEFORE after 3 renders in total.
+- Below: a clean final sequence (hash C, 4th render, hash D).
+
+=== SECTION 9a: SHA256 samples after 3 renders (C) ===
+3A84D54E051023264F4F767C6DBD4FB7426D5AFE402DE7EBAD139AD7F9A7BF7A  docs/optical/samples/C-7-0.png
+7EFDF8F1D69C02E5977D61675A18CC683A649E114DE1A4F3D45D1C2CD019E4A8  docs/optical/samples/C-7-180.png
+E7EA1468BBA4B9B08B2B99A2B4EC6F8C6EEA31BA680F3C1A636CAAEE734D5399  docs/optical/samples/contact-sheet-0deg.png
+6F7B53721321F5A0F9ADD45342398256F0AED79AB01D8B8FA7F56B6F6E2BB007  docs/optical/samples/D-K-0.png
+6F7B53721321F5A0F9ADD45342398256F0AED79AB01D8B8FA7F56B6F6E2BB007  docs/optical/samples/D-K-180.png
+664EECB01F0CE3CED9A88726D0642AEACD7375BEEC9970E441B944FC071F5E28  docs/optical/samples/H-A-0.png
+664EECB01F0CE3CED9A88726D0642AEACD7375BEEC9970E441B944FC071F5E28  docs/optical/samples/H-A-180.png
+927DDD6F4E844209115F0AE258053F798899517B763C5E353B5D4B29A30AB18F  docs/optical/samples/manifest.json
+7D3923C65ED321F9701E9FA4E8BC254AC2D3EE8300B0B55B7639B208E4D975A7  docs/optical/samples/README.md
+B54B1261F51FFAD2898A74179C112DE01096DCCEB72ADBD9A53686C9056F33DD  docs/optical/samples/S-Q-0.png
+28593F31CAE8254AA6AF4C91D96444EDDD477F5F165DE579C234F2610908C3D5  docs/optical/samples/S-Q-180.png
+
+=== SECTION 9b: render:samples (4th run) ===
+$ npm run render:samples
+
+> qroker-kiroween@0.0.0 render:samples
+> tsx scripts/render-samples.ts
+
+wrote 9 PNGs to D:\Project\QRoker\qroker-kiroween\docs\optical\samples\
+EXIT CODE: 0
+
+=== SECTION 9c: SHA256 samples after 4 renders (D) ===
+3A84D54E051023264F4F767C6DBD4FB7426D5AFE402DE7EBAD139AD7F9A7BF7A  docs/optical/samples/C-7-0.png
+7EFDF8F1D69C02E5977D61675A18CC683A649E114DE1A4F3D45D1C2CD019E4A8  docs/optical/samples/C-7-180.png
+E7EA1468BBA4B9B08B2B99A2B4EC6F8C6EEA31BA680F3C1A636CAAEE734D5399  docs/optical/samples/contact-sheet-0deg.png
+6F7B53721321F5A0F9ADD45342398256F0AED79AB01D8B8FA7F56B6F6E2BB007  docs/optical/samples/D-K-0.png
+6F7B53721321F5A0F9ADD45342398256F0AED79AB01D8B8FA7F56B6F6E2BB007  docs/optical/samples/D-K-180.png
+664EECB01F0CE3CED9A88726D0642AEACD7375BEEC9970E441B944FC071F5E28  docs/optical/samples/H-A-0.png
+664EECB01F0CE3CED9A88726D0642AEACD7375BEEC9970E441B944FC071F5E28  docs/optical/samples/H-A-180.png
+927DDD6F4E844209115F0AE258053F798899517B763C5E353B5D4B29A30AB18F  docs/optical/samples/manifest.json
+7D3923C65ED321F9701E9FA4E8BC254AC2D3EE8300B0B55B7639B208E4D975A7  docs/optical/samples/README.md
+B54B1261F51FFAD2898A74179C112DE01096DCCEB72ADBD9A53686C9056F33DD  docs/optical/samples/S-Q-0.png
+28593F31CAE8254AA6AF4C91D96444EDDD477F5F165DE579C234F2610908C3D5  docs/optical/samples/S-Q-180.png
+
+=== SECTION 9d: comparison (verified by hash tables above) ===
+BEFORE (section 0) vs C (9a) vs D (9b-c): all 11 files in docs/optical/samples have identical SHA-256 in all three tables (file count 11 before and after).
+codebook.v1.json, codebook-verification.json, codebook-verification.md: identical to BEFORE (section 8), and equal to the hashes given in the task (B331EC5E..., 5698693E...).
+
+=== SECTION 10: ad hoc read-only pixel check of sample PNGs (node script, inflate IDAT, count dark pixels per quadrant; script not kept) ===
+C-7-0     320x448 TL=0 TR=2496 BL=0 BR=2496
+C-7-180   320x448 TL=2496 TR=0 BL=2496 BR=0
+H-A-0     320x448 TL=2304 TR=0 BL=0 BR=2304
+H-A-180   320x448 TL=2304 TR=0 BL=0 BR=2304
+D-K-0     320x448 TL=0 TR=2560 BL=2560 BR=0
+S-Q-0     320x448 TL=2368 TR=0 BL=2368 BR=0
+S-Q-180   320x448 TL=0 TR=2368 BL=0 BR=2368

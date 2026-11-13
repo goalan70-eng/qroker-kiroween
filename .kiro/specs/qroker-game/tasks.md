@@ -93,22 +93,22 @@ Rules for every milestone:
     - Make test E executable by exposing one pure transform helper from the verifier (no imports of codebook/prng/transforms in production code), remove the always-true assertion in the case-11 property, stop tracking the generated Vitest JSON output, and rerun the Milestone 2 checks.
     - _Requirements: 5.3, 12.7_
 
-- [ ] 3. Suit-specific two-dimensional symmetry generation
+- [x] 3. Suit-specific two-dimensional symmetry generation
   - Dependencies: task 2.
   - Deliverables: `src/optical/fragments.ts` (second fragment derived from the base pattern: R180 for ♥♦, Fh for ♣♠; layout table; 0°/180° only), `src/optical/render.ts` (rasterizes card fragment layers with 7×7 border, 9×9 margin, blank unprinted corners).
   - Acceptance criteria: card layers satisfy the symmetry stated in design.md section 4. The two fragments of a card belong to the same D4 orbit.
   - Tests (Property 14, first part; Property 12 layout corner sets): ♥/♦ card layer is pixel-identical after 180° rotation; ♣/♠ card layer is pixel-identical after horizontal-axis reflection; both fragments are in the same D4 orbit; unprinted corners are blank; 90°/270° placement is not representable (type-level and runtime rejection); ♣ 0° and ♠ 180° share corner set TR+BR, ♣ 180° and ♠ 0° share TL+BL.
   - _Requirements: 5.2, 5.4, 5.5, 12.3, 12.4, 14.1, 14.5, 14.6_
 
-  - [ ] 3.1 Implement `fragments.ts` and `render.ts`
+  - [x] 3.1 Implement `fragments.ts` and `render.ts`
     - Use the frozen codebook. Derive the second fragment from the base pattern; do not store it separately.
     - _Requirements: 5.2, 14.1_
 
-  - [ ] 3.2 Write symmetry, orbit, blank-corner, and placement tests (Property 14)
+  - [x] 3.2 Write symmetry, orbit, blank-corner, and placement tests (Property 14)
     - Cover the list in Tests above.
     - _Requirements: 5.4, 5.5, 12.3, 12.4, 14.6_
 
-  - [ ] 3.3 Run tests and record results
+  - [x] 3.3 Run tests and record results
     - Save output to `docs/optical/results/m3-*`. Record failures; do not hide them.
     - _Requirements: 12.7_
 
