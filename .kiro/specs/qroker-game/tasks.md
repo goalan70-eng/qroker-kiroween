@@ -153,7 +153,7 @@ Rules for every milestone:
     - `ReferenceCheck.compare(result, referenceCards)` returns REFERENCE_MISMATCH on a differing card set and does not alter the result.
     - _Requirements: 13.2, 13.3, 13.9_
 
-  - [ ] 5.3 Write group decoding, reflection, boundary-sum, and API tests (Properties 20, 23, 25, 26)
+  - [x] 5.3 Write group decoding, reflection, boundary-sum, and API tests (Properties 20, 23, 25, 26)
     - Cover the list in Tests above.
     - _Requirements: 13.2, 13.7, 13.9, 14.7_
 
