@@ -2,26 +2,26 @@
 
 ## Overview
 
-QRoker의 Phase 1 기술 설계는 세 가지 핵심 영역을 다룬다: 커스텀 광학 마커 시스템, 게임 엔진 모듈, 게임 시뮬레이터 인터페이스(Phase 3 준비). 브라우저 UI 상세 구현(Phase 4)은 포함하지 않으며, 인터페이스 정의 수준만 명세한다.
+The Phase 1 technical design of QRoker covers three core areas: the custom optical marker system, the game engine module, and the game simulator interface (preparation for Phase 3). Detailed browser UI implementation (Phase 4) is not included; only interface definitions are specified.
 
-**기술 스택:**
-- 언어: 순수 TypeScript (브라우저 네이티브, 번들러 무관)
-- 렌더링: 테스트·실험용 래스터는 외부 의존성 없는 TypeScript, 브라우저 시각화는 Canvas API
-- 저장: `localStorage` (게임 상태 영속성)
-- 오프라인: Service Worker (정적 자산 캐싱)
-- 외부 의존성: 없음 (계정·서버·유료 API 불필요)
+**Technology stack:**
+- Language: plain TypeScript (browser-native, bundler-agnostic)
+- Rendering: TypeScript with no external dependencies for the test/experiment raster, Canvas API for browser visualization
+- Storage: `localStorage` (game state persistence)
+- Offline: Service Worker (static asset caching)
+- External dependencies: none (no accounts, servers, or paid APIs required)
 
-**설계 원칙:**
-- **오프라인 우선**: 모든 로직은 브라우저 로컬 실행. 네트워크 접근 불필요.
-- **플러그인 가능한 점수 설정**: 오차별 보상 테이블과 손패 소진 보너스를 `ScoreConfig`로 주입한다. 테이블 길이와 수치는 시뮬레이션으로 결정한다.
-- **불변성 중심**: 카드 총합 보존, 덱 고유성, 채점 멱등성을 엔진 레벨에서 강제.
-- **정보 격리**: Hidden_Sum과 타 플레이어 Guess는 공개 상태에서 제외.
+**Design principles:**
+- **Offline first**: All logic runs locally in the browser. No network access is required.
+- **Pluggable score configuration**: The per-error reward table and the hand-empty bonus are injected through `ScoreConfig`. The table length and values are determined by simulation.
+- **Invariant-centered**: The engine enforces conservation of the total card count, deck uniqueness, and scoring idempotence at the engine level.
+- **Information isolation**: Hidden_Sum and other players' Guess values are excluded from the public state.
 
 ---
 
 ## Architecture
 
-### 모듈 의존성 다이어그램
+### Module Dependency Diagram
 
 ```mermaid
 graph TD
@@ -38,7 +38,7 @@ graph TD
     CB["Codebook"]
     OD["OpticalDecoder"]
     MG["MarkerGenerator"]
-    FL["FragmentLayout\n(슬롯 규칙 공유)"]
+    FL["FragmentLayout\n(shared slot rules)"]
 
     UI --> GSM
     GSM --> BE
@@ -58,13 +58,13 @@ graph TD
     SIM -.->|"ScoreConfig\n(Phase 3)"| SE
 ```
 
-**계층 구조:**
-1. **코어 레이어**: `Deck`, `Board`, `CardValue` — 순수 데이터 및 상태 관리
-2. **로직 레이어**: `CompositeCodeDetector`, `ScoreEngine`, `DrawManager` — 규칙 집행
-3. **조율 레이어**: `GameStateManager` — 턴 흐름, 종료 조건, 정보 격리
-4. **광학 레이어**: `Codebook`(동결 코드북·생성·검증), `MarkerGenerator`(조각 래스터 렌더링), `OpticalDecoder`(탐지·판독·가설 검사), `ReferenceCheck`(Companion 전용 대조). 게임 엔진과 광학 판독기는 `FragmentLayout` 규칙 테이블만 공유하며, 판독기는 보드 상태에 의존하지 않는다.
-5. **AI 레이어**: `AIPlayer` (전략 패턴) — 로컬 오프라인 AI
-6. **시뮬레이터 레이어**: `GameSimulator` (Phase 3) — 점수 수치 최적화
+**Layer structure:**
+1. **Core layer**: `Deck`, `Board`, `CardValue` — pure data and state management
+2. **Logic layer**: `CompositeCodeDetector`, `ScoreEngine`, `DrawManager` — rule enforcement
+3. **Coordination layer**: `GameStateManager` — turn flow, end conditions, information isolation
+4. **Optical layer**: `Codebook` (frozen codebook, generation, verification), `MarkerGenerator` (fragment raster rendering), `OpticalDecoder` (detection, reading, hypothesis testing), `ReferenceCheck` (comparison against a reference, Companion only). The game engine and the optical reader share only the `FragmentLayout` rule table, and the reader does not depend on the board state.
+5. **AI layer**: `AIPlayer` (strategy pattern) — local offline AI
+6. **Simulator layer**: `GameSimulator` (Phase 3) — score value optimization
 
 ---
 
@@ -72,23 +72,23 @@ graph TD
 
 ### Deck
 
-**책임:** 52장 카드 관리, 셔플, 무작위 배분, 드로우.
+**Responsibility:** Manage the 52 cards, shuffle, random dealing, draw.
 
-**주요 알고리즘:**
-- Fisher–Yates 셔플 (seed 주입 가능 PRNG 사용 — 시뮬레이션 재현성)
-- 배분: 시작 4장(보드) + 플레이어당 4장 × 4명 = 20장. 나머지 32장은 덱에 잔류.
+**Key algorithms:**
+- Fisher–Yates shuffle (using a PRNG that accepts an injected seed — simulation reproducibility)
+- Dealing: 4 starting cards (board) + 4 cards × 4 players per player = 20 cards. The remaining 32 cards stay in the deck.
 
 ```typescript
 interface DeckState {
-  remaining: CardId[];   // 순서 있는 스택 (top = 마지막 요소)
-  dealtCards: Set<string>; // "suit-rank" 형식의 고유성 보장용 집합
+  remaining: CardId[];   // ordered stack (top = last element)
+  dealtCards: Set<string>; // set for guaranteeing uniqueness, in "suit-rank" format
 }
 
 interface DeckOperations {
   initialize(seed?: number): DeckState;
   deal(n: number, state: DeckState): { cards: CardId[]; newState: DeckState };
   draw(state: DeckState): { card: CardId | null; newState: DeckState };
-  // card가 null이면 덱 고갈 (Requirement 3.8)
+  // if card is null, the deck is exhausted (Requirement 3.8)
 }
 ```
 
@@ -96,13 +96,13 @@ interface DeckOperations {
 
 ### Board
 
-**책임:** 8×8 격자 상태 관리, 배치 유효성 검증, Quad_Group 후보 영역 추적.
+**Responsibility:** Manage the 8×8 grid state, validate placements, track Quad_Group candidate regions.
 
-**배치 유효성 조건 (Requirement 3.3, 3.11):**
-1. `col ∈ [0,7]`, `row ∈ [0,7]` — 경계 내
-2. `board[row][col] === null` — 비어 있음
-3. 상하좌우 4방향 중 하나 이상에 기존 카드 존재 — 인접성
-4. `orientation ∈ {0, 180}` — 90°/270° 거부
+**Placement validity conditions (Requirement 3.3, 3.11):**
+1. `col ∈ [0,7]`, `row ∈ [0,7]` — within bounds
+2. `board[row][col] === null` — empty
+3. An existing card is present in at least one of the 4 directions (up, down, left, right) — adjacency
+4. `orientation ∈ {0, 180}` — 90°/270° rejected
 
 ```typescript
 type GridPosition = { row: number; col: number }; // row: 1–8, col: A–H (0-indexed)
@@ -114,7 +114,7 @@ interface PlacedCard {
 
 interface BoardState {
   grid: (PlacedCard | null)[][];  // 8×8
-  cardCount: number;              // 불변성 추적용
+  cardCount: number;              // for invariant tracking
 }
 
 interface BoardOperations {
@@ -122,48 +122,48 @@ interface BoardOperations {
     { success: boolean; newState: BoardState; affectedQuads: GridPosition[] };
   isValid(pos: GridPosition, card: PlacedCard, state: BoardState): boolean;
   getAdjacent(pos: GridPosition, state: BoardState): GridPosition[];
-  getCandidateQuads(pos: GridPosition): GridPosition[]; // 최대 4개 2×2 영역의 좌상 모서리 반환
+  getCandidateQuads(pos: GridPosition): GridPosition[]; // returns the top-left corners of up to 4 2×2 regions
 }
 ```
 
-**Candidate Quad 계산:** 위치 (r, c)를 포함하는 2×2 영역의 좌상 모서리는 `{r-1,c-1}, {r-1,c}, {r,c-1}, {r,c}` 중 경계 내에 있는 것.
+**Candidate Quad computation:** The top-left corners of the 2×2 regions that contain position (r, c) are those among `{r-1,c-1}, {r-1,c}, {r,c-1}, {r,c}` that lie within bounds.
 
 ---
 
 ### CompositeCodeDetector
 
-**책임:** Quad_Group 탐지, Fragment_Layout + Card_Orientation 기반 Inward_Corner 검증, 중복 채점 방지.
+**Responsibility:** Detect Quad_Groups, verify the Inward_Corner based on Fragment_Layout + Card_Orientation, prevent duplicate scoring.
 
-**Inward_Corner 매핑 (Requirement 14.3):**
+**Inward_Corner mapping (Requirement 14.3):**
 
-| 2×2 내 위치 | Inward_Corner |
+| Position within 2×2 | Inward_Corner |
 |------------|--------------|
-| 좌상 (TL)  | BR           |
-| 우상 (TR)  | BL           |
-| 좌하 (BL)  | TR           |
-| 우하 (BR)  | TL           |
+| Top-left (TL)  | BR           |
+| Top-right (TR)  | BL           |
+| Bottom-left (BL)  | TR           |
+| Bottom-right (BR)  | TL           |
 
-**Fragment_Layout 조각 위치 (Requirement 14.1):**
+**Fragment_Layout fragment positions (Requirement 14.1):**
 
-| 무늬 | 0° 조각 위치 | 180° 조각 위치 | 대칭 유형    |
+| Suit | Fragment positions at 0° | Fragment positions at 180° | Symmetry type    |
 |------|------------|--------------|------------|
-| ♥ 하트      | TL + BR    | TL + BR      | 180° 점대칭  |
-| ♦ 다이아몬드 | TR + BL    | TR + BL      | 180° 점대칭  |
-| ♣ 클럽      | TR + BR    | TL + BL      | 수평 반사    |
-| ♠ 스페이드   | TL + BL    | TR + BR      | 수평 반사    |
+| ♥ Heart      | TL + BR    | TL + BR      | 180° point symmetry  |
+| ♦ Diamond | TR + BL    | TR + BL      | 180° point symmetry  |
+| ♣ Club      | TR + BR    | TL + BL      | horizontal-axis reflection    |
+| ♠ Spade   | TL + BL    | TR + BR      | horizontal-axis reflection    |
 
-**슬롯별 참여 가능 조건 (Fragment_Layout과 Inward_Corner에서 도출):**
+**Per-slot participation conditions (derived from Fragment_Layout and Inward_Corner):**
 
-| 슬롯 | ♥ | ♦ | ♣ | ♠ |
+| Slot | ♥ | ♦ | ♣ | ♠ |
 |------|---|---|---|---|
-| TL | 0°/180° | 불가 | 0° | 180° |
-| TR | 불가 | 0°/180° | 180° | 0° |
-| BL | 불가 | 0°/180° | 0° | 180° |
-| BR | 0°/180° | 불가 | 180° | 0° |
+| TL | 0°/180° | not possible | 0° | 180° |
+| TR | not possible | 0°/180° | 180° | 0° |
+| BL | not possible | 0°/180° | 0° | 180° |
+| BR | 0°/180° | not possible | 180° | 0° |
 
-카드 한 장은 둘러싼 꼭짓점 4개 중 정확히 2개에만 조각을 제공한다. 광학적으로 관측되는 내용은 [Optical Marker System](#optical-marker-system) 5절을 따른다.
+Each card contributes fragments to exactly 2 of the 4 surrounding vertices. What is observed optically follows Section 5 of the [Optical Marker System](#optical-marker-system).
 
-**유효성 검증 알고리즘:**
+**Validity check algorithm:**
 ```
 function isValidQuadMember(card, boardPos, orientation):
   fragments = getFragmentCorners(card.suit, orientation)
@@ -171,20 +171,20 @@ function isValidQuadMember(card, boardPos, orientation):
   return fragments.includes(inward)
 ```
 
-**중복 채점 방지:**
-- Quad_Group 고유 식별자: 4개 카드 ID를 정렬한 집합의 문자열 직렬화
-  - 예: `"C-A|D-K|H-7|S-Q"` (무늬-숫자 알파벳순 정렬)
-- `scoredGroups: Set<string>` — 이미 채점된 식별자 집합
-- 탐지 시 `scoredGroups.has(id)` → true이면 채점 건너뜀
-- 카드는 배치 후 이동·제거되지 않으므로 같은 4장 집합은 한 꼭짓점에서만 성립할 수 있다. `scoredGroups` 검사는 이 불변식을 방어적으로 확인한다.
+**Duplicate scoring prevention:**
+- Quad_Group unique identifier: string serialization of the set of the 4 card IDs in sorted order
+  - Example: `"C-A|D-K|H-7|S-Q"` (sorted alphabetically by suit-rank)
+- `scoredGroups: Set<string>` — the set of identifiers that have already been scored
+- During detection, if `scoredGroups.has(id)` is true, scoring is skipped
+- Cards are never moved or removed after placement, so the same set of 4 cards can hold at only one vertex. The `scoredGroups` check defensively verifies this invariant.
 
 ```typescript
 interface CompositeCodeResult {
   cards: [CardId, CardId, CardId, CardId];
   positions: [GridPosition, GridPosition, GridPosition, GridPosition];
   hiddenSum: number;
-  groupId: string;        // 정렬된 카드 ID 집합 직렬화
-  isNew: boolean;         // 중복 채점 방지용
+  groupId: string;        // serialization of the sorted card ID set
+  isNew: boolean;         // for duplicate scoring prevention
 }
 
 interface CompositeCodeDetector {
@@ -197,33 +197,33 @@ interface CompositeCodeDetector {
 
 ### ScoreEngine
 
-**책임:** 예측 배치(batch) 수집, 정보 격리, 일괄 공개, 점수 계산.
+**Responsibility:** Collect prediction batches, information isolation, simultaneous reveal, score calculation.
 
-**점수 함수 (Requirement 2.1–2.4):**
+**Score function (Requirement 2.1–2.4):**
 ```
 score(guess, hiddenSum, config):
   e = |guess − hiddenSum|
   return e < config.rewardByError.length ? config.rewardByError[e] : 0
 ```
 
-설정 검증: `rewardByError`는 길이 1 이상이고, 모든 값은 유한한 0 이상 수이며, `rewardByError[0] > 0`이고 비증가여야 한다. `handEmptyBonus`는 유한한 0 이상 수다. 위반하면 설정을 거부한다. 테이블 길이와 수치는 **TBD — determined by simulation**이며, Phase 3에서 선형 감소·기하 감소·계단형 등 후보를 비교한다.
+Configuration validation: `rewardByError` must have length at least 1, every value must be a finite number greater than or equal to 0, `rewardByError[0] > 0`, and the table must be non-increasing. `handEmptyBonus` is a finite number greater than or equal to 0. A configuration that violates these conditions is rejected. The table length and values are **TBD — determined by simulation**, and Phase 3 compares candidates such as linear decay, geometric decay, and step-shaped tables.
 
-**다중 Composite Code (Requirement 6.5):** 한 배치 액션으로 새로 성립한 Composite Code 전부를 하나의 `PredictionBatch`로 묶는다. 모든 플레이어가 배치 안의 모든 코드에 대한 예측을 제출한 뒤 한 번에 공개한다.
+**Multiple Composite Codes (Requirement 6.5):** All Composite Codes newly formed by a single placement action are grouped into one `PredictionBatch`. After every player has submitted predictions for all codes in the batch, they are revealed at once.
 
-**정보 격리 원칙:**
-- hiddenSum과 제출된 예측값은 `GameStateManager` 내부 봉인 저장소에만 보관한다.
-- 공개 `GameState`에는 배치별 제출 여부(`boolean`)만 포함한다.
-- 모든 예측 수집이 끝나면 `RevealResult`를 한 번에 공개한다.
+**Information isolation principles:**
+- hiddenSum and submitted prediction values are kept only in the sealed store inside `GameStateManager`.
+- The public `GameState` contains only whether each batch has been submitted (`boolean`).
+- Once all predictions have been collected, `RevealResult` is revealed at once.
 
 ```typescript
 interface ScoreConfig {
-  rewardByError: number[]; // index = 절댓값 오차. TBD — determined by simulation
+  rewardByError: number[]; // index = absolute error. TBD — determined by simulation
   handEmptyBonus: number;  // TBD — determined by simulation
 }
 
 interface PredictionBatch {
   batchId: string;
-  groupIds: string[]; // 예측 대상 그룹. hiddenSum은 포함하지 않음
+  groupIds: string[]; // groups to be predicted. hiddenSum is not included
 }
 
 interface RevealResult {
@@ -231,16 +231,16 @@ interface RevealResult {
   groups: Array<{ groupId: string; hiddenSum: number }>;
   playerResults: Array<{
     playerId: string;
-    earnedScore: number;     // 이번 배치 획득 점수
-    cumulativeScore: number; // 누적 점수
-    // guess 값은 포함하지 않음
+    earnedScore: number;     // score earned in this batch
+    cumulativeScore: number; // cumulative score
+    // guess values are not included
   }>;
 }
 
 interface ScoreEngineOperations {
   validateConfig(config: ScoreConfig): { ok: true } | { ok: false; reason: string };
   score(guess: number, hiddenSum: number, config: ScoreConfig): number;
-  submitGuesses(batchId: string, playerId: string, guesses: Record<string, number>): boolean; // [4, 52] 정수만 허용
+  submitGuesses(batchId: string, playerId: string, guesses: Record<string, number>): boolean; // only integers in [4, 52] are accepted
   allGuessesCollected(batchId: string, playerIds: string[]): boolean;
   reveal(batchId: string, config: ScoreConfig): RevealResult;
 }
@@ -250,11 +250,11 @@ interface ScoreEngineOperations {
 
 ### DrawManager
 
-**책임:** 드로우 규칙 집행 (첫 라운드 제외, Composite Code 미완성 시 1장 드로우).
+**Responsibility:** Enforce the draw rule (excluding the first round; draw 1 card when no Composite Code is completed).
 
 ```typescript
 interface DrawManagerState {
-  firstPlacementDone: Set<string>; // 첫 배치 완료한 플레이어 ID 집합
+  firstPlacementDone: Set<string>; // set of IDs of players who have completed their first placement
 }
 
 interface DrawManagerOperations {
@@ -269,54 +269,54 @@ interface DrawManagerOperations {
 }
 ```
 
-**규칙:**
-- `playerId ∉ firstPlacementDone` → `shouldDraw = false` (첫 배치 면제), 이후 `firstPlacementDone`에 추가
+**Rules:**
+- `playerId ∉ firstPlacementDone` → `shouldDraw = false` (first placement exempt), then add to `firstPlacementDone`
 - `completedCodes.length >= 1` → `shouldDraw = false`
-- 그 외 → `shouldDraw = true`
+- Otherwise → `shouldDraw = true`
 
 ---
 
 ### GameStateManager
 
-**책임:** 전체 게임 흐름 조율, 종료 감지, 불변성 유지, 공개 상태 관리.
+**Responsibility:** Coordinate the overall game flow, detect the end of the game, maintain invariants, manage the public state.
 
-**불변성 (Requirement 3.2, 3.10):**
+**Invariants (Requirement 3.2, 3.10):**
 - `deck.remaining.length + board.cardCount + sum(hand.length for all players) = 52`
 - `board.cardCount = placementActionCount + 4`
 
 ```typescript
 type GamePhase = 
-  | 'INIT'          // 초기화
-  | 'PLACEMENT'     // 카드 배치 단계
-  | 'GUESS_COLLECT' // Guess 수집 단계
-  | 'REVEAL'        // 점수 공개
-  | 'ENDED';        // 게임 종료
+  | 'INIT'          // initialization
+  | 'PLACEMENT'     // card placement phase
+  | 'GUESS_COLLECT' // Guess collection phase
+  | 'REVEAL'        // score reveal
+  | 'ENDED';        // game ended
 
 interface PublicGameState {
   phase: GamePhase;
   board: BoardState;
-  deckRemaining: number;        // 카드 수만 공개 (내용 미공개)
-  hands: Record<string, number>; // 플레이어별 손패 카드 수만 공개
-  scores: Record<string, number>; // 누적 점수
-  guessStatus: Record<string, boolean>; // 제출 여부만 공개
+  deckRemaining: number;        // only the card count is public (contents not revealed)
+  hands: Record<string, number>; // only each player's hand card count is public
+  scores: Record<string, number>; // cumulative scores
+  guessStatus: Record<string, boolean>; // only whether submitted is public
   lastReveal?: RevealResult;
-  winner?: string[];            // 게임 종료 시
+  winner?: string[];            // when the game has ended
 }
 
 interface PlayerView {
   publicState: PublicGameState;
-  myHand: CardId[];             // 자신의 손패만 공개
+  myHand: CardId[];             // only the player's own hand is revealed
 }
 ```
 
-**게임 종료 조건 (Requirement 3.7):**
-모든 Composite Code 채점 및 Guess 수집 완료 → 종료 선언 → `ScoreConfig.handEmptyBonus` 지급.
+**Game end condition (Requirement 3.7):**
+All Composite Codes scored and all Guess values collected → end declared → `ScoreConfig.handEmptyBonus` awarded.
 
 ---
 
 ### AIPlayer
 
-**책임:** 오프라인 로컬 AI 전략 구현. 전략 패턴(Strategy Pattern) 사용.
+**Responsibility:** Implement offline local AI strategies. Uses the Strategy Pattern.
 
 ```typescript
 interface AIStrategy {
@@ -325,28 +325,28 @@ interface AIStrategy {
 }
 
 class RandomStrategy implements AIStrategy {
-  // 초급: 무작위 유효 배치, 균등 분포 Guess
+  // beginner: random valid placement, uniformly distributed Guess
 }
 
 class HeuristicStrategy implements AIStrategy {
-  // 고급: Quad_Group 완성 가능성 최대화
-  // 평가 함수: 배치 후 완성될 수 있는 Quad_Group 후보 수 × 예상 점수
+  // advanced: maximize the likelihood of completing a Quad_Group
+  // evaluation function: number of Quad_Group candidates that can be completed after placement × expected score
 }
 ```
 
-**AI Guess 정보 제한 (Requirement 7.4):**
-AI는 `PlayerView.publicState.board`의 공개된 카드 정보만 사용. 다른 플레이어의 `myHand`나 pending guess에 접근 불가.
+**AI Guess information restriction (Requirement 7.4):**
+The AI uses only the revealed card information in `PlayerView.publicState.board`. It cannot access other players' `myHand` or pending guesses.
 
-**응답 시간 제한 (Requirement 7.3):**
-AI 결정은 동기 계산으로 3초 내 완료. 고급 휴리스틱의 경우 탐색 깊이 제한으로 보장.
+**Response time limit (Requirement 7.3):**
+AI decisions complete within 3 seconds as synchronous computation. For the advanced heuristic, this is guaranteed by limiting the search depth.
 
 ---
 
 ### OpticalMarkerSystem
 
-**책임:** 커스텀 광학 마커 생성, 코드북 관리, 디코딩 파이프라인 조율.
+**Responsibility:** Generate custom optical markers, manage the codebook, coordinate the decoding pipeline.
 
-세부 설계는 [Optical Marker System](#optical-marker-system) 섹션 참조.
+For the detailed design, see the [Optical Marker System](#optical-marker-system) section.
 
 ```typescript
 type Transform = 'I' | 'R90' | 'R180' | 'R270' | 'Fh' | 'Fv' | 'Dm' | 'Da';
@@ -357,16 +357,16 @@ interface GrayImage { width: number; height: number; data: Uint8Array; }
 interface Codebook {
   version: string;
   seed: number;
-  patterns: Record<string, number>; // "H-A" → 25비트 기반 패턴
-  dId: number;   // 측정된 카드 간 최소 거리
-  dSelf: number; // 측정된 자기 변환 최소 거리
+  patterns: Record<string, number>; // "H-A" → 25-bit base pattern
+  dId: number;   // measured minimum distance between cards
+  dSelf: number; // measured minimum self-transform distance
   sha256: string;
 }
 
 interface FragmentReading {
   card: CardId;
-  observedTransform: Transform; // 그룹 축 기준 관측 변환
-  distance: number;             // 최근접 템플릿까지 Hamming 거리
+  observedTransform: Transform; // observed transform relative to the group axes
+  distance: number;             // Hamming distance to the nearest template
   centerPx: [number, number];
 }
 
@@ -380,51 +380,51 @@ type OpticalDecodeResult =
       cards: [CardId, CardId, CardId, CardId];
       hiddenSum: number;
       reflection: 'NOT_REFLECTED' | 'REFLECTED' | 'AMBIGUOUS';
-      interpretations: SlotInterpretation[]; // 길이 2(반사 여부 결정) 또는 4(AMBIGUOUS)
+      interpretations: SlotInterpretation[]; // length 2 (reflection determined) or 4 (AMBIGUOUS)
       readings: FragmentReading[]; }
-  | { kind: 'NOT_DETECTED' }                          // 마커 테두리 자체를 찾지 못함
-  | { kind: 'INCOMPLETE_GROUP'; detected: number }    // 대상 꼭짓점 주변 조각 4개 미만
-  | { kind: 'CORRUPTED_FRAGMENT'; nearestDistance: number } // 테두리는 찾았으나 허용 반경 밖
+  | { kind: 'NOT_DETECTED' }                          // the marker border itself was not found
+  | { kind: 'INCOMPLETE_GROUP'; detected: number }    // fewer than 4 fragments around the target vertex
+  | { kind: 'CORRUPTED_FRAGMENT'; nearestDistance: number } // border found but outside the acceptance radius
   | { kind: 'DUPLICATE_CARD'; card: CardId }
-  | { kind: 'INVALID_ARRANGEMENT' }                   // 일관된 카메라 회전 가설 없음
-  | { kind: 'REFERENCE_MISMATCH' };                   // Companion 참조 대조 불일치
+  | { kind: 'INVALID_ARRANGEMENT' }                   // no consistent camera rotation hypothesis
+  | { kind: 'REFERENCE_MISMATCH' };                   // Companion reference comparison mismatch
 
 interface OpticalDecoder {
-  // 보드 상태를 입력으로 받지 않는다 (Requirement 13.1)
+  // does not take the board state as input (Requirement 13.1)
   decode(image: GrayImage, options?: { acceptRadius?: 0 | 1 | 2 }): OpticalDecodeResult;
 }
 
 interface ReferenceCheck {
-  // Scoring Companion 전용. 불일치 시 REFERENCE_MISMATCH, 기대값으로 대체하지 않음
+  // Scoring Companion only. On mismatch, returns REFERENCE_MISMATCH and does not substitute the expected value
   compare(result: OpticalDecodeResult, expectedCards: CardId[]): OpticalDecodeResult;
 }
 ```
 
 ---
 
-### GameSimulator (Phase 3 인터페이스)
+### GameSimulator (Phase 3 interface)
 
-**책임:** ScoreConfig 주입 → N회 게임 반복 → 통계 출력. Phase 3에서 구현, Phase 1에서는 시그니처만 정의.
+**Responsibility:** Inject ScoreConfig → repeat N games → output statistics. Implemented in Phase 3; only the signatures are defined in Phase 1.
 
 ```typescript
 interface SimulationConfig {
-  seed: number;             // 재현 가능 PRNG 시드
-  gameCount: number;        // 반복 횟수 (기본 1000)
-  scoreConfig: ScoreConfig; // 테스트할 보상 테이블·보너스 후보
-  strategies: AIStrategy[]; // 각 AI 플레이어 전략
+  seed: number;             // reproducible PRNG seed
+  gameCount: number;        // number of repetitions (default 1000)
+  scoreConfig: ScoreConfig; // reward table and bonus candidates to test
+  strategies: AIStrategy[]; // strategy of each AI player
 }
 
 interface SimulationResult {
-  winRates: Record<string, number>;    // 전략별 승률
-  avgGameLength: number;               // 평균 게임 길이 (턴 수)
-  predictionScoreShare: number;        // 전체 점수 중 예측 점수 비중
-  handEmptyBonusImpact: number;        // 손패 소진 보너스의 순위 역전 빈도
-  scoreDistribution: number[];         // 최종 점수 분포 (히스토그램)
+  winRates: Record<string, number>;    // win rate per strategy
+  avgGameLength: number;               // average game length (number of turns)
+  predictionScoreShare: number;        // share of prediction score in total score
+  handEmptyBonusImpact: number;        // frequency of rank reversals caused by the hand-empty bonus
+  scoreDistribution: number[];         // final score distribution (histogram)
 }
 
 interface GameSimulator {
   run(config: SimulationConfig): SimulationResult;
-  runBatch(configs: SimulationConfig[]): SimulationResult[]; // 파라미터 스윕
+  runBatch(configs: SimulationConfig[]): SimulationResult[]; // parameter sweep
 }
 ```
 
@@ -432,10 +432,10 @@ interface GameSimulator {
 
 ## Data Models
 
-### 핵심 타입
+### Core Types
 
 ```typescript
-// 카드 식별
+// Card identification
 type Suit = 'H' | 'D' | 'C' | 'S'; // Heart, Diamond, Club, Spade
 type Rank = 'A' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | 'J' | 'Q' | 'K';
 type Orientation = 0 | 180;
@@ -445,31 +445,31 @@ interface CardId {
   rank: Rank;
 }
 
-// 카드 값 매핑 (Requirement 1.1)
+// Card value mapping (Requirement 1.1)
 const CARD_VALUE: Record<Rank, number> = {
   'A': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7,
   '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13,
 };
 
-// 보드 위치 (0-indexed)
+// Board position (0-indexed)
 interface GridPosition {
-  row: number; // 0–7 (1–8에 대응)
-  col: number; // 0–7 (A–H에 대응)
+  row: number; // 0–7 (corresponds to 1–8)
+  col: number; // 0–7 (corresponds to A–H)
 }
 
-// 보드 위치 내 2×2 그룹 역할
-type QuadRole = 'TL' | 'TR' | 'BL' | 'BR'; // 2×2 내 위치
-type CornerPosition = 'TL' | 'TR' | 'BL' | 'BR'; // 카드 코너
+// Role within a 2×2 group on the board
+type QuadRole = 'TL' | 'TR' | 'BL' | 'BR'; // position within the 2×2
+type CornerPosition = 'TL' | 'TR' | 'BL' | 'BR'; // card corner
 
-// Fragment_Layout: 무늬 × 방향 → 조각 위치 집합
+// Fragment_Layout: suit × orientation → set of fragment positions
 const FRAGMENT_LAYOUT: Record<Suit, Record<Orientation, CornerPosition[]>> = {
-  H: { 0: ['TL', 'BR'], 180: ['TL', 'BR'] }, // 점대칭 — 불변
-  D: { 0: ['TR', 'BL'], 180: ['TR', 'BL'] }, // 점대칭 — 불변
-  C: { 0: ['TR', 'BR'], 180: ['TL', 'BL'] }, // 수평 반사
-  S: { 0: ['TL', 'BL'], 180: ['TR', 'BR'] }, // 수평 반사
+  H: { 0: ['TL', 'BR'], 180: ['TL', 'BR'] }, // point symmetry — invariant
+  D: { 0: ['TR', 'BL'], 180: ['TR', 'BL'] }, // point symmetry — invariant
+  C: { 0: ['TR', 'BR'], 180: ['TL', 'BL'] }, // horizontal-axis reflection
+  S: { 0: ['TL', 'BL'], 180: ['TR', 'BR'] }, // horizontal-axis reflection
 };
 
-// Inward_Corner: 2×2 내 위치 → 그룹 중심을 향하는 코너
+// Inward_Corner: position within the 2×2 → corner facing the group center
 const INWARD_CORNER: Record<QuadRole, CornerPosition> = {
   TL: 'BR',
   TR: 'BL',
@@ -477,249 +477,249 @@ const INWARD_CORNER: Record<QuadRole, CornerPosition> = {
   BR: 'TL',
 };
 
-// 배치된 카드
+// Placed card
 interface PlacedCard {
   card: CardId;
   orientation: Orientation;
 }
 
-// 플레이어
+// Player
 interface Player {
   id: string;
   isAI: boolean;
-  strategy?: AIStrategy; // AI인 경우
+  strategy?: AIStrategy; // if AI
 }
 
-// Quad_Group 결과
+// Quad_Group result
 interface CompositeCodeResult {
   cards: [CardId, CardId, CardId, CardId];
   positions: [GridPosition, GridPosition, GridPosition, GridPosition];
-  hiddenSum: number;         // 합산값
-  groupId: string;           // 정렬된 카드 ID 집합 직렬화
-  isNew: boolean;            // 처음 탐지 여부 (중복 방지)
+  hiddenSum: number;         // sum value
+  groupId: string;           // serialization of the sorted card ID set
+  isNew: boolean;            // whether detected for the first time (duplicate prevention)
 }
 
-// 점수 설정 — ScoreEngine 섹션의 ScoreConfig를 따른다 (수치 TBD — determined by simulation)
+// Score configuration — follows ScoreConfig in the ScoreEngine section (values TBD — determined by simulation)
 
-// 광학 타입(Transform, Slot, GrayImage, Codebook, FragmentReading, OpticalDecodeResult)은 OpticalMarkerSystem 컴포넌트 정의를 따른다.
+// Optical types (Transform, Slot, GrayImage, Codebook, FragmentReading, OpticalDecodeResult) follow the OpticalMarkerSystem component definition.
 ```
 
 ---
 
 ## Optical Marker System
 
-이 섹션은 이전의 6비트 코드북 설계를 대체한다. 6비트 설계는 아래 1절의 이유로 성립하지 않는다.
+This section replaces the earlier 6-bit codebook design. The 6-bit design does not hold, for the reasons given in subsection 1 below.
 
-### 1. 식별 비트 수와 물리 마커 길이의 구분
+### 1. Identification bits versus physical marker length
 
-- 52장을 구별하는 정보량은 log₂52 ≈ 5.70비트이므로 카드 ID를 **표현**하는 데는 6비트면 충분하다.
-- 단일 비트 오류 정정(d_min ≥ 3)에는 Hamming 한계 M·(n+1) ≤ 2ⁿ이 적용된다. n = 6이면 M ≤ 64/7 ≈ 9.1이고, 알려진 최댓값은 A(6,3) = 8이다. 52개 코드워드는 불가능하다.
-- 조각은 카메라에 회전·반사된 상태로 관측된다(4–5절). 따라서 코드북은 52개 코드워드가 아니라 52 × 8 = 416개 Fragment_Template 사이의 거리를 보장해야 한다.
+- The information needed to distinguish 52 cards is log₂52 ≈ 5.70 bits, so 6 bits are enough to **represent** a card ID.
+- Single-bit error correction (d_min ≥ 3) is subject to the Hamming bound M·(n+1) ≤ 2ⁿ. For n = 6, M ≤ 64/7 ≈ 9.1, and the known maximum is A(6,3) = 8. 52 codewords are impossible.
+- Fragments are observed after being rotated and reflected by the camera (subsections 4–5). The codebook must therefore guarantee distance among 52 × 8 = 416 Fragment_Templates, not among 52 codewords.
 
-### 2. 마커 구조 (채택안: 5×5 데이터 격자)
+### 2. Marker structure (adopted: 5×5 data grid)
 
-- 데이터: 5×5 = 25 이진 셀. 셀 (r, c)의 비트 인덱스는 i = 5r + c(행 우선, r = 0이 카드 기준 위쪽)다.
-- 테두리: 데이터 격자를 두르는 1모듈 폭 검은 테두리 → 7×7 모듈. 탐지와 원근 보정에만 쓰며 방향 정보는 담지 않는다.
-- 여백: 테두리 바깥 최소 1모듈 흰 여백 → 점유 영역 9×9 모듈.
-- 물리 치수 후보: 모듈 1.5–2.0mm(점유 영역 약 13.5–18mm). 카드 모서리 라운드와 인쇄 공차를 피하도록 모서리에서 안쪽으로 배치한다. 수치는 실제 인쇄·촬영 실험으로 확정한다(미검증).
+- Data: 5×5 = 25 binary cells. The bit index of cell (r, c) is i = 5r + c (row-major, with r = 0 at the top of the card).
+- Border: a black border 1 module wide surrounds the data grid → 7×7 modules. It is used only for detection and perspective correction and carries no orientation information.
+- Margin: a white quiet margin of at least 1 module outside the border → occupied area of 9×9 modules.
+- Candidate physical dimensions: module of 1.5–2.0 mm (occupied area of about 13.5–18 mm). The marker is placed inward from the corner to avoid the card's rounded corner and printing tolerance. The values are to be fixed by actual printing and photographing experiments (unverified).
 
-격자 크기 비교 (52장 보장 하한은 6절의 탐욕 논증으로 계산):
+Grid size comparison (the 52-card guaranteed lower bound is calculated with the greedy argument in subsection 6):
 
-| 데이터 격자 | n | 테두리 포함 | 52장 보장 여부 | 판단 |
+| Data grid | n | Including border | 52-card guarantee | Assessment |
 |---|---|---|---|---|
-| 4×4 | 16 | 6×6 모듈 | d = 3, 균형·자기 거리 필터 적용 후 하한 41(전수 열거) < 52 → 52장 보장 불가 | 1비트 정정 한계, 기각 |
-| 5×5 | 25 | 7×7 모듈 | d = 5, 필터 적용 후 하한 198(전수 열거, 6절) | **채택** |
-| 6×6 | 36 | 8×8 모듈 | d = 9, 필터 미적용 하한 209.5. 필터 적용 후 값은 열거하지 않음(미검증) | 대안. 같은 면적에서 모듈이 7/8로 작아져 블러·저해상도에 불리 |
+| 4×4 | 16 | 6×6 modules | d = 3; after the balance and self-distance filters, lower bound 41 (exhaustive enumeration) < 52 → 52 cards not guaranteed | Limited to 1-bit correction, rejected |
+| 5×5 | 25 | 7×7 modules | d = 5; after the filters, lower bound 198 (exhaustive enumeration, subsection 6) | **Adopted** |
+| 6×6 | 36 | 8×8 modules | d = 9; lower bound 209.5 without the filters. The value after the filters was not enumerated (unverified) | Alternative. At the same area the module shrinks to 7/8, which is disadvantageous for blur and low resolution |
 
-5×5를 고른 근거는 이론 하한만이 아니다. (a) d = 5를 필터 적용 후에도 52장 대비 약 3.8배 여유(하한 198)로 보장하고, (b) 같은 인쇄 면적에서 6×6보다 모듈이 약 14% 크며, (c) 판정 반경을 1로 잡으면 오식별에 조각당 4비트 이상 오류가 필요하다. 합성 실험에서 재현율이나 오식별 여유가 부족하면 6×6으로 상향한다.
+The reasons for choosing 5×5 are not only the theoretical lower bound. (a) It guarantees d = 5 with a margin of about 3.8 times the 52 cards even after the filters (lower bound 198), (b) at the same printed area the module is about 14% larger than with 6×6, and (c) with an acceptance radius of 1, misidentification requires errors of at least 4 bits per fragment. If recall or the misidentification margin proves insufficient in synthetic experiments, the design moves up to 6×6.
 
-### 3. 변환 정의 (2차원 대칭군 D4)
+### 3. Transform definition (2D symmetry group D4)
 
-5×5 격자의 셀 좌표 (r, c), r, c ∈ {0, …, 4}에 대한 셀 사상:
+Cell map for cell coordinates (r, c), r, c ∈ {0, …, 4}, of the 5×5 grid:
 
-| 기호 | 의미 | (r, c) → |
+| Symbol | Meaning | (r, c) → |
 |---|---|---|
-| I | 항등 | (r, c) |
-| R90 | 시계방향 90° 회전 | (c, 4−r) |
-| R180 | 180° 회전 | (4−r, 4−c) |
-| R270 | 시계방향 270° 회전 | (4−c, r) |
-| Fh | 수평축 반사(위↔아래) | (4−r, c) |
-| Fv | 수직축 반사(좌↔우) | (r, 4−c) |
-| Dm | 주대각선 반사 | (c, r) |
-| Da | 반대각선 반사 | (4−c, 4−r) |
+| I | Identity | (r, c) |
+| R90 | 90° clockwise rotation | (c, 4−r) |
+| R180 | 180° rotation | (4−r, 4−c) |
+| R270 | 270° clockwise rotation | (4−c, r) |
+| Fh | Horizontal-axis reflection (top↔bottom) | (4−r, c) |
+| Fv | Vertical-axis reflection (left↔right) | (r, 4−c) |
+| Dm | Main-diagonal reflection | (c, r) |
+| Da | Anti-diagonal reflection | (4−c, 4−r) |
 
-패턴 P에 변환 g를 적용한 결과는 (g·P)[g(x)] = P[x]로 정의한다. 각 g는 비트 인덱스 순열 π_g(5r + c) = 5r′ + c′로 구현하며, 이 순열은 위 셀 사상에서 직접 생성하므로 정의상 2차원 변환과 같다. 동치성은 Property 21에서 52 × 8 전수 래스터 테스트로 확인한다. 행 우선 인덱스에서 R180은 i → 24 − i(비트 순서 반전)와 같지만, Fh·Fv·R90은 단순 반전이나 절반 교환이 아니다.
+The result of applying a transform g to a pattern P is defined as (g·P)[g(x)] = P[x]. Each g is implemented as a bit-index permutation π_g(5r + c) = 5r′ + c′. This permutation is generated directly from the cell map above, so it equals the 2D transform by definition. The equivalence is confirmed in Property 21 by an exhaustive raster test over 52 × 8. In row-major indexing, R180 equals i → 24 − i (reversal of bit order), but Fh, Fv, and R90 are not a simple reversal or a half swap.
 
-### 4. 인쇄 조각 정의와 대칭성
+### 4. Printed fragment definition and symmetry
 
-카드를 0°로 세운 카드 좌표에서 카드 c의 기반 패턴을 P = P_c라 하면 인쇄 내용은 다음과 같다. 나머지 두 코너에는 조각이 없다.
+Let P = P_c be the base pattern of card c in card coordinates with the card upright at 0°. The printed content is then as follows. The other two corners carry no fragment.
 
-| 무늬 | 기반 코너 | 파생 코너 | 파생 내용 | 카드 조각층의 대칭 |
+| Suit | Base corner | Derived corner | Derived content | Symmetry of the card's fragment layer |
 |---|---|---|---|---|
-| ♥ | TL: P | BR | R180·P | 카드 180° 회전에 대해 픽셀 단위 불변 |
-| ♦ | TR: P | BL | R180·P | 카드 180° 회전에 대해 픽셀 단위 불변 |
-| ♣ | TR: P | BR | Fh·P | 카드 수평축 반사에 대해 픽셀 단위 불변 |
-| ♠ | TL: P | BL | Fh·P | 카드 수평축 반사에 대해 픽셀 단위 불변 |
+| ♥ | TL: P | BR | R180·P | Pixel-wise invariant under 180° card rotation |
+| ♦ | TR: P | BL | R180·P | Pixel-wise invariant under 180° card rotation |
+| ♣ | TR: P | BR | Fh·P | Pixel-wise invariant under card horizontal-axis reflection |
+| ♠ | TL: P | BL | Fh·P | Pixel-wise invariant under card horizontal-axis reflection |
 
-증명(♥): 카드를 180° 돌리면 TL의 P는 BR로 이동하면서 R180·P가 되어 인쇄된 BR과 같고, BR의 R180·P는 TL로 이동하면서 R180·R180·P = P가 된다. ♦도 같다. ♣: 카드 수평축 반사는 TR↔BR을 교환하고 내용에 Fh를 적용하므로 P와 Fh·P가 서로 바뀐다. ♠도 같다. 두 조각은 같은 P의 D4 궤도에 속하므로 같은 카드로 식별된다.
+Proof (♥): rotating the card by 180° moves the P at TL to BR, where it becomes R180·P, equal to the printed BR; the R180·P at BR moves to TL, where it becomes R180·R180·P = P. ♦ is the same. ♣: the card's horizontal-axis reflection swaps TR↔BR and applies Fh to the content, so P and Fh·P are exchanged. ♠ is the same. The two fragments belong to the D4 orbit of the same P, so they are identified as the same card.
 
-물리 회전과 카메라 회전의 구분:
-- **물리 회전**(Card_Orientation)은 0°/180°만 허용한다. 180°로 놓인 카드의 놓인 코너 X에 보이는 내용은 R180 · (반대편 코너 opp(X)의 인쇄 내용)이다.
-- **카메라 회전**(Camera_Rotation)은 이미지 전체에 적용되는 임의 각도 회전이다. 원근 보정 후에는 90° 배수의 잔여 회전만 남으며, 이는 템플릿 대조와 방향 가설 검사(7절)가 처리한다.
+Distinction between physical rotation and camera rotation:
+- **Physical rotation** (Card_Orientation) allows only 0°/180°. For a card placed at 180°, the content visible at a placed corner X is R180 · (the printed content of the opposite corner opp(X)).
+- **Camera rotation** (Camera_Rotation) is an arbitrary-angle rotation applied to the whole image. After perspective correction only a residual rotation by a multiple of 90° remains, and template matching and the orientation hypothesis check (subsection 7) handle it.
 
-### 5. 슬롯별 유효 조합과 관측 내용 (보드 축 기준, 카메라 회전 0)
+### 5. Valid combinations per slot and observed content (board axes, camera rotation 0)
 
-꼭짓점을 둘러싼 슬롯 s ∈ {TL, TR, BL, BR}의 카드는 Inward_Corner(TL→BR, TR→BL, BL→TR, BR→TL)에 조각이 있어야 한다. 4절 정의로 계산한 유효 조합과 그때 꼭짓점에서 관측되는 내용:
+The card in slot s ∈ {TL, TR, BL, BR} around a vertex must have its fragment at the Inward_Corner (TL→BR, TR→BL, BL→TR, BR→TL). The valid combinations computed from the definition in subsection 4, and the content observed at the vertex in each case:
 
-| 슬롯 | 필요 코너 | ♥ | ♦ | ♣ | ♠ |
+| Slot | Required corner | ♥ | ♦ | ♣ | ♠ |
 |---|---|---|---|---|---|
-| TL | BR | 0°/180°: R180·P | 불가 | 0°: Fh·P | 180°: R180·P |
-| TR | BL | 불가 | 0°/180°: R180·P | 180°: R180·P | 0°: Fh·P |
-| BL | TR | 불가 | 0°/180°: P | 0°: P | 180°: Fv·P |
-| BR | TL | 0°/180°: P | 불가 | 180°: Fv·P | 0°: P |
+| TL | BR | 0°/180°: R180·P | Impossible | 0°: Fh·P | 180°: R180·P |
+| TR | BL | Impossible | 0°/180°: R180·P | 180°: R180·P | 0°: Fh·P |
+| BL | TR | Impossible | 0°/180°: P | 0°: P | 180°: Fv·P |
+| BR | TL | 0°/180°: P | Impossible | 180°: Fv·P | 0°: P |
 
-이 표에서 수학적으로 도출되는 성질:
-1. 관측 변환은 항상 V = {I, R180, Fh, Fv}에 속한다.
-2. ♥는 TL·BR 슬롯에만, ♦는 TR·BL 슬롯에만 참여할 수 있다(방향 무관). ♣·♠는 모든 슬롯에 참여할 수 있으나 슬롯마다 가능한 방향은 정확히 하나다.
-3. 놓인 카드 한 장은 둘러싼 꼭짓점 4개 중 정확히 2개에만 조각을 제공한다. 보드 위의 모든 조각은 정확히 하나의 꼭짓점을 향하므로, Inward 조각 검사는 "해당 꼭짓점에 조각 4개가 모였는가"와 같다.
-4. **180° 모호성**: 유효한 2×2 배치 전체를 180° 돌린 결과도 같은 4장으로 이루어진 유효 배치다(표가 슬롯 TL↔BR·TR↔BL, 변환 g → R180∘g에 대해 닫혀 있다). 따라서 이미지만으로는 슬롯 배정을 180° 모호성 이내로만 결정할 수 있으며, 카드 집합과 합산은 모든 해석에서 같다.
-5. 카메라를 90° 돌리면 관측 변환은 R90∘V = {R90, R270, Dm, Da}로 이동하며 V와 겹치지 않는다. 따라서 카메라 회전은 180° 단위까지 결정된다.
-6. **반사(거울상) 판별**: 이미지에 반사가 포함되면 모든 조각의 관측 변환에서 회전/반사 성질이 뒤집힌다. 유효한 배치에서 ♥·♦ 조각은 항상 회전(I 또는 R180)으로만 관측되므로, 그룹에 ♥ 또는 ♦가 하나라도 있으면 반사 여부가 결정된다(통과 가설 2개, 반사 여부 동일). 그룹이 ♣·♠로만 이루어지면 반사된 이미지도 유효 배치가 되어 통과 가설이 4개(비반사 2 + 반사 2)이며 반사 여부를 판별할 수 없다. 관측 배치 81개 × 이미지 변환 8개 = 648개 이미지를 전수 열거한 결과: ♥/♦ 포함 520개는 반사 여부가 결정되고, ♣·♠ 전용 128개는 모호하다. 카드 식별과 합산은 반사 여부와 무관하다. 무작위 4장이 ♣·♠만으로 이루어질 확률은 C(26,4)/C(52,4) ≈ 5.5%다.
+Properties mathematically derived from this table:
+1. The observed transform always belongs to V = {I, R180, Fh, Fv}.
+2. ♥ can participate only in the TL and BR slots, and ♦ only in the TR and BL slots (regardless of orientation). ♣ and ♠ can participate in every slot, but each slot allows exactly one orientation.
+3. A placed card supplies fragments to exactly 2 of the 4 vertices around it. Every fragment on the board faces exactly one vertex, so the Inward fragment check is equivalent to "4 fragments have gathered at that vertex."
+4. **180° ambiguity**: rotating an entire valid 2×2 arrangement by 180° also yields a valid arrangement of the same 4 cards (the table is closed under the slot swaps TL↔BR and TR↔BL and the transform change g → R180∘g). The image alone therefore determines the slot assignment only up to the 180° ambiguity, while the card set and the sum are the same under every interpretation.
+5. Rotating the camera by 90° moves the observed transforms to R90∘V = {R90, R270, Dm, Da}, which does not overlap V. Camera rotation is therefore determined up to a multiple of 180°.
+6. **Reflection (mirror image) discrimination**: if the image contains a reflection, the rotation/reflection character of the observed transform flips for every fragment. In a valid arrangement, ♥ and ♦ fragments are always observed only as rotations (I or R180), so the presence of even one ♥ or ♦ in the group determines whether the image is reflected (2 passing hypotheses, all with the same reflection status). If the group consists only of ♣ and ♠, the reflected image is also a valid arrangement, so there are 4 passing hypotheses (2 non-reflected + 2 reflected) and the reflection status cannot be determined. Exhaustive enumeration of 81 observed arrangements × 8 image transforms = 648 images gave the following: for the 520 images containing ♥/♦, reflection status is determined, and the 128 ♣/♠-only images are ambiguous. Card identification and the sum do not depend on reflection status. The probability that 4 random cards consist only of ♣ and ♠ is C(26,4)/C(52,4) ≈ 5.5%.
 
-### 6. 코드북 제약과 생성 알고리즘
+### 6. Codebook constraints and generation algorithm
 
-정의: d(·,·)는 25비트 Hamming 거리, 템플릿 집합 T = {g·P_c : c ∈ 52장, g ∈ D4}.
-- 카드 간 거리: d_id = min_{c≠c′, g} d(P_c, g·P_{c′}) ≥ 5 (필수)
-- 자기 거리: d_self = min_{c, g≠I} d(P_c, g·P_c) ≥ 5 (필수. 관측 변환을 판정 반경 안에서 유일하게 결정하기 위함)
-- 따라서 416개 템플릿은 모두 서로 다르고 쌍별 거리가 5 이상이다.
-- 균형 필터: 기반 패턴의 검은 셀 수 w(P) ∈ [9, 16] (이진화 안정성).
+Definitions: d(·,·) is the 25-bit Hamming distance, and the template set is T = {g·P_c : c ∈ 52 cards, g ∈ D4}.
+- Inter-card distance: d_id = min_{c≠c′, g} d(P_c, g·P_{c′}) ≥ 5 (required)
+- Self distance: d_self = min_{c, g≠I} d(P_c, g·P_c) ≥ 5 (required, so that the observed transform is uniquely determined within the acceptance radius)
+- Consequently, all 416 templates are distinct and have pairwise distance of at least 5.
+- Balance filter: the number of black cells of the base pattern satisfies w(P) ∈ [9, 16] (binarization stability).
 
-생성 알고리즘(결정적 탐욕):
-1. 고정 PRNG(mulberry32, 고정 시드)로 25비트 후보를 차례로 생성한다.
-2. 균형·자기 거리 필터를 통과하고, 이미 채택된 모든 템플릿과 8가지 변환 모두에서 거리 5 이상인 후보만 채택한다.
-3. 52개를 채택하면 종료하고, 채택 순서대로 ♥A…♥K, ♦A…♦K, ♣A…♣K, ♠A…♠K에 할당한다.
-4. 결과를 `codebook.v1.json`(알고리즘 버전, 시드, 52개 패턴, 측정된 d_id·d_self, SHA-256)으로 동결해 커밋한다. 인쇄와 디코딩은 동결 파일만 사용하고, 재생성은 동일성 검증 용도로만 실행한다. 코드북 버전이 바뀌면 카드를 다시 인쇄해야 한다.
+Generation algorithm (deterministic greedy):
+1. Generate 25-bit candidates in sequence with a fixed PRNG (mulberry32, fixed seed).
+2. Accept only candidates that pass the balance and self-distance filters and are at distance 5 or more from every already accepted template under all 8 transforms.
+3. Stop when 52 are accepted, and assign them in acceptance order to ♥A…♥K, ♦A…♦K, ♣A…♣K, ♠A…♠K.
+4. Freeze the result and commit it as `codebook.v1.json` (algorithm version, seed, 52 patterns, measured d_id and d_self, SHA-256). Printing and decoding use only the frozen file, and regeneration is run only for identity verification. If the codebook version changes, the cards must be reprinted.
 
-**존재 보장 (분류: 전수 열거로 계산됨. 저장소 테스트로 재현되기 전까지는 "이번 설계 검토에서 계산한 값"으로 취급):**
+**Existence guarantee (classification: calculated by exhaustive enumeration. Until reproduced by repository tests, treat as a "value calculated in this design review"):**
 
-정의: F = { P ∈ {0,1}²⁵ : w(P) ∈ [9,16], 모든 g ≠ I에 대해 d(P, g·P) ≥ 5 }. 거리는 D4의 모든 원소 8개를 포함한다. 후보 P가 이미 채택된 카드의 어떤 템플릿 t에 대해서도 d(g·P, t) ≥ 5가 되려면 d(P, g⁻¹·t) ≥ 5여야 하고, g⁻¹·t도 같은 카드의 템플릿이므로 조건은 "P가 채택된 템플릿 모두에서 거리 5 이상"과 같다.
+Definition: F = { P ∈ {0,1}²⁵ : w(P) ∈ [9,16], d(P, g·P) ≥ 5 for all g ≠ I }. The distance includes all 8 elements of D4. For a candidate P to satisfy d(g·P, t) ≥ 5 for any template t of an already accepted card, it must hold that d(P, g⁻¹·t) ≥ 5; since g⁻¹·t is also a template of the same card, the condition is equivalent to "P is at distance 5 or more from all accepted templates."
 
-주장: F 전체를 순회하는 탐욕 절차가 더 채택할 후보가 없어 멈췄을 때 채택된 카드 수 N은 N ≥ ⌈|F| / (8·V(25,4))⌉이다. 근거: 멈췄다면 F의 모든 단어는 채택된 템플릿(최대 8N개, 자기 거리 ≥ 5이므로 카드당 정확히 8개) 중 하나로부터 거리 4 이하에 있으므로 |F| ≤ 8N·V(25,4)다.
+Claim: when the greedy procedure that sweeps all of F stops because no candidate remains to be accepted, the number N of accepted cards satisfies N ≥ ⌈|F| / (8·V(25,4))⌉. Reasoning: at stopping, every word in F lies within distance 4 of one of the accepted templates (at most 8N of them; exactly 8 per card because the self distance is ≥ 5), so |F| ≤ 8N·V(25,4).
 
-전수 열거 결과(2²⁵ = 33,554,432개 전부):
-- 균형 탈락 3,615,562 (Σ_{k≤8}C(25,k)의 2배)
-- 자기 거리 탈락 7,152,896 (변환별: R90 74,624, R270 74,624, R180 647,168, Fh·Fv·Dm·Da 각 1,835,008. 변환별 합 8,136,448은 합집합의 상한)
-- 둘 중 하나라도 탈락 9,456,896
+Exhaustive enumeration result (all 2²⁵ = 33,554,432 patterns):
+- Rejected by balance: 3,615,562 (2 times Σ_{k≤8}C(25,k))
+- Rejected by self distance: 7,152,896 (per transform: R90 74,624, R270 74,624, R180 647,168, Fh·Fv·Dm·Da 1,835,008 each. The per-transform sum 8,136,448 is an upper bound on the union)
+- Rejected by at least one of the two: 9,456,896
 - |F| = 24,097,536
 - V(25,4) = 1 + 25 + 300 + 2,300 + 12,650 = 15,276 → N ≥ ⌈24,097,536 / 122,208⌉ = **198**
-- 이전 설계 검토의 하한 178은 변환별 탈락 수의 합으로 계산한 더 느슨한 값이었으며 틀리지 않았다.
-- 다른 기준의 같은 계산: d = 6 → 45, d = 7 → 7 (모두 52 미만이므로 d ≥ 6은 보장되지 않음). 4×4(d = 3, 필터 적용) → 41.
+- The lower bound of 178 from the earlier design review was a looser value calculated from the sum of per-transform rejection counts, and it was not wrong.
+- The same calculation for other criteria: d = 6 → 45, d = 7 → 7 (both below 52, so d ≥ 6 is not guaranteed). 4×4 (d = 3, filters applied) → 41.
 
-생성기의 성격: 위 하한은 "52장 코드북이 존재한다"는 증명이며, 생성기는 고정 시드 PRNG로 후보를 뽑는 구성적 절차다. 51장 채택 후 무작위 후보 한 개가 채택될 확률의 하한은 (|F| − 51·8·15,276) / 2²⁵ ≈ 0.532이므로 시도 횟수 상한을 두면 사실상 항상 성공하지만, 이것은 확률적 설명이며 보장이 아니다. 생성기는 시도 횟수 상한을 넘으면 오류로 종료한다. 어떤 경우에도 최종 판정은 생성기가 아닌 독립 검증기(생성기와 코드를 공유하지 않는 래스터 기반 검증)가 내린다. 달성한 d_id·d_self는 측정해 기록한다.
+Nature of the generator: the lower bound above is a proof that "a 52-card codebook exists," whereas the generator is a constructive procedure that draws candidates with a fixed-seed PRNG. After 51 cards are accepted, the lower bound on the probability that one random candidate is accepted is (|F| − 51·8·15,276) / 2²⁵ ≈ 0.532, so with an upper limit on the number of attempts it practically always succeeds, but this is a probabilistic explanation, not a guarantee. The generator terminates with an error if it exceeds the attempt limit. In every case the final verdict is made not by the generator but by an independent verifier (raster-based verification that shares no code with the generator). The achieved d_id and d_self are measured and recorded.
 
-### 7. 디코딩 파이프라인
+### 7. Decoding pipeline
 
-입력은 그레이스케일 이미지뿐이며 보드 상태를 받지 않는다(API 시그니처로 강제).
+The input is only a grayscale image, and no board state is accepted (enforced by the API signature).
 
-1. **마커 탐지**: 적응형 이진화 → 연결 요소·외곽선 → 사각형 근사 → 4꼭짓점 호모그래피 → 7×7 샘플링 → 테두리 셀이 모두 검은지 확인. 하나도 없으면 NOT_DETECTED.
-2. **꼭짓점 클러스터링**: 공통 중심 주위 네 사분면에 하나씩 놓이고, 중심 간 거리가 마커 크기로 예측한 정사각형 배치와 허용 오차 안에서 맞는 마커 묶음을 찾는다. 프레임 중앙에 가장 가까운 묶음을 대상으로 한다. 대상 꼭짓점 주변 마커가 4개 미만이면 INCOMPLETE_GROUP. Central_Void가 있으므로 네 조각이 이어진 정사각형을 가정하지 않고 마커 중심 위치만 사용하며, 대상 꼭짓점이 아닌 마커(Distractor_Marker)는 군집에서 제외한다.
-3. **데이터 판독**: 마커 중심 간 벡터로 그룹 축을 추정하고(90° 배수 모호), 그 축에 맞춰 각 마커의 5×5 데이터를 읽는다.
-4. **템플릿 대조**: 416개 템플릿과 거리를 계산해 최근접 (카드, 변환 g, 거리)를 구한다. 거리 ≤ r_acc(기본 1, 최대 2로 설정 가능)이면 채택하고, 아니면 CORRUPTED_FRAGMENT.
-5. **중복 검사**: 4장 카드 ID가 모두 달라야 한다. 아니면 DUPLICATE_CARD.
-6. **방향·반사 가설 검사**: D4의 8개 원소 h(회전 4 × 반사 2)마다 슬롯과 상대 변환 h⁻¹∘g를 구해 5절 표와 대조한다. 통과한 가설 집합으로 다음과 같이 판정한다. (a) 통과 가설 없음 → INVALID_ARRANGEMENT. (b) 통과 가설 2개, 모두 비반사 → reflection = NOT_REFLECTED. (c) 통과 가설 2개, 모두 반사 → REFLECTED. (d) 통과 가설 4개(비반사 2 + 반사 2) → AMBIGUOUS. (e) 그 밖의 개수는 내부 오류로 거부한다. 판독기는 반사 여부를 추측하지 않는다. REFLECTED·AMBIGUOUS인 경우에도 카드 집합과 합산은 반환하되, 해석의 `reflected` 플래그로 반사 가정을 명시한다.
-7. **합산**: 식별된 4장의 Card_Value 합.
-8. **참조 대조**(Scoring Companion 전용, 선택): 보드 기록의 카드 집합과 다르면 REFERENCE_MISMATCH로 거부한다. 기대값으로 판독 결과를 대체하지 않는다.
+1. **Marker detection**: adaptive binarization → connected components and contours → quadrilateral approximation → 4-corner homography → 7×7 sampling → check that all border cells are black. If none is found, NOT_DETECTED.
+2. **Vertex clustering**: find a set of markers such that one lies in each of the four quadrants around a common center and the distances between centers match, within tolerance, a square arrangement predicted from the marker size. The set closest to the frame center is the target. If fewer than 4 markers surround the target vertex, INCOMPLETE_GROUP. Because the Central_Void exists, the procedure does not assume a connected square formed by the four fragments and uses only the marker center positions, and markers not at the target vertex (Distractor_Marker) are excluded from the cluster.
+3. **Data reading**: estimate the group axis from the vectors between marker centers (ambiguous up to multiples of 90°), and read each marker's 5×5 data aligned to that axis.
+4. **Template matching**: compute the distance to the 416 templates and obtain the nearest (card, transform g, distance). If the distance ≤ r_acc (default 1, configurable up to 2), accept; otherwise CORRUPTED_FRAGMENT.
+5. **Duplicate check**: the 4 card IDs must all differ. Otherwise DUPLICATE_CARD.
+6. **Orientation and reflection hypothesis check**: for each of the 8 elements h of D4 (4 rotations × 2 reflection states), obtain the slot and the relative transform h⁻¹∘g and compare them with the table in subsection 5. The set of passing hypotheses is judged as follows. (a) No passing hypothesis → INVALID_ARRANGEMENT. (b) 2 passing hypotheses, all non-reflected → reflection = NOT_REFLECTED. (c) 2 passing hypotheses, all reflected → REFLECTED. (d) 4 passing hypotheses (2 non-reflected + 2 reflected) → AMBIGUOUS. (e) Any other count is rejected as an internal error. The reader does not guess the reflection status. Even for REFLECTED and AMBIGUOUS, the card set and the sum are returned, and the `reflected` flag of the interpretation states the reflection assumption explicitly.
+7. **Sum**: the sum of the Card_Values of the 4 identified cards.
+8. **Reference comparison** (Scoring Companion only, optional): if the result differs from the card set in the board record, reject with REFERENCE_MISMATCH. The expected value does not replace the reading result.
 
-판독 결과는 ScoreEngine의 봉인 저장소로만 전달되며, Requirement 6에 따라 예측 수집이 끝나기 전에는 UI에 표시하지 않는다. 판독기 모듈 자체는 UI를 갖지 않는다.
+The reading result is passed only to the ScoreEngine's sealed store and, per Requirement 6, is not shown in the UI before prediction collection ends. The reader module itself has no UI.
 
-오류 허용 범위 (독립 비트 반전 모델 가정): 거리 5에서는 반경 2 이하의 정정이 보장되고 허용 영역은 서로 겹치지 않는다. r_acc = 1: 1비트는 정정이 보장되고, 2–3비트는 어떤 템플릿의 허용 영역에도 들어가지 않아 CORRUPTED_FRAGMENT 거부가 보장되며, 4비트 이상에서는 다른 카드가 허용 영역에 들어갈 수 있다(오식별 가능). r_acc = 2: 2비트까지 정정이 보장되고, 3비트 이상은 거부도 오식별도 모두 가능하다(보장 없음). 허용 영역에 템플릿이 둘 이상 들어오는 모호한 관측은 반경 ≤ 2에서는 구조적으로 발생하지 않는다. 셀 밝기가 임계값에 가까워 비트 판정 자체가 불확실한 경우는 조각 판독 단계(task 4.2)에서 셀 신뢰도로 별도 보고한다. 실제 이미지 오류(위치 오차, 블러, 조명)는 독립 비트 반전이 아니므로 위 보장이 그대로 적용되지 않으며, 합성 열화 실험(Requirement 12.5)의 측정값만 근거로 삼는다. 어떤 반경에서도 임의의 손상이 다른 유효 신원을 만들 수 없다고 주장하지 않는다. 기본값은 r_acc = 1이며, 최종 기본값은 합성 실험의 재현율·오식별률로 확정한다.
+Error tolerance (assuming the independent bit-flip model): at distance 5, correction within radius 2 or less is guaranteed and the acceptance regions do not overlap. With r_acc = 1: 1-bit errors are guaranteed to be corrected; 2–3-bit errors fall within no template's acceptance region, so CORRUPTED_FRAGMENT rejection is guaranteed; with 4 or more bits, another card can fall within the acceptance region (misidentification is possible). With r_acc = 2: errors up to 2 bits are guaranteed to be corrected, and for 3 or more bits both rejection and misidentification are possible (no guarantee). An ambiguous observation in which two or more templates fall within the acceptance region does not occur structurally at radius ≤ 2. Cases where the cell brightness is close to the threshold and the bit decision itself is uncertain are reported separately, as cell confidence, in the fragment reading stage (task 4.2). Actual image errors (position error, blur, lighting) are not independent bit flips, so the guarantees above do not apply as they are, and only the measured values from the synthetic degradation experiments (Requirement 12.5) serve as evidence. The design does not claim that arbitrary corruption cannot produce another valid identity at any radius. The default is r_acc = 1, and the final default is fixed by the recall and misidentification rate in the synthetic experiments.
 
-### 8. 보장 수준 구분
+### 8. Guarantee-level classification
 
-| 성질 | 근거 | 검증 방법 |
+| Property | Basis | Verification method |
 |---|---|---|
-| 52개 고유 ID, d_id ≥ 5, d_self ≥ 5 | 6절 전수 열거 결과(하한 198)와 생성기 | 동결 코드북의 416개 템플릿 전쌍(86,320쌍) 전수 검사 |
-| 비트 순열과 2차원 변환의 동치 | 3절 정의 | 52 × 8 래스터 전수 비교 |
-| ♥♦ 180° 불변, ♣♠ 수평축 반사 불변 | 4절 증명 | 카드 조각층 래스터 픽셀 비교 |
-| 슬롯 표, 180° 모호성, 통과 가설 수 ∈ {0, 2} | 5절 도출 | 슬롯 × 무늬 × 방향 전수, 합성 그룹 테스트 |
-| 반사 판별(♥/♦ 포함 그룹은 결정, ♣·♠ 전용은 모호) | 5절 도출, 이번 검토에서 전수 열거로 계산 | 648개 이미지 전수 테스트(Property 26) |
-| 판정 반경 안의 정정·탐지 | 7절 계산 | 고정 시드 비트 반전 테스트 |
-| 결정적 재생성 | 고정 알고리즘·시드 | 재생성 결과와 동결 파일 바이트 비교 |
-| 탐지율, 블러·노이즈·원근·조명 내성, 3조각 오탐 | 보장 안 됨 | 합성 열화 실험(Requirement 12.5) |
-| 인쇄 품질, 광택, 초점, 모듈 크기, 실제 카메라 | 미검증 | 실제 인쇄 카드·휴대폰 촬영 실험(별도 기록) |
-| 합성 시험에서 오식별 0건 | 유한 표본 관찰이며 보장이 아님. 한 시도당 확률의 95% 단측 상한 1 − 0.05^(1/n) | 조건별 n과 관측 건수를 `robustness.json`에 기록 (task 7) |
-| 뒷면 마커의 앞면 빈 코너 비침 | 미검증 | 실물 인쇄 시험 (task 8, Requirement 16.10) |
+| 52 unique IDs, d_id ≥ 5, d_self ≥ 5 | Exhaustive enumeration result of subsection 6 (lower bound 198) and the generator | Exhaustive check of all pairs (86,320 pairs) of the 416 templates in the frozen codebook |
+| Equivalence of bit permutation and 2D transform | Definition in subsection 3 | Exhaustive 52 × 8 raster comparison |
+| ♥♦ 180° invariance, ♣♠ horizontal-axis reflection invariance | Proof in subsection 4 | Raster pixel comparison of the card fragment layer |
+| Slot table, 180° ambiguity, number of passing hypotheses ∈ {0, 2} | Derivation in subsection 5 | Exhaustive over slot × suit × orientation, synthetic group tests |
+| Reflection discrimination (groups containing ♥/♦ are determined, ♣/♠-only groups are ambiguous) | Derivation in subsection 5, calculated by exhaustive enumeration in this review | Exhaustive test of 648 images (Property 26) |
+| Correction and detection within the acceptance radius | Calculation in subsection 7 | Fixed-seed bit-flip test |
+| Deterministic regeneration | Fixed algorithm and seed | Byte comparison of the regenerated result with the frozen file |
+| Detection rate, tolerance to blur, noise, perspective, and lighting, false positives from 3 fragments | Not guaranteed | Synthetic degradation experiments (Requirement 12.5) |
+| Print quality, gloss, focus, module size, real camera | Unverified | Experiments with real printed cards and phone photography (recorded separately) |
+| 0 misidentifications in synthetic tests | A finite-sample observation, not a guarantee. 95% one-sided upper bound on the per-trial probability: 1 − 0.05^(1/n) | Record n and the observed count per condition in `robustness.json` (task 7) |
+| Show-through of the back-side marker at the empty front corner | Unverified | Physical print test (task 8, Requirement 16.10) |
 
 ---
 
 ## Physical Card Geometry
 
-이 섹션은 실제 트럼프 카드를 간격 없이 붙인 2×2 배치에서 마커가 유지되는지를 다룬다. 코드북과 Fragment_Layout은 바꾸지 않는다.
+This section addresses whether the markers hold up in a 2×2 arrangement of real playing cards placed edge to edge with no gap. The codebook and Fragment_Layout are not changed.
 
-### 1. 기준 파라미터
+### 1. Baseline parameters
 
-| 파라미터 | 기준값 | 비고 |
+| Parameter | Baseline value | Notes |
 |---|---|---|
-| 카드 크기 | 63.5 × 88.9 mm | 프로토타입 40 × 56 모듈 격자와 모듈당 1.5875 mm에서 정확히 일치 |
-| Corner_Radius | 3.175 mm | 상용 인쇄 업체 자료에서 약 3–3.6 mm. 표준 규격으로는 확인하지 못함 |
-| Marker_Inset | 1모듈 (1.5875 mm) | 마커 발자국 바깥 모서리와 카드 가장자리 사이 |
-| 흰 여백 | 1모듈 | 코드북 구조의 일부가 아니라 렌더러 설정이므로 코드북을 바꾸지 않고 늘릴 수 있다 |
-| 모듈 크기 | 1.5875 mm | 실험 범위 1.4–2.0 mm |
-| 의도된 이음매 간격 | 0 mm | 간격을 요구하지 않는다 |
-| 배경(탁자) 밝기 | 어두운 값과 밝은 값 모두 시험 | |
+| Card size | 63.5 × 88.9 mm | Matches exactly the prototype 40 × 56 module grid at 1.5875 mm per module |
+| Corner_Radius | 3.175 mm | About 3–3.6 mm in commercial print-vendor material. Not confirmed against a standard specification |
+| Marker_Inset | 1 module (1.5875 mm) | Between the outer corner of the marker footprint and the card edge |
+| White quiet margin | 1 module | A renderer setting, not part of the codebook structure, so it can be increased without changing the codebook |
+| Module size | 1.5875 mm | Experiment range 1.4–2.0 mm |
+| Intended seam gap | 0 mm | No gap is required |
+| Background (table) brightness | Test both dark and light values | |
 
-### 2. 해석적 포함 계산 (이번 검토에서 계산한 값, 저장소 테스트로 재현되기 전까지 미재현)
+### 2. Analytic containment calculation (value calculated in this review; unreproduced until reproduced by repository tests)
 
-카드 모서리에서 대각선 방향으로 (a, a) mm 떨어진 점 P가 반경 r의 둥근 모서리 안에 있는지는 r ≤ a이면 항상 안쪽이고, r > a이면 호까지의 반경 방향 여유 c = r − √2·(r − a)가 0 이상일 때 안쪽이다. 마커 발자국의 흰 여백 바깥 모서리는 a = Marker_Inset, 검은 테두리 모서리는 a = Marker_Inset + 여백이다.
+Whether a point P at (a, a) mm diagonally from the card corner lies inside a rounded corner of radius r is as follows: if r ≤ a it is always inside, and if r > a it is inside when the radial clearance to the arc, c = r − √2·(r − a), is 0 or more. The outer corner of the marker footprint's white quiet margin has a = Marker_Inset, and the corner of the black border has a = Marker_Inset + margin.
 
-- 기준 형상(r = 3.175 mm, Marker_Inset 1모듈): 여백 바깥 모서리의 호까지 여유는 **0.93 mm**이다. 검은 테두리 모서리는 a = 3.175 mm = r이어서 둥글림 영역의 경계에 놓이며 호와 만나지 않는다.
-- 여백 전체가 카드 안에 있을 최대 반경은 r_max = a·√2/(√2 − 1)이다: Marker_Inset 0.5모듈 → 2.71 mm, 1모듈 → 5.42 mm, 1.5모듈 → 8.13 mm, 2모듈 → 10.84 mm. Marker_Inset 0.5모듈은 기준 반경에서 여백 모서리가 카드 밖으로 나간다(여유 −0.19 mm). Marker_Inset 1모듈은 반경 5 mm까지는 만족하고(여유 0.17 mm) 6 mm에서는 만족하지 않는다(여유 −0.24 mm).
-- 여백 바깥 모서리 여유 비교(Marker_Inset 1모듈 / 1.5모듈): r = 3.175 mm에서 0.93 / 2.05 mm, r = 3.6 mm에서 0.75 / 1.88 mm, r = 4 mm에서 0.59 / 1.71 mm.
-- Central_Void 면적은 4(1 − π/4)·r²이다: r = 2 mm → 3.43 mm², 3.175 mm → 8.65 mm², 4 mm → 13.73 mm², 5 mm → 21.46 mm². 이음매를 따라 중심에서 r만큼 뻗는 뿔 네 개 모양이다.
-- Central_Void의 뿔 끝과 검은 테두리 모서리의 최단 거리(Marker_Inset 1모듈): r = 2 mm → 3.39 mm, 3.175 mm → 3.17 mm, 4 mm → 3.28 mm, 5 mm → 3.66 mm, 6 mm → 4.25 mm. 모든 경우에 흰 여백과 Marker_Inset(합계 2모듈)이 사이에 있어 빈 영역이 검은 테두리에 닿지 않는다.
-- 이음매 양쪽 검은 사각형 사이 흰 간격(이격 0)은 2(Marker_Inset + 여백)모듈이다: Marker_Inset 1모듈 → 4모듈 = 6.35 mm, 1.5모듈 → 5모듈 = 7.94 mm.
-- 계산에 포함되지 않은 것: 카드 재단 오차, 인쇄 정합 오차, 가장자리 광택·그림자, 이음매 틈, 카드 휨. 기준 형상의 여유 0.93 mm가 실제 재단·정합 오차보다 큰지는 알지 못한다.
+- Baseline geometry (r = 3.175 mm, Marker_Inset 1 module): the clearance from the outer corner of the margin to the arc is **0.93 mm**. The corner of the black border has a = 3.175 mm = r, so it lies on the boundary of the rounded region and does not meet the arc.
+- The maximum radius at which the entire margin stays inside the card is r_max = a·√2/(√2 − 1): Marker_Inset 0.5 module → 2.71 mm, 1 module → 5.42 mm, 1.5 modules → 8.13 mm, 2 modules → 10.84 mm. With Marker_Inset 0.5 module at the baseline radius, the margin corner goes outside the card (clearance −0.19 mm). Marker_Inset 1 module is satisfied up to a radius of 5 mm (clearance 0.17 mm) and is not satisfied at 6 mm (clearance −0.24 mm).
+- Comparison of clearance at the outer corner of the margin (Marker_Inset 1 module / 1.5 modules): at r = 3.175 mm, 0.93 / 2.05 mm; at r = 3.6 mm, 0.75 / 1.88 mm; at r = 4 mm, 0.59 / 1.71 mm.
+- The Central_Void area is 4(1 − π/4)·r²: r = 2 mm → 3.43 mm², 3.175 mm → 8.65 mm², 4 mm → 13.73 mm², 5 mm → 21.46 mm². It has the shape of four horns, each extending r from the center along the seams.
+- Shortest distance between the horn tip of the Central_Void and the corner of the black border (Marker_Inset 1 module): r = 2 mm → 3.39 mm, 3.175 mm → 3.17 mm, 4 mm → 3.28 mm, 5 mm → 3.66 mm, 6 mm → 4.25 mm. In every case the white quiet margin and Marker_Inset (2 modules in total) lie in between, so the void does not touch the black border.
+- The white gap between the black squares on the two sides of a seam (clearance 0) is 2(Marker_Inset + margin) modules: Marker_Inset 1 module → 4 modules = 6.35 mm, 1.5 modules → 5 modules = 7.94 mm.
+- Not included in the calculation: card cutting tolerance, print registration error, edge gloss and shadow, seam gap, card warp. Whether the baseline clearance of 0.93 mm is larger than the actual cutting and registration errors is not known.
 
-### 3. 이미지에 나타나는 마커
+### 3. Markers as they appear in the image
 
-- 2×2 그룹의 중심 꼭짓점 주위에 안쪽 마커 4개가 있고, 같은 이미지에 각 카드의 바깥쪽 조각과 다른 꼭짓점 주위의 조각(Distractor_Marker)이 보인다. 큰 보드에서는 한 카드의 조각 두 개가 서로 다른 꼭짓점을 향한다. 군집은 한 꼭짓점 주위에 정확히 4개가 모인 경우에만 그룹으로 인정한다(Requirement 15.6).
-- `detect.ts`는 마커 단위로 검출하고 네 조각이 이어진 정사각형을 가정하지 않으므로 Central_Void는 검출 입력에 영향을 주지 않는 것으로 설계됐다. 이 가정은 실험(task 5.5)으로 확인한다.
-- 탁자 배경이 어두우면 전역 이진화에서 어두운 성분이 되지만 흰 여백과 Marker_Inset으로 마커와 분리된다. 이것도 실험으로 확인한다.
+- 4 inward markers surround the center vertex of a 2×2 group, and the same image shows the outward fragment of each card and the fragments around other vertices (Distractor_Marker). On a large board, the two fragments of one card face different vertices. A cluster is accepted as a group only when exactly 4 gather around one vertex (Requirement 15.6).
+- `detect.ts` detects per marker and does not assume a connected square formed by the four fragments, so the Central_Void is designed not to affect the detection input. This assumption is to be confirmed by experiment (task 5.5).
+- If the table background is dark, it becomes a dark component in global binarization, but it is separated from the marker by the white quiet margin and Marker_Inset. This is also to be confirmed by experiment.
 
-### 4. 시뮬레이션 합성기 (테스트 지원 코드, 프로덕션 코드 아님)
+### 4. Simulation synthesizer (test support code, not production code)
 
-- `renderPhysicalCard(card, orientation, geometry)`: mm 좌표 래스터에 둥근 모서리 마스크(안티앨리어싱)와 마커를 배치하고, 마스크 밖은 배경으로 채운다.
-- `composeBoard(placements, geometry, errors)`: 카드를 이격 0으로 붙이고 카드별 이동·회전 오차를 적용한다.
-- 기존 `render.ts`는 수정하지 않고 `renderMarker`와 `placedFragments`를 재사용한다. 포함 여유 계산 함수 `markerContainment(geometry)`는 위 해석식을 구현하고 래스터 결과와 비교한다.
-- 양면 카드는 `face: 'FRONT' | 'BACK'` 매개변수를 받으며, 인쇄 내용(`printLayers(card)`: Body_Frame의 앞·뒷면 층)과 관측(`observeFace(card, face, orientation, flip?)`: 위에서 내려다본 모습)을 분리해 모델링한다. 앞뒤 인쇄 정합 오차 `duplexRegistration { dxMm, dyMm, rotDeg }`와 재단 윤곽 오차는 형상 파라미터로 받는다.
+- `renderPhysicalCard(card, orientation, geometry)`: places a rounded-corner mask (anti-aliased) and the markers on a raster in mm coordinates, and fills the area outside the mask with the background.
+- `composeBoard(placements, geometry, errors)`: joins the cards with clearance 0 and applies per-card translation and rotation errors.
+- The existing `render.ts` is not modified, and `renderMarker` and `placedFragments` are reused. The containment-clearance function `markerContainment(geometry)` implements the analytic formula above and is compared with the raster result.
+- Double-sided cards take a `face: 'FRONT' | 'BACK'` parameter, and the design models printed content (`printLayers(card)`: the front and back layers in the Body_Frame) separately from observation (`observeFace(card, face, orientation, flip?)`: the view from above). The front-to-back print registration error `duplexRegistration { dxMm, dyMm, rotDeg }` and the cut-outline error are taken as geometry parameters.
 
-### 5. 점진적 최적화 순서와 판단 규칙
+### 5. Incremental optimization order and decision rule
 
-기준 형상(표준 둥근 모서리)을 먼저 평가한다. 신뢰성이 부족하면 다음 순서로만 개선한다: (1) 조각 위치와 Marker_Inset(1 → 1.5 → 2모듈), (2) 마커 크기와 여백, (3) 검출·기하 보정 알고리즘, (4) 물리 정렬 허용 오차 평가, (5) 필요한 경우에만 Corner_Radius를 단계적으로 축소. 개별 실패 사례 하나로 형상을 바꾸지 않으며, 각 단계는 조건별 집계(정상 식별률, 거부 종류, 오식별 건수, 실패 원인)와 형상 파라미터를 기록한 뒤 결정한다.
+The baseline geometry (standard rounded corner) is evaluated first. If reliability is insufficient, improve only in this order: (1) fragment position and Marker_Inset (1 → 1.5 → 2 modules), (2) marker size and margin, (3) detection and geometric-correction algorithm, (4) evaluation of physical alignment tolerance, (5) only if necessary, reduce Corner_Radius in steps. The geometry is not changed because of a single failure case, and each step decides after recording per-condition aggregates (correct recognition rate, rejection kinds, misidentification count, failure causes) and the geometry parameters.
 
-가설(미검증): 해석적으로는 기준 반경에서 포함 여유가 양수이고 Central_Void가 검은 테두리에서 2모듈 이상 떨어져 있어 반경 축소 없이 충분할 가능성이 있다. 위험은 여유가 0.93 mm로 작다는 점과 재단·정합 오차이며, Marker_Inset 1.5모듈(여유 2.05 mm)이 먼저 시험할 개선 후보다. 두 가설 모두 실험 전까지 증거가 없다.
+Hypothesis (unverified): analytically, the containment clearance at the baseline radius is positive and the Central_Void is at least 2 modules away from the black border, so it is possible that no radius reduction is needed. The risks are the small clearance of 0.93 mm and the cutting and registration errors, and Marker_Inset of 1.5 modules (clearance 2.05 mm) is the first improvement candidate to test. There is no evidence for either hypothesis until experiments are run.
 
-### 6. 실험 위치
+### 6. Where the experiments are
 
-합성 조합 실험은 task 5.4–5.6(양면·뒤집기 등가성 테스트는 task 5.5), 열화 조건과의 결합은 task 7, 실물 인쇄와 재단 오차 측정은 task 8에서 수행한다.
+Synthetic combination experiments are in tasks 5.4–5.6 (the double-sided and flip equivalence tests are in task 5.5), coupling with degradation conditions is in task 7, and real print and cutting-error measurement is in task 8.
 
-### 7. 양면 마커와 뒤집기 등가성
+### 7. Double-sided markers and flip equivalence
 
-**좌표계.** Body_Frame은 앞면에서 볼 때 왼쪽 위를 원점으로 카드 몸체에 고정된다. 앞면 층을 F(x, y)라 하고, 뒷면 인쇄는 같은 틀에서 앞면 쪽으로 투과해 본 모습 B(x, y)로 기술한다.
+**Coordinate system.** The Body_Frame is fixed to the card body with its origin at the upper-left as seen from the front. Let the front layer be F(x, y); the back print is described as B(x, y), the view of it seen through toward the front in the same frame.
 
-**유도.** 세로축 좌우 뒤집기는 몸체 x를 W − x로 옮긴다. 뒤집은 뒤 뒷면에서 직접 보이는 모습은 V(x′, y) = B(W − x′, y)다. 요구사항은 "뒤집은 뒤의 관측이 앞면과 같다"(V = F)이므로 B(x, y) = F(W − x, y), 즉 몸체 좌표의 뒷면 층은 앞면 층의 좌우 반전이며 조각의 픽셀 내용도 반전된다(셀 사상으로는 Fv). 뒷면에서 직접 보면 앞면과 같아 보인다. 이 유도는 이번 검토에서 손으로 확인한 것이며 저장소 테스트로 재현되기 전까지 미확인이다(task 5.5에서 확인).
+**Derivation.** A vertical-axis (left-right) flip maps body x to W − x. The view seen directly from the back after the flip is V(x′, y) = B(W − x′, y). The requirement is "the observation after the flip is the same as the front" (V = F), so B(x, y) = F(W − x, y); that is, the back layer in Body_Frame coordinates is the left-right mirror of the front layer, and the pixel content of the fragments is also mirrored (as a cell map, Fv). Seen directly from the back, it looks the same as the front. This derivation was checked by hand in this review and is unconfirmed until reproduced by repository tests (to be confirmed in task 5.5).
 
-**인쇄 파일 규약.** 같은 래스터를 Body_Frame에서 양면에 그대로 인쇄하면 뒤집은 뒤 관측이 앞면의 좌우 반전이 되어 코너 위치와 비트가 틀린다. 뒷면 인쇄 파일은 "뒷면에서 볼 때 앞면과 같은 모양"으로 지정해야 한다. 양면 인쇄기나 인쇄소가 뒷면 페이지를 자동으로 반전하는지는 알려져 있지 않으며 실물 뒤집기 시험(task 8)으로 확인해야 한다.
+**Print file convention.** If the same raster is printed unchanged in the Body_Frame on both sides, the observation after the flip is the left-right mirror of the front, and the corner positions and bits are wrong. The back print file must be specified as "the same appearance as the front when viewed from the back." Whether a duplex printer or print shop automatically mirrors the back page is not known, and it must be confirmed by a physical flip test (task 8).
 
-**코너 집합.** 앞면: ♥ {TL, BR}, ♦ {TR, BL}, ♣ {TR, BR}, ♠ {TL, BL}. Body_Frame에서 뒷면은 그 좌우 반전인 ♥ {TR, BL}, ♦ {TL, BR}, ♣ {TL, BL}, ♠ {TR, BR}이며 모든 무늬에서 앞면 집합과 겹치지 않는다. 따라서 두 면의 발자국은 서로 포개지지 않는다. 다만 이는 각 면의 마커가 반대 면의 빈 코너 바로 아래에 놓인다는 뜻이기도 하다. 앞면의 빈 코너(예: ♥의 TR·BL)는 몸체 좌표에서 뒷면 마커가 인쇄된 코너와 같다. 종이를 통해 비쳐 보이는 뒷면 마커가 앞면의 빈 코너에서 약한 마커처럼 보이면, 안쪽 코너가 빈 카드(잘못된 칸에 놓인 카드)가 마커를 가진 것처럼 보이거나 Distractor_Marker가 늘거나 흰 여백이 어두워질 수 있다. 비침 정도는 계산하지 않았고 합성 시뮬레이션 계획도 없으며, 마일스톤 8의 실물 시험으로 확인한다(Requirement 16.10).
+**Corner sets.** Front: ♥ {TL, BR}, ♦ {TR, BL}, ♣ {TR, BR}, ♠ {TL, BL}. In the Body_Frame, the back is its left-right mirror: ♥ {TR, BL}, ♦ {TL, BR}, ♣ {TL, BL}, ♠ {TR, BR}, and for every suit it does not overlap the front set. The footprints of the two faces therefore do not overlap each other. However, this also means that each face's markers lie directly beneath the empty corners of the opposite face. The empty corners of the front (for example TR and BL of ♥) are the same corners, in body coordinates, where the back markers are printed. If a back marker showing through the paper looks like a faint marker at an empty front corner, a card whose inward corner is empty (a card placed in the wrong slot) may appear to have a marker, the number of Distractor_Markers may increase, or the white quiet margin may darken. The degree of show-through has not been calculated and there is no synthetic simulation plan; it is to be confirmed by the physical test of milestone 8 (Requirement 16.10).
 
-**뒤집기 종류.** 세로축 뒤집기는 관측을 바꾸지 않는다. 가로축 뒤집기는 세로축 뒤집기에 면 내 180° 회전을 더한 것과 같아, 관측이 모든 무늬에서 허용된 방향(0°, 180°)의 관측과 같다(♥·♦는 변화 없음, ♣·♠는 180° 배치). 90° 관측은 어떤 뒤집기에서도 생기지 않는다.
+**Flip kinds.** A vertical-axis flip does not change the observation. A horizontal-axis flip equals a vertical-axis flip plus an in-plane 180° rotation, so the observation equals the observation at an allowed orientation (0°, 180°) for every suit (no change for ♥ and ♦, the 180° arrangement for ♣ and ♠). A 90° observation never arises from any flip.
 
-**포함과 정합.** 코너 발자국이 좌우 대칭이므로 뒷면의 포함 여유는 앞면과 같다(같은 반경, 안쪽 여유, 여백). 앞뒤 인쇄 정합 오차와 재단 윤곽 오차는 최악의 경우 포함 여유를 오차 크기만큼 소모한다. 기준 형상의 여유는 0.93 mm(안쪽 여유 1모듈), 안쪽 여유 1.5모듈은 2.05 mm이며 실제 정합·재단 오차는 알지 못한다. 정합 오차는 뒤집은 뒤 마커 위치를 이상 위치에서 이동시키지만, 판독은 마커 단위로 독립이므로 영향은 군집의 위치 허용 오차에 한정될 것으로 예상한다(미검증).
+**Containment and registration.** Because the corner footprint is left-right symmetric, the containment clearance of the back is the same as that of the front (same radius, inset, and margin). The front-to-back print registration error and the cut-outline error consume containment clearance by the size of the error in the worst case. The baseline clearance is 0.93 mm (inset 1 module) and 2.05 mm for an inset of 1.5 modules, and the actual registration and cutting errors are not known. Registration error shifts the marker position after the flip from its ideal position, but because reading is independent per marker, the effect is expected to be limited to the position tolerance of the cluster (unverified).
 
-**글자와 아트워크.** 반전은 광학 마커 층에만 적용한다. 합성기는 마커 층과 비대칭 탐침 아트워크(예: 글자 래스터)를 분리해 다루고, 아트워크가 반전되지 않음을 테스트한다.
+**Text and artwork.** The mirroring is applied only to the optical marker layer. The synthesizer handles the marker layer and an asymmetric probe artwork (for example a text raster) separately, and tests that the artwork is not mirrored.
 
-**숨김 정보 한계 (게임 보안).** 어느 면에서든 카드 ID를 인코딩한 마커가 보인다. 뒷면 마커는 손에 든 카드와 뒷면으로 놓인 카드의 신원도 판독기를 가진 누구에게나 드러낸다. 앱이 판독한 합산을 예측 수집 전에 표시하지 않는 것(Requirement 6.1)은 소프트웨어의 표시 시점 규칙이지 인쇄된 신원의 비밀성을 만들지 않는다. 마커 형상은 바꾸지 않고 다음 운영 안전장치를 별도로 제안한다(어느 것도 구현되거나 검증되지 않았다): (1) 상대 카드를 판독하지 않는 규칙과 Companion 앱이 보드에 놓인 카드의 공개 시점에만 스캔을 요청하는 절차(규칙 수준이며 기술적 강제가 아님), (2) 손패를 가리는 카드 홀더나 가림막, (3) 카드를 앞면이 보이게 놓는 방식으로 보드 카드는 공개 정보로 취급, (4) 덱별 비밀 치환은 알려진 카드가 늘면 대응표가 노출되므로 지연 효과뿐이라 권장하지 않음. 실질적 비밀성이 필요하면 물리 설계 자체를 바꿔야 하며 이 지시의 범위가 아니다.
+**Hidden-information limit (game security).** On either face, a marker encoding the card ID is visible. The back-side marker reveals the identity of cards held in hand and of cards placed face down to anyone with a reader. The rule that the app does not display the sum it reads before prediction collection (Requirement 6.1) is a software display-timing rule and does not make the printed identity secret. The marker geometry is not changed, and the following operational safeguards are proposed separately (none is implemented or verified): (1) a rule not to read the opponent's cards, and a procedure in which the Companion app requests a scan only when the cards placed on the board are revealed (a rule-level measure, not technically enforced), (2) a card holder or screen that hides the hand, (3) placing cards face up so that board cards are treated as public information, (4) a per-deck secret substitution is not recommended because the mapping table is exposed as the number of known cards grows, so it only delays disclosure. If real secrecy is needed, the physical design itself must change, which is outside the scope of this directive.
 
 ---
 
@@ -729,253 +729,253 @@ interface CompositeCodeResult {
 
 ---
 
-### Property 1: Card_Value 범위 불변성
+### Property 1: Card_Value range invariant
 
-*For any* 유효한 카드(52장 덱 내), `Card_Value(card) ∈ [1, 13]` 이며, Rank에 따른 매핑은 고정 테이블(A=1, 2–10=액면가, J=11, Q=12, K=13)과 일치한다.
+*For any* valid card (within the 52-card deck), `Card_Value(card) ∈ [1, 13]`, and the mapping by Rank matches the fixed table (A=1, 2–10=face value, J=11, Q=12, K=13).
 
 **Validates: Requirements 1.1**
 
 ---
 
-### Property 2: Hidden_Sum 범위 및 순서 독립성
+### Property 2: Hidden_Sum range and order independence
 
-*For any* 유효한 Quad_Group(4개 서로 다른 카드 ID), `Hidden_Sum ∈ [4, 52]` 이고, 동일한 4장 카드에 대해 카드 배치 순서와 무관하게 항상 동일한 Hidden_Sum을 반환한다.
+*For any* valid Quad_Group (4 distinct card IDs), `Hidden_Sum ∈ [4, 52]`, and for the same 4 cards it always returns the same Hidden_Sum regardless of the order in which the cards are arranged.
 
 **Validates: Requirements 1.2, 1.4, 1.5**
 
 ---
 
-### Property 3: Quad_Group 카드 고유성
+### Property 3: Quad_Group card uniqueness
 
-*For any* Quad_Group이 `CompositeCodeDetector`에 의해 반환될 때, 4개의 카드 ID는 쌍별로 모두 다르다 (동일한 무늬+숫자 조합 없음).
+*For any* Quad_Group returned by `CompositeCodeDetector`, the 4 card IDs are pairwise distinct (no identical suit+rank combination).
 
 **Validates: Requirements 1.3**
 
 ---
 
-### Property 4: 점수 함수 대칭성과 단조성
+### Property 4: Score function symmetry and monotonicity
 
-*For any* 유효한 `ScoreConfig`, `hiddenSum ∈ [4, 52]`, 오차 e에 대해 `score(hiddenSum + e) == score(hiddenSum − e)`(두 값이 모두 범위 안일 때)이고, 점수는 |e|가 커질 때 증가하지 않으며, |e| ≥ `rewardByError.length`이면 0이다. 음수·증가 구간·빈 테이블을 가진 설정은 거부된다.
+*For any* valid `ScoreConfig`, `hiddenSum ∈ [4, 52]`, and error e, `score(hiddenSum + e) == score(hiddenSum − e)` (when both values are within range), the score does not increase as |e| grows, and the score is 0 if |e| ≥ `rewardByError.length`. A configuration with negative values, an increasing segment, or an empty table is rejected.
 
 **Validates: Requirements 2.1, 2.2, 2.3, 2.4**
 
 ---
 
-### Property 5: Guess 범위 검증
+### Property 5: Guess range validation
 
-*For any* Guess 입력 시도에 대해, `guess ∉ [4, 52]`인 정수 또는 비정수 값은 항상 거부되고, `guess ∈ [4, 52]`인 정수는 항상 수락된다.
+*For any* attempted Guess input, an integer or non-integer value with `guess ∉ [4, 52]` is always rejected, and an integer with `guess ∈ [4, 52]` is always accepted.
 
 **Validates: Requirements 2.8, 11.3**
 
 ---
 
-### Property 6: 점수 공개 시 Guess 비포함
+### Property 6: Guess not included when scores are revealed
 
-*For any* 플레이어 집합과 임의의 Guess 집합에 대해, `ScoreEngine.reveal()`이 반환하는 `RevealResult`의 각 `playerResult`에는 raw guess 값이 포함되지 않는다.
+*For any* set of players and any set of Guesses, each `playerResult` in the `RevealResult` returned by `ScoreEngine.reveal()` does not contain the raw guess value.
 
 **Validates: Requirements 2.7, 6.2, 6.3**
 
 ---
 
-### Property 7: 카드 배분 고유성 불변성
+### Property 7: Card dealing uniqueness invariant
 
-*For any* 게임 초기화에 대해, `board_cards ∪ all_player_hands`의 카드 집합은 정확히 20장의 서로 다른 카드로 구성되며, 모두 52장 표준 덱에 속한다.
+*For any* game initialization, the card set `board_cards ∪ all_player_hands` consists of exactly 20 distinct cards, all belonging to the standard 52-card deck.
 
 **Validates: Requirements 3.2**
 
 ---
 
-### Property 8: 보드 카드 수 증가 불변성
+### Property 8: Board card count increase invariant
 
-*For any* 유효한 배치 액션에 대해, `board.cardCount(after) == board.cardCount(before) + 1`이 성립한다.
+*For any* valid placement action, `board.cardCount(after) == board.cardCount(before) + 1` holds.
 
 **Validates: Requirements 3.10**
 
 ---
 
-### Property 9: 배치 유효성 검증 완전성
+### Property 9: Placement validity check completeness
 
-*For any* 배치 시도 `(pos, card, orientation, boardState)`에 대해, 경계 외(out-of-bounds), 점유된 셀(occupied), 비인접(non-adjacent), 또는 90°/270° 방향 중 하나라도 해당하면 액션은 거부된다. 반대로 네 조건이 모두 충족되면 수락된다.
+*For any* placement attempt `(pos, card, orientation, boardState)`, the action is rejected if any one of the following applies: out-of-bounds, occupied cell (occupied), non-adjacent (non-adjacent), or 90°/270° orientation. Conversely, the action is accepted if all four conditions are satisfied.
 
 **Validates: Requirements 3.3, 3.11**
 
 ---
 
-### Property 10: 드로우 규칙 — Composite Code 완성 여부에 따른 대칭성
+### Property 10: Draw rule — symmetry according to whether a Composite Code is completed
 
-*For any* 비-첫-배치 액션에 대해:
-- 액션이 1개 이상의 새로운 Composite Code를 완성하면 → 드로우 없음
-- 액션이 Composite Code를 완성하지 못하면 → 덱이 비어있지 않은 경우 손패 1장 증가
+*For any* non-first placement action:
+- If the action completes one or more new Composite Codes → no draw
+- If the action does not complete a Composite Code → the hand increases by 1 card if the deck is not empty
 
 **Validates: Requirements 3.5, 3.6**
 
 ---
 
-### Property 11: 채점 멱등성
+### Property 11: Scoring idempotence
 
-*For any* 보드 상태에 대해, `CompositeCodeDetector.detect()`를 동일 보드 상태에서 반복 실행해도 `isNew == true`인 새로운 그룹이 추가되지 않는다 (이미 `scoredGroups`에 등록된 식별자는 재채점 대상 제외).
+*For any* board state, running `CompositeCodeDetector.detect()` repeatedly on the same board state does not add any new group with `isNew == true` (identifiers already registered in `scoredGroups` are excluded from re-scoring).
 
 **Validates: Requirements 4.3, 4.5**
 
 ---
 
-### Property 12: Fragment_Layout 대칭 불변성
+### Property 12: Fragment_Layout symmetry invariant
 
-*For any* 하트(♥) 또는 다이아몬드(♦) 카드 `c`에 대해, `FRAGMENT_LAYOUT[c.suit][0]`과 `FRAGMENT_LAYOUT[c.suit][180]`는 동일한 코너 집합을 반환한다.
+*For any* heart (♥) or diamond (♦) card `c`, `FRAGMENT_LAYOUT[c.suit][0]` and `FRAGMENT_LAYOUT[c.suit][180]` return the same corner set.
 
-*For any* 클럽(♣) 또는 스페이드(♠) 카드 `c`에 대해, `FRAGMENT_LAYOUT[c.suit][180]`는 `FRAGMENT_LAYOUT[c.suit][0]`의 반대 면 코너 집합을 반환한다 (TR+BR ↔ TL+BL).
+*For any* club (♣) or spade (♠) card `c`, `FRAGMENT_LAYOUT[c.suit][180]` returns the opposite-side corner set of `FRAGMENT_LAYOUT[c.suit][0]` (TR+BR ↔ TL+BL).
 
 **Validates: Requirements 3.11, 5.4, 5.5, 14.5, 14.6**
 
 ---
 
-### Property 13: 템플릿 거리
+### Property 13: Template distance
 
-동결 코드북의 416개 Fragment_Template에서 서로 다른 두 템플릿의 Hamming 거리는 5 이상이고, 모든 기반 패턴의 검은 셀 수는 [9, 16]에 속한다. (전수 검사)
+For the 416 Fragment_Templates in the frozen codebook, the Hamming distance between any two distinct templates is at least 5, and the number of black cells in every base pattern lies in [9, 16]. (Exhaustive check)
 
 **Validates: Requirements 5.3**
 
 ---
 
-### Property 14: 조각 대칭과 식별 불변성
+### Property 14: Fragment symmetry and identification invariance
 
-*For any* 카드 c에 대해, ♥·♦이면 카드 조각층 래스터를 180° 회전한 결과가 원본과 픽셀 단위로 같고, ♣·♠이면 수평축 반사 결과가 원본과 같다. 두 조각을 각각 판독하면 같은 카드 ID를 반환한다. 이미지 전체를 거울상으로 뒤집어도 식별된 카드 ID는 바뀌지 않는다. 단, 반사 여부 자체는 Property 26에 따라 별도로 보고된다.
+*For any* card c, for ♥ and ♦ the result of rotating the card's fragment-layer raster by 180° is pixel-for-pixel identical to the original, and for ♣ and ♠ the result of reflecting it about the horizontal axis is identical to the original. Reading each of the two fragments returns the same card ID. Mirror-flipping the entire image does not change the identified card ID. However, whether the image is reflected is reported separately according to Property 26.
 
 **Validates: Requirements 5.2, 5.4, 5.5, 13.5**
 
 ---
 
-### Property 15: 광학 오류 거부
+### Property 15: Optical error rejection
 
-*For any* 유효한 2×2 합성 이미지에서 (a) 조각을 1개 이상 제거하면 INCOMPLETE_GROUP, (b) 한 조각을 다른 슬롯과 같은 카드로 바꾸면 DUPLICATE_CARD, (c) 한 조각에 r_acc + 1 이상 4 − r_acc 이하 비트를 반전하면 CORRUPTED_FRAGMENT (r_acc = 1일 때만 비어 있지 않은 구간), (d) 5절 표에 없는 관측 변환으로 조각을 합성하면(예: 90° 회전 조각, ♥ 조각 내용을 TR 슬롯에 배치) INVALID_ARRANGEMENT를 반환한다. 어떤 경우에도 IDENTIFIED를 반환하지 않는다. 물리적으로 ♥를 TR 슬롯에 놓으면 해당 꼭짓점에 조각이 없으므로 (a)에 해당한다.
+*For any* valid 2×2 composite image: (a) removing one or more fragments returns INCOMPLETE_GROUP; (b) replacing one fragment with the same card as another slot returns DUPLICATE_CARD; (c) flipping at least r_acc + 1 and at most 4 − r_acc bits in one fragment returns CORRUPTED_FRAGMENT (the interval is non-empty only when r_acc = 1); (d) composing a fragment with an observation transform not in the Section 5 table (for example, a 90°-rotated fragment, or placing ♥ fragment content in the TR slot) returns INVALID_ARRANGEMENT. IDENTIFIED is never returned in any of these cases. Physically placing ♥ in the TR slot corresponds to (a), because there is no fragment at that corner.
 
 **Validates: Requirements 5.7, 13.4, 13.6**
 
 ---
 
-### Property 16: Inward_Corner ∩ Fragment — Quad_Group 유효성
+### Property 16: Inward_Corner ∩ Fragment — Quad_Group validity
 
-*For any* 카드 `c`를 2×2 내 역할 `role` 위치에 방향 `orientation`으로 배치할 때, `FRAGMENT_LAYOUT[c.suit][orientation]`에 `INWARD_CORNER[role]`이 포함되면 유효한 Quad_Group 멤버이고, 포함되지 않으면 무효이다.
+*For any* card `c` placed at role `role` within a 2×2 with orientation `orientation`, if `FRAGMENT_LAYOUT[c.suit][orientation]` contains `INWARD_CORNER[role]`, it is a valid Quad_Group member, and if it does not contain it, it is invalid.
 
 **Validates: Requirements 3.12, 14.4**
 
 ---
 
-### Property 17: AI 액션 유효성
+### Property 17: AI action validity
 
-*For any* 게임 상태에서 AI 플레이어가 생성하는 모든 `PlacementAction`은 `Board.isValid()`를 통과한다.
+*For any* game state, every `PlacementAction` generated by an AI player passes `Board.isValid()`.
 
 **Validates: Requirements 7.2**
 
 ---
 
-### Property 18: 공개 상태 — Guess 정보 비포함
+### Property 18: Public state — Guess information not included
 
-*For any* 게임 상태 `s`에서 Guess 수집이 완료되지 않은 경우, `s.publicState`에 `hiddenSum`이 포함되지 않는다. 모든 플레이어의 `publicState`에는 타 플레이어의 pending guess 값이 포함되지 않는다.
+*For any* game state `s` in which Guess collection is not complete, `s.publicState` does not contain `hiddenSum`. The `publicState` of every player does not contain the pending guess values of other players.
 
 **Validates: Requirements 6.1, 6.3**
 
 ---
 
-### Property 19: 최종 순위 동점 처리
+### Property 19: Final ranking tie handling
 
-*For any* 게임 종료 후 최종 점수 분포에서, `score(player_i) == score(player_j)`이면 `rank(player_i) == rank(player_j)` (공동 순위).
+*For any* final score distribution after the game ends, if `score(player_i) == score(player_j)` then `rank(player_i) == rank(player_j)` (shared rank).
 
 **Validates: Requirements 3.9, 11.4**
 
 ---
 
-### Property 20: 판독 합산 정확성
+### Property 20: Read-out sum correctness
 
-*For any* IDENTIFIED 결과에 대해 `hiddenSum`은 식별된 4장의 Card_Value 합과 같고, 이 값은 판독기와 독립적인 참조 구현(카드 값 테이블 조회 합)의 결과와 같다. 보드 기록과의 대조는 Property 25를 따른다.
+*For any* IDENTIFIED result, `hiddenSum` equals the sum of the Card_Values of the 4 identified cards, and this value equals the result of a reference implementation independent of the reader (a sum of card-value table lookups). Comparison against the board record follows Property 25.
 
 **Validates: Requirements 13.2**
 
 ---
 
-### Property 21: 비트 순열과 2차원 변환의 동치
+### Property 21: Equivalence of bit permutation and 2D transform
 
-52개 기반 패턴 × 8개 변환 전부에서, 비트 순열 π_g의 결과와 패턴을 래스터로 렌더링해 2차원 픽셀 변환을 적용한 뒤 재샘플링한 결과가 같다.
+For all 52 base patterns × 8 transforms, the result of the bit permutation π_g equals the result of rendering the pattern to a raster, applying the 2D pixel transform, and then resampling.
 
 **Validates: Requirements 5.2, 13.5**
 
 ---
 
-### Property 22: 코드북 결정적 재생성
+### Property 22: Deterministic codebook regeneration
 
-같은 알고리즘 버전과 시드로 재생성한 코드북은 동결 파일과 바이트 단위로 같다.
+A codebook regenerated with the same algorithm version and seed is byte-for-byte identical to the frozen file.
 
 **Validates: Requirements 5.3, 12.7**
 
 ---
 
-### Property 23: 슬롯 해석과 합산 정확성
+### Property 23: Slot interpretation and sum correctness
 
-*For any* 5절 표에서 고정 시드로 뽑은 유효 2×2 배치(서로 다른 4장)와 임의 카메라 회전 각도에 대해, 판독기는 IDENTIFIED를 반환하고, 그룹에 ♥ 또는 ♦가 있으면 해석은 정확히 2개(서로 180° 관계, reflected 값 동일)이고, ♣·♠로만 이루어진 그룹이면 4개이며(비반사 2 + 반사 2), 카드 집합은 실제 배치와 같으며, hiddenSum은 독립적으로 계산한 참조값과 같다.
+*For any* valid 2×2 placement (4 distinct cards) drawn with a fixed seed from the Section 5 table and any camera rotation angle, the reader returns IDENTIFIED; if the group contains ♥ or ♦, there are exactly 2 interpretations (180° apart, with the same reflected value); if the group consists only of ♣ and ♠, there are 4 (2 non-reflected + 2 reflected); the card set equals the actual placement; and hiddenSum equals the independently computed reference value.
 
 **Validates: Requirements 5.6, 13.1, 13.2, 13.6, 14.3, 14.4**
 
 ---
 
-### Property 24: 판정 반경
+### Property 24: Acceptance radius
 
-*For any* 조각에 대해 (a) 0부터 r_acc개(r_acc ≤ 2) 비트를 반전하면 원래 카드로 식별된다(거리 ≥ 5에서 보장). (b) r_acc = 1이면 2–3개 비트 반전은 항상 CORRUPTED_FRAGMENT가 된다(보장). (c) r_acc = 2이면 보장되는 거부 구간이 없다. (d) 보장 구간 밖(r_acc = 1에서 4개 이상, r_acc = 2에서 3개 이상 반전)에서는 다른 카드로의 오식별이 가능하며, 테스트는 이를 단언하지 않고 발생 빈도를 측정해 기록한다. r_acc > 2 설정은 거부된다.
+*For any* fragment: (a) flipping 0 to r_acc bits (r_acc ≤ 2) still identifies the original card (guaranteed at distance ≥ 5). (b) If r_acc = 1, flipping 2–3 bits always yields CORRUPTED_FRAGMENT (guaranteed). (c) If r_acc = 2, there is no guaranteed rejection interval. (d) Outside the guaranteed intervals (4 or more flipped bits at r_acc = 1, 3 or more flipped bits at r_acc = 2), misidentification as another card is possible; the test does not assert on this and instead measures and records its frequency. A configuration with r_acc > 2 is rejected.
 
 **Validates: Requirements 13.4**
 
 ---
 
-### Property 25: 기대값 대체 금지
+### Property 25: No substitution of expected values
 
-판독기 API는 보드 상태를 입력으로 받지 않는다. 참조 대조에서 카드 집합이 다르면 REFERENCE_MISMATCH를 반환하고 기대값을 결과로 쓰지 않는다.
+The reader API does not take the board state as input. If the card set differs in the reference comparison, it returns REFERENCE_MISMATCH and does not use the expected value as the result.
 
 **Validates: Requirements 5.7, 13.3**
 
 ---
 
-### Property 26: 반사 보고
+### Property 26: Reflection reporting
 
-*For any* 5절 표에서 뽑은 유효 배치와 8개 이미지 변환 h에 대해, 그룹에 ♥ 또는 ♦가 있으면 reflection은 h가 반사인지 여부와 일치(NOT_REFLECTED 또는 REFLECTED)하고, ♣·♠로만 이루어진 그룹이면 항상 AMBIGUOUS다. 어떤 경우에도 REFLECTED 이미지를 NOT_REFLECTED로 보고하지 않으며, AMBIGUOUS를 NOT_REFLECTED나 REFLECTED로 단정하지 않는다.
+*For any* valid placement drawn from the Section 5 table and any of the 8 image transforms h, if the group contains ♥ or ♦, reflection matches whether h is a reflection (NOT_REFLECTED or REFLECTED), and if the group consists only of ♣ and ♠, it is always AMBIGUOUS. A REFLECTED image is never reported as NOT_REFLECTED, and AMBIGUOUS is never asserted as NOT_REFLECTED or REFLECTED.
 
 **Validates: Requirements 13.9**
 
 ---
 
-### Property 27: 포함 여유 해석식과 래스터의 일치
+### Property 27: Agreement between the analytic containment margin and the raster
 
-*For any* Corner_Radius, Marker_Inset, 여백, 모듈 크기의 스윕 격자에 대해, `markerContainment`가 계산한 여유가 0 이상일 때 마커 발자국의 모든 인쇄 픽셀이 둥근 모서리 마스크 안에 있고, 0 미만이면 마스크 밖 픽셀이 존재한다(경계는 슈퍼샘플링 해상도의 1픽셀 오차를 허용한다).
+*For any* sweep grid of Corner_Radius, Marker_Inset, margin, and module size, when the margin computed by `markerContainment` is 0 or greater, every printed pixel of the marker footprint lies inside the rounded-corner mask, and when it is less than 0, a pixel outside the mask exists (the boundary tolerates an error of 1 pixel at the supersampling resolution).
 
 **Validates: Requirements 15.3**
 
 ---
 
-### Property 28: Distractor 불변
+### Property 28: Distractor invariance
 
-*For any* 유효한 2×2 합성 배치에 이웃 카드(바깥쪽 조각 포함)를 추가해도 중심 꼭짓점 그룹의 판독 결과(카드 집합, 합산)는 변하지 않고, 마커가 정확히 4개 모이지 않은 꼭짓점은 그룹으로 보고되지 않는다.
+*For any* valid 2×2 composite placement, adding neighboring cards (including their outer fragments) does not change the read-out result of the center-vertex group (card set, sum), and a vertex where exactly 4 markers do not gather is not reported as a group.
 
 **Validates: Requirements 15.4, 15.6**
 
 ---
 
-### Property 29: 뒤집기 등가성
+### Property 29: Flip equivalence
 
-*For any* 52장 카드와 허용된 방향(0°, 180°)에 대해, 이상적 조건에서 `observeFace`가 계산한 뒷면 관측(세로축 뒤집기 후)은 앞면 관측과 마커 층 픽셀 단위로 같고, 두 관측의 코너 위치·비트 패턴·판독 카드 ID가 같다. 가로축 뒤집기 후의 관측은 같은 카드를 반대 허용 방향으로 놓은 앞면 관측과 픽셀 단위로 같다.
+*For any* of the 52 cards and any allowed orientation (0°, 180°), under ideal conditions the back-face observation computed by `observeFace` (after a vertical-axis flip) is pixel-for-pixel identical to the front-face observation in the marker layer, and the two observations have the same corner positions, bit patterns, and read card ID. The observation after a horizontal-axis flip is pixel-for-pixel identical to the front-face observation of the same card placed in the opposite allowed orientation.
 
 **Validates: Requirements 16.3, 16.4**
 
 ---
 
-### Property 30: 반전 필요성과 대체 조각 금지
+### Property 30: Flip necessity and no substitute fragments
 
-*For any* 카드에 대해, 같은 래스터를 Body_Frame에서 양면에 그대로 인쇄한 모델은 뒤집은 뒤 관측이 앞면과 다르다(코너 위치 또는 비트). 뒷면 층은 해당 카드의 앞면 층만의 함수이며 이웃 카드·보드 상태를 입력으로 받지 않는다. 앞면 코너 집합과 그 좌우 반전 집합은 서로 겹치지 않는다. 마커 층만 반전되고 아트워크 탐침은 반전되지 않는다.
+*For any* card, a model that prints the same raster unchanged on both sides in the Body_Frame has a post-flip observation that differs from the front face (in corner positions or bits). The back-face layer is a function of that card's front-face layer only and does not take neighboring cards or board state as input. The front-face corner set and its left-right mirrored set do not overlap. Only the marker layer is inverted; the artwork probe is not inverted.
 
 **Validates: Requirements 16.2, 16.5, 16.6, 16.7**
 
 ---
 
-### Property 31: 양면 포함과 정합 오차
+### Property 31: Two-sided containment and registration error
 
-*For any* 스윕 격자(반경, 안쪽 여유, 여백, 모듈 크기)와 두 면에 대해, `markerContainment`가 계산한 여유는 앞면과 뒷면에서 같고, 앞뒤 정합·재단 오차 크기만큼 여유가 감소하며, 여유가 0 이상일 때 두 면의 모든 인쇄 픽셀이 둥근 모서리 마스크 안에 있다.
+*For any* sweep grid (radius, inner margin, margin, module size) and both faces, the margin computed by `markerContainment` is the same for the front and back faces, the margin decreases by the magnitude of the front-back registration and cutting errors, and when the margin is 0 or greater, every printed pixel on both faces lies inside the rounded-corner mask.
 
 **Validates: Requirements 16.7, 16.8, 15.3**
 
@@ -983,150 +983,150 @@ interface CompositeCodeResult {
 
 ## Error Handling
 
-### 배치 오류
+### Placement errors
 
-| 오류 조건           | 처리               | 사용자 피드백                     |
+| Error condition | Handling | User feedback |
 |-------------------|--------------------|-------------------------------|
-| 경계 외 위치        | 액션 거부, 상태 불변 | "유효하지 않은 위치"              |
-| 점유된 셀          | 액션 거부, 상태 불변 | "이미 카드가 있는 위치"           |
-| 비인접 위치        | 액션 거부, 상태 불변 | "기존 카드와 인접해야 합니다"      |
-| 잘못된 방향(90°)   | 액션 거부           | "90°/270° 배치는 지원하지 않습니다" |
-| 손패에 없는 카드    | 액션 거부           | "손패에 없는 카드"               |
+| Out-of-bounds position | Action rejected, state unchanged | "유효하지 않은 위치" (Invalid position) |
+| Occupied cell | Action rejected, state unchanged | "이미 카드가 있는 위치" (Position already has a card) |
+| Non-adjacent position | Action rejected, state unchanged | "기존 카드와 인접해야 합니다" (Must be adjacent to an existing card) |
+| Invalid orientation (90°) | Action rejected | "90°/270° 배치는 지원하지 않습니다" (90°/270° placement is not supported) |
+| Card not in hand | Action rejected | "손패에 없는 카드" (Card not in hand) |
 
-### Guess 오류
+### Guess errors
 
-| 오류 조건           | 처리               |
+| Error condition | Handling |
 |-------------------|--------------------|
-| 범위 외 (`< 4` 또는 `> 52`) | 입력 거부 |
-| 비정수             | 입력 거부           |
-| 중복 제출          | 최초 제출 유지, 재제출 거부 |
+| Out of range (`< 4` or `> 52`) | Input rejected |
+| Non-integer | Input rejected |
+| Duplicate submission | First submission kept, resubmission rejected |
 
-### 광학 디코딩 오류
+### Optical decoding errors
 
-모든 오류는 `OpticalDecodeResult.kind`(NOT_DETECTED, INCOMPLETE_GROUP, CORRUPTED_FRAGMENT, DUPLICATE_CARD, INVALID_ARRANGEMENT, REFERENCE_MISMATCH)로 구분해 반환한다. 탐지 실패(NOT_DETECTED)와 식별 실패(CORRUPTED_FRAGMENT)는 서로 다른 결과다. Scoring Companion은 오류 시 수동 입력으로 전환하며 기대값으로 대체하지 않는다.
+Every error is returned and distinguished by `OpticalDecodeResult.kind` (NOT_DETECTED, INCOMPLETE_GROUP, CORRUPTED_FRAGMENT, DUPLICATE_CARD, INVALID_ARRANGEMENT, REFERENCE_MISMATCH). A detection failure (NOT_DETECTED) and an identification failure (CORRUPTED_FRAGMENT) are distinct results. On error, the Scoring Companion switches to manual input and does not substitute the expected value.
 
-### 덱 고갈
+### Deck exhaustion
 
-덱이 비어있는 상태에서 드로우가 필요한 경우, `Deck.draw()`는 `null`을 반환. `DrawManager`는 이를 감지하여 드로우를 건너뜀 (손패 불변).
+When a draw is required while the deck is empty, `Deck.draw()` returns `null`. `DrawManager` detects this and skips the draw (hand unchanged).
 
-### 게임 상태 복구
+### Game state recovery
 
-`GameStateManager`는 각 액션 후 `localStorage`에 직렬화된 `GameState`를 저장. 페이지 새로고침 시 복구.
+`GameStateManager` saves the serialized `GameState` to `localStorage` after each action. It is restored on page refresh.
 
 ---
 
 ## Testing Strategy
 
-### 단위 테스트 (Unit Tests)
+### Unit Tests
 
-대상 모듈 및 케이스:
+Target modules and cases:
 
-- **`CardValue`**: 13개 Rank 각각에 대한 정확한 값 매핑. 조커 미포함 검증.
-- **`CompositeCodeDetector`**: 유효/무효 Quad_Group 케이스 (14.4 예시 테이블 기반 픽스처).
-- **`ScoreEngine`**: 설정 검증(음수·증가 구간·빈 테이블 거부), 테이블 경계(e = 길이 − 1, 길이, 길이 + 1), 다중 코드 배치의 일괄 공개.
-- **`DrawManager`**: 첫 배치 면제, Composite Code 완성 시 드로우 안 함, 덱 고갈 시 건너뜀.
-- **`Deck`**: 같은 시드로 두 번 초기화하면 동일한 셔플 결과.
-- **`OpticalDecoder`**: NOT_DETECTED, INCOMPLETE_GROUP, CORRUPTED_FRAGMENT, DUPLICATE_CARD, INVALID_ARRANGEMENT, REFERENCE_MISMATCH 각각의 거부 테스트.
+- **`CardValue`**: exact value mapping for each of the 13 Ranks. Verify that jokers are not included.
+- **`CompositeCodeDetector`**: valid/invalid Quad_Group cases (fixtures based on the example table in 14.4).
+- **`ScoreEngine`**: configuration validation (reject negative values, increasing segments, empty tables), table boundaries (e = length − 1, length, length + 1), batch reveal of multiple codes placed together.
+- **`DrawManager`**: first-placement exemption, no draw when a Composite Code is completed, skip when the deck is exhausted.
+- **`Deck`**: initializing twice with the same seed gives the same shuffle result.
+- **`OpticalDecoder`**: a rejection test for each of NOT_DETECTED, INCOMPLETE_GROUP, CORRUPTED_FRAGMENT, DUPLICATE_CARD, INVALID_ARRANGEMENT, REFERENCE_MISMATCH.
 
-### 통합 테스트 (Integration Tests)
+### Integration Tests
 
-- 완전한 게임 루프 (init → place → guess → reveal → end) 2–3 시나리오
-- 광학 조각 생성 → 2×2 합성 → 판독 왕복 (합성 이미지, 고정 시드)
-- Service Worker 캐싱 (최초 로드 후 오프라인 접근)
+- Complete game loop (init → place → guess → reveal → end), 2–3 scenarios
+- Optical fragment generation → 2×2 composition → read-out round trip (synthetic images, fixed seed)
+- Service Worker caching (offline access after the first load)
 
-### Property-Based 테스트 (PBT)
+### Property-Based Tests (PBT)
 
-**테스트 러너**: Vitest(`vitest --run`), Node 환경. 광학 테스트는 순수 TypeScript 래스터를 사용하므로 브라우저가 필요 없다.
+**Test runner**: Vitest (`vitest --run`), Node environment. The optical tests use a pure TypeScript raster, so no browser is required.
 
-**테스트 구분**: (1) 수학적 성질 전수 검사 — Property 13, 14, 21, 22. (2) 고정 시드 PBT·합성 이미지 테스트 — Property 15, 23, 24. (3) 합성 열화 측정 실험 — Requirement 12.5, 통과/실패가 아닌 측정값 기록. (4) 실제 인쇄 카드·휴대폰 카메라 실험 — 별도 기록, 아직 수행하지 않음.
+**Test categories**: (1) Exhaustive checks of mathematical properties — Property 13, 14, 21, 22. (2) Fixed-seed PBT and synthetic-image tests — Property 15, 23, 24. (3) Synthetic degradation measurement experiments — Requirement 12.5, recording measured values rather than pass/fail. (4) Experiments with real printed cards and phone cameras — recorded separately, not yet performed.
 
-**PBT 라이브러리**: `fast-check` (TypeScript 네이티브, 브라우저 호환)
+**PBT library**: `fast-check` (native TypeScript, browser-compatible)
 
-**테스트 구성**: 각 property 테스트 최소 100회 반복. 각 테스트에 아래 형식의 태그 주석 포함:
+**Test configuration**: each property test runs at least 100 iterations. Each test includes a tag comment in the following format:
 
 ```
 // Feature: qroker-game, Property N: <property_text>
 ```
 
-구현할 property 테스트 목록 (Property 번호와 1:1 대응):
+List of property tests to implement (one-to-one with Property numbers):
 
-| Property | 대상 함수 | 생성기 |
+| Property | Target function | Generator |
 |---------|---------|------|
 | 1 | `getCardValue` | `fc.constantFrom(...ALL_CARDS)` |
-| 2 | `computeHiddenSum` | `fc.array(fc.constantFrom(...ALL_CARDS), {minLength:4, maxLength:4})` + 순열 생성기 |
-| 3 | `detectQuadGroup` | 무작위 보드 상태 생성기 |
-| 4 | `calculateScore`, `validateScoreConfig` | 임의 비증가 테이블 생성기 × guess × hiddenSum |
+| 2 | `computeHiddenSum` | `fc.array(fc.constantFrom(...ALL_CARDS), {minLength:4, maxLength:4})` + permutation generator |
+| 3 | `detectQuadGroup` | random board state generator |
+| 4 | `calculateScore`, `validateScoreConfig` | arbitrary non-increasing table generator × guess × hiddenSum |
 | 5 | `validateGuess` | `fc.integer({min:-100,max:200})` |
-| 6 | `revealResults` | 무작위 플레이어+guess 집합 생성기 |
+| 6 | `revealResults` | random player + guess set generator |
 | 7 | `initializeGame` | `fc.integer()` (seed) |
-| 8 | `placeCard` | 유효 보드 상태 + 유효 배치 생성기 |
-| 9 | `placeCard` (거부 케이스) | 무효 위치/방향 생성기 |
-| 10 | `processTurn` | 무작위 보드 상태 + 배치 액션 생성기 |
-| 11 | `detectQuadGroup` (멱등성) | 무작위 보드 상태 생성기 |
-| 12 | `FRAGMENT_LAYOUT` 조회 | `fc.constantFrom('H','D','C','S')` |
-| 13 | 코드북 검증기 | 전수 (416개 템플릿 전쌍) |
-| 14 | `renderCardLayer`, `decodeFragment` | 52장 전수 + 거울상 이미지 |
-| 15 | `opticalDecode` (오류 케이스) | 고정 시드 합성 그룹 + 오류 주입 |
-| 16 | `isValidQuadMember` | 카드 × 역할 × 방향 생성기 |
-| 17 | `AIPlayer.selectPlacement` | 무작위 유효 게임 상태 생성기 |
-| 18 | `getPublicState` | Guess 수집 중 상태 생성기 |
+| 8 | `placeCard` | valid board state + valid placement generator |
+| 9 | `placeCard` (rejection cases) | invalid position/orientation generator |
+| 10 | `processTurn` | random board state + placement action generator |
+| 11 | `detectQuadGroup` (idempotence) | random board state generator |
+| 12 | `FRAGMENT_LAYOUT` lookup | `fc.constantFrom('H','D','C','S')` |
+| 13 | codebook verifier | exhaustive (all pairs of the 416 templates) |
+| 14 | `renderCardLayer`, `decodeFragment` | all 52 cards exhaustive + mirrored images |
+| 15 | `opticalDecode` (error cases) | fixed-seed synthetic group + error injection |
+| 16 | `isValidQuadMember` | card × role × orientation generator |
+| 17 | `AIPlayer.selectPlacement` | random valid game state generator |
+| 18 | `getPublicState` | state-during-Guess-collection generator |
 | 19 | `computeRanking` | `fc.array(fc.integer({min:0}), {minLength:4,maxLength:4})` |
-| 20 | `opticalDecode` (합산 대조) | 유효 4개 조각 생성기 |
-| 21 | `applyTransform` vs 래스터 변환 | 52 × 8 전수 |
-| 22 | `generateCodebook` | 고정 시드 |
-| 23 | `opticalDecode` | 슬롯 표 기반 유효 배치 생성기 × 카메라 각도 |
-| 24 | `matchTemplate` | 카드 × 반전 비트 집합 생성기 |
-| 25 | `ReferenceCheck.compare` | 불일치 카드 집합 생성기 |
-| 26 | `opticalDecode` (reflection) | 슬롯 표 기반 유효 배치 전수 × 이미지 변환 8개 |
-| 27 | `markerContainment` vs 렌더 마스크 | 반경 × Marker_Inset × 모듈 크기 스윕 격자 |
-| 28 | `opticalDecode` (distractor) | 2×2 배치 + 이웃 카드 3×3 보드 생성기 |
-| 29 | `observeFace` (flip) | 52장 × 방향 × 뒤집기 축 |
-| 30 | `printLayers` | 52장 전수 + 아트워크 탐침 |
-| 31 | `markerContainment` (두 면, 정합 오차) | 반경 × 안쪽 여유 × 정합 오차 스윕 |
+| 20 | `opticalDecode` (sum comparison) | valid 4-fragment generator |
+| 21 | `applyTransform` vs raster transform | 52 × 8 exhaustive |
+| 22 | `generateCodebook` | fixed seed |
+| 23 | `opticalDecode` | slot-table-based valid placement generator × camera angle |
+| 24 | `matchTemplate` | card × flipped-bit set generator |
+| 25 | `ReferenceCheck.compare` | mismatched card set generator |
+| 26 | `opticalDecode` (reflection) | slot-table-based valid placements exhaustive × 8 image transforms |
+| 27 | `markerContainment` vs render mask | radius × Marker_Inset × module size sweep grid |
+| 28 | `opticalDecode` (distractor) | 2×2 placement + neighbor-card 3×3 board generator |
+| 29 | `observeFace` (flip) | 52 cards × orientation × flip axis |
+| 30 | `printLayers` | all 52 cards exhaustive + artwork probe |
+| 31 | `markerContainment` (both faces, registration error) | radius × inner margin × registration error sweep |
 
 ---
 
 ## Open Technical Questions
 
-다음 항목들은 현재 미확정이며, 프로토타입 실험 또는 시뮬레이션을 통해 결정한다.
+The following items are currently undecided and will be determined through prototype experiments or simulation.
 
-1. **마커 인쇄 면과 정보 은닉 (게임 설계 결정 필요)**
-   - 마커는 판독기만 있으면 누구나 읽을 수 있다. 카드를 앞면이 보이게 놓으면 합산은 눈으로도 계산할 수 있다. 뒷면이 보이게 놓고 나중에 뒤집는 방식(Requirement 6.4)이고 마커가 뒷면에 있다면, 보드 카드뿐 아니라 상대 손패의 뒷면까지 판독될 수 있다.
-   - 마커를 어느 면에 둘지, 카드를 어느 면으로 놓을지 정해야 Requirement 6의 은닉 범위를 확정할 수 있다. 이전 검토는 앞면 배치를 가정했으며 이 가정은 검증되지 않았다.
+1. **Marker print face and information hiding (game design decision required)**
+   - Markers can be read by anyone who has a reader. If a card is placed face up, the sum can also be calculated by eye. If cards are placed face down and flipped later (Requirement 6.4) and the markers are on the back face, then not only the board cards but also the back faces of opponents' hands could be read.
+   - The scope of hiding in Requirement 6 can be finalized only after deciding which face carries the markers and which face up cards are placed. The previous review assumed face-up placement, and this assumption has not been verified.
 
-2. **중앙 시작 그룹**
-   - 무작위 4장은 슬롯 조건을 만족하지 않을 수 있다(예: TR 슬롯의 ♥). 시작 ♣·♠의 방향 결정 방식과 이 그룹의 채점 여부가 정의되지 않았다.
+2. **Center starting group**
+   - 4 random cards may not satisfy the slot conditions (for example, ♥ in the TR slot). How the orientation of the starting ♣ and ♠ is decided, and whether this group is scored, are undefined.
 
-3. **판정 반경 기본값**
-   - r_acc = 1(보수적)과 2(재현율 우선) 중 합성 열화 실험의 재현율·오식별률로 결정한다.
+3. **Acceptance radius default**
+   - Choose between r_acc = 1 (conservative) and 2 (recall-first) based on the recall and misidentification rates from the synthetic degradation experiments.
 
-4. **물리 치수와 카드 앞면 레이아웃**
-   - 모듈 크기, 모서리 안쪽 여백, 카드 간 간격, 모서리 라운드는 실측이 필요하다.
-   - 표준 카드의 숫자·무늬 인덱스는 일반적으로 TL·BR에 있어 ♥(TL·BR), ♣(BR), ♠(TL) 조각과 겹친다. 전용 카드 레이아웃이 필요하다.
+4. **Physical dimensions and card front layout**
+   - Module size, corner inner margin, spacing between cards, and corner rounding require real measurement.
+   - On standard cards the rank and suit indexes are typically at TL and BR, which overlap with the ♥ (TL·BR), ♣ (BR), and ♠ (TL) fragments. A dedicated card layout is required.
 
-5. **실기기 인식**
-   - 광택 반사, 초점 거리, 조명 조건은 실제 인쇄 카드와 휴대폰으로 측정한다. 합성 실험 결과로 대체하지 않는다.
+5. **Real-device recognition**
+   - Glare, focal distance, and lighting conditions will be measured with real printed cards and phones. They are not replaced by synthetic experiment results.
 
-6. **꼭짓점 제약의 게임 영향**
-   - 카드 한 장은 꼭짓점 4개 중 2개에만 참여하고 ♥·♦는 슬롯이 제한된다. Composite Code 성립 빈도와 게임 길이를 Phase 3 시뮬레이션으로 측정한다.
+6. **Game impact of the vertex constraint**
+   - A card participates in only 2 of its 4 vertices, and the slots of ♥ and ♦ are restricted. The frequency with which Composite Codes form and the game length will be measured by Phase 3 simulation.
 
-7. **점수 테이블과 손패 소진 보너스**
-   - 테이블 길이·수치와 `handEmptyBonus`는 **TBD — determined by simulation** (Phase 3).
+7. **Score table and hand-empty bonus**
+   - The table length and values and `handEmptyBonus` are **TBD — determined by simulation** (Phase 3).
 
-8. **첫 라운드 정의**
-   - 요구사항 3.5: "각 플레이어의 첫 번째 배치"
-   - 현재 설계: `DrawManager.firstPlacementDone`으로 플레이어별 첫 배치를 개별 추적한다.
-   - 명확화 필요: 게임 전체의 첫 N개 배치를 면제하는지, 각 플레이어의 첫 배치를 면제하는지.
+8. **Definition of the first round**
+   - Requirement 3.5: "each player's first placement"
+   - Current design: `DrawManager.firstPlacementDone` tracks each player's first placement individually.
+   - Clarification needed: whether the first N placements of the whole game are exempt, or each player's first placement is exempt.
 
-9. **반사 모호 (♣·♠ 전용 그룹)**
-   - 무작위 4장의 약 5.5%는 ♣·♠로만 이루어져 반사 여부를 판별할 수 없다. 카드 식별과 합산은 영향받지 않지만, 슬롯 배치를 UI에 표시할 때는 AMBIGUOUS를 그대로 표시해야 한다. 필요하면 사용자에게 재촬영(카메라 방향 안내)을 요구하는 방식을 Companion 설계에서 결정한다.
-   - 게임 설계 결정(마커 인쇄 면, 시작 카드 처리 등)은 `docs/open-decisions.md`에서 별도로 추적한다. 초기 독립 광학 프로토타입은 이 결정들과 무관하게 진행한다.
+9. **Reflection ambiguity (♣·♠-only groups)**
+   - About 5.5% of random 4-card sets consist only of ♣ and ♠, so whether the image is reflected cannot be determined. Card identification and the sum are not affected, but when displaying the slot arrangement in the UI, AMBIGUOUS must be shown as is. If needed, requiring the user to re-photograph (with camera orientation guidance) will be decided in the Companion design.
+   - Game design decisions (marker print face, handling of the starting cards, etc.) are tracked separately in `docs/open-decisions.md`. The initial standalone optical prototype proceeds independently of these decisions.
 
-10. **물리 형상 파라미터의 실제 값**
-   - 실제 카드 재단 오차, 인쇄 정합 오차, 판매처별 Corner_Radius(약 3–3.6 mm 범위로 보임)는 알지 못한다. 기준 형상의 포함 여유(0.93 mm)가 이 오차보다 큰지 실물 측정이 필요하다.
-   - 합성 실험이 기준 형상의 신뢰성을 보여도 실제 카메라 성능은 보장되지 않는다.
+10. **Actual values of physical geometry parameters**
+   - The actual card cutting error, print registration error, and vendor-specific Corner_Radius (appears to be in the range of about 3–3.6 mm) are unknown. Real (physical) measurement is needed to determine whether the containment margin of the reference geometry (0.93 mm) is larger than these errors.
+   - Even if synthetic experiments show the reference geometry to be reliable, real camera performance is not guaranteed.
 
-11. **양면 마커의 실물 위험**
-   - 인쇄 파일 규약: 양면 인쇄에서 뒷면 페이지가 자동 반전되는지, 인쇄소가 어떤 좌표 규약을 쓰는지 알지 못한다. 실물 뒤집기 시험으로 확인한다.
-   - 앞뒤 인쇄 정합 오차, 재단 오차, 종이 비침(show-through)은 측정하지 않았다. 비침은 앞면 빈 코너에서 가짜 마커가 보이는지로 판정하며 task 8에서 검증한다(Requirement 16.10).
-   - 양면 마커는 손패와 뒷면으로 놓인 카드의 신원을 판독기에 노출한다. 운영 안전장치는 제안만 있고 검증되지 않았다.
+11. **Real-print risks of two-sided markers**
+   - Print file convention: it is unknown whether the back-side page is automatically mirrored in duplex printing, and which coordinate convention the print shop uses. This will be confirmed with a real (physical) flip test.
+   - Front-back print registration error, cutting error, and paper show-through (show-through) have not been measured. Show-through is judged by whether a false marker is visible at an empty corner of the front face, and is verified in task 8 (Requirement 16.10).
+   - Two-sided markers expose the identity of cards in hand and of cards placed face down to the reader. Operational safeguards are only proposed and have not been verified.

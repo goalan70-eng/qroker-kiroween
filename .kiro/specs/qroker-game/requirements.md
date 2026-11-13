@@ -2,300 +2,301 @@
 
 ## Introduction
 
-QRoker는 하이브리드 카드 배치 및 추론 게임이다. 플레이어는 8×8 보드에 카드를 배치하여 2×2 그룹(Composite Code)을 형성하고, 해당 그룹의 카드 합산값을 비공개로 예측한 뒤 점수를 경쟁한다.
+QRoker is a hybrid card-placement and inference game. Players place cards on an 8×8 Board to form 2×2 groups (Composite Code), privately predict the sum of the card values in each group, and compete on score.
 
-표준 52장 덱을 사용하며 조커는 사용하지 않는다. 본 문서는 두 가지 모드를 다룬다: (1) Browser Practice Mode — 3명의 로컬 AI 플레이어와 대결하는 브라우저 게임, (2) Physical Scoring Companion — 물리 카드 실전 플레이를 위한 모바일 점수 보조 앱.
+The game uses a standard 52-card deck and no jokers. This document covers two modes: (1) Browser Practice Mode, a browser game played against 3 local AI players, and (2) the Physical Scoring Companion, a mobile scoring assistant app for playing with physical cards.
 
-광학 마커 시스템, 게임 메커닉 유효성, 오프라인 우선 구현이 설계의 핵심 제약이다. 점수 수치는 게임 시뮬레이션을 통해 결정되며 현재 미확정이다.
+The optical marker system, the validity of the game mechanics, and an offline-first implementation are the key design constraints. Score values will be determined through game simulation and are currently undecided.
 
 ---
 
 ## Glossary
 
-- **Board**: 8×8 격자. 열은 A–H, 행은 1–8로 표기. 기본 시작 카드 4장은 D4, E4, D5, E5에 위치.
-- **Card**: 표준 52장 덱. 조커 없음. 각 카드는 패(Suit: ♠♥♦♣)와 숫자(Rank: A,2–10,J,Q,K)를 가진다.
-- **Card_Value**: 카드 숫자 점수. A=1, 숫자 카드(2–10)=액면가, J=11, Q=12, K=13.
-- **Quad_Group**: 보드 위 인접한 2×2 위치를 점유하는 서로 다른 4장의 카드 집합. 모든 4장의 Inward_Corner에 유효한 광학 조각이 있을 때 Composite Code로 인정된다.
-- **Composite_Code**: Quad_Group의 4장 카드 코너 조각이 결합되어 형성되는 광학 마커.
-- **Hidden_Sum**: Composite Code(2×2 그룹)를 구성하는 4장의 Card_Value 합산값. 최솟값 4(A×4=1+1+1+1), 최댓값 52(K×4=13×4). 플레이어가 예측하는 대상.
-- **Guess**: 플레이어가 Quad_Group 형성 시 비공개로 입력하는 Hidden_Sum 예측값.
-- **Score**: 플레이어의 게임 내 누적 점수. 예측 점수와 Hand_Empty_End 보너스의 합으로 산정한다.
-- **Placement_Action**: 손패에서 카드를 보드의 인접한 빈 칸에 놓는 행동.
-- **AI_Player**: 오프라인 로컬 알고리즘으로 구동되는 비인간 플레이어. 외부 API 불필요.
-- **Optical_Marker**: 카드 코너 조각 4개가 조합되어 식별 가능한 복합 시각 패턴.
-- **Game_Engine**: 보드 상태, 액션 유효성, 점수 계산을 관리하는 핵심 로직 모듈.
-- **Scoring_Companion**: 물리 카드 플레이를 위한 점수 입력 및 집계 도우미 앱 (Physical Scoring Companion).
-- **Service_Worker**: 오프라인 접근을 위한 브라우저 캐싱 메커니즘.
-- **Card_Orientation**: 카드가 보드에 배치될 때의 회전 각도. 0° 또는 180°만 허용되며, 90°/270°는 지원하지 않는다.
-- **Inward_Corner**: 2×2 그룹에서 카드가 그룹 중심(꼭짓점)을 향하는 코너. 위치는 슬롯으로 정해지며(TL→BR, TR→BL, BL→TR, BR→TL), 그 위치에 오는 인쇄 코너는 Card_Orientation에 따라 달라진다.
-- **Fragment_Pixel**: 카드에 인쇄된 광학 조각의 실제 픽셀 데이터. 회전 시 새로 생성되지 않고 기존 픽셀이 회전 변환된다.
-- **Suit_Group**: 무늬(Suit)를 Fragment_Layout 대칭 패턴으로 분류한 그룹. (A) 180° 점대칭: 하트(TL+BR), 다이아몬드(TR+BL) — 180° 회전 시 조각 위치 변화 없음. (B) 수평 반사 대칭: 클럽(TR+BR→우측면), 스페이드(TL+BL→좌측면) — 180° 회전 시 조각이 반대 면으로 이동.
-- **Fragment_Layout**: 각 카드 무늬별로 영구 인쇄된 광학 조각의 코너 위치. 하트(♥): TL+BR(대각A, 180° 점대칭). 다이아몬드(♦): TR+BL(대각B, 180° 점대칭). 클럽(♣): TR+BR(우측면, 수평 반사 대칭). 스페이드(♠): TL+BL(좌측면, 수평 반사 대칭). 조커 없음. 이 배치는 물리 카드에 고정이며 게임 중 변경되지 않는다.
-- **Draw_Rule**: 플레이어가 카드를 배치했을 때 새로운 Composite Code가 완성되지 않으면 덱에서 1장을 드로우한다. 첫 번째 라운드(각 플레이어의 첫 번째 배치)는 드로우 의무에서 제외된다.
-- **Hand_Empty_End**: 플레이어의 손패가 0장이 되는 순간 게임이 종료된다. 해당 액션과 관련된 모든 채점 및 예측 수집이 완료된 후 종료 처리한다. 손패 소진 보너스는 수치 미확정이며 시뮬레이션으로 결정한다.
-- **Fragment_Template**: 카드 기반 패턴(5×5 이진 격자)에 2차원 대칭군 D4의 변환(회전 0°/90°/180°/270°, 수평축·수직축·두 대각선 반사)을 적용한 결과. 52장 × 8변환 = 416개.
-- **Camera_Rotation**: 촬영 이미지 전체의 회전. 카드의 물리적 배치 방향(Card_Orientation)과 구분되며 임의 각도를 허용한다.
-- **Corner_Radius**: 카드 모서리의 둥근 정도. 기준값은 3.175 mm(1/8 inch). 상용 인쇄 업체 자료에서 약 3–3.6 mm 범위가 보이며 공식 표준 규격으로 확인되지 않았다.
-- **Central_Void**: 간격 없이 붙인 2×2 배치에서 네 카드의 둥근 안쪽 모서리 사이에 생기는 작은 빈 영역. 이음매를 따라 중심에서 Corner_Radius만큼 뻗는 뿔 네 개 모양이다.
-- **Printable_Area**: 카드 윤곽(둥근 모서리 포함) 안쪽으로 인쇄 내용이 놓일 수 있는 영역.
-- **Marker_Inset**: 마커 발자국(흰 여백 포함)의 바깥 모서리와 카드 가장자리 사이 거리. 기준값은 1모듈(1.5875 mm).
-- **Distractor_Marker**: 같은 이미지에 보이지만 대상 꼭짓점을 향하지 않는 마커(카드의 바깥쪽 조각, 다른 꼭짓점 주위의 조각).
-- **Card_Face**: 카드의 면. FRONT(앞면) 또는 BACK(뒷면).
-- **Body_Frame**: 카드 몸체에 고정된 좌표계. 원점은 앞면에서 볼 때의 왼쪽 위, x는 오른쪽, y는 아래다. 뒷면 인쇄도 같은 틀에서 앞면 쪽으로 투과해 본 모습(through-view)으로 기술한다.
-- **Flip**: 카드를 세로축을 중심으로 좌우로 뒤집는 동작. 카드 몸체의 x 좌표가 W − x로 바뀐다.
-- **Observed_Layer**: 카드를 위에서 내려다볼 때 실제로 보이는 광학 마커 층(보드 좌표에서의 위치와 픽셀 모양).
+- **Board**: An 8×8 grid. Columns are labeled A–H and rows 1–8. The 4 default starting cards are placed at D4, E4, D5, and E5.
+- **Card**: A card from the standard 52-card deck. No jokers. Each card has a suit (Suit: ♠♥♦♣) and a rank (Rank: A, 2–10, J, Q, K).
+- **Card_Value**: The numeric point value of a card. A=1, number cards (2–10)=face value, J=11, Q=12, K=13.
+- **Quad_Group**: A set of 4 distinct cards occupying adjacent 2×2 positions on the Board. It is recognized as a Composite Code when the Inward_Corner of all 4 cards has a valid optical fragment.
+- **Composite_Code**: The optical marker formed by combining the corner fragments of the 4 cards of a Quad_Group.
+- **Hidden_Sum**: The sum of the Card_Value of the 4 cards that make up a Composite Code (2×2 group). The minimum is 4 (A×4=1+1+1+1) and the maximum is 52 (K×4=13×4). This is the value that players predict.
+- **Guess**: A player's prediction of the Hidden_Sum, entered privately when a Quad_Group is formed.
+- **Score**: A player's cumulative in-game score. It is calculated as the sum of the prediction scores and the Hand_Empty_End bonus.
+- **Placement_Action**: The action of placing a card from the hand onto an adjacent empty cell of the Board.
+- **AI_Player**: A non-human player driven by an offline local algorithm. No external API is required.
+- **Optical_Marker**: A composite visual pattern, identifiable when 4 card-corner fragments are combined.
+- **Game_Engine**: The core logic module that manages Board state, action validity, and score calculation.
+- **Scoring_Companion**: A helper app for score entry and tallying when playing with physical cards (Physical Scoring Companion).
+- **Service_Worker**: A browser caching mechanism for offline access.
+- **Card_Orientation**: The rotation angle of a card when it is placed on the Board. Only 0° or 180° is allowed; 90°/270° is not supported.
+- **Inward_Corner**: In a 2×2 group, the corner of a card that faces the center (the shared vertex) of the group. Its position is determined by the slot (TL→BR, TR→BL, BL→TR, BR→TL), and which printed corner lands at that position depends on the Card_Orientation.
+- **Fragment_Pixel**: The actual pixel data of an optical fragment printed on a card. On rotation, the existing pixels are rotated and transformed; new pixels are not generated.
+- **Suit_Group**: A grouping of suits by the symmetry pattern of their Fragment_Layout. (A) 180° point symmetry: Hearts (TL+BR) and Diamonds (TR+BL), where the fragment positions do not change under a 180° rotation. (B) Horizontal reflection symmetry: Clubs (TR+BR → right side) and Spades (TL+BL → left side), where the fragments move to the opposite side under a 180° rotation.
+- **Fragment_Layout**: The permanently printed corner positions of the optical fragments for each card suit. Hearts (♥): TL+BR (diagonal A, 180° point symmetry). Diamonds (♦): TR+BL (diagonal B, 180° point symmetry). Clubs (♣): TR+BR (right side, horizontal reflection symmetry). Spades (♠): TL+BL (left side, horizontal reflection symmetry). No jokers. This layout is fixed on the physical cards and does not change during the game.
+- **Draw_Rule**: When a player places a card and no new Composite Code is completed, the player draws 1 card from the deck. The first round (each player's first placement) is exempt from the draw obligation.
+- **Hand_Empty_End**: The game ends at the moment a player's hand reaches 0 cards. The end is processed after all scoring and prediction collection related to that action are complete. The hand-empty bonus value is undecided and will be determined by simulation.
+- **Fragment_Template**: The result of applying a transformation of the 2-dimensional symmetry group D4 (rotations of 0°/90°/180°/270°, and reflections across the horizontal axis, the vertical axis, and the two diagonals) to a card's base pattern (a 5×5 binary grid). 52 cards × 8 transformations = 416.
+- **Camera_Rotation**: The rotation of the entire captured image. It is distinct from the physical placement orientation of a card (Card_Orientation) and allows an arbitrary angle.
+- **Corner_Radius**: The roundness of the card corners. The reference value is 3.175 mm (1/8 inch). Commercial print-vendor materials show a range of about 3–3.6 mm, and it has not been confirmed as an official standard specification.
+- **Central_Void**: The small empty region that forms between the rounded inner corners of four cards in a 2×2 arrangement placed together with no gap. It has the shape of four horns extending from the center along the seams by the Corner_Radius.
+- **Printable_Area**: The region inside the card outline (including the rounded corners) where printed content can be placed.
+- **Marker_Inset**: The distance between the outer edge of the marker footprint (including the white quiet margin) and the card edge. The reference value is 1 module (1.5875 mm).
+- **Distractor_Marker**: A marker that is visible in the same image but does not face the target vertex (a fragment on the outer side of a card, or a fragment around another vertex).
+- **Card_Face**: A face of a card. Either FRONT (front side) or BACK (back side).
+- **Body_Frame**: A coordinate system fixed to the card body. The origin is the top-left as seen from the front, x points right, and y points down. Back-side printing is also described in the same frame, as seen through the card toward the front (through-view).
+- **Flip**: The action of flipping a card left-right about its vertical axis. The x coordinate of the card body changes to W − x.
+- **Observed_Layer**: The optical marker layer that is actually visible when the card is viewed from above (its position in Board coordinates and its pixel shape).
 
 ---
 
 ## Requirements
 
-### Requirement 1: 카드 값 및 Composite Code 합산 계산
+### Requirement 1: Card Values and Composite Code Sum Calculation
 
-**User Story:** 게임 진행자로서, 나는 2×2 Composite Code의 숨겨진 합산값이 일관되게 계산되기를 원하며, 그래야 모든 플레이어가 동일한 기준으로 예측을 검증할 수 있다.
+**User Story:** As a game facilitator, I want the hidden sum of a 2×2 Composite Code to be calculated consistently, so that all players can verify their predictions against the same standard.
 
 #### Acceptance Criteria
 
-1. THE Game_Engine SHALL 각 카드의 Card_Value를 다음 규칙으로 결정한다: A=1, 숫자 카드(2–10)=액면가, J=11, Q=12, K=13. 조커는 덱에 포함되지 않는다.
-2. WHEN Composite Code(Quad_Group)가 형성되면, THE Game_Engine SHALL 해당 그룹의 Card_Value 4개를 합산하여 Hidden_Sum을 산출한다.
-3. THE Game_Engine SHALL Composite Code를 정확히 4장의 카드로 구성하되, 동일한 무늬+숫자 조합의 카드는 중복 포함될 수 없다.
-4. THE Game_Engine SHALL Hidden_Sum이 항상 4 이상 52 이하의 정수임을 보장한다. (최솟값: A+A+A+A=4, 최댓값: K+K+K+K=52)
-5. THE Game_Engine SHALL 동일한 4장 카드 조합에 대해 카드 배치 순서와 무관하게 항상 동일한 Hidden_Sum을 산출한다.
+1. THE Game_Engine SHALL determine the Card_Value of each card by the following rule: A=1, number cards (2–10)=face value, J=11, Q=12, K=13. Jokers are not included in the deck.
+2. WHEN a Composite Code (Quad_Group) is formed, THE Game_Engine SHALL add the 4 Card_Value of that group to produce the Hidden_Sum.
+3. THE Game_Engine SHALL compose a Composite Code of exactly 4 cards, and cards with the same suit+rank combination cannot be included more than once.
+4. THE Game_Engine SHALL guarantee that the Hidden_Sum is always an integer from 4 to 52 inclusive. (Minimum: A+A+A+A=4, maximum: K+K+K+K=52)
+5. THE Game_Engine SHALL always produce the same Hidden_Sum for the same combination of 4 cards, regardless of the card placement order.
 
 ---
 
-### Requirement 2: 점수 계산
+### Requirement 2: Score Calculation
 
-**User Story:** 플레이어로서, 나는 내 예측 정확도에 따라 점수가 명확하고 예측 가능하게 부여되기를 원하며, 그래야 전략적 선택에 의미가 생긴다.
+**User Story:** As a player, I want points to be awarded clearly and predictably according to my prediction accuracy, so that my strategic choices are meaningful.
 
 #### Acceptance Criteria
 
-1. WHEN 예측이 채점되면, THE Game_Engine SHALL 절댓값 오차 e = |Guess − Hidden_Sum|만으로 예측 점수를 결정하며, 크기가 같은 양·음 오차에는 같은 점수를 부여한다.
-2. THE Game_Engine SHALL 예측 점수를 설정 가능한 오차별 보상 테이블로 계산하되, e=0에 최고 점수를 부여하고 e가 커질 때 점수가 증가하지 않도록 한다.
-3. WHEN e가 보상 테이블이 정의한 최대 오차를 초과하면, THE Game_Engine SHALL 예측 점수 0을 부여한다.
-4. THE Game_Engine SHALL 보상 테이블의 길이(오차 단계 수)와 각 수치를 코드에 고정하지 않고 설정값으로 주입받는다. 이 값들은 게임 시뮬레이션 후 결정한다. IF 설정값에 음수가 있거나 e에 대해 증가하는 구간이 있으면, THEN THE Game_Engine SHALL 해당 설정을 거부한다.
-5. THE Game_Engine SHALL Composite Code 완성에 대해 별도의 완성 보너스 점수를 부여하지 않는다. 완성 자체가 예측 채점 기회와 Hand_Empty_End 보너스로 이미 보상된다.
-6. THE Game_Engine SHALL 점수 산출 시 현재 라운드의 Guess와 Hidden_Sum만을 사용하며, 이전 라운드의 Guess 또는 점수 이력에 접근하지 않는다.
-7. WHEN 모든 플레이어의 Guess 수집이 완료되면, THE Game_Engine SHALL 각 플레이어의 획득 점수와 누적 Score를 동시에 공개하되, 개별 Guess 값은 공개하지 않는다.
-8. WHEN 플레이어의 Guess 입력 창이 열리면, THE Game_Engine SHALL 입력 가능한 값의 범위를 4 이상 52 이하의 정수로 제한한다.
-9. WHEN 플레이어의 손패가 0장이 되면, THE Game_Engine SHALL 해당 플레이어에게 Hand_Empty_End 보너스 B를 부여한다. (B의 수치 미확정; 예측 점수 합산 대비 의미 있지만 압도적이지 않은 수치로 시뮬레이션으로 결정)
+1. WHEN a prediction is scored, THE Game_Engine SHALL determine the prediction score solely from the absolute error e = |Guess − Hidden_Sum|, and SHALL award the same score to positive and negative errors of equal magnitude.
+2. THE Game_Engine SHALL calculate the prediction score from a configurable reward table indexed by error, awarding the highest score at e=0 and ensuring that the score does not increase as e grows.
+3. WHEN e exceeds the maximum error defined by the reward table, THE Game_Engine SHALL award a prediction score of 0.
+4. THE Game_Engine SHALL receive the length of the reward table (the number of error levels) and each of its values as configuration values injected from outside, rather than fixing them in code. These values will be determined after game simulation. IF the configuration values contain a negative value or a segment that increases with e, THEN THE Game_Engine SHALL reject that configuration.
+5. THE Game_Engine SHALL NOT award a separate completion bonus score for completing a Composite Code. The completion itself is already rewarded by the opportunity to score a prediction and by the Hand_Empty_End bonus.
+6. THE Game_Engine SHALL use only the Guess and Hidden_Sum of the current round when calculating a score, and SHALL NOT access the Guess or score history of previous rounds.
+7. WHEN the collection of Guess values from all players is complete, THE Game_Engine SHALL reveal each player's earned score and cumulative Score at the same time, without revealing the individual Guess values.
+8. WHEN a player's Guess input window opens, THE Game_Engine SHALL restrict the allowed input values to integers from 4 to 52 inclusive.
+9. WHEN a player's hand reaches 0 cards, THE Game_Engine SHALL award the Hand_Empty_End bonus B to that player. (The value of B is undecided; it is to be determined by simulation as a value that is meaningful but not overwhelming relative to the sum of the prediction scores.)
 
 ---
 
-### Requirement 3: 보드, 배치 규칙, 드로우 및 게임 종료
+### Requirement 3: Board, Placement Rules, Drawing, and Game End
 
-**User Story:** 플레이어로서, 나는 카드 배치, 드로우, 게임 종료 규칙이 명확하게 강제되기를 원하며, 그래야 유효하지 않은 이동이나 규칙 혼란이 없다.
+**User Story:** As a player, I want the rules for card placement, drawing, and game end to be clearly enforced, so that there are no invalid moves or rule confusion.
 
 #### Acceptance Criteria
 
-1. THE Board SHALL 8×8 격자(A1–H8)로 구성되며, 게임 시작 시 중앙 2×2 위치(D4, E4, D5, E5)에 52장 덱에서 무작위로 선택된 중립 카드 4장이 배치된다.
-2. THE Game_Engine SHALL 게임 시작 시 중립 카드 4장과 각 플레이어 손패 4장(총 4+4×4=20장)을 52장 덱에서 중복 없이 무작위 배분한다.
-3. WHEN 플레이어가 카드를 배치하면, THE Game_Engine SHALL 대상 위치가 보드 경계(A–H, 1–8) 내에 있고, 비어 있으며, 기존 배치 카드와 상하좌우 인접한지 검증하고, 조건 미충족 시 해당 액션을 거부한다.
-4. THE Game_Engine SHALL Swap_Action을 지원하지 않는다. 플레이어는 손패에서만 카드를 보드에 놓을 수 있다.
-5. WHEN 플레이어의 배치 액션이 새로운 Composite Code를 완성하지 못하면, THE Game_Engine SHALL 해당 플레이어에게 덱에서 1장을 드로우하게 한다. 단, 각 플레이어의 첫 번째 배치 액션(첫 라운드)은 드로우 의무에서 제외된다.
-6. WHEN 플레이어의 배치 액션이 하나 이상의 Composite Code를 완성하면, THE Game_Engine SHALL 드로우를 수행하지 않는다.
-7. WHEN 플레이어의 손패가 0장이 되면, THE Game_Engine SHALL 해당 액션과 관련된 모든 Composite Code 채점 및 예측 수집을 완료한 뒤 즉시 게임 종료를 선언한다.
-8. WHEN 덱이 고갈된 상태에서 드로우가 필요하면, THE Game_Engine SHALL 드로우를 건너뛰고 플레이어의 손패가 현재 카드 수를 유지하도록 한다.
-9. THE Game_Engine SHALL 게임 종료 시 최종 점수를 비교하여 순위를 결정하고, 동점 처리 규칙을 다음과 같이 적용한다: 동점 플레이어는 공동 순위로 처리하며, 별도의 타이브레이크를 적용하지 않는다.
-10. FOR ALL 보드 상태 변환(배치), 보드 위 카드의 총 수는 액션 전보다 정확히 1 증가한다 (보드 카드 수 불변성).
-11. THE Game_Engine SHALL 카드 배치 시 Card_Orientation을 함께 기록하되, 다음 규칙을 적용한다: (a) 하트(♥)·다이아몬드(♦)는 Fragment_Layout이 대각선 패턴이므로 180° 회전 시 조각 위치가 변하지 않아 0°와 동등하다. (b) 클럽(♣)·스페이드(♠)는 Fragment_Layout이 면 패턴이므로 180° 회전 시 조각이 반대 면으로 이동한다. (c) 모든 카드에 대해 90°/270° 배치 시도는 거부한다.
-12. WHEN 카드가 Composite Code(Quad_Group)에 참여할 때, THE Game_Engine SHALL 해당 카드의 Fragment_Layout과 Card_Orientation을 조합하여 실제 조각 코너를 계산하고, 그 코너 중 하나 이상이 해당 보드 위치의 Inward_Corner와 일치하는지 검증한다. 일치하지 않으면 Composite Code로 판정하지 않는다.
+1. THE Board SHALL consist of an 8×8 grid (A1–H8), and at the start of the game 4 neutral cards randomly selected from the 52-card deck are placed at the central 2×2 positions (D4, E4, D5, E5).
+2. THE Game_Engine SHALL randomly deal, without duplicates, the 4 neutral cards and 4 hand cards for each player (4+4×4=20 cards in total) from the 52-card deck at the start of the game.
+3. WHEN a player places a card, THE Game_Engine SHALL verify that the target position is within the Board bounds (A–H, 1–8), is empty, and is orthogonally (up, down, left, or right) adjacent to an already placed card, and SHALL reject the action if any condition is not met.
+4. THE Game_Engine SHALL NOT support a Swap_Action. A player can place a card onto the Board only from the hand.
+5. WHEN a player's placement action does not complete a new Composite Code, THE Game_Engine SHALL have that player draw 1 card from the deck. However, each player's first placement action (the first round) is exempt from the draw obligation.
+6. WHEN a player's placement action completes one or more Composite Code, THE Game_Engine SHALL NOT perform a draw.
+7. WHEN a player's hand reaches 0 cards, THE Game_Engine SHALL declare the game over immediately, after completing all Composite Code scoring and prediction collection related to that action.
+8. WHEN a draw is required while the deck is exhausted, THE Game_Engine SHALL skip the draw and keep the player's hand at its current number of cards.
+9. THE Game_Engine SHALL determine the ranking by comparing final scores at game end, and SHALL apply the tie rule as follows: players with tied scores are treated as sharing the same rank, and no separate tiebreak is applied.
+10. FOR ALL Board state transitions (placements), the total number of cards on the Board increases by exactly 1 compared with before the action (Board card count invariant).
+11. THE Game_Engine SHALL record the Card_Orientation together with the card placement, applying the following rules: (a) For Hearts (♥) and Diamonds (♦), the Fragment_Layout is a diagonal pattern, so the fragment positions do not change under a 180° rotation and are equivalent to 0°. (b) For Clubs (♣) and Spades (♠), the Fragment_Layout is a side pattern, so the fragments move to the opposite side under a 180° rotation. (c) Attempts to place any card at 90°/270° are rejected.
+12. WHEN a card participates in a Composite Code (Quad_Group), THE Game_Engine SHALL calculate the actual fragment corners by combining that card's Fragment_Layout and Card_Orientation, and SHALL verify that at least one of those corners matches the Inward_Corner of that Board position. If none matches, the group is not judged to be a Composite Code.
 
 ---
 
-### Requirement 4: Quad_Group 탐지 및 중복 방지
+### Requirement 4: Quad_Group Detection and Duplicate Prevention
 
-**User Story:** 게임 엔진 개발자로서, 나는 동일한 4장 카드 조합이 중복으로 점수를 받지 않도록 보장하고 싶으며, 그래야 점수 체계의 공정성이 유지된다.
+**User Story:** As a game engine developer, I want to ensure that the same combination of 4 cards does not receive a duplicate score, so that the fairness of the scoring system is maintained.
 
 #### Acceptance Criteria
 
-1. WHEN 새로운 카드가 보드에 배치되면, THE Game_Engine SHALL 배치된 칸을 포함하는 최대 4개의 2×2 후보 영역을 검사한다.
-2. WHEN 2×2 영역의 4개 칸이 모두 채워지면, THE Game_Engine SHALL 해당 영역을 Quad_Group으로 탐지하고 Requirement 3.12에 따라 Composite Code 성립 여부를 별도로 판정한다. 4칸 점유만으로는 Composite Code로 인정하지 않는다.
-3. THE Game_Engine SHALL 채점된 Quad_Group을 고유 식별자로 기록하고, 동일한 식별자의 그룹에는 중복 점수를 부여하지 않는다. 고유 식별자는 4장 카드 ID(무늬+숫자)의 정렬된 집합(위치 순서 무관)으로 구성된다. 동일한 4장 카드 조합은 보드 위 위치나 배치 순서와 무관하게 하나의 식별자를 가진다.
-4. THE Game_Engine SHALL 다음 세 조건을 모두 만족할 때만 채점 자격을 부여한다: (a) Composite Code 성립, (b) 해당 Composite Code가 현재 배치 액션으로 새로 성립, (c) 카드 집합 식별자가 채점 기록에 없음. 카드는 배치 후 이동·제거되지 않으므로 같은 4장 집합은 보드 위 한 위치에만 존재할 수 있으며, 채점 기록 검사는 이 불변식을 방어적으로 확인한다.
-5. FOR ALL 보드 상태, 채점된 Quad_Group 집합은 멱등성을 가진다: 동일한 보드 상태에서 그룹 탐지를 반복 실행해도 새로운 그룹이 추가되지 않는다.
+1. WHEN a new card is placed on the Board, THE Game_Engine SHALL examine up to 4 candidate 2×2 regions that contain the placed cell.
+2. WHEN all 4 cells of a 2×2 region are filled, THE Game_Engine SHALL detect that region as a Quad_Group and SHALL separately determine whether it forms a Composite Code according to Requirement 3.12. Occupancy of the 4 cells alone is not recognized as a Composite Code.
+3. THE Game_Engine SHALL record each scored Quad_Group by a unique identifier, and SHALL NOT award a duplicate score to a group with the same identifier. The unique identifier consists of the sorted set of the 4 card IDs (suit+rank), independent of position order. The same combination of 4 cards has a single identifier regardless of its position on the Board or placement order.
+4. THE Game_Engine SHALL grant scoring eligibility only when all three of the following conditions are met: (a) a Composite Code is formed, (b) that Composite Code is newly formed by the current placement action, and (c) the card-set identifier is not in the scoring record. Because cards are not moved or removed after placement, the same set of 4 cards can exist at only one position on the Board, and the scoring-record check verifies this invariant defensively.
+5. FOR ALL Board states, the set of scored Quad_Group is idempotent: running group detection repeatedly on the same Board state does not add any new group.
 
 ---
 
-### Requirement 5: 커스텀 대칭 광학 마커 시스템
+### Requirement 5: Custom Symmetric Optical Marker System
 
-**User Story:** 프로덕트 오너로서, 나는 52장의 카드를 카메라로 식별할 수 있는 신뢰성 있는 광학 마커 시스템이 설계되기를 원하며, 그래야 물리 카드 플레이를 디지털 채점과 연결할 수 있다.
+**User Story:** As a product owner, I want a reliable optical marker system, designed so that the 52 cards can be identified by camera, so that physical card play can be linked to digital scoring.
 
 #### Acceptance Criteria
 
-1. THE optical marker system SHALL 표준 QR코드(ISO 18004)를 사용하지 않는다. 대신 52장 카드 각각을 고유하게 식별할 수 있는 커스텀 대칭 마커를 설계한다.
-2. THE marker generator SHALL 각 카드에 대해 하나의 기반 광학 패턴(base pattern)을 생성하고, Fragment_Layout에 정의된 대칭 변환을 적용하여 두 번째 조각을 도출한다. 두 조각은 동일한 카드를 식별한다.
-3. THE codebook SHALL 52장 카드 각각에 고유한 2차원 이진 기반 패턴을 할당하고, 416개 Fragment_Template 전체에서 서로 다른 두 템플릿 사이의 최소 Hamming 거리를 5 이상으로 보장한다. 코드북은 고정 알고리즘과 고정 시드로 결정적으로 생성하며, 인쇄와 디코딩에는 저장소에 동결된 코드북만 사용한다.
-4. THE optical marker SHALL 하트·다이아몬드 카드에서 Fragment_Layout을 180° 회전 적용해도 동일한 카드 ID를 반환하는 대칭 불변성을 유지한다.
-5. THE optical marker SHALL 클럽·스페이드 카드에서 Fragment_Layout을 180° 회전 적용하면 조각 위치가 반대 면으로 이동하되, 카드 ID는 동일하게 디코딩되어야 한다.
-6. WHEN Composite Code의 4개 조각이 모두 디코딩되면, THE optical reader SHALL 보드 상태를 조회하지 않고 이미지 데이터만으로 4장의 카드 ID와 Card_Value를 반환한다. Quad_Group 내 위치는 이미지만으로 결정되는 범위의 해석 전부로 반환하며(서로 180° 회전 관계인 해석, 그리고 반사 여부가 모호한 경우 반사 해석 포함), 카드 집합과 Hidden_Sum은 모든 해석에서 동일하다.
-7. IF 판독 결과가 Requirement 13.4의 오류 조건(불완전 그룹·중복·손상·배치 불일치) 중 하나에 해당하거나 Scoring Companion의 참조 카드 집합과 다르면, THEN THE optical reader SHALL 스캔 결과를 거부하고 수동 입력으로 전환한다.
+1. THE optical marker system SHALL NOT use the standard QR code (ISO 18004). Instead, a custom symmetric marker that can uniquely identify each of the 52 cards is designed.
+2. THE marker generator SHALL generate one base optical pattern (base pattern) for each card, and SHALL derive the second fragment by applying the symmetry transformation defined in the Fragment_Layout. The two fragments identify the same card.
+3. THE codebook SHALL assign a unique 2-dimensional binary base pattern to each of the 52 cards, and SHALL guarantee a minimum Hamming distance of at least 5 between any two distinct templates among all 416 Fragment_Template. The codebook is generated deterministically with a fixed algorithm and a fixed seed, and only the codebook frozen in the repository is used for printing and decoding.
+4. THE optical marker SHALL maintain symmetry invariance for Hearts and Diamonds cards, returning the same card ID even when the Fragment_Layout is applied with a 180° rotation.
+5. THE optical marker SHALL, for Clubs and Spades cards, move the fragment positions to the opposite side when the Fragment_Layout is applied with a 180° rotation, while the card ID must still be decoded as the same.
+6. WHEN all 4 fragments of a Composite Code are decoded, THE optical reader SHALL return the 4 card IDs and Card_Value from the image data alone, without consulting the Board state. The positions within the Quad_Group are returned as the full set of interpretations that the image alone can determine (including interpretations that are 180° rotations of each other and, where the reflection status is ambiguous, reflected interpretations), and the card set and Hidden_Sum are identical in all interpretations.
+7. IF a reading result falls under one of the error conditions of Requirement 13.4 (incomplete group, duplicate, corruption, arrangement mismatch) or differs from the reference card set of the Scoring Companion, THEN THE optical reader SHALL reject the scan result and switch to manual entry.
 
 ---
 
-### Requirement 6: 정보 비대칭 및 공개 순서
+### Requirement 6: Information Asymmetry and Reveal Order
 
-**User Story:** 플레이어로서, 나는 내 예측이 다른 플레이어의 추측 전략에 영향을 주지 않도록 보장되기를 원하며, 그래야 공정한 추론 경쟁이 성립한다.
+**User Story:** As a player, I want to be assured that my prediction does not influence other players' guessing strategies, so that a fair inference competition is established.
 
 #### Acceptance Criteria
 
-1. WHEN Quad_Group이 형성되면, THE Game_Engine SHALL 모든 참여 플레이어의 Guess를 수집하기 전까지 Hidden_Sum을 시스템 UI에 표시하지 않는다. 단, 플레이어가 보드 위 카드를 직접 보고 합산을 추론하는 행위는 이 제약의 대상이 아니며, 이 제약은 소프트웨어가 자동 계산한 값의 표시 시점에만 적용된다.
-2. WHEN 모든 Guess가 수집되면, THE Game_Engine SHALL Hidden_Sum을 공개하고 각 플레이어의 획득 점수(Guess 값 미포함)와 누적 Score를 동시에 표시한다.
-3. THE Game_Engine SHALL 임의의 플레이어가 다른 플레이어의 Guess 값을 게임 진행 중에 열람하지 못하도록 한다.
-4. WHEN 물리 카드를 뒤집어 Hidden_Sum을 공개할 때, THE Scoring_Companion SHALL 카드의 좌우 배치 방향(Composite_Code 조각의 좌우 위치)을 원래 보드 배치 기준으로 유지하여 미러링되지 않도록 한다.
-5. WHEN 단일 배치 액션으로 둘 이상의 Composite Code가 새로 성립하면, THE Game_Engine SHALL 해당 Composite Code 전부에 대한 예측을 먼저 수집한 뒤 결과를 일괄 공개하여, 앞선 코드의 결과가 다음 코드의 예측에 영향을 주지 않도록 한다.
+1. WHEN a Quad_Group is formed, THE Game_Engine SHALL NOT display the Hidden_Sum in the system UI until the Guess of all participating players has been collected. However, a player looking directly at the cards on the Board and inferring the sum is not subject to this constraint; this constraint applies only to the timing of displaying the value automatically calculated by the software.
+2. WHEN all Guess values have been collected, THE Game_Engine SHALL reveal the Hidden_Sum and at the same time display each player's earned score (without the Guess value) and cumulative Score.
+3. THE Game_Engine SHALL prevent any player from viewing another player's Guess value while the game is in progress.
+4. WHEN a physical card is flipped to reveal the Hidden_Sum, THE Scoring_Companion SHALL keep the left-right placement orientation of the cards (the left-right position of the Composite_Code fragments) based on the original Board placement, so that it is not mirrored.
+5. WHEN a single placement action newly forms two or more Composite Code, THE Game_Engine SHALL first collect the predictions for all of those Composite Code and then reveal the results together, so that the result of an earlier code does not influence the prediction for a later code.
 
 ---
 
-### Requirement 7: AI 플레이어
+### Requirement 7: AI Players
 
-**User Story:** 싱글 플레이어로서, 나는 인터넷 연결이나 유료 API 없이도 도전적인 AI 상대와 연습 게임을 즐기고 싶다.
+**User Story:** As a single player, I want to enjoy practice games against a challenging AI opponent without an internet connection or a paid API.
 
 #### Acceptance Criteria
 
-1. THE Game_Engine SHALL 브라우저 로컬 환경에서 실행되는 AI_Player 알고리즘 3개를 제공하며, 외부 서버나 유료 AI API에 의존하지 않는다.
-2. THE AI_Player SHALL 유효한 Placement_Action만 수행한다.
-3. WHEN AI_Player의 차례가 되면, THE Game_Engine SHALL 3초 이내에 AI_Player의 행동을 결정하고 실행한다.
-4. THE AI_Player SHALL Guess를 생성할 때 보드에 공개된 카드 정보만 사용하고, 다른 플레이어의 비공개 Guess에 접근하지 않는다.
-5. WHERE 난이도 설정이 제공되면, THE AI_Player SHALL 최소 2가지 난이도(초급: 랜덤 유효 배치, 고급: Quad_Group 완성 가능성 최대화 휴리스틱)를 구현한다.
+1. THE Game_Engine SHALL provide 3 AI_Player algorithms that run in the local browser environment, and SHALL NOT depend on an external server or a paid AI API.
+2. THE AI_Player SHALL perform only valid Placement_Action.
+3. WHEN it is the AI_Player's turn, THE Game_Engine SHALL decide and execute the AI_Player's action within 3 seconds.
+4. THE AI_Player SHALL use only the card information revealed on the Board when generating a Guess, and SHALL NOT access other players' private Guess values.
+5. WHERE a difficulty setting is provided, THE AI_Player SHALL implement at least 2 difficulty levels (beginner: random valid placement; advanced: a heuristic that maximizes the likelihood of completing a Quad_Group).
 
 ---
 
 ### Requirement 8: Browser Practice Mode
 
-**User Story:** 게임 개발자로서, 나는 물리 카드 인쇄 전에 핵심 게임 루프를 브라우저에서 검증하고 싶으며, 그래야 인쇄 비용 낭비 없이 개념 증명이 가능하다.
+**User Story:** As a game developer, I want to verify the core game loop in the browser before printing physical cards, so that a proof of concept is possible without wasting printing costs.
 
 #### Acceptance Criteria
 
-1. THE Browser_Practice_Mode SHALL 표준 웹 브라우저(크롬, 파이어폭스, 사파리 최신 2버전)에서 설치 없이 실행된다.
-2. THE Browser_Practice_Mode SHALL 8×8 보드, 카드 패, 배치 및 방향 선택 인터페이스, Guess 입력, 점수 표시를 포함하는 완전한 게임 루프를 구현한다.
-3. THE Browser_Practice_Mode SHALL 물리 카드가 없어도 Composite_Code 시각화를 화면에 렌더링하여 광학 마커 디자인을 검증할 수 있게 한다.
-4. WHEN 게임이 종료되면, THE Browser_Practice_Mode SHALL 최종 점수판과 각 Quad_Group의 Hidden_Sum 내역을 표시한다.
-5. THE Browser_Practice_Mode SHALL 모바일 화면(320px 이상 너비)에서 터치 인터랙션으로 플레이 가능한 반응형 레이아웃을 제공한다.
+1. THE Browser_Practice_Mode SHALL run without installation in standard web browsers (the latest 2 versions of Chrome, Firefox, and Safari).
+2. THE Browser_Practice_Mode SHALL implement a complete game loop that includes the 8×8 Board, the card hand, a placement and orientation selection interface, Guess input, and score display.
+3. THE Browser_Practice_Mode SHALL render the Composite_Code visualization on screen even without physical cards, so that the optical marker design can be verified.
+4. WHEN the game ends, THE Browser_Practice_Mode SHALL display the final scoreboard and the Hidden_Sum details of each Quad_Group.
+5. THE Browser_Practice_Mode SHALL provide a responsive layout that is playable with touch interaction on mobile screens (width of 320px or more).
 
 ---
 
-### Requirement 9: Scoring Companion Mode (물리 카드 점수 보조)
+### Requirement 9: Scoring Companion Mode (Physical Card Scoring Assistance)
 
-**User Story:** 물리 카드 플레이어로서, 나는 실제 카드 게임 중에 점수 계산을 앱이 자동으로 처리해주기를 원하며, 그래야 게임 흐름을 방해하지 않고 정확한 점수 집계가 가능하다.
+**User Story:** As a physical card player, I want the app to handle score calculation automatically during a real card game, so that accurate score tallying is possible without interrupting the flow of the game.
 
 #### Acceptance Criteria
 
-1. THE Scoring_Companion SHALL 카드 값 수동 입력(4장) 또는 카메라 스캔으로 Quad_Group의 Hidden_Sum을 산출하는 두 가지 입력 방식을 지원한다.
-2. THE Scoring_Companion SHALL 각 플레이어의 Guess 입력 화면을 순차적으로 표시하여 이전 플레이어의 입력을 가리고 정보 비대칭을 유지한다.
-3. WHEN Guess 수집이 완료되면, THE Scoring_Companion SHALL Hidden_Sum을 공개하고 점수 분배를 계산하여 표시한다.
-4. THE Scoring_Companion SHALL Service_Worker를 통해 오프라인에서도 작동하며, 최초 로드 후 네트워크 연결 없이 전체 기능을 사용할 수 있다.
-5. THE Scoring_Companion SHALL 진행 중인 게임 상태를 브라우저 로컬 스토리지에 저장하여 앱 재시작 또는 페이지 새로고침 후에도 게임을 이어갈 수 있다.
+1. THE Scoring_Companion SHALL support two input methods for deriving the Hidden_Sum of a Quad_Group: manual entry of card values (4 cards) or a camera scan.
+2. THE Scoring_Companion SHALL display each player's Guess input screen sequentially, hiding the previous player's input to maintain information asymmetry.
+3. WHEN Guess collection is complete, THE Scoring_Companion SHALL reveal the Hidden_Sum and calculate and display the score distribution.
+4. THE Scoring_Companion SHALL operate offline through the Service_Worker, and all functionality SHALL be usable without a network connection after the initial load.
+5. THE Scoring_Companion SHALL save the in-progress game state to the browser's local storage so that the game can be resumed after an app restart or page refresh.
 
 ---
 
-### Requirement 10: 오프라인 우선 및 배포 제약
+### Requirement 10: Offline-First and Deployment Constraints
 
-**User Story:** 게임 운영자로서, 나는 인터넷이 불안정한 환경에서도 앱이 완전히 작동하기를 원하며, 그래야 파티나 야외 행사에서 사용 가능하다.
+**User Story:** As a game operator, I want the app to work fully even in environments with unstable internet, so that it can be used at parties and outdoor events.
 
 #### Acceptance Criteria
 
-1. THE Game_Engine SHALL 계정 등록, 로그인, 외부 데이터베이스 연동 없이 완전히 작동한다.
-2. THE Service_Worker SHALL 앱의 모든 정적 자산(HTML, CSS, JS, 카드 이미지)을 최초 방문 시 캐시하여 이후 오프라인 접근을 지원한다.
-3. WHEN 네트워크 연결이 없을 때 앱에 접근하면, THE Service_Worker SHALL 캐시된 버전을 제공하고 오프라인 상태임을 사용자에게 알린다.
-4. THE Scoring_Companion SHALL 계정 생성이나 서버 연동 없이 즉시 사용 가능하다.
-5. WHERE 앱 업데이트가 있으면, THE Service_Worker SHALL 새 버전을 백그라운드에서 캐시하고 사용자가 직접 새로고침을 선택할 때만 업데이트를 적용한다.
+1. THE Game_Engine SHALL operate fully without account registration, login, or integration with an external database.
+2. THE Service_Worker SHALL cache all static assets of the app (HTML, CSS, JS, card images) on the first visit to support subsequent offline access.
+3. WHEN the app is accessed without a network connection, THE Service_Worker SHALL serve the cached version and notify the user that the app is offline.
+4. THE Scoring_Companion SHALL be immediately usable without account creation or server integration.
+5. WHERE an app update is available, THE Service_Worker SHALL cache the new version in the background and apply the update only when the user chooses to reload.
 
 ---
 
-### Requirement 11: 게임 전략 건전성 (Strategic Soundness)
+### Requirement 11: Game Strategic Soundness (Strategic Soundness)
 
-**User Story:** 게임 디자이너로서, 나는 배치 방향 제약, 드로우 규칙, 정보 비대칭 메커닉이 지배 전략이나 무의미한 게임 상태를 만들지 않는지 확인하고 싶다.
+**User Story:** As a game designer, I want to verify that the placement orientation constraint, the draw rule, and the information asymmetry mechanics do not create dominant strategies or meaningless game states.
 
 #### Acceptance Criteria
 
-1. THE Game_Engine SHALL 스왑이 없는 규칙에서 특정 전략이 지배 전략이 되는지 여부를 시뮬레이션 테스트로 평가하고 결과를 기록한다.
-2. WHEN 한 플레이어가 모든 Quad_Group을 단독으로 완성하는 전략을 시도할 때, THE Game_Engine SHALL 다른 플레이어들도 추측 점수로 경쟁력을 유지할 수 있음을 점수 시뮬레이션으로 검증한다.
-3. THE Game_Engine SHALL Guess 입력 유효성 검사에서 허용 범위를 Hidden_Sum의 실제 최솟값 4 이상, 최댓값 52 이하의 정수로 제한한다. (Requirement 1 Criterion 4와 일치)
-4. IF 4명의 플레이어 모두 동일한 Guess를 입력하면, THE Game_Engine SHALL 모든 플레이어에게 동일한 점수 기준을 적용하고 타이브레이킹 규칙을 문서화한다.
+1. THE Game_Engine SHALL evaluate through simulation tests whether any particular strategy becomes a dominant strategy under the rules without swaps, and SHALL record the results.
+2. WHEN one player attempts a strategy of completing all Quad_Group alone, THE Game_Engine SHALL verify through score simulation that the other players can also remain competitive through guess scores.
+3. THE Game_Engine SHALL restrict the allowed range in Guess input validation to integers from the actual minimum of 4 to the actual maximum of 52 of the Hidden_Sum. (Consistent with Requirement 1 Criterion 4)
+4. IF all 4 players enter the same Guess, THEN THE Game_Engine SHALL apply the same scoring standard to all players and SHALL document the tiebreaking rule.
 
 ---
 
-### Requirement 12: 커스텀 광학 마커 프로토타입 검증
+### Requirement 12: Custom Optical Marker Prototype Validation
 
-**User Story:** 게임 개발자로서, 나는 52장 카드 식별을 위한 커스텀 대칭 마커 시스템이 실제로 동작하는지 검증하고 싶으며, 그래야 물리 카드 인쇄 전에 광학 인식 신뢰성을 확인할 수 있다.
+**User Story:** As a game developer, I want to verify that the custom symmetric marker system for identifying the 52 cards actually works, so that optical recognition reliability can be confirmed before printing physical cards.
 
 #### Acceptance Criteria
 
-1. THE prototype SHALL 외부 의존성 없는 TypeScript 래스터 연산으로 52장 카드의 광학 조각을 생성·렌더링하며, 자동화 테스트는 브라우저 없이 Node 환경에서 실행 가능해야 한다. Canvas API는 브라우저 시각화에만 사용한다.
-2. THE prototype SHALL 임의의 Composite Code(4장 조합)에 대해 4개 조각 이미지를 합성하고, 광학 디코더가 각 조각을 독립적으로 디코딩하여 4개의 카드 ID를 반환하는지 검증한다.
-3. THE prototype SHALL 하트·다이아몬드 카드의 180° 회전 동등성을 검증한다: 동일 카드를 0°와 180°로 각각 렌더링했을 때 디코딩 결과가 동일해야 한다.
-4. THE prototype SHALL 클럽·스페이드 카드의 180° 회전 조각 이동을 검증한다: 회전 전후 카드 ID는 동일하되 조각 코너 위치가 바뀜을 확인한다.
-5. THE prototype SHALL 고정 시드로 생성한 합성 열화 조건(조각별 위치 오차 0·0.1·0.25 모듈, 임의 카메라 회전 각도, 원근 변환, 블러, 노이즈, 조명 기울기)에서 조건별 정상 식별률·거부율·오식별률을 측정하고, 조건마다 최소 1,000회 시도 결과를 기록한다. 오식별(잘못된 카드 ID나 합산을 성공으로 반환) 건수도 조건별로 기록하며, 0이 아닌 조건은 실패 시드와 함께 보고한다. 오식별 0건은 측정된 조건 안에서의 관찰이며 모든 손상에 대한 보장이 아니다. 각 조건에서 시도 횟수 n과 관측 건수를 함께 기록하고, 관측 건수가 0이면 한 시도당 오식별 확률의 95% 단측 신뢰 상한 1 − 0.05^(1/n)(약 3/n, n = 1,000이면 약 0.30%)도 기록한다. 수학적 보장은 독립 비트 반전 모델의 정정·거부 범위(design.md 7절)에 한정되며, 유한 표본에서 0건이 관찰됐다는 사실은 그 보장이 아니라 합성 조건 분포에 대한 실험 통과 기준이다.
-6. THE prototype SHALL 오류 조건(불완전 그룹(조각 4개 미만), 중복 카드 ID, 손상 조각)을 탐지하고 거부하는 로직을 검증한다.
-7. THE team SHALL 프로토타입 코드, 테스트 케이스, 측정 결과(성공률, 오차 허용 범위)를 저장소에 커밋하여 재현 가능한 기록으로 남긴다. 합성 이미지 결과와 실제 인쇄 카드·카메라 결과는 구분하여 기록한다.
+1. THE prototype SHALL generate and render the optical fragments of the 52 cards with TypeScript raster operations that have no external dependencies, and the automated tests must be runnable in a Node environment without a browser. The Canvas API is used only for browser visualization.
+2. THE prototype SHALL, for any Composite Code (a combination of 4 cards), synthesize the 4 fragment images and verify that the optical decoder decodes each fragment independently and returns 4 card IDs.
+3. THE prototype SHALL verify the 180° rotation equivalence of Hearts and Diamonds cards: when the same card is rendered at 0° and at 180°, the decoding results must be identical.
+4. THE prototype SHALL verify the fragment movement under 180° rotation of Clubs and Spades cards: it confirms that the card ID is the same before and after rotation while the fragment corner positions change.
+5. THE prototype SHALL, under synthetic degradation conditions generated with a fixed seed (per-fragment position error of 0, 0.1, and 0.25 modules, arbitrary camera rotation angle, perspective transformation, blur, noise, and lighting gradient), measure the correct recognition rate, rejection rate, and misidentification rate for each condition, and SHALL record the results of at least 1,000 trials per condition. The number of misidentifications (returning a wrong card ID or sum as a success) is also recorded per condition, and any condition with a nonzero count is reported together with the failing seeds. Zero misidentifications is an observation within the measured conditions and not a guarantee against all corruption. For each condition, the number of trials n and the observed count are recorded together, and if the observed count is 0, the 95% one-sided confidence upper bound on the per-trial misidentification probability, 1 − 0.05^(1/n) (about 3/n, about 0.30% for n = 1,000), is also recorded. The mathematical guarantee is limited to the correction and rejection range of the independent bit-flip model (design.md section 7); the fact that 0 occurrences were observed in a finite sample is not that guarantee but an experimental pass criterion over the distribution of synthetic conditions.
+6. THE prototype SHALL verify the logic that detects and rejects error conditions (incomplete group (fewer than 4 fragments), duplicate card ID, corrupted fragment).
+7. THE team SHALL commit the prototype code, test cases, and measurement results (success rate, error tolerance range) to the repository as a reproducible record. Results from synthetic images and results from real printed cards and a real camera are recorded separately.
 
 ---
 
-### Requirement 13: 광학 조각 독립 디코딩 및 합산 정확성
+### Requirement 13: Independent Optical Fragment Decoding and Sum Accuracy
 
-**User Story:** 점수 보조 앱 사용자로서, 나는 물리 카드를 스캔했을 때 각 카드의 신원이 올바르게 식별되고 Hidden_Sum이 정확히 계산되기를 원하며, 그래야 수동 입력 없이 신뢰할 수 있는 점수 집계가 가능하다.
-
-#### Acceptance Criteria
-
-1. THE optical reader SHALL 각 조각을 보드의 예상 상태와 독립적으로 디코딩하여 카드 ID(무늬+숫자)와 Card_Value를 반환하고, Quad_Group 내 위치(좌상/우상/좌하/우하)는 이미지만으로 결정되는 범위의 모든 해석(180° 모호성, 필요 시 반사 모호성 포함)으로 반환한다. 이 정보는 보드 상태 조회 없이 이미지 데이터만으로 결정해야 한다.
-2. WHEN 4개의 조각이 모두 성공적으로 디코딩되면, THE optical reader SHALL 독립적으로 산출한 4개의 Card_Value 합산을 Hidden_Sum으로 반환하고, 이 값을 Game_Engine이 보드 상태로부터 계산한 참조값과 대조하여 일치 여부를 기록한다.
-3. IF 디코딩된 Hidden_Sum이 Game_Engine의 참조값과 다르면, THE optical reader SHALL 스캔 결과를 거부하고 재스캔 또는 수동 입력을 요청하며, 불일치 Hidden_Sum을 게임에 적용하지 않는다.
-4. THE optical reader SHALL 다음 오류 조건을 각각 탐지하고 거부한다: (1) 불완전 그룹 — 한 꼭짓점 주변에서 조각이 4개 미만으로 탐지됨, (2) 중복 조각 — 같은 카드 ID가 2회 이상 탐지됨, (3) 손상 조각 — 마커 경계는 탐지됐으나 허용 반경 안에 일치하는 템플릿이 없음, (4) 배치 불일치 — 관측된 조각 변환과 무늬가 어떤 Camera_Rotation 가설에서도 Fragment_Layout의 슬롯별 유효 조합과 일치하지 않음. 마커 미탐지(탐지 실패)와 손상 조각(식별 실패)은 서로 다른 결과로 보고한다.
-5. WHEN 허용된 방향으로 배치된 카드를 촬영하면, THE optical reader SHALL 물리 방향을 입력으로 받지 않고 관측 픽셀을 416개 Fragment_Template과 대조하여 카드 ID와 관측 변환을 함께 결정한다. 카드의 물리 방향은 관측 변환과 슬롯으로부터 추론한다.
-6. THE optical reader SHALL 카드의 물리 회전과 Camera_Rotation을 구분한다. 임의 각도의 Camera_Rotation은 정상 입력으로 처리한다. 물리적으로 90°/270° 놓인 카드는 나머지 조각과 일관된 Camera_Rotation 가설이 없으므로 배치 불일치로 거부한다. 하트·다이아몬드의 180° 배치는 0°와 광학적으로 동일하게 처리하고, 클럽·스페이드의 방향은 슬롯별 유효 조합으로 검증한다.
-7. THE optical_reader_test_suite SHALL 고정 시드(seed)를 사용한 반복 가능한 무작위 테스트를 포함하며, 다음 케이스를 커버한다: (a) 유효 0° 조합 — 4가지 무늬(하트·다이아·클럽·스페이드) 각 1장씩, 각 카드의 Inward_Corner에 Fragment_Layout 조각이 위치하는 배치, (b) 유효 180° 조합 — 클럽·스페이드 카드를 180° 회전하여 Inward_Corner 조건이 여전히 충족되는 배치, (c) 대각선 패턴 동등성 — 하트·다이아를 0°/180°로 각각 배치했을 때 디코딩 결과가 동일함을 확인, (d) 경계값 카드 — Hidden_Sum 최솟값(A+A+A+A=4) 및 최댓값(K+K+K+K=52) 조합, (e) 거부 케이스 — 90° 회전 조각, 조각 없는 Inward_Corner(불완전 그룹), 3조각 그룹, 중복 카드 ID, 손상 조각.
-8. THE optical_reader_test_suite SHALL Requirement 12의 프로토타입 실험과 독립적으로 실행 가능하며, 표준 QR 디코더가 아닌 전용 조각 판독기를 대상으로 한다.
-9. THE optical reader SHALL 촬영 이미지에 반사(거울상)가 포함됐는지 판별하여 `NOT_REFLECTED`, `REFLECTED`, `AMBIGUOUS` 중 하나로 보고한다. 그룹에 하트 또는 다이아몬드가 있어 판별이 가능하면 사실과 일치하는 값을 보고해야 하고, 클럽·스페이드로만 이루어진 그룹처럼 이미지만으로 판별할 수 없으면 `AMBIGUOUS`로 보고하며 어느 쪽으로도 추측하지 않는다. 반사 여부는 카드 식별과 Hidden_Sum 계산에 영향을 주지 않는다. THE optical reader SHALL 광학 판독이 실패했을 때 보드 기록이나 기대값으로 결과를 대체하지 않는다.
----
-
-### Requirement 14: 무늬별 광학 조각 배치 규칙 (Fragment Layout)
-
-**User Story:** 카드 디자이너로서, 나는 각 무늬별로 광학 조각이 어느 코너에 인쇄돼야 하는지 명확하게 알고 싶으며, 그래야 52장 카드를 한 번 인쇄하면 모든 유효한 Quad_Group에서 조각이 올바르게 조합될 수 있다.
+**User Story:** As a scoring companion app user, I want each card's identity to be correctly identified and the Hidden_Sum to be calculated accurately when I scan physical cards, so that reliable score tallying is possible without manual entry.
 
 #### Acceptance Criteria
 
-1. THE card design SHALL 각 무늬의 Fragment_Layout을 다음과 같이 영구 정의한다: 하트(♥) — TL(좌상)+BR(우하) 대각선A(180° 점대칭), 다이아몬드(♦) — TR(우상)+BL(좌하) 대각선B(180° 점대칭), 클럽(♣) — TR(우상)+BR(우하) 우측면(수평 반사 대칭), 스페이드(♠) — TL(좌상)+BL(좌하) 좌측면(수평 반사 대칭). 조커는 사용하지 않는다.
-2. THE card design SHALL Fragment_Layout을 물리 카드에 영구 인쇄하며, 게임 중 보드 위치나 소프트웨어에 의해 동적으로 변경하지 않는다.
-3. THE Game_Engine SHALL 2×2 보드 위치별 Inward_Corner를 다음과 같이 결정한다: 좌상(TL) 위치 카드 → BR이 Inward_Corner, 우상(TR) 위치 카드 → BL이 Inward_Corner, 좌하(BL) 위치 카드 → TR이 Inward_Corner, 우하(BR) 위치 카드 → TL이 Inward_Corner.
-4. THE Game_Engine SHALL 카드의 Fragment_Layout 조각 코너 중 하나 이상이 해당 보드 위치의 Inward_Corner와 일치하는지 검증하여 Quad_Group 유효성을 판정한다. 유효한 조합의 예: 좌상 위치의 하트(TL+BR) — BR이 Inward_Corner(BR)와 일치 → 유효. 좌상 위치의 클럽(TR+BR) — BR이 Inward_Corner(BR)와 일치 → 유효. 좌하 위치의 스페이드(TL+BL) — TL이 Inward_Corner(TR)와 불일치, BL이 Inward_Corner(TR)와 불일치 → 무효(0°일 때). 좌상 위치의 다이아몬드(TR+BL) — 두 조각 모두 Inward_Corner(BR)와 불일치 → 무효(180° 회전해도 TR+BL이므로 방향과 무관).
-5. WHEN 클럽(♣) 또는 스페이드(♠) 카드가 180° 회전 배치되면, THE Game_Engine SHALL Fragment_Layout을 180° 변환하여 유효성을 재검증한다: 클럽 180° → TL+BL(좌측면), 스페이드 180° → TR+BR(우측면). 변환 후 Inward_Corner 일치 여부가 달라질 수 있다.
-6. THE Game_Engine SHALL 클럽(♣) 0° 배치 시 TR+BR이 조각 위치이며, 180° 배치 시 TL+BL로 이동함을 검증한다. 스페이드(♠) 0° 배치 시 TL+BL이 조각 위치이며, 180° 배치 시 TR+BR로 이동함을 검증한다. 클럽 180°와 스페이드 0°는 같은 코너 집합(TL+BL)을, 클럽 0°와 스페이드 180°는 같은 코너 집합(TR+BR)을 사용하므로 코너 위치만으로는 무늬를 구별할 수 없으며, 무늬는 코드북 패턴으로 식별한다.
-7. THE feasibility_test_suite SHALL 14.4에 정의된 유효 조합과 무효 조합을 각각 픽스처로 구성하여 광학 디코딩 정확도를 검증하고, 모든 4가지 무늬 패턴을 포함한 케이스를 자동화 테스트로 커버한다.
+1. THE optical reader SHALL decode each fragment independently of the expected state of the Board and return the card ID (suit+rank) and Card_Value, and SHALL return the position within the Quad_Group (top-left/top-right/bottom-left/bottom-right) as all interpretations that the image alone can determine (including the 180° ambiguity and, where needed, the reflection ambiguity). This information must be determined from the image data alone, without consulting the Board state.
+2. WHEN all 4 fragments are successfully decoded, THE optical reader SHALL return the sum of the 4 independently derived Card_Value as the Hidden_Sum, and SHALL compare this value against the reference value that the Game_Engine calculates from the Board state and record whether they match.
+3. IF the decoded Hidden_Sum differs from the Game_Engine reference value, THEN THE optical reader SHALL reject the scan result, request a rescan or manual entry, and SHALL NOT apply the mismatched Hidden_Sum to the game.
+4. THE optical reader SHALL detect and reject each of the following error conditions: (1) incomplete group — fewer than 4 fragments are detected around a vertex, (2) duplicate fragment — the same card ID is detected 2 or more times, (3) corrupted fragment — a marker boundary is detected but no matching template exists within the allowed radius, (4) arrangement mismatch — the observed fragment transformation and suit do not match a valid per-slot combination of the Fragment_Layout under any Camera_Rotation hypothesis. A marker that is not detected (detection failure) and a corrupted fragment (identification failure) are reported as different results.
+5. WHEN a card placed in an allowed orientation is photographed, THE optical reader SHALL compare the observed pixels against the 416 Fragment_Template, without taking the physical orientation as an input, and determine the card ID and the observed transformation together. The physical orientation of the card is inferred from the observed transformation and the slot.
+6. THE optical reader SHALL distinguish the physical rotation of a card from the Camera_Rotation. A Camera_Rotation of any angle is handled as normal input. A card physically placed at 90°/270° is rejected as an arrangement mismatch, because no Camera_Rotation hypothesis is consistent with the remaining fragments. A 180° placement of Hearts and Diamonds is handled as optically identical to 0°, and the orientation of Clubs and Spades is verified against the per-slot valid combinations.
+7. THE optical_reader_test_suite SHALL include repeatable randomized tests using a fixed seed, covering the following cases: (a) valid 0° combination — one card of each of the 4 suits (Hearts, Diamonds, Clubs, Spades), in an arrangement where the Fragment_Layout fragment is located at the Inward_Corner of each card, (b) valid 180° combination — an arrangement where Clubs and Spades cards are rotated 180° and the Inward_Corner condition is still satisfied, (c) diagonal pattern equivalence — confirming that the decoding results are identical when Hearts and Diamonds are placed at 0° and at 180°, (d) boundary-value cards — the Hidden_Sum minimum (A+A+A+A=4) and maximum (K+K+K+K=52) combinations, (e) rejection cases — a 90°-rotated fragment, an Inward_Corner with no fragment (incomplete group), a 3-fragment group, a duplicate card ID, and a corrupted fragment.
+8. THE optical_reader_test_suite SHALL be runnable independently of the prototype experiments of Requirement 12, and SHALL target the dedicated fragment reader, not a standard QR decoder.
+9. THE optical reader SHALL determine whether the captured image contains a reflection (mirror image) and report one of `NOT_REFLECTED`, `REFLECTED`, or `AMBIGUOUS`. When the determination is possible because the group contains a Heart or Diamond, it must report the value that matches the fact; when it cannot be determined from the image alone, as with a group made up only of Clubs and Spades, it reports `AMBIGUOUS` and does not guess either way. Whether the image is reflected does not affect card identification or the Hidden_Sum calculation. THE optical reader SHALL NOT substitute Board records or expected values for the result when optical reading fails.
 
 ---
 
-### Requirement 15: 물리 카드 형상과 인접 배치
+### Requirement 14: Per-Suit Optical Fragment Layout Rules (Fragment Layout)
 
-**User Story:** 카드 디자이너로서, 나는 일반 트럼프 카드와 같은 크기와 둥근 모서리를 유지한 채 카드를 간격 없이 붙여도 광학 인식이 신뢰성 있게 동작하기를 원하며, 그래야 카드의 외형과 취급감을 바꾸지 않고 게임을 할 수 있다.
+**User Story:** As a card designer, I want to know clearly which corners the optical fragments must be printed on for each suit, so that once the 52 cards are printed, the fragments combine correctly in every valid Quad_Group.
 
 #### Acceptance Criteria
 
-1. THE card design SHALL 기준 형상을 63.5 × 88.9 mm, Corner_Radius 3.175 mm로 하고, 40 × 56 모듈 프로토타입 격자를 모듈당 1.5875 mm로 이 크기에 대응시킨다. 이 기준은 상용 인쇄 업체 자료에 근거한 값이며 표준 규격이 아니므로, 실험은 Corner_Radius를 기준값 주변과 그 이상으로 바꿔 가며 보고한다.
-2. THE card design SHALL 카드 4장이 직선 가장자리를 따라 겹침 없이 맞닿는 배치를 전제하고, 카드 사이에 의도된 간격을 요구하지 않는다. THE optical reader SHALL 의도된 간격이나 정사각형 모서리에 의존하지 않는다.
-3. THE card design SHALL 각 마커의 검은 테두리, 흰 여백, Marker_Inset 전체가 Printable_Area 안에 있도록 한다. 형상 파라미터(Corner_Radius, Marker_Inset, 모듈 크기, 여백)로 포함 여유(호까지의 거리)를 계산해 보고하며, 여유가 0 이하인 형상은 무효로 표시한다.
-4. THE optical reader SHALL 한 꼭짓점의 네 조각이 끊김 없는 하나의 정사각형을 이룬다고 가정하지 않고, Central_Void가 있는 상태에서도 마커 네 개를 독립적으로 검출해 군집화한다. THE experiment SHALL Central_Void와 가장 가까운 마커 사이의 최소 거리를 형상 파라미터별로 보고한다.
-5. THE card design SHALL 이음매 양쪽 마커의 검은 사각형 사이에 이음매 이격 0일 때 2(Marker_Inset + 여백) 모듈 이상의 흰 간격이 있도록 하고, THE experiment SHALL 인접한 마커의 연결 성분이 병합되지 않는지 검증한다.
-6. WHEN 이미지에 Distractor_Marker가 있으면, THE optical reader SHALL 한 꼭짓점 주위에 마커가 정확히 4개 모인 경우에만 그룹으로 판독하고, 4개 미만인 꼭짓점은 그룹으로 보고하지 않는다.
-7. THE team SHALL 광학 인식이 기준 형상에서 부족할 때 다음 순서로만 개선을 시도한다: (1) 조각 위치와 Marker_Inset 조정, (2) 마커 크기와 여백 조정, (3) 검출·기하 보정 알고리즘 개선, (4) 물리 정렬 허용 오차 평가, (5) 필요한 경우에만 Corner_Radius를 단계적으로 줄이기. 개별 실패 사례 하나만으로 카드 모서리 형상을 바꾸지 않는다.
-8. THE experiment SHALL 다음 조건을 재현 가능한 형상 파라미터와 고정 시드로 측정한다: 이격 0 배치, 둥근 안쪽 모서리와 Central_Void, Corner_Radius 비교, 카드별 작은 위치·회전 오차, 카메라 회전·원근·흐림·조명 변화. 조건별로 정상 식별률(네 카드와 합산이 모두 정확), 거부율과 거부 종류, 오식별 건수, 불완전 그룹 거부 여부, 실패 원인 집계, 각 형상 조정의 효과를 기록한다.
-9. THE team SHALL 합성 이미지 결과가 실제 카메라 성능을 보장하지 않는다는 점을 보고서에 명시하고, 실물 인쇄·촬영 결과는 Requirement 12.7의 구분 규칙에 따라 별도로 기록한다.
-10. THE card design SHALL Requirement 14의 Fragment_Layout과 동결 코드북을 변경하지 않는다.
+1. THE card design SHALL permanently define the Fragment_Layout of each suit as follows: Hearts (♥) — TL (top-left)+BR (bottom-right), diagonal A (180° point symmetry); Diamonds (♦) — TR (top-right)+BL (bottom-left), diagonal B (180° point symmetry); Clubs (♣) — TR (top-right)+BR (bottom-right), right side (horizontal reflection symmetry); Spades (♠) — TL (top-left)+BL (bottom-left), left side (horizontal reflection symmetry). Jokers are not used.
+2. THE card design SHALL permanently print the Fragment_Layout on the physical cards, and SHALL NOT change it dynamically by Board position or by software during the game.
+3. THE Game_Engine SHALL determine the Inward_Corner for each 2×2 Board position as follows: a card at the top-left (TL) position → BR is the Inward_Corner; a card at the top-right (TR) position → BL is the Inward_Corner; a card at the bottom-left (BL) position → TR is the Inward_Corner; a card at the bottom-right (BR) position → TL is the Inward_Corner.
+4. THE Game_Engine SHALL judge Quad_Group validity by verifying that at least one of the card's Fragment_Layout fragment corners matches the Inward_Corner of that Board position. Examples of valid combinations: a Heart (TL+BR) at the top-left position — BR matches the Inward_Corner (BR) → valid. A Club (TR+BR) at the top-left position — BR matches the Inward_Corner (BR) → valid. Example of an invalid combination: a Spade (TL+BL) at the bottom-left position — TL does not match the Inward_Corner (TR), and BL does not match the Inward_Corner (TR) → invalid (at 0°). A Diamond (TR+BL) at the top-left position — neither fragment matches the Inward_Corner (BR) → invalid (it is TR+BL even when rotated 180°, so independent of orientation).
+5. WHEN a Club (♣) or Spade (♠) card is placed rotated 180°, THE Game_Engine SHALL transform the Fragment_Layout by 180° and re-verify validity: Club at 180° → TL+BL (left side), Spade at 180° → TR+BR (right side). Whether the Inward_Corner matches may change after the transformation.
+6. THE Game_Engine SHALL verify that a Club (♣) placed at 0° has its fragments at TR+BR and moves them to TL+BL when placed at 180°. It SHALL verify that a Spade (♠) placed at 0° has its fragments at TL+BL and moves them to TR+BR when placed at 180°. Because a Club at 180° and a Spade at 0° use the same corner set (TL+BL), and a Club at 0° and a Spade at 180° use the same corner set (TR+BR), the suit cannot be distinguished by corner positions alone; the suit is identified by the codebook pattern.
+7. THE feasibility_test_suite SHALL build fixtures for each of the valid and invalid combinations defined in 14.4 to verify optical decoding accuracy, and SHALL cover cases that include all 4 suit patterns in automated tests.
 
 ---
 
-### Requirement 16: 양면 광학 마커와 뒤집기 등가성
+### Requirement 15: Physical Card Shape and Adjacent Placement
 
-**User Story:** 카드 디자이너로서, 나는 카드를 좌우로 뒤집어도 보드 좌표에서 마커의 위치와 모양이 그대로이기를 원하며, 그래야 어느 면이 위를 향해도 같은 카드로 판독되고 뒤집는 동작이 판독 규칙을 바꾸지 않는다.
+**User Story:** As a card designer, I want optical recognition to work reliably even when cards are placed together with no gap while keeping the same size and rounded corners as ordinary playing cards, so that the game can be played without changing the appearance or handling feel of the cards.
 
 #### Acceptance Criteria
 
-1. THE card design SHALL 앞면과 뒷면 모두에 광학 조각을 인쇄하며, 앞면은 Requirement 14의 Fragment_Layout을 따른다.
-2. THE card design SHALL 뒷면 광학 층을 Body_Frame에서 앞면 광학 층의 좌우 반전(위치 x → W − x, 조각의 픽셀 내용에도 같은 반전)으로 정의한다. 뒷면 조각은 같은 카드의 앞면 층에서만 도출하며, 이웃 카드나 보드 상태에 따라 대체 조각을 생성하지 않는다.
-3. WHEN 카드를 세로축 기준으로 좌우로 뒤집으면, THE Observed_Layer SHALL 이상적 조건(인쇄·재단 오차 없음)에서 뒤집기 전과 위치, 비트 패턴, 픽셀 모양이 같고 판독되는 카드 ID가 변하지 않는다.
-4. WHEN 카드를 가로축 기준으로 상하로 뒤집으면, THE Observed_Layer SHALL 허용된 방향(0° 또는 180°)에 놓인 같은 카드의 관측과 같다. 이는 세로축 뒤집기에 면 내 180° 회전을 더한 것과 같다.
-5. THE team SHALL 같은 래스터를 Body_Frame에서 양면에 그대로 인쇄하는 방식이 뒤집은 뒤 좌우가 반전된 관측을 만들어 요구사항을 만족하지 못한다는 것을 자동화 테스트로 입증하고, 뒷면 인쇄 파일이 뒷면에서 볼 때 앞면과 같은 모양이 되도록 하는 인쇄 파일 규약을 문서화한다. 양면 인쇄에서 뒷면이 자동으로 반전되는지는 실물 뒤집기 시험으로 확인한다.
-6. THE card design SHALL 좌우 반전을 광학 마커 층에만 적용하고 글자와 그림 같은 다른 카드 아트워크는 반전하지 않는다.
-7. THE card design SHALL 앞면 코너 집합과 그 좌우 반전 집합이 겹치지 않음(두 면의 조각이 Body_Frame에서 서로 다른 코너를 차지함)을 검증하고, 두 면 모두 Requirement 15.3의 포함 조건과 흰 여백을 만족한다.
-8. THE experiment SHALL 두 면 모두에서 허용된 방향(0°, 180°), 이격 0 배치, 앞뒤 인쇄 정합 오차(이동·회전)와 재단 윤곽 오차를 형상 파라미터로 다루고, 이 오차가 마커 위치를 이상적 위치에서 벗어나게 하는 정도와 포함 여유를 소모하는 정도를 기록한다. 카드 형상을 바꾸기 전에 인쇄·재단 허용 오차를 먼저 평가한다(Requirement 15.7).
-9. THE documentation SHALL 어느 면에서든 카드 ID를 인코딩한 마커가 보이므로 숨겨진 카드 정보가 노출될 수 있음을 게임 보안 한계로 명시한다. THE team SHALL 앱이 판독한 합산을 숨기는 것이 인쇄된 카드 신원을 비밀로 만든다고 주장하지 않는다. 대응 방안은 승인된 양면 마커 형상을 바꾸지 않는 별도의 게임 운영 안전장치로 제안한다.
-10. THE team SHALL 한쪽 면의 마커가 종이를 통해 반대 면의 빈 코너에 비쳐 보이는 정도(show-through)를 실물 인쇄에서 측정한다. 몸체 좌표에서 뒷면 마커는 앞면의 빈 코너 바로 아래에 놓이므로(예: ♥의 앞면 TL·BR, 뒷면 TR·BL), THE experiment SHALL 앞면 빈 코너와 깨끗한 종이의 명암 차이를 판독기의 마커 대비 요구값과 비교하고, 빈 코너가 마커로 검출되지 않으며 안쪽 코너가 비어 있는 카드(예: TR 칸의 ♥)가 완전한 그룹을 만들지 않음을 확인한다. 이 검증은 마일스톤 8의 실물 시험에서 수행하며, 합성 시뮬레이션 결과로 대체하지 않는다.
+1. THE card design SHALL use a reference shape of 63.5 × 88.9 mm with a Corner_Radius of 3.175 mm, and SHALL map the 40 × 56 module prototype grid to this size at 1.5875 mm per module. This reference is a value based on commercial print-vendor materials and is not a standard specification, so the experiments report results while varying the Corner_Radius around the reference value and above it.
+2. THE card design SHALL assume an arrangement in which 4 cards meet along their straight edges without overlapping, and SHALL NOT require an intentional gap between cards. THE optical reader SHALL NOT depend on an intentional gap or on square corners.
+3. THE card design SHALL ensure that the black border, the white quiet margin, and the entire Marker_Inset of each marker lie inside the Printable_Area. The containment margin (the distance to the arc) is calculated and reported from the shape parameters (Corner_Radius, Marker_Inset, module size, margin), and a shape whose margin is 0 or less is flagged as invalid.
+4. THE optical reader SHALL NOT assume that the four fragments at a vertex form a single seamless square, and SHALL detect and cluster the four markers independently even in the presence of the Central_Void. THE experiment SHALL report the minimum distance between the Central_Void and the nearest marker for each set of shape parameters.
+5. THE card design SHALL ensure a white gap of at least 2(Marker_Inset + margin) modules between the black squares of the markers on both sides of a seam when the seam gap is 0, and THE experiment SHALL verify that the connected components of adjacent markers do not merge.
+6. WHEN the image contains a Distractor_Marker, THE optical reader SHALL read a group only when exactly 4 markers are gathered around a vertex, and SHALL NOT report a vertex with fewer than 4 as a group.
+7. THE team SHALL attempt improvements only in the following order when optical recognition is insufficient with the reference shape: (1) adjust the fragment positions and Marker_Inset, (2) adjust the marker size and margin, (3) improve the detection and geometric-correction algorithm, (4) evaluate the physical alignment tolerance, (5) only if necessary, reduce the Corner_Radius in steps. The card corner shape SHALL NOT be changed based on a single individual failure case.
+8. THE experiment SHALL measure the following conditions with reproducible shape parameters and fixed seeds: zero-gap placement, rounded inner corners and the Central_Void, Corner_Radius comparison, small per-card position and rotation errors, and camera rotation, perspective, blur, and lighting changes. For each condition, it records the correct recognition rate (all four cards and the sum are correct), the rejection rate and the rejection kinds, the number of misidentifications, whether incomplete groups were rejected, a tally of failure causes, and the effect of each shape adjustment.
+9. THE team SHALL state in the report that synthetic image results do not guarantee real camera performance, and SHALL record real printing and photographing results separately according to the distinction rule of Requirement 12.7.
+10. THE card design SHALL NOT change the Fragment_Layout of Requirement 14 or the frozen codebook.
+
+---
+
+### Requirement 16: Double-Sided Optical Markers and Flip Equivalence
+
+**User Story:** As a card designer, I want the position and shape of the markers in Board coordinates to remain the same when a card is flipped left-right, so that the card is read as the same card whichever face is up and flipping does not change the reading rules.
+
+#### Acceptance Criteria
+
+1. THE card design SHALL print optical fragments on both the front and the back, and the front SHALL follow the Fragment_Layout of Requirement 14.
+2. THE card design SHALL define the back optical layer in the Body_Frame as the left-right mirror of the front optical layer (position x → W − x, with the same mirroring applied to the pixel content of the fragments). The back fragments are derived only from the front layer of the same card, and no substitute fragments are generated depending on neighboring cards or the Board state.
+3. WHEN a card is flipped left-right about its vertical axis, THE Observed_Layer SHALL have, under ideal conditions (no printing or cutting error), the same position, bit pattern, and pixel shape as before the flip, and the card ID that is read SHALL NOT change.
+4. WHEN a card is flipped top-bottom about its horizontal axis, THE Observed_Layer SHALL be the same as the observation of the same card placed in an allowed orientation (0° or 180°). This is equivalent to a vertical-axis flip plus an in-plane 180° rotation.
+5. THE team SHALL demonstrate through an automated test that printing the same raster as-is on both faces in the Body_Frame produces a left-right-reversed observation after flipping and does not satisfy the requirement, and SHALL document a print-file convention such that the back-side print file has the same shape as the front when viewed from the back. Whether the back side is automatically mirrored in double-sided printing is confirmed by a physical flip test.
+6. THE card design SHALL apply the left-right mirroring only to the optical marker layer, and SHALL NOT mirror other card artwork such as text and pictures.
+7. THE card design SHALL verify that the front corner set and its left-right mirrored set do not overlap (the fragments of the two faces occupy different corners in the Body_Frame), and both faces satisfy the containment condition of Requirement 15.3 and the white quiet margin.
+8. THE experiment SHALL treat, as shape parameters, the allowed orientations on both faces (0°, 180°), zero-gap placement, the front-to-back print registration error (shift and rotation), and the cut outline error, and SHALL record how far these errors displace marker positions from their ideal positions and how much of the containment margin they consume. Printing and cutting tolerances are evaluated first, before changing the card shape (Requirement 15.7).
+9. THE documentation SHALL state, as a game security limitation, that hidden card information may be exposed because a marker encoding the card ID is visible on either face. THE team SHALL NOT claim that hiding the sum read by the app makes the printed card identity secret. Countermeasures are proposed as separate game-operation safeguards that do not change the approved double-sided marker shape.
+10. THE team SHALL measure on real prints the degree to which a marker on one face shows through the paper onto the empty corner of the opposite face (show-through). Because in body coordinates a back marker lies directly beneath an empty corner of the front (for example, for ♥, front TL·BR and back TR·BL), THE experiment SHALL compare the contrast difference between an empty front corner and clean paper against the reader's marker contrast requirement, and SHALL confirm that an empty corner is not detected as a marker and that a card whose inward corner is empty (for example, a ♥ in the TR cell) does not form a complete group. This verification is performed in the physical test of Milestone 8 and is not replaced by synthetic simulation results.
