@@ -145,7 +145,7 @@ Rules for every milestone:
   - Tests (Properties 20, 23, 25, 26, 14 second part): all 81 observed arrangements × 8 image transforms (648 images) decode with correct card set, hiddenSum, reflection, and interpretation count, and the determined/ambiguous counts are 520/128; boundary groups {A♥, A♦, A♣, A♠} (sum 4) and {K♥, K♦, K♣, K♠} (sum 52) are each identified; seeded random 4-card groups drawn from the real 52 cards with arbitrary camera rotation; a mirrored image is never reported as NOT_REFLECTED when reflection is determinable, and AMBIGUOUS is never reported as NOT_REFLECTED or REFLECTED; a type-level test shows the decoder has no board-state parameter; `ReferenceCheck.compare` returns REFERENCE_MISMATCH on a different card set and never replaces the decoded result with expected values; mirroring the whole image does not change the identified card IDs.
   - _Requirements: 5.6, 5.7, 12.2, 13.1, 13.2, 13.3, 13.4, 13.5, 13.7, 13.9, 14.7, 15.2, 15.4, 15.6_
 
-  - [ ] 5.1 Implement `decode-group.ts`
+  - [x] 5.1 Implement `decode-group.ts`
     - Cluster four markers around the center, run the 8 hypotheses, classify the passing set per design.md section 7 step 6, and sum Card_Values. Internal error when the passing-hypothesis count is not 0, 2, or 4.
     - _Requirements: 5.6, 13.1, 13.5, 13.9_
 
