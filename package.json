@@ -5,12 +5,18 @@
   "type": "module",
   "scripts": {
     "test": "vitest --run",
+    "test:ci": "vitest --run --maxWorkers=4",
     "generate:codebook": "tsx scripts/generate-codebook.ts",
     "verify:bound": "tsx scripts/verify-bound.ts",
     "verify:codebook": "tsx scripts/verify-codebook.ts",
     "render:samples": "tsx scripts/render-samples.ts",
     "measure:detection": "tsx scripts/measure-detection.ts",
     "measure:decode-fragment": "tsx scripts/measure-decode-fragment.ts",
+    "measure:geometry": "tsx scripts/measure-geometry.ts",
+    "merge:geometry": "tsx scripts/merge-geometry.ts",
+    "analyze:geometry": "tsx scripts/geometry-failures.ts",
+    "analyze:45deg": "tsx scripts/geometry-45deg.ts",
+    "verify:geometry": "tsx scripts/verify-geometry-results.ts",
     "collect:decode-counterexamples": "tsx scripts/collect-decode-counterexamples.ts",
     "check:codebook": "tsx scripts/generate-codebook.ts --check"
   },

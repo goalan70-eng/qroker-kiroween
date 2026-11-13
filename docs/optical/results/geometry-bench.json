@@ -1,0 +1,122 @@
+{
+  "note": "Measured wall-clock timings of a fixed sample (seeds derived from 'bench-<class>' and the trial index). Timings are machine dependent and are the only non-deterministic content of the plan; they are recorded here, not recomputed by --plan. synthetic images, not real cameras: these are synthetic-test findings about the sampled conditions only; they do not measure or guarantee real-camera performance, and a zero-event bound applies only to the sampled synthetic condition distribution (independent seeded trials).",
+  "machine": {
+    "node": "v24.20.0",
+    "cpu": "Intel(R) Core(TM) i5-10400F CPU @ 2.90GHz",
+    "logicalCores": 12,
+    "totalMemoryGiB": 39.9,
+    "platform": "win32 x64"
+  },
+  "sample": {
+    "warmupTrials": 3,
+    "trialsPerClass": 30,
+    "seedRule": "trialSeed('bench-<class>', i)"
+  },
+  "classes": {
+    "B2-plain": {
+      "trials": 30,
+      "meanMs": {
+        "buildMs": 0.06,
+        "renderMs": 64.6,
+        "warpMs": 0,
+        "blurMs": 0,
+        "lightMs": 0,
+        "decodeMs": 6.43,
+        "totalMs": 71.14
+      },
+      "outcomes": {
+        "CORRECT": 30
+      }
+    },
+    "B2-degraded": {
+      "trials": 30,
+      "meanMs": {
+        "buildMs": 0.06,
+        "renderMs": 74.07,
+        "warpMs": 17.26,
+        "blurMs": 6,
+        "lightMs": 1.67,
+        "decodeMs": 10.66,
+        "totalMs": 109.81
+      },
+      "outcomes": {
+        "CORRECT": 26,
+        "REJECTED:INCOMPLETE_GROUP": 4
+      }
+    },
+    "B2-duplex": {
+      "trials": 30,
+      "meanMs": {
+        "buildMs": 0.04,
+        "renderMs": 67.78,
+        "warpMs": 0,
+        "blurMs": 0,
+        "lightMs": 0,
+        "decodeMs": 4.97,
+        "totalMs": 72.87
+      },
+      "outcomes": {
+        "REJECTED:INCOMPLETE_GROUP": 24,
+        "CORRECT": 6
+      }
+    },
+    "B3-plain": {
+      "trials": 30,
+      "meanMs": {
+        "buildMs": 0.15,
+        "renderMs": 146.35,
+        "warpMs": 0,
+        "blurMs": 0,
+        "lightMs": 0,
+        "decodeMs": 12.14,
+        "totalMs": 158.67
+      },
+      "outcomes": {
+        "CORRECT": 30
+      }
+    },
+    "B3-degraded": {
+      "trials": 30,
+      "meanMs": {
+        "buildMs": 0.14,
+        "renderMs": 164.63,
+        "warpMs": 39.64,
+        "blurMs": 13.68,
+        "lightMs": 3.35,
+        "decodeMs": 22.6,
+        "totalMs": 244.11
+      },
+      "outcomes": {
+        "CORRECT": 22,
+        "REJECTED:INCOMPLETE_GROUP": 8
+      }
+    }
+  },
+  "peakRssMiB": 108.3,
+  "scaling": [
+    {
+      "processes": 4,
+      "wallSeconds": 7.8,
+      "singleProcessSeconds": 6.62,
+      "speedup": 3.4
+    },
+    {
+      "processes": 6,
+      "wallSeconds": 7.52,
+      "singleProcessSeconds": 6.62,
+      "speedup": 5.28
+    },
+    {
+      "processes": 8,
+      "wallSeconds": 8.44,
+      "singleProcessSeconds": 6.62,
+      "speedup": 6.28
+    },
+    {
+      "processes": 12,
+      "wallSeconds": 12.07,
+      "singleProcessSeconds": 6.62,
+      "speedup": 6.59
+    }
+  ]
+}

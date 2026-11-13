@@ -1,0 +1,113 @@
+﻿Task 5.6 geometry sweep, tier 4, verbatim console output of the 8 shard processes (node scripts/measure-geometry.ts --run --tier 4 --shard i/8), in shard order. Synthetic images, not real cameras.
+
+===== shard 0/8 =====
+3x3-F-r3.175-i1-tb64-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=200 rejected=0 falseAccepts=0 (67.7 s)
+3x3-F-r3.175-i2-tb64-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=200 rejected=0 falseAccepts=0 (61.5 s)
+3x3-F-r6-i1-tb64-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=200 rejected=0 falseAccepts=0 (55.6 s)
+2x2abs-F-r3.175-i1-tb64-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (21.0 s)
+2x2abs-F-r3.175-i2-tb64-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (20.4 s)
+2x2abs-F-r6-i1-tb64-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (17.1 s)
+3x3abs-F-r3.175-i1-tb64-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (50.0 s)
+3x3abs-F-r3.175-i2-tb64-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (45.1 s)
+3x3abs-F-r6-i1-tb64-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (43.3 s)
+cells run: 9, skipped (file exists): 0
+
+[launcher] exit code=0 signal=null
+
+===== shard 1/8 =====
+3x3-F-r3.175-i1-tb200-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=200 rejected=0 falseAccepts=0 (64.8 s)
+3x3-F-r3.175-i2-tb200-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=200 rejected=0 falseAccepts=0 (59.1 s)
+3x3-F-r6-i1-tb200-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=200 rejected=0 falseAccepts=0 (54.1 s)
+2x2abs-F-r3.175-i1-tb200-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (20.7 s)
+2x2abs-F-r3.175-i2-tb200-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (20.3 s)
+2x2abs-F-r6-i1-tb200-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (18.3 s)
+3x3abs-F-r3.175-i1-tb200-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (48.8 s)
+3x3abs-F-r3.175-i2-tb200-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (43.1 s)
+3x3abs-F-r6-i1-tb200-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (43.8 s)
+cells run: 9, skipped (file exists): 0
+
+[launcher] exit code=0 signal=null
+
+===== shard 2/8 =====
+3x3-F-r3.175-i1-tb64-sh0.5-ro1-gp0-cmR-tl10-bl0.5-lt0.2-rs0-rr0-co0-mat n=200 correct=193 rejected=7 falseAccepts=0 (99.8 s)
+3x3-F-r3.175-i2-tb64-sh0.5-ro1-gp0-cmR-tl10-bl0.5-lt0.2-rs0-rr0-co0-mat n=200 correct=185 rejected=15 falseAccepts=0 (81.8 s)
+3x3-F-r6-i1-tb64-sh0.5-ro1-gp0-cmR-tl10-bl0.5-lt0.2-rs0-rr0-co0-mat n=200 correct=190 rejected=10 falseAccepts=0 (77.1 s)
+2x2abs-F-r3.175-i1-tb64-sh0.5-ro1-gp0-cmR-tl10-bl0.5-lt0.2-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (27.2 s)
+2x2abs-F-r3.175-i2-tb64-sh0.5-ro1-gp0-cmR-tl10-bl0.5-lt0.2-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (23.0 s)
+2x2abs-F-r6-i1-tb64-sh0.5-ro1-gp0-cmR-tl10-bl0.5-lt0.2-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (24.5 s)
+3x3abs-F-r3.175-i1-tb64-sh0.5-ro1-gp0-cmR-tl10-bl0.5-lt0.2-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (57.4 s)
+3x3abs-F-r3.175-i2-tb64-sh0.5-ro1-gp0-cmR-tl10-bl0.5-lt0.2-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (53.0 s)
+3x3abs-F-r6-i1-tb64-sh0.5-ro1-gp0-cmR-tl10-bl0.5-lt0.2-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (48.1 s)
+cells run: 9, skipped (file exists): 0
+
+[launcher] exit code=0 signal=null
+
+===== shard 3/8 =====
+3x3-F-r3.175-i1-tb64-sh1-ro1-gp0.5-cmR-tl20-bl0.5-lt0.4-rs0-rr0-co0-mat n=200 correct=146 rejected=54 falseAccepts=0 (96.7 s)
+3x3-F-r3.175-i2-tb64-sh1-ro1-gp0.5-cmR-tl20-bl0.5-lt0.4-rs0-rr0-co0-mat n=200 correct=123 rejected=77 falseAccepts=0 (82.4 s)
+3x3-F-r6-i1-tb64-sh1-ro1-gp0.5-cmR-tl20-bl0.5-lt0.4-rs0-rr0-co0-mat n=200 correct=135 rejected=65 falseAccepts=0 (79.3 s)
+2x2abs-F-r3.175-i1-tb64-sh1-ro1-gp0.5-cmR-tl20-bl0.5-lt0.4-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (27.4 s)
+2x2abs-F-r3.175-i2-tb64-sh1-ro1-gp0.5-cmR-tl20-bl0.5-lt0.4-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (23.3 s)
+2x2abs-F-r6-i1-tb64-sh1-ro1-gp0.5-cmR-tl20-bl0.5-lt0.4-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (24.3 s)
+3x3abs-F-r3.175-i1-tb64-sh1-ro1-gp0.5-cmR-tl20-bl0.5-lt0.4-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (58.3 s)
+3x3abs-F-r3.175-i2-tb64-sh1-ro1-gp0.5-cmR-tl20-bl0.5-lt0.4-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (53.5 s)
+3x3abs-F-r6-i1-tb64-sh1-ro1-gp0.5-cmR-tl20-bl0.5-lt0.4-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (48.6 s)
+cells run: 9, skipped (file exists): 0
+
+[launcher] exit code=0 signal=null
+
+===== shard 4/8 =====
+3x3-F-r3.175-i1.5-tb64-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=200 rejected=0 falseAccepts=0 (67.1 s)
+3x3-F-r0-i1-tb64-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=200 rejected=0 falseAccepts=0 (56.7 s)
+3x3-F-r6-i1.5-tb64-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=200 rejected=0 falseAccepts=0 (55.8 s)
+2x2abs-F-r3.175-i1.5-tb64-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (20.3 s)
+2x2abs-F-r0-i1-tb64-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (18.4 s)
+2x2abs-F-r6-i1.5-tb64-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (17.5 s)
+3x3abs-F-r3.175-i1.5-tb64-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (49.5 s)
+3x3abs-F-r0-i1-tb64-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (42.6 s)
+3x3abs-F-r6-i1.5-tb64-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (45.6 s)
+cells run: 9, skipped (file exists): 0
+
+[launcher] exit code=0 signal=null
+
+===== shard 5/8 =====
+3x3-F-r3.175-i1.5-tb200-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=200 rejected=0 falseAccepts=0 (65.0 s)
+3x3-F-r0-i1-tb200-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=200 rejected=0 falseAccepts=0 (56.7 s)
+3x3-F-r6-i1.5-tb200-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=200 rejected=0 falseAccepts=0 (55.2 s)
+2x2abs-F-r3.175-i1.5-tb200-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (20.5 s)
+2x2abs-F-r0-i1-tb200-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (19.7 s)
+2x2abs-F-r6-i1.5-tb200-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (18.3 s)
+3x3abs-F-r3.175-i1.5-tb200-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (48.0 s)
+3x3abs-F-r0-i1-tb200-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (40.9 s)
+3x3abs-F-r6-i1.5-tb200-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (45.4 s)
+cells run: 9, skipped (file exists): 0
+
+[launcher] exit code=0 signal=null
+
+===== shard 6/8 =====
+3x3-F-r3.175-i1.5-tb64-sh0.5-ro1-gp0-cmR-tl10-bl0.5-lt0.2-rs0-rr0-co0-mat n=200 correct=184 rejected=16 falseAccepts=0 (90.4 s)
+3x3-F-r0-i1-tb64-sh0.5-ro1-gp0-cmR-tl10-bl0.5-lt0.2-rs0-rr0-co0-mat n=200 correct=185 rejected=15 falseAccepts=0 (81.3 s)
+3x3-F-r6-i1.5-tb64-sh0.5-ro1-gp0-cmR-tl10-bl0.5-lt0.2-rs0-rr0-co0-mat n=200 correct=185 rejected=15 falseAccepts=0 (77.5 s)
+2x2abs-F-r3.175-i1.5-tb64-sh0.5-ro1-gp0-cmR-tl10-bl0.5-lt0.2-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (28.3 s)
+2x2abs-F-r0-i1-tb64-sh0.5-ro1-gp0-cmR-tl10-bl0.5-lt0.2-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (22.9 s)
+2x2abs-F-r6-i1.5-tb64-sh0.5-ro1-gp0-cmR-tl10-bl0.5-lt0.2-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (22.3 s)
+3x3abs-F-r3.175-i1.5-tb64-sh0.5-ro1-gp0-cmR-tl10-bl0.5-lt0.2-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (62.1 s)
+3x3abs-F-r0-i1-tb64-sh0.5-ro1-gp0-cmR-tl10-bl0.5-lt0.2-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (50.8 s)
+3x3abs-F-r6-i1.5-tb64-sh0.5-ro1-gp0-cmR-tl10-bl0.5-lt0.2-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (48.4 s)
+cells run: 9, skipped (file exists): 0
+
+[launcher] exit code=0 signal=null
+
+===== shard 7/8 =====
+3x3-F-r3.175-i1.5-tb64-sh1-ro1-gp0.5-cmR-tl20-bl0.5-lt0.4-rs0-rr0-co0-mat n=200 correct=136 rejected=64 falseAccepts=0 (90.6 s)
+3x3-F-r0-i1-tb64-sh1-ro1-gp0.5-cmR-tl20-bl0.5-lt0.4-rs0-rr0-co0-mat n=200 correct=147 rejected=53 falseAccepts=0 (81.6 s)
+3x3-F-r6-i1.5-tb64-sh1-ro1-gp0.5-cmR-tl20-bl0.5-lt0.4-rs0-rr0-co0-mat n=200 correct=140 rejected=60 falseAccepts=0 (77.8 s)
+2x2abs-F-r3.175-i1.5-tb64-sh1-ro1-gp0.5-cmR-tl20-bl0.5-lt0.4-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (28.0 s)
+2x2abs-F-r0-i1-tb64-sh1-ro1-gp0.5-cmR-tl20-bl0.5-lt0.4-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (23.2 s)
+2x2abs-F-r6-i1.5-tb64-sh1-ro1-gp0.5-cmR-tl20-bl0.5-lt0.4-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (22.3 s)
+3x3abs-F-r3.175-i1.5-tb64-sh1-ro1-gp0.5-cmR-tl20-bl0.5-lt0.4-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (62.6 s)
+3x3abs-F-r0-i1-tb64-sh1-ro1-gp0.5-cmR-tl20-bl0.5-lt0.4-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (51.5 s)
+3x3abs-F-r6-i1.5-tb64-sh1-ro1-gp0.5-cmR-tl20-bl0.5-lt0.4-rs0-rr0-co0-mat n=200 correct=0 rejected=200 falseAccepts=0 (49.2 s)
+cells run: 9, skipped (file exists): 0
+
+[launcher] exit code=0 signal=null

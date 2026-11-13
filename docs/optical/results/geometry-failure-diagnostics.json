@@ -1,0 +1,20 @@
+{
+  "disclaimer": "synthetic images, not real cameras: these are synthetic-test findings about the sampled conditions only; they do not measure or guarantee real-camera performance, and a zero-event bound applies only to the sampled synthetic condition distribution (independent seeded trials).",
+  "method": "Every recorded false-accept seed and the first 6 recorded failing seeds of every cell were re-run and the image given to the reader was inspected. A blob is a detected marker with bits 0x1FFFFFF (the signature of the documented 0x5AC54 finding: an isolated black blob inside a marker data area accepted as a marker). A failure counts as consequentially spurious only when such a blob was a member of the decoded group. Trials with a blob detected (anywhere in the image): 0; of these, blob not a group member: 0.",
+  "analyzedTrials": 2179,
+  "trialsWithSpuriousCandidates": 0,
+  "consequentialSpurious": [],
+  "falseAcceptNotes": [],
+  "limits": [
+    "Only the first 6 recorded failing seeds per cell were re-run (a cell stores at most 20); cells with more failures than that are covered by a sample of their failures, not all of them. Correct trials were not inspected.",
+    "The decoder result lists no markers for NOT_DETECTED, INVALID_MARKER and INCOMPLETE_GROUP; for these the image was checked with detectMarkers directly, so a blob can be seen but its effect on the result is not attributable from the result alone.",
+    "A spurious marker other than the 0x1FFFFFF signature (SPURIOUS_CANDIDATE with other bits) is counted in trialsWithSpuriousCandidates but not classified."
+  ],
+  "probes": [
+    "Probe, FRONT, cut offset 1.0 mm (r=3.175 mm, inset 1, 20 failing seeds of cell 2x2-F-r3.175-i1-tb64-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co1-mat): re-decoded with positionToleranceModules 1: correct 0, rejected 20, false accept 0; 1.5: correct 20, rejected 0, false accept 0; 2: correct 20, rejected 0, false accept 0. This is a diagnostic re-run of failing seeds only; the reader's tolerance was not changed and the other cells were not re-run.",
+    "Probe, BACK_VERTICAL, registration shift 1.0 mm (r=3.175 mm, inset 1, 20 failing seeds of cell 2x2-BV-r3.175-i1-tb64-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs1-rr0-co0-mat): re-decoded with positionToleranceModules 1: correct 0, rejected 20, false accept 0; 1.5: correct 20, rejected 0, false accept 0; 2: correct 20, rejected 0, false accept 0. This is a diagnostic re-run of failing seeds only; the reader's tolerance was not changed and the other cells were not re-run.",
+    "Probe, BACK_VERTICAL, registration rotation 1 deg (r=3.175 mm, inset 1, 20 failing seeds of cell 2x2-BV-r3.175-i1-tb64-sh0-ro0-gp0-cm0-tl0-bl0-lt0-rs0-rr1-co0-mat): re-decoded with positionToleranceModules 1: correct 0, rejected 20, false accept 0; 1.5: correct 20, rejected 0, false accept 0; 2: correct 20, rejected 0, false accept 0. This is a diagnostic re-run of failing seeds only; the reader's tolerance was not changed and the other cells were not re-run.",
+    "Probe, placement rotation bound 2 deg (r=3.175 mm, inset 1, 20 failing seeds of cell 2x2-F-r3.175-i1-tb64-sh0-ro2-gp0-cm0-tl0-bl0-lt0-rs0-rr0-co0-mat): re-decoded with positionToleranceModules 1: correct 0, rejected 20, false accept 0; 1.5: correct 18, rejected 2, false accept 0; 2: correct 20, rejected 0, false accept 0. This is a diagnostic re-run of failing seeds only; the reader's tolerance was not changed and the other cells were not re-run.",
+    "Probe, camera rotation exactly 45 deg at inset 2 (cell 2x2-F-r3.175-i2-tb64-sh0-ro0-gp0-cm45-tl0-bl0-lt0-rs0-rr0-co0-mat, 200 of 200 trials rejected): seed 4283752155: INCOMPLETE_GROUP detected 3, markers 5; seed 2570642193: INCOMPLETE_GROUP detected 3, markers 4; seed 100199672: INCOMPLETE_GROUP detected 3, markers 4; seed 287810398: INCOMPLETE_GROUP detected 3, markers 4; seed 547529977: INCOMPLETE_GROUP detected 3, markers 5; seed 3752234771: INCOMPLETE_GROUP detected 3, markers 5."
+  ]
+}
