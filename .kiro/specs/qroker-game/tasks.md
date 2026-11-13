@@ -125,7 +125,7 @@ Rules for every milestone:
     - Marker border detection, homography, and 7×7 sampling in plain TypeScript.
     - _Requirements: 12.1, 13.4_
 
-  - [ ] 4.2 Implement `decode-fragment.ts`
+  - [x] 4.2 Implement `decode-fragment.ts`
     - Read the 5×5 data, match templates, return card, observed transform, and distance.
     - _Requirements: 13.5_
 

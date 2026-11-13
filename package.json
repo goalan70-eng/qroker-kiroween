@@ -10,6 +10,7 @@
     "verify:codebook": "tsx scripts/verify-codebook.ts",
     "render:samples": "tsx scripts/render-samples.ts",
     "measure:detection": "tsx scripts/measure-detection.ts",
+    "measure:decode-fragment": "tsx scripts/measure-decode-fragment.ts",
     "check:codebook": "tsx scripts/generate-codebook.ts --check"
   },
   "devDependencies": {

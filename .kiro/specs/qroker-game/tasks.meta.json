@@ -223,6 +223,18 @@
         "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
         "timestamp": 1794538901268
       }
+    ],
+    "4.2 Implement `decode-fragment.ts`": [
+      {
+        "executionId": "4ee5fb0a-e237-4f50-9334-ff9338fcffc0",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794543656661
+      },
+      {
+        "executionId": "4ee5fb0a-e237-4f50-9334-ff9338fcffc0",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794544245475
+      }
     ]
   }
 }
