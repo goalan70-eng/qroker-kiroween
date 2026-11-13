@@ -1,0 +1,2376 @@
+{
+  "title": "Fragment decoder counterexamples (task 4.3)",
+  "warning": "SYNTHETIC images and a synthetic independent-bit-flip model, not real cameras.",
+  "codebookSha256": "515ECEB318648C14A47574496788236A2B1BBDFC7062387DB09303CB717CC2D4",
+  "idDistance": 5,
+  "seed": 20251112,
+  "radii": [
+    {
+      "radius": 1,
+      "exactCountsPerWeight": [
+        {
+          "k": 0,
+          "events": 416,
+          "correct": 416,
+          "correctExactTransform": 416,
+          "correctOtherTransform": 0,
+          "falseAccept": 0,
+          "rejected": 0
+        },
+        {
+          "k": 1,
+          "events": 10400,
+          "correct": 10400,
+          "correctExactTransform": 10400,
+          "correctOtherTransform": 0,
+          "falseAccept": 0,
+          "rejected": 0
+        },
+        {
+          "k": 2,
+          "events": 124800,
+          "correct": 0,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 0,
+          "falseAccept": 0,
+          "rejected": 124800
+        },
+        {
+          "k": 3,
+          "events": 956800,
+          "correct": 0,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 0,
+          "falseAccept": 0,
+          "rejected": 956800
+        },
+        {
+          "k": 4,
+          "events": 5262400,
+          "correct": 0,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 0,
+          "falseAccept": 1360,
+          "rejected": 5261040
+        },
+        {
+          "k": 5,
+          "events": 22102080,
+          "correct": 1344,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 1344,
+          "falseAccept": 5072,
+          "rejected": 22095664
+        },
+        {
+          "k": 6,
+          "events": 73673600,
+          "correct": 224,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 224,
+          "falseAccept": 22032,
+          "rejected": 73651344
+        },
+        {
+          "k": 7,
+          "events": 199971200,
+          "correct": 7584,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 7584,
+          "falseAccept": 61616,
+          "rejected": 199902000
+        },
+        {
+          "k": 8,
+          "events": 449935200,
+          "correct": 416,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 416,
+          "falseAccept": 137568,
+          "rejected": 449797216
+        },
+        {
+          "k": 9,
+          "events": 849877600,
+          "correct": 14912,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 14912,
+          "falseAccept": 264480,
+          "rejected": 849598208
+        },
+        {
+          "k": 10,
+          "events": 1359804160,
+          "correct": 784,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 784,
+          "falseAccept": 435216,
+          "rejected": 1359368160
+        },
+        {
+          "k": 11,
+          "events": 1854278400,
+          "correct": 19248,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 19248,
+          "falseAccept": 582960,
+          "rejected": 1853676192
+        },
+        {
+          "k": 12,
+          "events": 2163324800,
+          "correct": 624,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 624,
+          "falseAccept": 703648,
+          "rejected": 2162620528
+        },
+        {
+          "k": 13,
+          "events": 2163324800,
+          "correct": 16400,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 16400,
+          "falseAccept": 676192,
+          "rejected": 2162632208
+        },
+        {
+          "k": 14,
+          "events": 1854278400,
+          "correct": 592,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 592,
+          "falseAccept": 596496,
+          "rejected": 1853681312
+        },
+        {
+          "k": 15,
+          "events": 1359804160,
+          "correct": 9456,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 9456,
+          "falseAccept": 418224,
+          "rejected": 1359376480
+        },
+        {
+          "k": 16,
+          "events": 849877600,
+          "correct": 184,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 184,
+          "falseAccept": 273168,
+          "rejected": 849604248
+        },
+        {
+          "k": 17,
+          "events": 449935200,
+          "correct": 3240,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 3240,
+          "falseAccept": 138384,
+          "rejected": 449793576
+        },
+        {
+          "k": 18,
+          "events": 199971200,
+          "correct": 88,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 88,
+          "falseAccept": 64848,
+          "rejected": 199906264
+        },
+        {
+          "k": 19,
+          "events": 73673600,
+          "correct": 616,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 616,
+          "falseAccept": 21104,
+          "rejected": 73651880
+        },
+        {
+          "k": 20,
+          "events": 22102080,
+          "correct": 0,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 0,
+          "falseAccept": 8464,
+          "rejected": 22093616
+        },
+        {
+          "k": 21,
+          "events": 5262400,
+          "correct": 0,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 0,
+          "falseAccept": 1520,
+          "rejected": 5260880
+        },
+        {
+          "k": 22,
+          "events": 956800,
+          "correct": 0,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 0,
+          "falseAccept": 528,
+          "rejected": 956272
+        },
+        {
+          "k": 23,
+          "events": 124800,
+          "correct": 0,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 0,
+          "falseAccept": 48,
+          "rejected": 124752
+        },
+        {
+          "k": 24,
+          "events": 10400,
+          "correct": 0,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 0,
+          "falseAccept": 0,
+          "rejected": 10400
+        },
+        {
+          "k": 25,
+          "events": 416,
+          "correct": 0,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 0,
+          "falseAccept": 0,
+          "rejected": 416
+        }
+      ],
+      "falseAcceptances": [
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "I",
+          "weight": 4,
+          "flippedBits": [
+            2,
+            5,
+            13,
+            20
+          ],
+          "observedBits": "0x0BCA41D",
+          "decodedCard": "S-A",
+          "decodedTransform": "R270",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "I",
+          "weight": 4,
+          "flippedBits": [
+            2,
+            5,
+            13,
+            22
+          ],
+          "observedBits": "0x0ECA41D",
+          "decodedCard": "S-A",
+          "decodedTransform": "R270",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "I",
+          "weight": 4,
+          "flippedBits": [
+            2,
+            5,
+            20,
+            22
+          ],
+          "observedBits": "0x0FC841D",
+          "decodedCard": "S-A",
+          "decodedTransform": "R270",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "I",
+          "weight": 4,
+          "flippedBits": [
+            2,
+            13,
+            20,
+            22
+          ],
+          "observedBits": "0x0FCA43D",
+          "decodedCard": "S-A",
+          "decodedTransform": "R270",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "I",
+          "weight": 4,
+          "flippedBits": [
+            5,
+            13,
+            20,
+            22
+          ],
+          "observedBits": "0x0FCA419",
+          "decodedCard": "S-A",
+          "decodedTransform": "R270",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R90",
+          "weight": 4,
+          "flippedBits": [
+            0,
+            3,
+            10,
+            14
+          ],
+          "observedBits": "0x129C437",
+          "decodedCard": "S-A",
+          "decodedTransform": "I",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R90",
+          "weight": 4,
+          "flippedBits": [
+            0,
+            3,
+            10,
+            17
+          ],
+          "observedBits": "0x12B8437",
+          "decodedCard": "S-A",
+          "decodedTransform": "I",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R90",
+          "weight": 4,
+          "flippedBits": [
+            0,
+            3,
+            14,
+            17
+          ],
+          "observedBits": "0x12BC037",
+          "decodedCard": "S-A",
+          "decodedTransform": "I",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R90",
+          "weight": 4,
+          "flippedBits": [
+            0,
+            10,
+            14,
+            17
+          ],
+          "observedBits": "0x12BC43F",
+          "decodedCard": "S-A",
+          "decodedTransform": "I",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R90",
+          "weight": 4,
+          "flippedBits": [
+            3,
+            10,
+            14,
+            17
+          ],
+          "observedBits": "0x12BC436",
+          "decodedCard": "S-A",
+          "decodedTransform": "I",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R180",
+          "weight": 4,
+          "flippedBits": [
+            2,
+            4,
+            11,
+            19
+          ],
+          "observedBits": "0x1304A7E",
+          "decodedCard": "S-A",
+          "decodedTransform": "R90",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R180",
+          "weight": 4,
+          "flippedBits": [
+            2,
+            4,
+            11,
+            22
+          ],
+          "observedBits": "0x1784A7E",
+          "decodedCard": "S-A",
+          "decodedTransform": "R90",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R180",
+          "weight": 4,
+          "flippedBits": [
+            2,
+            4,
+            19,
+            22
+          ],
+          "observedBits": "0x170427E",
+          "decodedCard": "S-A",
+          "decodedTransform": "R90",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R180",
+          "weight": 4,
+          "flippedBits": [
+            2,
+            11,
+            19,
+            22
+          ],
+          "observedBits": "0x1704A6E",
+          "decodedCard": "S-A",
+          "decodedTransform": "R90",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R180",
+          "weight": 4,
+          "flippedBits": [
+            4,
+            11,
+            19,
+            22
+          ],
+          "observedBits": "0x1704A7A",
+          "decodedCard": "S-A",
+          "decodedTransform": "R90",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R270",
+          "weight": 4,
+          "flippedBits": [
+            7,
+            10,
+            14,
+            21
+          ],
+          "observedBits": "0x0D847A9",
+          "decodedCard": "S-A",
+          "decodedTransform": "R180",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R270",
+          "weight": 4,
+          "flippedBits": [
+            7,
+            10,
+            14,
+            24
+          ],
+          "observedBits": "0x1F847A9",
+          "decodedCard": "S-A",
+          "decodedTransform": "R180",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R270",
+          "weight": 4,
+          "flippedBits": [
+            7,
+            10,
+            21,
+            24
+          ],
+          "observedBits": "0x1D807A9",
+          "decodedCard": "S-A",
+          "decodedTransform": "R180",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R270",
+          "weight": 4,
+          "flippedBits": [
+            7,
+            14,
+            21,
+            24
+          ],
+          "observedBits": "0x1D843A9",
+          "decodedCard": "S-A",
+          "decodedTransform": "R180",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R270",
+          "weight": 4,
+          "flippedBits": [
+            10,
+            14,
+            21,
+            24
+          ],
+          "observedBits": "0x1D84729",
+          "decodedCard": "S-A",
+          "decodedTransform": "R180",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "Fh",
+          "weight": 4,
+          "flippedBits": [
+            0,
+            2,
+            13,
+            15
+          ],
+          "observedBits": "0x190272F",
+          "decodedCard": "S-A",
+          "decodedTransform": "Dm",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "Fh",
+          "weight": 4,
+          "flippedBits": [
+            0,
+            2,
+            13,
+            22
+          ],
+          "observedBits": "0x1D0A72F",
+          "decodedCard": "S-A",
+          "decodedTransform": "Dm",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "Fh",
+          "weight": 4,
+          "flippedBits": [
+            0,
+            2,
+            15,
+            22
+          ],
+          "observedBits": "0x1D0072F",
+          "decodedCard": "S-A",
+          "decodedTransform": "Dm",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "Fh",
+          "weight": 4,
+          "flippedBits": [
+            0,
+            13,
+            15,
+            22
+          ],
+          "observedBits": "0x1D0272B",
+          "decodedCard": "S-A",
+          "decodedTransform": "Dm",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "Fh",
+          "weight": 4,
+          "flippedBits": [
+            2,
+            13,
+            15,
+            22
+          ],
+          "observedBits": "0x1D0272E",
+          "decodedCard": "S-A",
+          "decodedTransform": "Dm",
+          "distance": 1
+        }
+      ],
+      "wrongTransforms": [
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "I",
+          "weight": 5,
+          "flippedBits": [
+            1,
+            5,
+            9,
+            15,
+            19
+          ],
+          "observedBits": "0x0BE41AB",
+          "decodedCard": "H-A",
+          "decodedTransform": "Fh",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "I",
+          "weight": 5,
+          "flippedBits": [
+            1,
+            5,
+            9,
+            15,
+            21
+          ],
+          "observedBits": "0x09641AB",
+          "decodedCard": "H-A",
+          "decodedTransform": "Fh",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "I",
+          "weight": 5,
+          "flippedBits": [
+            1,
+            5,
+            9,
+            19,
+            21
+          ],
+          "observedBits": "0x09EC1AB",
+          "decodedCard": "H-A",
+          "decodedTransform": "Fh",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "I",
+          "weight": 5,
+          "flippedBits": [
+            1,
+            5,
+            15,
+            19,
+            21
+          ],
+          "observedBits": "0x09E43AB",
+          "decodedCard": "H-A",
+          "decodedTransform": "Fh",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "I",
+          "weight": 5,
+          "flippedBits": [
+            1,
+            9,
+            15,
+            19,
+            21
+          ],
+          "observedBits": "0x09E418B",
+          "decodedCard": "H-A",
+          "decodedTransform": "Fh",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "I",
+          "weight": 5,
+          "flippedBits": [
+            5,
+            9,
+            15,
+            19,
+            21
+          ],
+          "observedBits": "0x09E41A9",
+          "decodedCard": "H-A",
+          "decodedTransform": "Fh",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R90",
+          "weight": 5,
+          "flippedBits": [
+            1,
+            3,
+            5,
+            9,
+            21
+          ],
+          "observedBits": "0x0EDAA19",
+          "decodedCard": "H-A",
+          "decodedTransform": "Dm",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R90",
+          "weight": 5,
+          "flippedBits": [
+            1,
+            3,
+            5,
+            9,
+            23
+          ],
+          "observedBits": "0x04DAA19",
+          "decodedCard": "H-A",
+          "decodedTransform": "Dm",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R90",
+          "weight": 5,
+          "flippedBits": [
+            1,
+            3,
+            5,
+            21,
+            23
+          ],
+          "observedBits": "0x06DA819",
+          "decodedCard": "H-A",
+          "decodedTransform": "Dm",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R90",
+          "weight": 5,
+          "flippedBits": [
+            1,
+            3,
+            9,
+            21,
+            23
+          ],
+          "observedBits": "0x06DAA39",
+          "decodedCard": "H-A",
+          "decodedTransform": "Dm",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R90",
+          "weight": 5,
+          "flippedBits": [
+            1,
+            5,
+            9,
+            21,
+            23
+          ],
+          "observedBits": "0x06DAA11",
+          "decodedCard": "H-A",
+          "decodedTransform": "Dm",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R90",
+          "weight": 5,
+          "flippedBits": [
+            3,
+            5,
+            9,
+            21,
+            23
+          ],
+          "observedBits": "0x06DAA1B",
+          "decodedCard": "H-A",
+          "decodedTransform": "Dm",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R180",
+          "weight": 5,
+          "flippedBits": [
+            3,
+            5,
+            9,
+            15,
+            19
+          ],
+          "observedBits": "0x12B04F2",
+          "decodedCard": "H-A",
+          "decodedTransform": "Fv",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R180",
+          "weight": 5,
+          "flippedBits": [
+            3,
+            5,
+            9,
+            15,
+            23
+          ],
+          "observedBits": "0x1A304F2",
+          "decodedCard": "H-A",
+          "decodedTransform": "Fv",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R180",
+          "weight": 5,
+          "flippedBits": [
+            3,
+            5,
+            9,
+            19,
+            23
+          ],
+          "observedBits": "0x1AB84F2",
+          "decodedCard": "H-A",
+          "decodedTransform": "Fv",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R180",
+          "weight": 5,
+          "flippedBits": [
+            3,
+            5,
+            15,
+            19,
+            23
+          ],
+          "observedBits": "0x1AB06F2",
+          "decodedCard": "H-A",
+          "decodedTransform": "Fv",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R180",
+          "weight": 5,
+          "flippedBits": [
+            3,
+            9,
+            15,
+            19,
+            23
+          ],
+          "observedBits": "0x1AB04D2",
+          "decodedCard": "H-A",
+          "decodedTransform": "Fv",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R180",
+          "weight": 5,
+          "flippedBits": [
+            5,
+            9,
+            15,
+            19,
+            23
+          ],
+          "observedBits": "0x1AB04FA",
+          "decodedCard": "H-A",
+          "decodedTransform": "Fv",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R270",
+          "weight": 5,
+          "flippedBits": [
+            1,
+            3,
+            15,
+            19,
+            21
+          ],
+          "observedBits": "0x1B0AB6C",
+          "decodedCard": "H-A",
+          "decodedTransform": "Da",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R270",
+          "weight": 5,
+          "flippedBits": [
+            1,
+            3,
+            15,
+            19,
+            23
+          ],
+          "observedBits": "0x110AB6C",
+          "decodedCard": "H-A",
+          "decodedTransform": "Da",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R270",
+          "weight": 5,
+          "flippedBits": [
+            1,
+            3,
+            15,
+            21,
+            23
+          ],
+          "observedBits": "0x138AB6C",
+          "decodedCard": "H-A",
+          "decodedTransform": "Da",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R270",
+          "weight": 5,
+          "flippedBits": [
+            1,
+            3,
+            19,
+            21,
+            23
+          ],
+          "observedBits": "0x1302B6C",
+          "decodedCard": "H-A",
+          "decodedTransform": "Da",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R270",
+          "weight": 5,
+          "flippedBits": [
+            1,
+            15,
+            19,
+            21,
+            23
+          ],
+          "observedBits": "0x130AB64",
+          "decodedCard": "H-A",
+          "decodedTransform": "Da",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R270",
+          "weight": 5,
+          "flippedBits": [
+            3,
+            15,
+            19,
+            21,
+            23
+          ],
+          "observedBits": "0x130AB6E",
+          "decodedCard": "H-A",
+          "decodedTransform": "Da",
+          "distance": 1
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "Fh",
+          "weight": 5,
+          "flippedBits": [
+            1,
+            5,
+            9,
+            15,
+            19
+          ],
+          "observedBits": "0x096C389",
+          "decodedCard": "H-A",
+          "decodedTransform": "I",
+          "distance": 1
+        }
+      ]
+    },
+    {
+      "radius": 2,
+      "exactCountsPerWeight": [
+        {
+          "k": 0,
+          "events": 416,
+          "correct": 416,
+          "correctExactTransform": 416,
+          "correctOtherTransform": 0,
+          "falseAccept": 0,
+          "rejected": 0
+        },
+        {
+          "k": 1,
+          "events": 10400,
+          "correct": 10400,
+          "correctExactTransform": 10400,
+          "correctOtherTransform": 0,
+          "falseAccept": 0,
+          "rejected": 0
+        },
+        {
+          "k": 2,
+          "events": 124800,
+          "correct": 124800,
+          "correctExactTransform": 124800,
+          "correctOtherTransform": 0,
+          "falseAccept": 0,
+          "rejected": 0
+        },
+        {
+          "k": 3,
+          "events": 956800,
+          "correct": 0,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 0,
+          "falseAccept": 2720,
+          "rejected": 954080
+        },
+        {
+          "k": 4,
+          "events": 5262400,
+          "correct": 3360,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 3360,
+          "falseAccept": 13360,
+          "rejected": 5245680
+        },
+        {
+          "k": 5,
+          "events": 22102080,
+          "correct": 1344,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 1344,
+          "falseAccept": 79648,
+          "rejected": 22021088
+        },
+        {
+          "k": 6,
+          "events": 73673600,
+          "correct": 37408,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 37408,
+          "falseAccept": 267792,
+          "rejected": 73368400
+        },
+        {
+          "k": 7,
+          "events": 199971200,
+          "correct": 7584,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 7584,
+          "falseAccept": 763312,
+          "rejected": 199200304
+        },
+        {
+          "k": 8,
+          "events": 449935200,
+          "correct": 130576,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 130576,
+          "falseAccept": 1747248,
+          "rejected": 448057376
+        },
+        {
+          "k": 9,
+          "events": 849877600,
+          "correct": 14912,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 14912,
+          "falseAccept": 3355728,
+          "rejected": 846506960
+        },
+        {
+          "k": 10,
+          "events": 1359804160,
+          "correct": 216144,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 216144,
+          "falseAccept": 5347152,
+          "rejected": 1354240864
+        },
+        {
+          "k": 11,
+          "events": 1854278400,
+          "correct": 19248,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 19248,
+          "falseAccept": 7497552,
+          "rejected": 1846761600
+        },
+        {
+          "k": 12,
+          "events": 2163324800,
+          "correct": 234160,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 234160,
+          "falseAccept": 8508880,
+          "rejected": 2154581760
+        },
+        {
+          "k": 13,
+          "events": 2163324800,
+          "correct": 16400,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 16400,
+          "falseAccept": 8763760,
+          "rejected": 2154544640
+        },
+        {
+          "k": 14,
+          "events": 1854278400,
+          "correct": 162512,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 162512,
+          "falseAccept": 7231728,
+          "rejected": 1846884160
+        },
+        {
+          "k": 15,
+          "events": 1359804160,
+          "correct": 9456,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 9456,
+          "falseAccept": 5474160,
+          "rejected": 1354320544
+        },
+        {
+          "k": 16,
+          "events": 849877600,
+          "correct": 72704,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 72704,
+          "falseAccept": 3281856,
+          "rejected": 846523040
+        },
+        {
+          "k": 17,
+          "events": 449935200,
+          "correct": 3240,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 3240,
+          "falseAccept": 1814688,
+          "rejected": 448117272
+        },
+        {
+          "k": 18,
+          "events": 199971200,
+          "correct": 17800,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 17800,
+          "falseAccept": 758992,
+          "rejected": 199194408
+        },
+        {
+          "k": 19,
+          "events": 73673600,
+          "correct": 616,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 616,
+          "falseAccept": 311024,
+          "rejected": 73361960
+        },
+        {
+          "k": 20,
+          "events": 22102080,
+          "correct": 1848,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 1848,
+          "falseAccept": 81008,
+          "rejected": 22019224
+        },
+        {
+          "k": 21,
+          "events": 5262400,
+          "correct": 0,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 0,
+          "falseAccept": 26192,
+          "rejected": 5236208
+        },
+        {
+          "k": 22,
+          "events": 956800,
+          "correct": 0,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 0,
+          "falseAccept": 3664,
+          "rejected": 953136
+        },
+        {
+          "k": 23,
+          "events": 124800,
+          "correct": 0,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 0,
+          "falseAccept": 816,
+          "rejected": 123984
+        },
+        {
+          "k": 24,
+          "events": 10400,
+          "correct": 0,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 0,
+          "falseAccept": 48,
+          "rejected": 10352
+        },
+        {
+          "k": 25,
+          "events": 416,
+          "correct": 0,
+          "correctExactTransform": 0,
+          "correctOtherTransform": 0,
+          "falseAccept": 0,
+          "rejected": 416
+        }
+      ],
+      "falseAcceptances": [
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "I",
+          "weight": 3,
+          "flippedBits": [
+            2,
+            5,
+            13
+          ],
+          "observedBits": "0x0ACA41D",
+          "decodedCard": "S-A",
+          "decodedTransform": "R270",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "I",
+          "weight": 3,
+          "flippedBits": [
+            2,
+            5,
+            20
+          ],
+          "observedBits": "0x0BC841D",
+          "decodedCard": "S-A",
+          "decodedTransform": "R270",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "I",
+          "weight": 3,
+          "flippedBits": [
+            2,
+            5,
+            22
+          ],
+          "observedBits": "0x0EC841D",
+          "decodedCard": "S-A",
+          "decodedTransform": "R270",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "I",
+          "weight": 3,
+          "flippedBits": [
+            2,
+            13,
+            20
+          ],
+          "observedBits": "0x0BCA43D",
+          "decodedCard": "S-A",
+          "decodedTransform": "R270",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "I",
+          "weight": 3,
+          "flippedBits": [
+            2,
+            13,
+            22
+          ],
+          "observedBits": "0x0ECA43D",
+          "decodedCard": "S-A",
+          "decodedTransform": "R270",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "I",
+          "weight": 3,
+          "flippedBits": [
+            2,
+            20,
+            22
+          ],
+          "observedBits": "0x0FC843D",
+          "decodedCard": "S-A",
+          "decodedTransform": "R270",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "I",
+          "weight": 3,
+          "flippedBits": [
+            5,
+            13,
+            20
+          ],
+          "observedBits": "0x0BCA419",
+          "decodedCard": "S-A",
+          "decodedTransform": "R270",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "I",
+          "weight": 3,
+          "flippedBits": [
+            5,
+            13,
+            22
+          ],
+          "observedBits": "0x0ECA419",
+          "decodedCard": "S-A",
+          "decodedTransform": "R270",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "I",
+          "weight": 3,
+          "flippedBits": [
+            5,
+            20,
+            22
+          ],
+          "observedBits": "0x0FC8419",
+          "decodedCard": "S-A",
+          "decodedTransform": "R270",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "I",
+          "weight": 3,
+          "flippedBits": [
+            13,
+            20,
+            22
+          ],
+          "observedBits": "0x0FCA439",
+          "decodedCard": "S-A",
+          "decodedTransform": "R270",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R90",
+          "weight": 3,
+          "flippedBits": [
+            0,
+            3,
+            10
+          ],
+          "observedBits": "0x1298437",
+          "decodedCard": "S-A",
+          "decodedTransform": "I",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R90",
+          "weight": 3,
+          "flippedBits": [
+            0,
+            3,
+            14
+          ],
+          "observedBits": "0x129C037",
+          "decodedCard": "S-A",
+          "decodedTransform": "I",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R90",
+          "weight": 3,
+          "flippedBits": [
+            0,
+            3,
+            17
+          ],
+          "observedBits": "0x12B8037",
+          "decodedCard": "S-A",
+          "decodedTransform": "I",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R90",
+          "weight": 3,
+          "flippedBits": [
+            0,
+            10,
+            14
+          ],
+          "observedBits": "0x129C43F",
+          "decodedCard": "S-A",
+          "decodedTransform": "I",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R90",
+          "weight": 3,
+          "flippedBits": [
+            0,
+            10,
+            17
+          ],
+          "observedBits": "0x12B843F",
+          "decodedCard": "S-A",
+          "decodedTransform": "I",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R90",
+          "weight": 3,
+          "flippedBits": [
+            0,
+            14,
+            17
+          ],
+          "observedBits": "0x12BC03F",
+          "decodedCard": "S-A",
+          "decodedTransform": "I",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R90",
+          "weight": 3,
+          "flippedBits": [
+            3,
+            10,
+            14
+          ],
+          "observedBits": "0x129C436",
+          "decodedCard": "S-A",
+          "decodedTransform": "I",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R90",
+          "weight": 3,
+          "flippedBits": [
+            3,
+            10,
+            17
+          ],
+          "observedBits": "0x12B8436",
+          "decodedCard": "S-A",
+          "decodedTransform": "I",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R90",
+          "weight": 3,
+          "flippedBits": [
+            3,
+            14,
+            17
+          ],
+          "observedBits": "0x12BC036",
+          "decodedCard": "S-A",
+          "decodedTransform": "I",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R90",
+          "weight": 3,
+          "flippedBits": [
+            10,
+            14,
+            17
+          ],
+          "observedBits": "0x12BC43E",
+          "decodedCard": "S-A",
+          "decodedTransform": "I",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R180",
+          "weight": 3,
+          "flippedBits": [
+            2,
+            4,
+            11
+          ],
+          "observedBits": "0x1384A7E",
+          "decodedCard": "S-A",
+          "decodedTransform": "R90",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R180",
+          "weight": 3,
+          "flippedBits": [
+            2,
+            4,
+            19
+          ],
+          "observedBits": "0x130427E",
+          "decodedCard": "S-A",
+          "decodedTransform": "R90",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R180",
+          "weight": 3,
+          "flippedBits": [
+            2,
+            4,
+            22
+          ],
+          "observedBits": "0x178427E",
+          "decodedCard": "S-A",
+          "decodedTransform": "R90",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R180",
+          "weight": 3,
+          "flippedBits": [
+            2,
+            11,
+            19
+          ],
+          "observedBits": "0x1304A6E",
+          "decodedCard": "S-A",
+          "decodedTransform": "R90",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-5",
+          "sourceTransform": "R180",
+          "weight": 3,
+          "flippedBits": [
+            2,
+            11,
+            22
+          ],
+          "observedBits": "0x1784A6E",
+          "decodedCard": "S-A",
+          "decodedTransform": "R90",
+          "distance": 2
+        }
+      ],
+      "wrongTransforms": [
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "I",
+          "weight": 4,
+          "flippedBits": [
+            1,
+            5,
+            9,
+            15
+          ],
+          "observedBits": "0x0B641AB",
+          "decodedCard": "H-A",
+          "decodedTransform": "Fh",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "I",
+          "weight": 4,
+          "flippedBits": [
+            1,
+            5,
+            9,
+            19
+          ],
+          "observedBits": "0x0BEC1AB",
+          "decodedCard": "H-A",
+          "decodedTransform": "Fh",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "I",
+          "weight": 4,
+          "flippedBits": [
+            1,
+            5,
+            9,
+            21
+          ],
+          "observedBits": "0x096C1AB",
+          "decodedCard": "H-A",
+          "decodedTransform": "Fh",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "I",
+          "weight": 4,
+          "flippedBits": [
+            1,
+            5,
+            15,
+            19
+          ],
+          "observedBits": "0x0BE43AB",
+          "decodedCard": "H-A",
+          "decodedTransform": "Fh",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "I",
+          "weight": 4,
+          "flippedBits": [
+            1,
+            5,
+            15,
+            21
+          ],
+          "observedBits": "0x09643AB",
+          "decodedCard": "H-A",
+          "decodedTransform": "Fh",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "I",
+          "weight": 4,
+          "flippedBits": [
+            1,
+            5,
+            19,
+            21
+          ],
+          "observedBits": "0x09EC3AB",
+          "decodedCard": "H-A",
+          "decodedTransform": "Fh",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "I",
+          "weight": 4,
+          "flippedBits": [
+            1,
+            9,
+            15,
+            19
+          ],
+          "observedBits": "0x0BE418B",
+          "decodedCard": "H-A",
+          "decodedTransform": "Fh",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "I",
+          "weight": 4,
+          "flippedBits": [
+            1,
+            9,
+            15,
+            21
+          ],
+          "observedBits": "0x096418B",
+          "decodedCard": "H-A",
+          "decodedTransform": "Fh",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "I",
+          "weight": 4,
+          "flippedBits": [
+            1,
+            9,
+            19,
+            21
+          ],
+          "observedBits": "0x09EC18B",
+          "decodedCard": "H-A",
+          "decodedTransform": "Fh",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "I",
+          "weight": 4,
+          "flippedBits": [
+            1,
+            15,
+            19,
+            21
+          ],
+          "observedBits": "0x09E438B",
+          "decodedCard": "H-A",
+          "decodedTransform": "Fh",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "I",
+          "weight": 4,
+          "flippedBits": [
+            5,
+            9,
+            15,
+            19
+          ],
+          "observedBits": "0x0BE41A9",
+          "decodedCard": "H-A",
+          "decodedTransform": "Fh",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "I",
+          "weight": 4,
+          "flippedBits": [
+            5,
+            9,
+            15,
+            21
+          ],
+          "observedBits": "0x09641A9",
+          "decodedCard": "H-A",
+          "decodedTransform": "Fh",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "I",
+          "weight": 4,
+          "flippedBits": [
+            5,
+            9,
+            19,
+            21
+          ],
+          "observedBits": "0x09EC1A9",
+          "decodedCard": "H-A",
+          "decodedTransform": "Fh",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "I",
+          "weight": 4,
+          "flippedBits": [
+            5,
+            15,
+            19,
+            21
+          ],
+          "observedBits": "0x09E43A9",
+          "decodedCard": "H-A",
+          "decodedTransform": "Fh",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "I",
+          "weight": 4,
+          "flippedBits": [
+            9,
+            15,
+            19,
+            21
+          ],
+          "observedBits": "0x09E4189",
+          "decodedCard": "H-A",
+          "decodedTransform": "Fh",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R90",
+          "weight": 4,
+          "flippedBits": [
+            1,
+            3,
+            5,
+            9
+          ],
+          "observedBits": "0x0CDAA19",
+          "decodedCard": "H-A",
+          "decodedTransform": "Dm",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R90",
+          "weight": 4,
+          "flippedBits": [
+            1,
+            3,
+            5,
+            21
+          ],
+          "observedBits": "0x0EDA819",
+          "decodedCard": "H-A",
+          "decodedTransform": "Dm",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R90",
+          "weight": 4,
+          "flippedBits": [
+            1,
+            3,
+            5,
+            23
+          ],
+          "observedBits": "0x04DA819",
+          "decodedCard": "H-A",
+          "decodedTransform": "Dm",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R90",
+          "weight": 4,
+          "flippedBits": [
+            1,
+            3,
+            9,
+            21
+          ],
+          "observedBits": "0x0EDAA39",
+          "decodedCard": "H-A",
+          "decodedTransform": "Dm",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R90",
+          "weight": 4,
+          "flippedBits": [
+            1,
+            3,
+            9,
+            23
+          ],
+          "observedBits": "0x04DAA39",
+          "decodedCard": "H-A",
+          "decodedTransform": "Dm",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R90",
+          "weight": 4,
+          "flippedBits": [
+            1,
+            3,
+            21,
+            23
+          ],
+          "observedBits": "0x06DA839",
+          "decodedCard": "H-A",
+          "decodedTransform": "Dm",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R90",
+          "weight": 4,
+          "flippedBits": [
+            1,
+            5,
+            9,
+            21
+          ],
+          "observedBits": "0x0EDAA11",
+          "decodedCard": "H-A",
+          "decodedTransform": "Dm",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R90",
+          "weight": 4,
+          "flippedBits": [
+            1,
+            5,
+            9,
+            23
+          ],
+          "observedBits": "0x04DAA11",
+          "decodedCard": "H-A",
+          "decodedTransform": "Dm",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R90",
+          "weight": 4,
+          "flippedBits": [
+            1,
+            5,
+            21,
+            23
+          ],
+          "observedBits": "0x06DA811",
+          "decodedCard": "H-A",
+          "decodedTransform": "Dm",
+          "distance": 2
+        },
+        {
+          "sourceCard": "H-A",
+          "sourceTransform": "R90",
+          "weight": 4,
+          "flippedBits": [
+            1,
+            9,
+            21,
+            23
+          ],
+          "observedBits": "0x06DAA31",
+          "decodedCard": "H-A",
+          "decodedTransform": "Dm",
+          "distance": 2
+        }
+      ]
+    }
+  ],
+  "imageCellSpec": "Per (radius, k) cell: n = 300 seeded random (card, transform, k distinct flipped bits), rendered with renderMarker at a seeded modulePx 4..10 and integer offset, then detectMarkers + decodeDetection. Cells are never pooled.",
+  "imageCells": [
+    {
+      "radius": 1,
+      "k": 0,
+      "n": 300,
+      "correct": 300,
+      "correctRate": 1,
+      "sameCardOtherTransform": 0,
+      "falseAccept": 0,
+      "falseAcceptRate": 0,
+      "falseAcceptUpper95": 0.00993608,
+      "rejected": 0,
+      "rejectedRate": 0,
+      "rejectedByKind": {
+        "CORRUPTED_FRAGMENT": 0,
+        "AMBIGUOUS": 0,
+        "NOT_DETECTED": 0,
+        "INVALID_MARKER": 0
+      },
+      "detectorBitMismatch": 0,
+      "trialsWithExtraFragments": 0
+    },
+    {
+      "radius": 1,
+      "k": 1,
+      "n": 300,
+      "correct": 300,
+      "correctRate": 1,
+      "sameCardOtherTransform": 0,
+      "falseAccept": 0,
+      "falseAcceptRate": 0,
+      "falseAcceptUpper95": 0.00993608,
+      "rejected": 0,
+      "rejectedRate": 0,
+      "rejectedByKind": {
+        "CORRUPTED_FRAGMENT": 0,
+        "AMBIGUOUS": 0,
+        "NOT_DETECTED": 0,
+        "INVALID_MARKER": 0
+      },
+      "detectorBitMismatch": 0,
+      "trialsWithExtraFragments": 0
+    },
+    {
+      "radius": 1,
+      "k": 2,
+      "n": 300,
+      "correct": 0,
+      "correctRate": 0,
+      "sameCardOtherTransform": 0,
+      "falseAccept": 0,
+      "falseAcceptRate": 0,
+      "falseAcceptUpper95": 0.00993608,
+      "rejected": 300,
+      "rejectedRate": 1,
+      "rejectedByKind": {
+        "CORRUPTED_FRAGMENT": 300,
+        "AMBIGUOUS": 0,
+        "NOT_DETECTED": 0,
+        "INVALID_MARKER": 0
+      },
+      "detectorBitMismatch": 0,
+      "trialsWithExtraFragments": 0
+    },
+    {
+      "radius": 1,
+      "k": 3,
+      "n": 300,
+      "correct": 0,
+      "correctRate": 0,
+      "sameCardOtherTransform": 0,
+      "falseAccept": 0,
+      "falseAcceptRate": 0,
+      "falseAcceptUpper95": 0.00993608,
+      "rejected": 300,
+      "rejectedRate": 1,
+      "rejectedByKind": {
+        "CORRUPTED_FRAGMENT": 300,
+        "AMBIGUOUS": 0,
+        "NOT_DETECTED": 0,
+        "INVALID_MARKER": 0
+      },
+      "detectorBitMismatch": 0,
+      "trialsWithExtraFragments": 0
+    },
+    {
+      "radius": 1,
+      "k": 4,
+      "n": 300,
+      "correct": 0,
+      "correctRate": 0,
+      "sameCardOtherTransform": 0,
+      "falseAccept": 0,
+      "falseAcceptRate": 0,
+      "falseAcceptUpper95": 0.00993608,
+      "rejected": 300,
+      "rejectedRate": 1,
+      "rejectedByKind": {
+        "CORRUPTED_FRAGMENT": 300,
+        "AMBIGUOUS": 0,
+        "NOT_DETECTED": 0,
+        "INVALID_MARKER": 0
+      },
+      "detectorBitMismatch": 0,
+      "trialsWithExtraFragments": 0
+    },
+    {
+      "radius": 1,
+      "k": 5,
+      "n": 300,
+      "correct": 0,
+      "correctRate": 0,
+      "sameCardOtherTransform": 0,
+      "falseAccept": 1,
+      "falseAcceptRate": 0.00333333,
+      "falseAcceptUpper95": null,
+      "rejected": 299,
+      "rejectedRate": 0.996667,
+      "rejectedByKind": {
+        "CORRUPTED_FRAGMENT": 299,
+        "AMBIGUOUS": 0,
+        "NOT_DETECTED": 0,
+        "INVALID_MARKER": 0
+      },
+      "detectorBitMismatch": 0,
+      "trialsWithExtraFragments": 1
+    },
+    {
+      "radius": 1,
+      "k": 6,
+      "n": 300,
+      "correct": 0,
+      "correctRate": 0,
+      "sameCardOtherTransform": 0,
+      "falseAccept": 0,
+      "falseAcceptRate": 0,
+      "falseAcceptUpper95": 0.00993608,
+      "rejected": 300,
+      "rejectedRate": 1,
+      "rejectedByKind": {
+        "CORRUPTED_FRAGMENT": 300,
+        "AMBIGUOUS": 0,
+        "NOT_DETECTED": 0,
+        "INVALID_MARKER": 0
+      },
+      "detectorBitMismatch": 0,
+      "trialsWithExtraFragments": 0
+    },
+    {
+      "radius": 1,
+      "k": 7,
+      "n": 300,
+      "correct": 0,
+      "correctRate": 0,
+      "sameCardOtherTransform": 0,
+      "falseAccept": 0,
+      "falseAcceptRate": 0,
+      "falseAcceptUpper95": 0.00993608,
+      "rejected": 300,
+      "rejectedRate": 1,
+      "rejectedByKind": {
+        "CORRUPTED_FRAGMENT": 300,
+        "AMBIGUOUS": 0,
+        "NOT_DETECTED": 0,
+        "INVALID_MARKER": 0
+      },
+      "detectorBitMismatch": 0,
+      "trialsWithExtraFragments": 0
+    },
+    {
+      "radius": 1,
+      "k": 8,
+      "n": 300,
+      "correct": 0,
+      "correctRate": 0,
+      "sameCardOtherTransform": 0,
+      "falseAccept": 0,
+      "falseAcceptRate": 0,
+      "falseAcceptUpper95": 0.00993608,
+      "rejected": 300,
+      "rejectedRate": 1,
+      "rejectedByKind": {
+        "CORRUPTED_FRAGMENT": 300,
+        "AMBIGUOUS": 0,
+        "NOT_DETECTED": 0,
+        "INVALID_MARKER": 0
+      },
+      "detectorBitMismatch": 0,
+      "trialsWithExtraFragments": 0
+    },
+    {
+      "radius": 2,
+      "k": 0,
+      "n": 300,
+      "correct": 300,
+      "correctRate": 1,
+      "sameCardOtherTransform": 0,
+      "falseAccept": 0,
+      "falseAcceptRate": 0,
+      "falseAcceptUpper95": 0.00993608,
+      "rejected": 0,
+      "rejectedRate": 0,
+      "rejectedByKind": {
+        "CORRUPTED_FRAGMENT": 0,
+        "AMBIGUOUS": 0,
+        "NOT_DETECTED": 0,
+        "INVALID_MARKER": 0
+      },
+      "detectorBitMismatch": 0,
+      "trialsWithExtraFragments": 0
+    },
+    {
+      "radius": 2,
+      "k": 1,
+      "n": 300,
+      "correct": 300,
+      "correctRate": 1,
+      "sameCardOtherTransform": 0,
+      "falseAccept": 0,
+      "falseAcceptRate": 0,
+      "falseAcceptUpper95": 0.00993608,
+      "rejected": 0,
+      "rejectedRate": 0,
+      "rejectedByKind": {
+        "CORRUPTED_FRAGMENT": 0,
+        "AMBIGUOUS": 0,
+        "NOT_DETECTED": 0,
+        "INVALID_MARKER": 0
+      },
+      "detectorBitMismatch": 0,
+      "trialsWithExtraFragments": 0
+    },
+    {
+      "radius": 2,
+      "k": 2,
+      "n": 300,
+      "correct": 300,
+      "correctRate": 1,
+      "sameCardOtherTransform": 0,
+      "falseAccept": 0,
+      "falseAcceptRate": 0,
+      "falseAcceptUpper95": 0.00993608,
+      "rejected": 0,
+      "rejectedRate": 0,
+      "rejectedByKind": {
+        "CORRUPTED_FRAGMENT": 0,
+        "AMBIGUOUS": 0,
+        "NOT_DETECTED": 0,
+        "INVALID_MARKER": 0
+      },
+      "detectorBitMismatch": 0,
+      "trialsWithExtraFragments": 0
+    },
+    {
+      "radius": 2,
+      "k": 3,
+      "n": 300,
+      "correct": 0,
+      "correctRate": 0,
+      "sameCardOtherTransform": 0,
+      "falseAccept": 0,
+      "falseAcceptRate": 0,
+      "falseAcceptUpper95": 0.00993608,
+      "rejected": 300,
+      "rejectedRate": 1,
+      "rejectedByKind": {
+        "CORRUPTED_FRAGMENT": 300,
+        "AMBIGUOUS": 0,
+        "NOT_DETECTED": 0,
+        "INVALID_MARKER": 0
+      },
+      "detectorBitMismatch": 0,
+      "trialsWithExtraFragments": 0
+    },
+    {
+      "radius": 2,
+      "k": 4,
+      "n": 300,
+      "correct": 0,
+      "correctRate": 0,
+      "sameCardOtherTransform": 1,
+      "falseAccept": 4,
+      "falseAcceptRate": 0.0133333,
+      "falseAcceptUpper95": null,
+      "rejected": 295,
+      "rejectedRate": 0.983333,
+      "rejectedByKind": {
+        "CORRUPTED_FRAGMENT": 295,
+        "AMBIGUOUS": 0,
+        "NOT_DETECTED": 0,
+        "INVALID_MARKER": 0
+      },
+      "detectorBitMismatch": 0,
+      "trialsWithExtraFragments": 0
+    },
+    {
+      "radius": 2,
+      "k": 5,
+      "n": 300,
+      "correct": 0,
+      "correctRate": 0,
+      "sameCardOtherTransform": 0,
+      "falseAccept": 1,
+      "falseAcceptRate": 0.00333333,
+      "falseAcceptUpper95": null,
+      "rejected": 299,
+      "rejectedRate": 0.996667,
+      "rejectedByKind": {
+        "CORRUPTED_FRAGMENT": 299,
+        "AMBIGUOUS": 0,
+        "NOT_DETECTED": 0,
+        "INVALID_MARKER": 0
+      },
+      "detectorBitMismatch": 0,
+      "trialsWithExtraFragments": 0
+    },
+    {
+      "radius": 2,
+      "k": 6,
+      "n": 300,
+      "correct": 0,
+      "correctRate": 0,
+      "sameCardOtherTransform": 1,
+      "falseAccept": 1,
+      "falseAcceptRate": 0.00333333,
+      "falseAcceptUpper95": null,
+      "rejected": 298,
+      "rejectedRate": 0.993333,
+      "rejectedByKind": {
+        "CORRUPTED_FRAGMENT": 298,
+        "AMBIGUOUS": 0,
+        "NOT_DETECTED": 0,
+        "INVALID_MARKER": 0
+      },
+      "detectorBitMismatch": 0,
+      "trialsWithExtraFragments": 0
+    },
+    {
+      "radius": 2,
+      "k": 7,
+      "n": 300,
+      "correct": 0,
+      "correctRate": 0,
+      "sameCardOtherTransform": 0,
+      "falseAccept": 1,
+      "falseAcceptRate": 0.00333333,
+      "falseAcceptUpper95": null,
+      "rejected": 299,
+      "rejectedRate": 0.996667,
+      "rejectedByKind": {
+        "CORRUPTED_FRAGMENT": 299,
+        "AMBIGUOUS": 0,
+        "NOT_DETECTED": 0,
+        "INVALID_MARKER": 0
+      },
+      "detectorBitMismatch": 0,
+      "trialsWithExtraFragments": 0
+    },
+    {
+      "radius": 2,
+      "k": 8,
+      "n": 300,
+      "correct": 0,
+      "correctRate": 0,
+      "sameCardOtherTransform": 0,
+      "falseAccept": 0,
+      "falseAcceptRate": 0,
+      "falseAcceptUpper95": 0.00993608,
+      "rejected": 300,
+      "rejectedRate": 1,
+      "rejectedByKind": {
+        "CORRUPTED_FRAGMENT": 300,
+        "AMBIGUOUS": 0,
+        "NOT_DETECTED": 0,
+        "INVALID_MARKER": 0
+      },
+      "detectorBitMismatch": 0,
+      "trialsWithExtraFragments": 0
+    }
+  ]
+}

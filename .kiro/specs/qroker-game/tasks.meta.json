@@ -235,6 +235,18 @@
         "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
         "timestamp": 1794544245475
       }
+    ],
+    "4.3 Write fragment decode and bit-flip tests (Property 24)": [
+      {
+        "executionId": "eaa1d7f9-2f43-4751-8e7a-a72dc4e8b2eb",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794544539015
+      },
+      {
+        "executionId": "eaa1d7f9-2f43-4751-8e7a-a72dc4e8b2eb",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794545378234
+      }
     ]
   }
 }

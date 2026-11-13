@@ -129,7 +129,7 @@ Rules for every milestone:
     - Read the 5×5 data, match templates, return card, observed transform, and distance.
     - _Requirements: 13.5_
 
-  - [ ] 4.3 Write fragment decode and bit-flip tests (Property 24)
+  - [x] 4.3 Write fragment decode and bit-flip tests (Property 24)
     - Cover the list in Tests above.
     - _Requirements: 12.2, 13.4_
 

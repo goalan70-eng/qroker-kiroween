@@ -11,6 +11,7 @@
     "render:samples": "tsx scripts/render-samples.ts",
     "measure:detection": "tsx scripts/measure-detection.ts",
     "measure:decode-fragment": "tsx scripts/measure-decode-fragment.ts",
+    "collect:decode-counterexamples": "tsx scripts/collect-decode-counterexamples.ts",
     "check:codebook": "tsx scripts/generate-codebook.ts --check"
   },
   "devDependencies": {
