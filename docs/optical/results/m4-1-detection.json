@@ -1,0 +1,1163 @@
+{
+  "degradationsInformational": [
+    {
+      "condition": "gaussian-noise sigma=10",
+      "detected": 20,
+      "exact": 20,
+      "total": 20,
+      "wrongBits": 0
+    },
+    {
+      "condition": "gaussian-noise sigma=20",
+      "detected": 20,
+      "exact": 20,
+      "total": 20,
+      "wrongBits": 0
+    },
+    {
+      "condition": "gaussian-noise sigma=40",
+      "detected": 20,
+      "exact": 20,
+      "total": 20,
+      "wrongBits": 0
+    },
+    {
+      "condition": "gaussian-noise sigma=60",
+      "detected": 20,
+      "exact": 20,
+      "total": 20,
+      "wrongBits": 0
+    },
+    {
+      "condition": "box-blur radius=1px (module 8px)",
+      "detected": 20,
+      "exact": 20,
+      "total": 20,
+      "wrongBits": 0
+    },
+    {
+      "condition": "box-blur radius=2px (module 8px)",
+      "detected": 20,
+      "exact": 20,
+      "total": 20,
+      "wrongBits": 0
+    },
+    {
+      "condition": "box-blur radius=3px (module 8px)",
+      "detected": 20,
+      "exact": 20,
+      "total": 20,
+      "wrongBits": 0
+    },
+    {
+      "condition": "illumination ramp x0.6..x1 otsu",
+      "detected": 20,
+      "exact": 20,
+      "total": 20,
+      "wrongBits": 0
+    },
+    {
+      "condition": "illumination ramp x0.6..x1 adaptive",
+      "detected": 20,
+      "exact": 20,
+      "total": 20,
+      "wrongBits": 0
+    },
+    {
+      "condition": "illumination ramp x0.35..x1 otsu",
+      "detected": 0,
+      "exact": 0,
+      "total": 20,
+      "wrongBits": 0
+    },
+    {
+      "condition": "illumination ramp x0.35..x1 adaptive",
+      "detected": 20,
+      "exact": 20,
+      "total": 20,
+      "wrongBits": 0
+    },
+    {
+      "condition": "illumination ramp x0.2..x1 otsu",
+      "detected": 0,
+      "exact": 0,
+      "total": 20,
+      "wrongBits": 0
+    },
+    {
+      "condition": "illumination ramp x0.2..x1 adaptive",
+      "detected": 0,
+      "exact": 0,
+      "total": 20,
+      "wrongBits": 0
+    },
+    {
+      "condition": "clean adaptive",
+      "detected": 20,
+      "exact": 20,
+      "total": 20,
+      "wrongBits": 0
+    },
+    {
+      "condition": "dim marker: black=90 white=170 otsu",
+      "detected": 20,
+      "exact": 20,
+      "total": 20,
+      "wrongBits": 0
+    }
+  ],
+  "detectorDefaults": {
+    "binarization": "otsu",
+    "minSizePx": 14
+  },
+  "failureCases": [],
+  "families": [
+    {
+      "cases": 52,
+      "detected": 52,
+      "detectionRate": "100.0%",
+      "exact": 52,
+      "exactRate": "100.0%",
+      "extra": {
+        "maxAbsRotationDeg": 0,
+        "maxCenterErrPx": 0,
+        "maxSizeErrPx": 0,
+        "minBorderDarkness": 1
+      },
+      "family": "clean-base-patterns",
+      "firstRejectedReasons": {},
+      "kinds": {
+        "DETECTED": 52
+      },
+      "wrongBitsDetected": 0
+    },
+    {
+      "cases": 416,
+      "detected": 416,
+      "detectionRate": "100.0%",
+      "exact": 416,
+      "exactRate": "100.0%",
+      "extra": {},
+      "family": "clean-d4-transforms",
+      "firstRejectedReasons": {},
+      "kinds": {
+        "DETECTED": 416
+      },
+      "wrongBitsDetected": 0
+    },
+    {
+      "cases": 104,
+      "detected": 104,
+      "detectionRate": "100.0%",
+      "exact": 104,
+      "exactRate": "100.0%",
+      "extra": {
+        "expectedMarkers": 104,
+        "markersLocatedWithExactBits": 208,
+        "maxCenterErrPx": 0
+      },
+      "family": "card-layers",
+      "firstRejectedReasons": {},
+      "kinds": {
+        "DETECTED": 104
+      },
+      "wrongBitsDetected": 0
+    },
+    {
+      "cases": 1,
+      "detected": 1,
+      "detectionRate": "100.0%",
+      "exact": 1,
+      "exactRate": "100.0%",
+      "extra": {
+        "expectedMarkers": 104,
+        "markersLocatedWithExactBits": 104,
+        "markersWithWrongBits": 0,
+        "maxCenterErrPx": 0,
+        "rejectedCandidates": 0,
+        "unexpectedExtraMarkers": 0
+      },
+      "family": "contact-sheet",
+      "firstRejectedReasons": {},
+      "kinds": {
+        "DETECTED": 1
+      },
+      "wrongBitsDetected": 0
+    },
+    {
+      "cases": 300,
+      "detected": 300,
+      "detectionRate": "100.0%",
+      "exact": 300,
+      "exactRate": "100.0%",
+      "extra": {
+        "maxCenterErrPx": 0.5955,
+        "subPixelCases": 155
+      },
+      "family": "positions",
+      "firstRejectedReasons": {},
+      "kinds": {
+        "DETECTED": 300
+      },
+      "wrongBitsDetected": 0
+    },
+    {
+      "cases": 720,
+      "detected": 720,
+      "detectionRate": "100.0%",
+      "exact": 720,
+      "exactRate": "100.0%",
+      "extra": {
+        "boundaryCases(within 5 deg of +-45; any of four R90 rotations accepted)": 40,
+        "maxCenterErrPx": 0,
+        "maxSizeErrPx": 0.1209,
+        "strictCases": 680,
+        "strictExact": 680
+      },
+      "family": "rotations",
+      "firstRejectedReasons": {},
+      "kinds": {
+        "DETECTED": 720
+      },
+      "wrongBitsDetected": 0
+    },
+    {
+      "cases": 320,
+      "detected": 0,
+      "detectionRate": "0.0%",
+      "exact": 320,
+      "exactRate": "100.0%",
+      "extra": {},
+      "family": "negatives",
+      "firstRejectedReasons": {
+        "none": 320
+      },
+      "kinds": {
+        "NOT_DETECTED": 320
+      },
+      "wrongBitsDetected": 0
+    },
+    {
+      "cases": 236,
+      "detected": 42,
+      "detectionRate": "17.8%",
+      "exact": 236,
+      "exactRate": "100.0%",
+      "extra": {},
+      "family": "invalid-borders",
+      "firstRejectedReasons": {
+        "BORDER_NOT_BLACK": 131,
+        "MARGIN_NOT_WHITE": 3,
+        "NOT_QUADRILATERAL": 33,
+        "TOUCHES_IMAGE_EDGE": 16,
+        "none": 11
+      },
+      "kinds": {
+        "DETECTED": 42,
+        "INVALID_MARKER": 183,
+        "NOT_DETECTED": 11
+      },
+      "wrongBitsDetected": 0
+    }
+  ],
+  "invalidBorders": [
+    {
+      "detectedButInvalidStructure": 0,
+      "detectedWithWrongBits": 0,
+      "name": "b-corner-border-cell-white",
+      "outcomes": {
+        "INVALID_MARKER/BORDER_NOT_BLACK": 12
+      },
+      "total": 12
+    },
+    {
+      "detectedButInvalidStructure": 0,
+      "detectedWithWrongBits": 0,
+      "name": "a-noncorner-border-cell-white",
+      "outcomes": {
+        "INVALID_MARKER/BORDER_NOT_BLACK": 60
+      },
+      "total": 60
+    },
+    {
+      "detectedButInvalidStructure": 0,
+      "detectedWithWrongBits": 0,
+      "name": "c-border-side-white",
+      "outcomes": {
+        "INVALID_MARKER/BORDER_NOT_BLACK": 10,
+        "INVALID_MARKER/NOT_QUADRILATERAL": 2
+      },
+      "total": 12
+    },
+    {
+      "detectedButInvalidStructure": 0,
+      "detectedWithWrongBits": 0,
+      "name": "e-margin-black-side-full",
+      "outcomes": {
+        "INVALID_MARKER/NOT_QUADRILATERAL": 12
+      },
+      "total": 12
+    },
+    {
+      "detectedButInvalidStructure": 0,
+      "detectedWithWrongBits": 0,
+      "name": "e-margin-black-side-partial",
+      "outcomes": {
+        "INVALID_MARKER/NOT_QUADRILATERAL": 12
+      },
+      "total": 12
+    },
+    {
+      "detectedButInvalidStructure": 0,
+      "detectedWithWrongBits": 0,
+      "name": "e-margin-isolated-dots-1",
+      "outcomes": {
+        "DETECTED": 3
+      },
+      "total": 3
+    },
+    {
+      "detectedButInvalidStructure": 0,
+      "detectedWithWrongBits": 0,
+      "name": "e-margin-isolated-dots-8",
+      "outcomes": {
+        "INVALID_MARKER/MARGIN_NOT_WHITE": 3
+      },
+      "total": 3
+    },
+    {
+      "detectedButInvalidStructure": 0,
+      "detectedWithWrongBits": 0,
+      "name": "h-two-markers-touching",
+      "outcomes": {
+        "INVALID_MARKER/BORDER_NOT_BLACK": 6,
+        "NOT_DETECTED": 3
+      },
+      "total": 9
+    },
+    {
+      "detectedButInvalidStructure": 0,
+      "detectedWithWrongBits": 0,
+      "name": "d-border-cell-gray100",
+      "outcomes": {
+        "DETECTED": 24
+      },
+      "total": 24
+    },
+    {
+      "detectedButInvalidStructure": 0,
+      "detectedWithWrongBits": 0,
+      "name": "d-border-cell-gray128",
+      "outcomes": {
+        "INVALID_MARKER/BORDER_NOT_BLACK": 24
+      },
+      "total": 24
+    },
+    {
+      "detectedButInvalidStructure": 0,
+      "detectedWithWrongBits": 0,
+      "name": "d-whole-border-gray128",
+      "outcomes": {
+        "DETECTED": 1
+      },
+      "total": 1
+    },
+    {
+      "detectedButInvalidStructure": 0,
+      "detectedWithWrongBits": 0,
+      "name": "f-cropped-visible-25pct",
+      "outcomes": {
+        "NOT_DETECTED": 8
+      },
+      "total": 8
+    },
+    {
+      "detectedButInvalidStructure": 0,
+      "detectedWithWrongBits": 0,
+      "name": "f-cropped-visible-50pct",
+      "outcomes": {
+        "INVALID_MARKER/TOUCHES_IMAGE_EDGE": 8
+      },
+      "total": 8
+    },
+    {
+      "detectedButInvalidStructure": 0,
+      "detectedWithWrongBits": 0,
+      "name": "f-cropped-visible-75pct",
+      "outcomes": {
+        "INVALID_MARKER/TOUCHES_IMAGE_EDGE": 8
+      },
+      "total": 8
+    },
+    {
+      "detectedButInvalidStructure": 0,
+      "detectedWithWrongBits": 0,
+      "name": "g-white-occluder",
+      "outcomes": {
+        "DETECTED": 14,
+        "INVALID_MARKER/BORDER_NOT_BLACK": 19,
+        "INVALID_MARKER/NOT_QUADRILATERAL": 7
+      },
+      "total": 40
+    }
+  ],
+  "measuredLimitCases": [
+    {
+      "family": "scales-integer-modulePx",
+      "level": "1",
+      "observed": "NOT_DETECTED",
+      "params": "card=H-A modulePx=1"
+    },
+    {
+      "family": "scales-integer-modulePx",
+      "level": "1",
+      "observed": "NOT_DETECTED",
+      "params": "card=H-2 modulePx=1"
+    },
+    {
+      "family": "scales-fractional",
+      "level": "1",
+      "observed": "NOT_DETECTED",
+      "params": "pattern=2231724 effectiveModulePx=1 scale=0.125"
+    },
+    {
+      "family": "scales-fractional",
+      "level": "1",
+      "observed": "NOT_DETECTED",
+      "params": "pattern=24388787 effectiveModulePx=1 scale=0.125"
+    },
+    {
+      "family": "scales-fractional",
+      "level": "1.25",
+      "observed": "INVALID_MARKER[TOO_SMALL]",
+      "params": "pattern=2231724 effectiveModulePx=1.25 scale=0.15625"
+    },
+    {
+      "family": "scales-fractional",
+      "level": "1.25",
+      "observed": "INVALID_MARKER[TOO_SMALL]",
+      "params": "pattern=24388787 effectiveModulePx=1.25 scale=0.15625"
+    },
+    {
+      "family": "scales-fractional",
+      "level": "1.5",
+      "observed": "INVALID_MARKER[TOO_SMALL]",
+      "params": "pattern=2231724 effectiveModulePx=1.5 scale=0.1875"
+    },
+    {
+      "family": "scales-fractional",
+      "level": "1.5",
+      "observed": "INVALID_MARKER[TOO_SMALL]",
+      "params": "pattern=24388787 effectiveModulePx=1.5 scale=0.1875"
+    },
+    {
+      "family": "scales-fractional",
+      "level": "1.75",
+      "observed": "INVALID_MARKER[TOO_SMALL]",
+      "params": "pattern=2231724 effectiveModulePx=1.75 scale=0.21875"
+    },
+    {
+      "family": "scales-fractional",
+      "level": "1.75",
+      "observed": "INVALID_MARKER[TOO_SMALL]",
+      "params": "pattern=24388787 effectiveModulePx=1.75 scale=0.21875"
+    },
+    {
+      "family": "scales-fractional",
+      "level": "2",
+      "observed": "INVALID_MARKER[TOO_SMALL]",
+      "params": "pattern=2231724 effectiveModulePx=2 scale=0.25"
+    },
+    {
+      "family": "scales-fractional",
+      "level": "2",
+      "observed": "INVALID_MARKER[GRID_MISALIGNED]",
+      "params": "pattern=17587168 effectiveModulePx=2 scale=0.25"
+    },
+    {
+      "family": "scales-fractional",
+      "level": "2.25",
+      "observed": "INVALID_MARKER[GRID_MISALIGNED]",
+      "params": "pattern=20652541 effectiveModulePx=2.25 scale=0.28125"
+    },
+    {
+      "family": "scales-fractional",
+      "level": "2.25",
+      "observed": "INVALID_MARKER[GRID_MISALIGNED]",
+      "params": "pattern=11306041 effectiveModulePx=2.25 scale=0.28125"
+    },
+    {
+      "family": "perspective",
+      "level": "60/5",
+      "observed": "INVALID_MARKER[DEGENERATE_GEOMETRY]",
+      "params": "tiltDeg=60 case=5 seed=20311117 card=13093775 rotationDeg=1.7 axisDeg=349.1 distance=5x"
+    },
+    {
+      "family": "perspective",
+      "level": "60/5",
+      "observed": "INVALID_MARKER[DEGENERATE_GEOMETRY]",
+      "params": "tiltDeg=60 case=8 seed=20311120 card=13093775 rotationDeg=266.9 axisDeg=267.8 distance=5x"
+    },
+    {
+      "family": "perspective",
+      "level": "70/5",
+      "observed": "NOT_DETECTED",
+      "params": "tiltDeg=70 case=0 seed=20321112 card=29336846 rotationDeg=134.3 axisDeg=116.5 distance=5x"
+    },
+    {
+      "family": "perspective",
+      "level": "70/5",
+      "observed": "INVALID_MARKER[DEGENERATE_GEOMETRY]",
+      "params": "tiltDeg=70 case=1 seed=20321113 card=14583777 rotationDeg=273.5 axisDeg=295.5 distance=5x"
+    },
+    {
+      "family": "perspective",
+      "level": "60/3",
+      "observed": "INVALID_MARKER[DEGENERATE_GEOMETRY]",
+      "params": "tiltDeg=60 case=5 seed=20311117 card=13093775 rotationDeg=1.7 axisDeg=349.1 distance=3x"
+    },
+    {
+      "family": "perspective",
+      "level": "60/3",
+      "observed": "INVALID_MARKER[DEGENERATE_GEOMETRY]",
+      "params": "tiltDeg=60 case=8 seed=20311120 card=13093775 rotationDeg=266.9 axisDeg=267.8 distance=3x"
+    },
+    {
+      "family": "perspective",
+      "level": "70/3",
+      "observed": "NOT_DETECTED",
+      "params": "tiltDeg=70 case=0 seed=20321112 card=29336846 rotationDeg=134.3 axisDeg=116.5 distance=3x"
+    },
+    {
+      "family": "perspective",
+      "level": "70/3",
+      "observed": "NOT_DETECTED",
+      "params": "tiltDeg=70 case=1 seed=20321113 card=14583777 rotationDeg=273.5 axisDeg=295.5 distance=3x"
+    }
+  ],
+  "negatives": {
+    "rows": [
+      {
+        "detected": 0,
+        "invalidMarker": 0,
+        "name": "constant-white",
+        "notDetected": 1,
+        "total": 1
+      },
+      {
+        "detected": 0,
+        "invalidMarker": 0,
+        "name": "constant-black",
+        "notDetected": 1,
+        "total": 1
+      },
+      {
+        "detected": 0,
+        "invalidMarker": 0,
+        "name": "constant-gray",
+        "notDetected": 1,
+        "total": 1
+      },
+      {
+        "detected": 0,
+        "invalidMarker": 0,
+        "name": "empty-0x0",
+        "notDetected": 1,
+        "total": 1
+      },
+      {
+        "detected": 0,
+        "invalidMarker": 0,
+        "name": "degenerate-sizes",
+        "notDetected": 9,
+        "total": 9
+      },
+      {
+        "detected": 0,
+        "invalidMarker": 0,
+        "name": "uniform-noise-200",
+        "notDetected": 200,
+        "total": 200
+      },
+      {
+        "detected": 0,
+        "invalidMarker": 0,
+        "name": "gaussian-noise-around-gray-100",
+        "notDetected": 100,
+        "total": 100
+      },
+      {
+        "detected": 0,
+        "invalidMarker": 0,
+        "name": "gradient-only",
+        "notDetected": 3,
+        "total": 3
+      },
+      {
+        "detected": 0,
+        "invalidMarker": 0,
+        "name": "bar-wrong-aspect",
+        "notDetected": 2,
+        "total": 2
+      },
+      {
+        "detected": 0,
+        "invalidMarker": 0,
+        "name": "filled-black-disk",
+        "notDetected": 2,
+        "total": 2
+      }
+    ],
+    "solidBlack7x7Square": {
+      "bits": 33554431,
+      "observed": "DETECTED[n=1 bits=33554431]"
+    }
+  },
+  "perspective": {
+    "cameraDistance3MarkerEdges": [
+      {
+        "detected": 20,
+        "exact": 20,
+        "tiltDeg": 0,
+        "total": 20,
+        "wrongBits": 0
+      },
+      {
+        "detected": 20,
+        "exact": 20,
+        "tiltDeg": 10,
+        "total": 20,
+        "wrongBits": 0
+      },
+      {
+        "detected": 20,
+        "exact": 20,
+        "tiltDeg": 20,
+        "total": 20,
+        "wrongBits": 0
+      },
+      {
+        "detected": 20,
+        "exact": 20,
+        "tiltDeg": 30,
+        "total": 20,
+        "wrongBits": 0
+      },
+      {
+        "detected": 20,
+        "exact": 20,
+        "tiltDeg": 40,
+        "total": 20,
+        "wrongBits": 0
+      },
+      {
+        "detected": 20,
+        "exact": 20,
+        "tiltDeg": 50,
+        "total": 20,
+        "wrongBits": 0
+      },
+      {
+        "detected": 15,
+        "exact": 15,
+        "tiltDeg": 60,
+        "total": 20,
+        "wrongBits": 0
+      },
+      {
+        "detected": 0,
+        "exact": 0,
+        "tiltDeg": 70,
+        "total": 20,
+        "wrongBits": 0
+      }
+    ],
+    "cameraDistance5MarkerEdges": [
+      {
+        "detected": 20,
+        "exact": 20,
+        "tiltDeg": 0,
+        "total": 20,
+        "wrongBits": 0
+      },
+      {
+        "detected": 20,
+        "exact": 20,
+        "tiltDeg": 10,
+        "total": 20,
+        "wrongBits": 0
+      },
+      {
+        "detected": 20,
+        "exact": 20,
+        "tiltDeg": 20,
+        "total": 20,
+        "wrongBits": 0
+      },
+      {
+        "detected": 20,
+        "exact": 20,
+        "tiltDeg": 30,
+        "total": 20,
+        "wrongBits": 0
+      },
+      {
+        "detected": 20,
+        "exact": 20,
+        "tiltDeg": 40,
+        "total": 20,
+        "wrongBits": 0
+      },
+      {
+        "detected": 20,
+        "exact": 20,
+        "tiltDeg": 50,
+        "total": 20,
+        "wrongBits": 0
+      },
+      {
+        "detected": 16,
+        "exact": 16,
+        "tiltDeg": 60,
+        "total": 20,
+        "wrongBits": 0
+      },
+      {
+        "detected": 0,
+        "exact": 0,
+        "tiltDeg": 70,
+        "total": 20,
+        "wrongBits": 0
+      }
+    ],
+    "model": "plane tilted by tiltDeg about a random in-plane axis, random in-plane rotation, 20 seeded cases per strength, modulePx 8",
+    "reasonsDistance5": {
+      "DEGENERATE_GEOMETRY": 10,
+      "NOT_QUADRILATERAL": 7,
+      "none": 7
+    }
+  },
+  "scalesFractionalBlurred": {
+    "defaultOptions": [
+      {
+        "detected": 0,
+        "exact": 0,
+        "modulePx": 1,
+        "sizePx": 7,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 0,
+        "exact": 0,
+        "modulePx": 1.25,
+        "sizePx": 8.75,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 0,
+        "exact": 0,
+        "modulePx": 1.5,
+        "sizePx": 10.5,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 0,
+        "exact": 0,
+        "modulePx": 1.75,
+        "sizePx": 12.25,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 35,
+        "exact": 35,
+        "modulePx": 2,
+        "sizePx": 14,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 36,
+        "exact": 36,
+        "modulePx": 2.25,
+        "sizePx": 15.75,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 2.5,
+        "sizePx": 17.5,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 2.75,
+        "sizePx": 19.25,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 3,
+        "sizePx": 21,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 3.5,
+        "sizePx": 24.5,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 4,
+        "sizePx": 28,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 5,
+        "sizePx": 35,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 6,
+        "sizePx": 42,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 8,
+        "sizePx": 56,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 12,
+        "sizePx": 84,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 16,
+        "sizePx": 112,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 24,
+        "sizePx": 168,
+        "total": 52,
+        "wrongBits": 0
+      }
+    ],
+    "minSizePxLoweredTo3": [
+      {
+        "detected": 0,
+        "exact": 0,
+        "modulePx": 1,
+        "sizePx": 7,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 7,
+        "exact": 7,
+        "modulePx": 1.5,
+        "sizePx": 10.5,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 35,
+        "exact": 35,
+        "modulePx": 2,
+        "sizePx": 14,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 36,
+        "exact": 36,
+        "modulePx": 2.25,
+        "sizePx": 15.75,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 2.5,
+        "sizePx": 17.5,
+        "total": 52,
+        "wrongBits": 0
+      }
+    ],
+    "reasons": {
+      "GRID_MISALIGNED": 32,
+      "TOO_SMALL": 153,
+      "none": 56
+    }
+  },
+  "scalesIntegerCrisp": {
+    "defaultOptions": [
+      {
+        "detected": 0,
+        "exact": 0,
+        "modulePx": 1,
+        "sizePx": 7,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 2,
+        "sizePx": 14,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 3,
+        "sizePx": 21,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 4,
+        "sizePx": 28,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 5,
+        "sizePx": 35,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 6,
+        "sizePx": 42,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 7,
+        "sizePx": 49,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 8,
+        "sizePx": 56,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 9,
+        "sizePx": 63,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 10,
+        "sizePx": 70,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 11,
+        "sizePx": 77,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 12,
+        "sizePx": 84,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 13,
+        "sizePx": 91,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 14,
+        "sizePx": 98,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 15,
+        "sizePx": 105,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 16,
+        "sizePx": 112,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 17,
+        "sizePx": 119,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 18,
+        "sizePx": 126,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 19,
+        "sizePx": 133,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 20,
+        "sizePx": 140,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 21,
+        "sizePx": 147,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 22,
+        "sizePx": 154,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 23,
+        "sizePx": 161,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 24,
+        "sizePx": 168,
+        "total": 52,
+        "wrongBits": 0
+      }
+    ],
+    "minSizePxLoweredTo3": [
+      {
+        "detected": 0,
+        "exact": 0,
+        "modulePx": 1,
+        "sizePx": 7,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 2,
+        "sizePx": 14,
+        "total": 52,
+        "wrongBits": 0
+      },
+      {
+        "detected": 52,
+        "exact": 52,
+        "modulePx": 3,
+        "sizePx": 21,
+        "total": 52,
+        "wrongBits": 0
+      }
+    ]
+  },
+  "scope": "SYNTHETIC images, not real cameras. No claim about printed cards, phone sensors, lenses or lighting.",
+  "seed": 20251112,
+  "summary": {
+    "falsePositivesOnNegatives": 0,
+    "minExactModulePxBlurredFractional": 2.5,
+    "minExactModulePxCrisp": 2,
+    "minExactSizePxBlurredFractional": 17.5,
+    "minExactSizePxCrisp": 14,
+    "negativeImages": 320,
+    "perspectiveCloseCameraMaxFullyExactTiltDeg": 50,
+    "perspectiveMaxFullyExactTiltDeg": 50,
+    "wrongBitsDetectedAcrossAllFamilies": 0
+  },
+  "title": "M4.1 marker detection measurements"
+}
