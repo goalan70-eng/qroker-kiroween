@@ -18,6 +18,7 @@ Fixed technical choices (from design.md):
 - Acceptance radius r_acc defaults to 1 and is configurable to 2. Values above 2 are rejected. With distance ≥ 5, correction is guaranteed only for up to 2 bit errors under an independent bit-flip model; larger corruption can be falsely accepted as another card.
 - Independence rule: the codebook verifier must not import code from the generator or from the transform implementation the generator uses. It re-derives the 8 cell maps itself and works from the frozen JSON and rasterized fragments.
 - Physical card geometry (Requirement 15): baseline 63.5 × 88.9 mm, corner radius 3.175 mm, marker inset 1 module (1.5875 mm), quiet margin 1 module, zero intended gap between cards. The central void left by rounded inner corners must not be assumed away. Improvement order if recognition is unreliable: inset, marker size/margin, detection/geometry algorithms, alignment tolerance, and only then a smaller corner radius. Synthetic geometry results do not guarantee real-camera performance. The analytic containment numbers in design.md ("Physical Card Geometry") are unreproduced until task 5.4 tests pass.
+- Double-sided markers (Requirement 16): the back-face layer is the horizontal mirror of the front-face layer in the card body frame (including the fragment pixel content), so that after a left-right flip the observed markers have the same board position, bits and pixels. Printing the same body-frame raster on both faces does not satisfy this and is covered by a negative test. Mirroring applies to the marker layer only. Back fragments are derived only from the same card's front layer. Duplex registration and cut-outline errors are geometry parameters. A readable marker on either face can reveal hidden cards; this is a documented gameplay limitation (design.md, Physical Card Geometry section 7), not something the decoder or the app can fix.
 
 Rules for every milestone:
 
@@ -161,12 +162,17 @@ Rules for every milestone:
     - Tests (Property 27, Property 28 setup): clearance formula vs rasterized rounded-corner mask over a sweep grid (radius 0, 2.0, 3.0, 3.175, 3.6, 4.0, 5.0, 6.0 mm × inset 0.5, 1, 1.5, 2 modules); every printed marker pixel lies inside the mask at baseline; at 6 mm radius with inset 1 the containment is reported as invalid; zero-gap composition has seam white separation of 2(inset+margin) modules and the black squares of adjacent cards form separate connected components; central void area matches 4(1−π/4)r² within raster tolerance; deterministic output for fixed inputs.
     - _Requirements: 15.1, 15.2, 15.3, 15.5_
 
-  - [ ] 5.5 Run the geometry experiments and record the decision table
-    - Dependencies: 5.4. Run group decoding on physical compositions with fixed seeds (at least 200 trials per cell, at least 1,000 for the baseline cell): radius sweep {0, 2.0, 3.0, 3.175 (baseline), 3.6, 4.0, 5.0, 6.0} mm; inset {1, 1.5, 2} modules; small placement errors (shift along a seam 0–1.5 mm, per-card rotation 0–3°, unintended gap 0–1 mm); camera rotation, perspective, blur, lighting gradient; dark and light table; 3×3 boards with Distractor_Markers; incomplete groups (one card absent). For each cell record the rate of exactly correct four cards and sum, rejection rate by kind, misidentification count, tally of failure causes, and minimum distance between Central_Void and the nearest marker. Write `docs/optical/results/geometry-experiments.json` and `.md` (deterministic, no timestamps) with a decision table that follows the improvement order in Requirement 15.7: a corner-radius reduction may only be recommended after steps 1–4 are evaluated and recorded. State "synthetic images, not real cameras". Record failures and failing seeds; do not loosen thresholds or change geometry because of a single failing case.
-    - Acceptance: baseline results and the effect of each geometry adjustment are recorded; no claim of real-camera performance; misidentification counts are reported per cell (0 is an observation, not a guarantee).
-    - _Requirements: 15.4, 15.6, 15.7, 15.8, 15.9_
+  - [ ] 5.5 Add double-sided rendering and flip-equivalence tests (test support)
+    - Dependencies: 5.4. Deliverables: extend `src/optical/testing/physical-card.ts` with `Card_Face` (`FRONT` | `BACK`), `printLayers(card)` (front and back layers in the body frame, the back derived only from the same card's front layer by horizontal mirroring of positions and fragment pixel content), `observeFace(card, face, orientation, flip?)`, `flipCard(axis)` for vertical-axis and horizontal-axis flips, `duplexRegistration { dxMm, dyMm, rotDeg }`, a cut-outline offset parameter, and a separate asymmetric artwork probe layer that is never mirrored. Do not modify `render.ts` or the frozen codebook.
+    - Tests (Properties 29, 30, 31): all 52 cards × orientations {0°, 180°}: observed marker layer after a vertical-axis flip is pixel-identical to the front observation (positions, bits, pixels, decoded card id via `detectMarkers` bits); a horizontal-axis flip equals the opposite permitted orientation of the front; negative test: printing the same body-frame raster on both faces gives a different observation after flipping for every card (corner positions or bits) and is rejected; front and back corner sets are disjoint for all four suits; back layer is a pure function of the card (changing neighboring cards or board state cannot change it); artwork probe is not mirrored while the marker layer is; containment is identical for both faces and shrinks by the registration/cut error; no fragment is ever regenerated from neighboring cards.
+    - _Requirements: 16.1, 16.2, 16.3, 16.4, 16.5, 16.6, 16.7_
 
-  - [ ] 5.6 Run tests and record results
+  - [ ] 5.6 Run the geometry experiments and record the decision table
+    - Dependencies: 5.4, 5.5. Run group decoding on physical compositions with fixed seeds (at least 200 trials per cell, at least 1,000 for the baseline cell): radius sweep {0, 2.0, 3.0, 3.175 (baseline), 3.6, 4.0, 5.0, 6.0} mm; inset {1, 1.5, 2} modules; small placement errors (shift along a seam 0–1.5 mm, per-card rotation 0–3°, unintended gap 0–1 mm); camera rotation, perspective, blur, lighting gradient; dark and light table; 3×3 boards with Distractor_Markers; incomplete groups (one card absent); face FRONT/BACK, vertical-axis and horizontal-axis flips, duplex registration shift 0/0.25/0.5/1.0 mm and rotation 0/0.5/1°, cut-outline offset 0/0.5/1.0 mm (all as parameter sweeps; real tolerances are unknown), applied on top of the radius/inset sweep. Statistics are computed separately for each experimental cell (each combination of geometry and degradation parameters) and never pooled across different geometries, faces, flips or degradation conditions. For each cell record: the number of trials n; the count and rate of exactly correct recognition (all four cards and the sum correct); the count and rate of rejections, with the rejection kinds tallied; the count and rate of incorrect identification (a wrong card set or sum returned as IDENTIFIED, i.e. false acceptance); and, when the false-acceptance count is 0, the exact one-sided 95% upper confidence bound on the per-trial false-acceptance probability, 1 − 0.05^(1/n) (about 3/n; about 0.30% for n = 1,000 and about 1.5% for n = 200). Also record the tally of failure causes and the minimum distance between Central_Void and the nearest marker for each cell. When the false-acceptance count is not 0, record the count and rate and the failing seeds instead of a zero-event bound. Write `docs/optical/results/geometry-experiments.json` and `.md` (deterministic, no timestamps) with a decision table that follows the improvement order in Requirement 15.7: a corner-radius reduction may only be recommended after steps 1–4 are evaluated and recorded. State "synthetic images, not real cameras" in every output file: these are synthetic-test findings about the sampled conditions only, they do not measure or guarantee real-camera performance, and the zero-event bound applies only to the sampled synthetic condition distribution (independent seeded trials). Record failures and failing seeds; do not loosen thresholds or change geometry because of a single failing case.
+    - Acceptance: baseline results and the effect of each geometry adjustment are recorded; no claim of real-camera performance; n, correct, rejection and false-acceptance counts and rates are reported per cell without pooling, with the exact one-sided 95% upper bound 1 − 0.05^(1/n) for every cell whose false-acceptance count is 0 (0 is an observation under the sampled conditions, not a mathematical guarantee, and says nothing about real cameras). Registration/cut tolerances are evaluated before any change to card shape (Requirement 15.7, 16.8).
+    - _Requirements: 15.4, 15.6, 15.7, 15.8, 15.9, 16.8_
+
+  - [ ] 5.7 Run tests and record results
     - Save output and the 520/128 counts to `docs/optical/results/m5-*`. Record failures; do not hide them.
     - _Requirements: 12.7_
 
@@ -174,7 +180,7 @@ Rules for every milestone:
   - Dependencies: task 5.
   - Deliverables: rejection test suite; changes to `decode-group.ts` only where the tests expose gaps. Any failure found is recorded in `docs/optical/results/m6-*`.
   - Acceptance criteria: no result is IDENTIFIED when any rule is violated.
-  - Tests (Property 15, with Properties 24 and 25): removing 1 to 3 fragments gives INCOMPLETE_GROUP; a duplicate card gives DUPLICATE_CARD; flipping r_acc+1 to 4−r_acc bits in one fragment gives CORRUPTED_FRAGMENT (non-empty only for r_acc = 1); observed transforms not in the slot table (90°-rotated fragment, ♥ content in a ♦ slot) give INVALID_ARRANGEMENT; three-fragment compositions never give IDENTIFIED; a property-based sweep over all violation types asserts the result kind is never IDENTIFIED; a physical composition with one card absent (rounded-corner voids, three markers around the vertex) gives INCOMPLETE_GROUP; distractor markers from neighboring cards never complete or alter a group.
+  - Tests (Property 15, with Properties 24 and 25): removing 1 to 3 fragments gives INCOMPLETE_GROUP; a duplicate card gives DUPLICATE_CARD; flipping r_acc+1 to 4−r_acc bits in one fragment gives CORRUPTED_FRAGMENT (non-empty only for r_acc = 1); observed transforms not in the slot table (90°-rotated fragment, ♥ content in a ♦ slot) give INVALID_ARRANGEMENT; three-fragment compositions never give IDENTIFIED; a property-based sweep over all violation types asserts the result kind is never IDENTIFIED; a physical composition with one card absent (rounded-corner voids, three markers around the vertex) gives INCOMPLETE_GROUP; distractor markers from neighboring cards never complete or alter a group; an incomplete group is rejected on either face and after a flip.
   - _Requirements: 5.7, 12.6, 13.4, 13.6, 13.7_
 
   - [ ] 6.1 Write rejection tests (Property 15)
@@ -191,9 +197,9 @@ Rules for every milestone:
 
 - [ ] 7. Synthetic-image robustness testing
   - Dependencies: task 6.
-  - Deliverables: `src/optical/degrade.ts` (seeded degradations: fragment position error 0 / 0.1 / 0.25 module, arbitrary camera rotation angles, perspective, blur, noise, illumination gradient, optional reflection), `scripts/run-robustness.ts`, `docs/optical/results/robustness.json` and `robustness.md`. All outputs are labeled "synthetic images, not real cameras". Add a condition family that applies the degradations to physical-geometry compositions from `src/optical/testing/physical-card.ts` (baseline radius, and any radius/inset the decision table of task 5.5 marks as a candidate) and report it separately from the flat-layout conditions.
-  - Acceptance criteria: at least 1,000 trials per condition, with fixed seeds. For each condition the files record the correct-identification rate, the rejection rate, and the misidentification count (a wrong card or sum returned as IDENTIFIED). The misidentification count must be 0 in every measured condition. A count of 0 is an observation for the measured conditions, not a guarantee against arbitrary corruption. If it is not, record the failing seeds and conditions and mark this task as failed-with-findings; do not loosen thresholds. Success rates are measurements, not pass/fail.
-  - Tests (Properties 15, 20, 24, 26): degradation functions are deterministic for a given seed; degradations at zero strength leave images unchanged; a test asserts misidentification count = 0 for every condition in `robustness.json`.
+  - Deliverables: `src/optical/degrade.ts` (seeded degradations: fragment position error 0 / 0.1 / 0.25 module, arbitrary camera rotation angles, perspective, blur, noise, illumination gradient, optional reflection), `scripts/run-robustness.ts`, `docs/optical/results/robustness.json` and `robustness.md`. All outputs are labeled "synthetic images, not real cameras". Add a condition family that applies the degradations to physical-geometry compositions from `src/optical/testing/physical-card.ts` (baseline radius, and any radius/inset the decision table of task 5.6 marks as a candidate) and report it separately from the flat-layout conditions, on both faces and after flips, including duplex registration error.
+  - Acceptance criteria: at least 1,000 trials per condition, with fixed seeds. For each condition the files record the correct-identification rate, the rejection rate, and the misidentification count (a wrong card or sum returned as IDENTIFIED). Misidentification is judged at two separate levels. (1) Mathematical guarantee: only inside the independent-bit-flip model of design.md section 7 (correction up to 2 bit errors; for r_acc = 1, rejection of 2–3 bit errors). There is no guarantee for arbitrary image corruption, and false acceptance of another card is possible beyond those ranges. (2) Finite-sample experimental pass criterion: for each condition record n, the observed misidentification count and, when the count is 0, the one-sided 95% upper confidence bound 1 − 0.05^(1/n) (about 3/n; about 0.30% for n = 1,000) on the per-trial misidentification probability for that synthetic condition distribution. The task passes this criterion when the observed count is 0 in every measured condition. Any observed misidentification marks the task failed-with-findings: record the failing seeds and conditions and do not loosen thresholds. A pass means no misidentification was observed in n synthetic trials; it does not mean the probability is zero and it does not transfer to real cameras. Success rates are measurements, not pass/fail.
+  - Tests (Properties 15, 20, 24, 26): degradation functions are deterministic for a given seed; degradations at zero strength leave images unchanged; a test asserts that `robustness.json` records n, the observed misidentification count and, for zero counts, the 95% upper bound 1 − 0.05^(1/n) (computed correctly) for every condition, and that the observed count is 0 for every condition (the experimental pass criterion, not a mathematical guarantee).
   - _Requirements: 12.5, 12.7_
 
   - [ ] 7.1 Implement `degrade.ts`
@@ -215,18 +221,18 @@ Rules for every milestone:
 - [ ] 8. Physical-camera validation preparation
   - Dependencies: task 7.
   - Deliverables: `scripts/render-print-sheet.ts` (PNG/SVG print sheets of the 52 cards' fragments at configurable module size, for example 1.5 mm and 2.0 mm, with registration marks), `docs/optical/physical-test-protocol.md`.
-  - Protocol contents: printer and paper, module sizes, lighting, distance, phone models, matte versus glossy, card die-cut corner radius and measured clearance between marker margin and card edge on real prints (caliper or ruler), zero-gap 2×2 placement, rounded-corner outline overlay and the Central_Void on the print sheet, and a corner-radius comparison only if the task 5.5 decision table reached the radius-reduction step, a result-recording template, and pass criteria drawn from task 7 (misidentification count must be 0; success rates are recorded as measurements).
-  - Acceptance criteria: this task prepares physical testing only. No real-camera results exist at this point, and none may be claimed until they are recorded in the template with real prints and real devices.
-  - Tests (Properties 14, 21): sheet generation is deterministic (same inputs give identical bytes); every card appears exactly once on the sheets; each sheet decodes back through the decoder from the rendered raster; the protocol file exists.
-  - _Requirements: 12.7_
+  - Protocol contents: printer and paper, module sizes, lighting, distance, phone models, matte versus glossy, card die-cut corner radius and measured clearance between marker margin and card edge on real prints (caliper or ruler), zero-gap 2×2 placement, rounded-corner outline overlay and the Central_Void on the print sheet, and a corner-radius comparison only if the task 5.6 decision table reached the radius-reduction step, a left-right flip test on real prints (observed positions and bits before and after the flip), verification of the duplex print-file convention (whether the printer or vendor mirrors the back page), measured front/back registration and cutting error with a ruler or caliper, show-through check (see the Acceptance criteria), and a hidden-information note (markers on both faces expose card identity), a result-recording template, and pass criteria drawn from task 7 and stated at the finite-sample level (the number of real trials n per condition is fixed in the protocol before testing, for example n = 100, whose zero-event 95% upper bound 1 − 0.05^(1/n) is about 3%; the observed misidentification count and the bound are recorded; any observed misidentification is a recorded failure; success rates are recorded as measurements; zero observed misidentifications in n real trials is not a mathematical guarantee and does not imply zero probability).
+  - Acceptance criteria: this task prepares physical testing only. No real-camera results exist at this point, and none may be claimed until they are recorded in the template with real prints and real devices. Show-through verification (Requirement 16.10): in the body frame the back-face markers sit under the front's blank corners (for example hearts: front TL+BR, back TR+BL), so the protocol must measure, on real prints of both faces, with front lighting and backlighting and on the intended stock (matte and glossy), the gray-level contrast of each blank corner against clean paper and compare it with the detector's marker contrast requirement (detect.ts needs at least 40 gray levels between border and margin). Record the measured contrast and the margin to the threshold. Verify that blank corners are never reported as markers and that a card whose inward corner is blank (an invalid placement such as a heart in a TR slot) never produces a complete group; record n and the 95% upper bound for these checks. If show-through is not below the detection threshold by a recorded margin, the response is a change of stock opacity or ink density, not a change of the codebook or the approved double-sided geometry.
+  - Tests (Properties 14, 21): sheet generation is deterministic (same inputs give identical bytes); every card appears exactly once on the sheets; each sheet decodes back through the decoder from the rendered raster; the protocol file exists; front/back sheet pair obeys the convention: decoding the back sheet raster mirrored as a viewer would see it gives the same bits as the front.
+  - _Requirements: 12.7, 16.10_
 
   - [ ] 8.1 Implement `scripts/render-print-sheet.ts`
-    - Configurable module size in mm, registration marks, deterministic output. Optional cut-outline overlay with the configurable corner radius.
+    - Configurable module size in mm, registration marks, deterministic output. Optional cut-outline overlay with the configurable corner radius. Generate front and back print sheets using the documented back-page convention (back viewed from its own face looks like the front) with registration marks on both.
     - _Requirements: 12.7_
 
   - [ ] 8.2 Write `docs/optical/physical-test-protocol.md`
-    - Include the sections listed above and a blank result-recording template.
-    - _Requirements: 12.7_
+    - Include the sections listed above and a blank result-recording template. Include the show-through measurement procedure.
+    - _Requirements: 12.7, 16.10_
 
   - [ ] 8.3 Write print-sheet and protocol tests
     - Cover the list in Tests above.
@@ -241,7 +247,9 @@ Rules for every milestone:
 - Open decisions that do NOT block this prototype (see `docs/open-decisions.md`, created separately): which card face carries the fragments; how identities stay hidden before predictions; whether random starting cards must form a valid Composite Code; UI handling of the ♣/♠-only reflection ambiguity; conflicts with the printed-card front layout.
 - Phases 3–4 tasks (game engine, AI, simulator, browser UI, PWA, companion app) will be generated after the optical prototype review.
 - Scoring values are undecided and are not part of this plan.
-- Physical card geometry experiments (Requirement 15) are in task 5.4–5.5 (synthetic), task 7 (combined degradations) and task 8 (real prints).
+- Physical card geometry experiments (Requirement 15) are in task 5.4–5.6 (synthetic), task 7 (combined degradations) and task 8 (real prints).
+- Double-sided markers (Requirement 16): rendering and flip-equivalence tests are task 5.5, experiments with duplex registration are task 5.6, real-print flip test is task 8. The hidden-information limitation is documented in design.md and docs/open-decisions.md; no safeguard has been implemented or validated.
+- Zero-misidentification statements in tasks 7 and 8 are finite-sample experimental criteria with a recorded confidence bound, not mathematical guarantees. The show-through risk of back-face markers under the front's blank corners (Requirement 16.10) is verified on real prints in task 8.
 
 ## Task Dependency Graph
 
@@ -272,17 +280,18 @@ Rules for every milestone:
     { "id": 21, "tasks": ["5.4"] },
     { "id": 22, "tasks": ["5.5"] },
     { "id": 23, "tasks": ["5.6"] },
-    { "id": 24, "tasks": ["6.1"] },
-    { "id": 25, "tasks": ["6.2"] },
-    { "id": 26, "tasks": ["6.3"] },
-    { "id": 27, "tasks": ["7.1"] },
-    { "id": 28, "tasks": ["7.2"] },
-    { "id": 29, "tasks": ["7.3"] },
-    { "id": 30, "tasks": ["7.4"] },
-    { "id": 31, "tasks": ["8.1"] },
-    { "id": 32, "tasks": ["8.2"] },
-    { "id": 33, "tasks": ["8.3"] },
-    { "id": 34, "tasks": ["8.4"] }
+    { "id": 24, "tasks": ["5.7"] },
+    { "id": 25, "tasks": ["6.1"] },
+    { "id": 26, "tasks": ["6.2"] },
+    { "id": 27, "tasks": ["6.3"] },
+    { "id": 28, "tasks": ["7.1"] },
+    { "id": 29, "tasks": ["7.2"] },
+    { "id": 30, "tasks": ["7.3"] },
+    { "id": 31, "tasks": ["7.4"] },
+    { "id": 32, "tasks": ["8.1"] },
+    { "id": 33, "tasks": ["8.2"] },
+    { "id": 34, "tasks": ["8.3"] },
+    { "id": 35, "tasks": ["8.4"] }
   ]
 }
 ```
