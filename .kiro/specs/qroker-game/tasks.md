@@ -66,28 +66,32 @@ Rules for every milestone:
     - Run `npm test` and the bound script. Save output and a short Markdown report to `docs/optical/results/m1-*.txt|md`. Record failures; do not hide them.
     - _Requirements: 12.7_
 
-- [ ] 2. Eight-transformation and Hamming-distance verification
+- [x] 2. Eight-transformation and Hamming-distance verification
   - Dependencies: task 1.
   - Deliverables: `src/optical/transforms.ts` (8 D4 cell maps and bit permutations, used by decoder code), `src/optical/verify-codebook.ts` and its test. The verifier does not import from `codebook.ts`, `prng.ts`, or `transforms.ts`. It re-derives the 8 cell maps itself and reads only the frozen JSON and rasterized fragments.
   - Acceptance criteria: the verifier measures d_id and d_self from the frozen JSON and writes them to `docs/optical/results/codebook-verification.json` (+ short `.md`). A deliberately corrupted codebook is rejected.
   - Tests (Properties 13, 21): each of the 8 maps is a bijection on the 25 cells; the 8 maps form a group (closure, inverses); for all 52 × 8 combinations, the bit permutation equals the rasterized 2D transform followed by resampling; all 86,320 template pairs have distance ≥ 5; measured d_id and d_self recorded; negative tests: codebook with a duplicate pattern, a pair at distance < 5 across different transforms, and an out-of-range weight are each rejected.
   - _Requirements: 5.3, 12.1, 12.7_
 
-  - [ ] 2.1 Implement `transforms.ts`
+  - [x] 2.1 Implement `transforms.ts`
     - Define the 8 cell maps with (g·P)[g(x)] = P[x] and generate bit permutations from the cell maps.
     - _Requirements: 5.3_
 
-  - [ ] 2.2 Implement the independent `verify-codebook.ts`
+  - [x] 2.2 Implement the independent `verify-codebook.ts`
     - Re-derive the cell maps locally. Check distances over all 416 templates (86,320 pairs), weights, and uniqueness. Report d_id and d_self.
     - _Requirements: 5.3, 12.7_
 
-  - [ ] 2.3 Write transform, equivalence, distance, and negative tests (Properties 13, 21)
+  - [x] 2.3 Write transform, equivalence, distance, and negative tests (Properties 13, 21)
     - Cover the list in Tests above.
     - _Requirements: 5.3, 12.1_
 
-  - [ ] 2.4 Run tests and record results
+  - [x] 2.4 Run tests and record results
     - Save output and measured d_id/d_self to `docs/optical/results/`. Record failures; do not hide them.
     - _Requirements: 12.7_
+
+  - [x] 2.5 Final cleanup of Milestone 2 tests and generated artifacts
+    - Make test E executable by exposing one pure transform helper from the verifier (no imports of codebook/prng/transforms in production code), remove the always-true assertion in the case-11 property, stop tracking the generated Vitest JSON output, and rerun the Milestone 2 checks.
+    - _Requirements: 5.3, 12.7_
 
 - [ ] 3. Suit-specific two-dimensional symmetry generation
   - Dependencies: task 2.
@@ -241,7 +245,7 @@ Rules for every milestone:
     { "id": 6, "tasks": ["2.1"] },
     { "id": 7, "tasks": ["2.2"] },
     { "id": 8, "tasks": ["2.3"] },
-    { "id": 9, "tasks": ["2.4"] },
+    { "id": 9, "tasks": ["2.4", "2.5"] },
     { "id": 10, "tasks": ["3.1"] },
     { "id": 11, "tasks": ["3.2"] },
     { "id": 12, "tasks": ["3.3"] },

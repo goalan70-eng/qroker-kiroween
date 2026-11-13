@@ -91,6 +91,83 @@
         "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
         "timestamp": 1794492501930
       }
+    ],
+    "2.1 Implement `transforms.ts`": [
+      {
+        "executionId": "284a1119-07b5-4d32-bc28-a557366ed992",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794493154632
+      },
+      {
+        "executionId": "284a1119-07b5-4d32-bc28-a557366ed992",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794493159788
+      }
+    ],
+    "2.2 Implement the independent `verify-codebook.ts`": [
+      {
+        "executionId": "284a1119-07b5-4d32-bc28-a557366ed992",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794493163555
+      },
+      {
+        "executionId": "284a1119-07b5-4d32-bc28-a557366ed992",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794493329707
+      }
+    ],
+    "2.3 Write transform, equivalence, distance, and negative tests (Properties 13, 21)": [
+      {
+        "executionId": "284a1119-07b5-4d32-bc28-a557366ed992",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794493333582
+      },
+      {
+        "executionId": "284a1119-07b5-4d32-bc28-a557366ed992",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794493469619
+      }
+    ],
+    "2.4 Run tests and record results": [
+      {
+        "executionId": "284a1119-07b5-4d32-bc28-a557366ed992",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794493473540
+      },
+      {
+        "executionId": "284a1119-07b5-4d32-bc28-a557366ed992",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794493702759
+      }
+    ],
+    "2. Eight-transformation and Hamming-distance verification": [
+      {
+        "executionId": "284a1119-07b5-4d32-bc28-a557366ed992",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794493702815
+      }
+    ],
+    "2.5 Final cleanup of Milestone 2 tests and generated artifacts": [
+      {
+        "executionId": "bea19903-8535-483a-b636-8e23e0f58453",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794494663351
+      },
+      {
+        "executionId": "bea19903-8535-483a-b636-8e23e0f58453",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794494794458
+      },
+      {
+        "executionId": "bea19903-8535-483a-b636-8e23e0f58453",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794494805421
+      },
+      {
+        "executionId": "bea19903-8535-483a-b636-8e23e0f58453",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794494875696
+      }
     ]
   }
 }

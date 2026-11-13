@@ -1,0 +1,65 @@
+﻿Milestone 2 final cleanup (task 2.5)
+Test E is now executable (names equal, 416 comparisons, unknown-name throw); trivial 'bruteTrue >= 0' assertion removed from case 11.
+
+== hashes BEFORE (recorded at start) ==
+515ECEB318648C14A47574496788236A2B1BBDFC7062387DB09303CB717CC2D4
+B331EC5E5499BA6831A23880F977A6C7EB2219323F15B8FEDD0BD819DAF1EF36
+5698693E994EA3229FE30DDC63A160A9A1C9AC0F13B117A0040CA93D5068EE66
+
+== npm test (exit 0) ==
+
+> qroker-kiroween@0.0.0 test
+> vitest --run
+
+
+ RUN  v5.1.0 D:/Project/QRoker/qroker-kiroween
+
+
+ Test Files  5 passed (5)
+      Tests  44 passed (44)
+   Start at  23:45:27
+   Duration  11.91s (tests 97%, import 2%, transform 1%)
+
+
+== per-file passed counts (verbose run, exit 0; skipped: 0) ==
+src/optical/smoke.test.ts: 2 passed
+src/optical/transforms.test.ts: 9 passed
+src/optical/codebook.test.ts: 10 passed
+src/optical/verify-codebook.test.ts: 22 passed
+scripts/verify-bound.test.ts: 1 passed
+
+== npx tsc --noEmit == exit 0 (no output)
+
+== npm run verify:codebook (exit 0) ==
+
+> qroker-kiroween@0.0.0 verify:codebook
+> tsx scripts/verify-codebook.ts
+
+codebook verification PASS (dId=5, dSelf=6, minDistance=5)
+
+== npm run check:codebook (exit 0) ==
+
+> qroker-kiroween@0.0.0 check:codebook
+> tsx scripts/generate-codebook.ts --check
+
+check ok: regenerated codebook is byte-identical to codebook.v1.json
+
+== hashes AFTER ==
+515ECEB318648C14A47574496788236A2B1BBDFC7062387DB09303CB717CC2D4  .\src\optical\codebook.v1.json
+B331EC5E5499BA6831A23880F977A6C7EB2219323F15B8FEDD0BD819DAF1EF36  .\docs\optical\results\codebook-verification.json
+5698693E994EA3229FE30DDC63A160A9A1C9AC0F13B117A0040CA93D5068EE66  .\docs\optical\results\codebook-verification.md
+
+== comparison == ALL THREE HASHES UNCHANGED
+
+== item 3 follow-up (task 2.5) ==
+Correction: the earlier claim ".vitest was untracked and already ignored" was wrong.
+.vitest/json/output.json was tracked (since commit c1575b9) and .gitignore held only "node_modules/".
+Actions: added ".vitest/" to .gitignore; ran `git rm --cached .vitest/json/output.json` (local file kept, Test-Path = True).
+git ls-files .vitest        -> (empty)
+git check-ignore -v ...     -> .gitignore:2:.vitest/	.vitest/json/output.json
+git status --short          -> " M .gitignore" and "D  .vitest/json/output.json" (staged untrack) plus prior changes
+git diff --check           -> exit 0, no whitespace errors; only LF->CRLF warnings (.gitignore, tasks.md, tasks.meta.json, bound.json, bound.md, package.json)
+git diff --stat            -> 6 files changed, 86 insertions(+), 8 deletions(-); .gitignore | 1 +
+npm test                   -> Test Files 5 passed (5); Tests 44 passed (44); 0 skipped
+codebook.v1.json SHA256    -> 515ECEB318648C14A47574496788236A2B1BBDFC7062387DB09303CB717CC2D4 (unchanged)
+Nothing committed, pushed or merged.

@@ -1,6 +1,6 @@
 # Codebook capacity bound (exhaustive enumeration)
 
-Enumerated all 2^25 patterns independently of `src/optical`. Runtime: 1.9 s.
+Enumerated all 2^25 patterns independently of `src/optical`. Runtime: 1.7 s.
 
 Overall: all stated claims matched.
 

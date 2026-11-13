@@ -1,0 +1,139 @@
+{
+  "verifierVersion": "verify-codebook.v1",
+  "inputPath": "src/optical/codebook.v1.json",
+  "fileSha256": "515eceb318648c14a47574496788236a2b1bbdfc7062387db09303cb717cc2d4",
+  "report": {
+    "ok": true,
+    "stats": {
+      "cards": 52,
+      "templates": 416,
+      "pairs": 86320,
+      "minPairDistance": 5,
+      "dId": 5,
+      "dSelf": 6,
+      "weightMin": 9,
+      "weightMax": 16,
+      "distanceHistogram": {
+        "5": 136,
+        "6": 512,
+        "7": 1128,
+        "8": 2968,
+        "9": 5080,
+        "10": 8416,
+        "11": 11664,
+        "12": 13600,
+        "13": 13480,
+        "14": 11144,
+        "15": 8376,
+        "16": 5180,
+        "17": 2808,
+        "18": 1188,
+        "19": 464,
+        "20": 104,
+        "21": 64,
+        "22": 8
+      }
+    },
+    "checks": [
+      {
+        "id": "shape",
+        "ok": true,
+        "detail": "required fields present with correct types"
+      },
+      {
+        "id": "card-keys",
+        "ok": true,
+        "detail": "52 canonical keys, canonical cardOrder"
+      },
+      {
+        "id": "pattern-values",
+        "ok": true,
+        "detail": "all values are integers in [0, 2^25)"
+      },
+      {
+        "id": "base-distinct",
+        "ok": true,
+        "detail": "52 distinct base patterns among 52 valid"
+      },
+      {
+        "id": "weight-range",
+        "ok": true,
+        "detail": "weights in [9,16]; measured min=9 max=16"
+      },
+      {
+        "id": "transform-self-check",
+        "ok": true,
+        "detail": "8 maps are bijections on 25 cells; closed under composition; every map has an inverse"
+      },
+      {
+        "id": "templates-416",
+        "ok": true,
+        "detail": "416 distinct templates"
+      },
+      {
+        "id": "min-distance",
+        "ok": true,
+        "detail": "all 86320 pairs have distance >= 5; min=5"
+      },
+      {
+        "id": "d-id",
+        "ok": true,
+        "detail": "measured dId=5 (required >= 5)"
+      },
+      {
+        "id": "d-self",
+        "ok": true,
+        "detail": "measured dSelf=6 (required >= 5)"
+      },
+      {
+        "id": "metadata-agreement",
+        "ok": true,
+        "detail": "stored dId, dSelf, weightRange agree with measurements; attempts within cap"
+      },
+      {
+        "id": "sha256",
+        "ok": true,
+        "detail": "sha256 matches (a6974f3491efbd5aec87bb00807c113962015838c9b74d0df9863f38fdc29a74)"
+      },
+      {
+        "id": "suit-fragments",
+        "ok": true,
+        "detail": "second fragments (R180 for H/D, Fh for C/S) differ from P by >= 5 and lie in the orbit"
+      }
+    ],
+    "failures": []
+  },
+  "metadataAgreement": {
+    "dId": {
+      "stored": 5,
+      "measured": 5,
+      "match": true
+    },
+    "dSelf": {
+      "stored": 6,
+      "measured": 6,
+      "match": true
+    },
+    "weightRange": {
+      "stored": [
+        9,
+        16
+      ],
+      "measured": [
+        9,
+        16
+      ],
+      "match": true
+    },
+    "sha256": {
+      "stored": "a6974f3491efbd5aec87bb00807c113962015838c9b74d0df9863f38fdc29a74",
+      "measured": "a6974f3491efbd5aec87bb00807c113962015838c9b74d0df9863f38fdc29a74",
+      "match": true
+    }
+  },
+  "notCovered": [
+    "Image decoding (rasterization, thresholding, grid sampling).",
+    "Pixel-level symmetry of the suit layer (rasterized fragments).",
+    "Real cameras, lighting, blur, and perspective distortion."
+  ]
+}
