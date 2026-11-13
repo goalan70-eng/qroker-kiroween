@@ -114,7 +114,7 @@ Rules for every milestone:
     - Save output to `docs/optical/results/m3-*`. Record failures; do not hide them.
     - _Requirements: 12.7_
 
-- [ ] 4. Image-based fragment detection and decoding
+- [x] 4. Image-based fragment detection and decoding
   - Dependencies: task 3.
   - Deliverables: `src/optical/detect.ts` (adaptive binarization, connected components/contours, quadrilateral approximation, 4-point homography, 7×7 sampling, all border cells must be black), `src/optical/decode-fragment.ts` (5×5 read, match against 416 templates with radius r_acc, returns card, observed transform, distance). r_acc defaults to 1 and can be set to 2.
   - Acceptance criteria: decoding uses pixels only. A clean image with no marker returns NOT_DETECTED. A marker whose nearest template is farther than r_acc returns CORRUPTED_FRAGMENT. The two outcomes are distinct.
@@ -133,7 +133,7 @@ Rules for every milestone:
     - Cover the list in Tests above.
     - _Requirements: 12.2, 13.4_
 
-  - [ ] 4.4 Run tests and record results
+  - [x] 4.4 Run tests and record results
     - Save output to `docs/optical/results/m4-*`. Record failures; do not hide them.
     - _Requirements: 12.7_
 

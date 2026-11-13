@@ -1,6 +1,6 @@
 {
   "note": "expected = values stated in tasks.md/design.md (unverified claims); measured = exhaustive enumeration of 2^25 patterns.",
-  "runtimeSeconds": 1.707,
+  "runtimeSeconds": 1.839,
   "expected": {
     "balanceFail": 3615562,
     "selfDistanceFail": 7152896,

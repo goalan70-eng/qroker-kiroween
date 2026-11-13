@@ -1,0 +1,570 @@
+﻿Milestone 4 task 4.4 raw verification output
+node: v24.20.0  HEAD: 435a7015ed73f76136c88f9dc4109772bd687384
+SHA256 before:
+515ECEB318648C14A47574496788236A2B1BBDFC7062387DB09303CB717CC2D4  src/optical/codebook.v1.json
+E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855  docs/optical/results/.gitkeep
+23D3CF576BFCA680D52FA5A6BF6E2D7DD27D665E462FE6A41290B0A464350D3D  docs/optical/results/bound.json
+47187AAFA396AAF968EA32B06433C69689630A714CC89644BAD77BEFC4A4076E  docs/optical/results/bound.md
+B331EC5E5499BA6831A23880F977A6C7EB2219323F15B8FEDD0BD819DAF1EF36  docs/optical/results/codebook-verification.json
+5698693E994EA3229FE30DDC63A160A9A1C9AC0F13B117A0040CA93D5068EE66  docs/optical/results/codebook-verification.md
+539E7B166CF387B2A6B470FE166654913BB0C7906506A90E42CC1A19542F149F  docs/optical/results/m0-test-output.txt
+7E3ED50F9022774BC1E4A0B1A2A5D262AB76017BB0E4E3884468F3D5DE7ED0DA  docs/optical/results/m1-report.md
+C1FE937D18F62A595C7B7F087C2D21F1975D9B3C12115F1181ADDCB9FC687A55  docs/optical/results/m1-test-output.txt
+7DCB97913FC357D1B2D1AE2ECA5340184E809D9231C6B33F0472E1C325AAE1FA  docs/optical/results/m2-final-output.txt
+9B64E88E34E7040FFE2EF57F9924C336B838347AF488F67140EBB497F5842BEC  docs/optical/results/m2-report.md
+61DBC3B5586AA1E426AF8263EA729ED6698FB72C66B49A4798C013DAFC9F0786  docs/optical/results/m2-test-output.txt
+A22273FF368D0925EF39F733B39DD5D62B0002E47214B708425CD1A17D308741  docs/optical/results/m3-report.md
+F2C1275FDF4AF605CA6B4DB61A4B4A227A013B9DB16A0F1711524DDC1CEC314F  docs/optical/results/m3-test-output.txt
+2DB10D406A06D6CC183889390E7249AC3EAF091A465A0C88F8D0367D8B7AA38D  docs/optical/results/m4-1-detection.json
+441BCB52A1158E4132A3DF3F0518462905DC16AD46F2661FAA72A017118AD47C  docs/optical/results/m4-1-detection.md
+AED437E3ABD22B866EF813E6FDC5147ADC6A0E143258FD83F264E0A8B913AC52  docs/optical/results/m4-2-decode-fragment.json
+179B6FDE1225623453290FB5F7643A1485AE7F12A1F99FF6D706F638FF10F3F3  docs/optical/results/m4-2-decode-fragment.md
+D397D4ABED151FC45D983B0048A900B9C23C3FD9868B28CD1910530250119AD3  docs/optical/results/m4-3-counterexamples.json
+DB029EE39ED3F36A9FDA037298B5FA7C97BCEA7A0E398C4A402818B0178CEC34  docs/optical/results/m4-3-counterexamples.md
+73414C5FBFB0BA7436A6F4F1C2F4D2BE2FEF4B077214196F66F38309EDFEE61A  docs/optical/results/m4-3-coverage.md
+
+
+==============================================================================
+## tsc
+## command: npx tsc --noEmit
+## started: 2026-11-13T14:10:51.6323221+09:00
+==============================================================================
+
+## exit code: 0
+
+==============================================================================
+## vitest run 1
+## command: npx vitest --run
+## started: 2026-11-13T14:10:55.9784263+09:00
+==============================================================================
+
+ RUN  v5.1.0 D:/Project/QRoker/qroker-kiroween
+
+
+ Test Files  11 passed (11)
+      Tests  190 passed (190)
+   Start at  14:10:58
+   Duration  13.63s (tests 82%, import 18%, transform 1%)
+
+
+## exit code: 0
+
+==============================================================================
+## vitest run 2
+## command: npx vitest --run
+## started: 2026-11-13T14:11:11.8362197+09:00
+==============================================================================
+
+ RUN  v5.1.0 D:/Project/QRoker/qroker-kiroween
+
+
+ Test Files  11 passed (11)
+      Tests  190 passed (190)
+   Start at  14:11:13
+   Duration  13.54s (tests 81%, import 17%, transform 1%)
+
+
+## exit code: 0
+
+==============================================================================
+## verbose
+## command: npx vitest --run --reporter=verbose
+## started: 2026-11-13T14:11:27.0920285+09:00
+==============================================================================
+
+ RUN  v5.1.0 D:/Project/QRoker/qroker-kiroween
+
+ ✓ src/optical/smoke.test.ts > smoke > runs a plain test 4ms
+ ✓ src/optical/smoke.test.ts > smoke > loads fast-check: addition commutes 5ms
+ ✓ src/optical/fragments.test.ts > printedFragments > holds exactly the expected corners with base from JSON and derived via own transform 18ms
+ ✓ src/optical/fragments.test.ts > placedFragments / visibleCorners > visible corners match the table at 0 and 180 8ms
+ ✓ src/optical/fragments.test.ts > placedFragments / visibleCorners > 180 content follows visible[Y] = R180(printed[opposite(Y)]) and the per-suit derivation 8ms
+ ✓ src/optical/fragments.test.ts > placedFragments / visibleCorners > club and spade patterns differ by >= 5 bits at every shared corner (suit identifiable) 10ms
+ ✓ src/optical/fragments.test.ts > rejection > orientation 90 throws RangeError 1ms
+ ✓ src/optical/fragments.test.ts > rejection > orientation 270 throws RangeError 0ms
+ ✓ src/optical/fragments.test.ts > rejection > orientation -90 throws RangeError 0ms
+ ✓ src/optical/fragments.test.ts > rejection > orientation 360 throws RangeError 0ms
+ ✓ src/optical/fragments.test.ts > rejection > orientation 1 throws RangeError 0ms
+ ✓ src/optical/fragments.test.ts > rejection > orientation NaN throws RangeError 0ms
+ ✓ src/optical/fragments.test.ts > rejection > orientation 0 throws RangeError 0ms
+ ✓ src/optical/fragments.test.ts > rejection > orientation 180 throws RangeError 0ms
+ ✓ src/optical/fragments.test.ts > rejection > orientation null throws RangeError 0ms
+ ✓ src/optical/fragments.test.ts > rejection > orientation undefined throws RangeError 0ms
+ ✓ src/optical/fragments.test.ts > rejection > card key "JK" throws 1ms
+ ✓ src/optical/fragments.test.ts > rejection > card key "JOKER" throws 0ms
+ ✓ src/optical/fragments.test.ts > rejection > card key "X-JOKER" throws 3ms
+ ✓ src/optical/fragments.test.ts > rejection > card key "" throws 1ms
+ ✓ src/optical/fragments.test.ts > rejection > card key "H-1" throws 1ms
+ ✓ src/optical/fragments.test.ts > rejection > card key "H-11" throws 1ms
+ ✓ src/optical/fragments.test.ts > rejection > card key "X-A" throws 1ms
+ ✓ src/optical/fragments.test.ts > rejection > card key "h-a" throws 2ms
+ ✓ src/optical/fragments.test.ts > rejection > ALL_CARDS has 52 unique keys and no joker 14ms
+ ✓ src/optical/fragments.test.ts > rejection > every placed corner is derived from printed patterns (no substitute pattern) 3ms
+ ✓ src/optical/fragments.test.ts > frozen codebook integrity > using the module does not change the frozen JSON bytes 4ms
+ ✓ src/optical/verify-codebook.test.ts > A. positive cases > frozen codebook passes with full measurements 156ms
+ ✓ src/optical/transforms.test.ts > D4 cell maps > each map is a bijection on the 25 cells 7ms
+ ✓ src/optical/transforms.test.ts > D4 cell maps > the 8 maps are distinct, closed under composition, and have inverses in the set 3ms
+ ✓ src/optical/transforms.test.ts > D4 cell maps > known cell checks 2ms
+ ✓ src/optical/transforms.test.ts > equivalence with 2D matrix operations (Property 21 partial) > applyTransform matches the independent matrix op for 52 base patterns x 8 transforms 122ms
+ ✓ src/optical/render.test.ts > renderMarker geometry > modulePx 1: size, margin ring, border ring, data cells 179ms
+ ✓ scripts/render-samples.test.ts > PNG encoder > has signature and IHDR matching the input 5ms
+ ✓ scripts/render-samples.test.ts > PNG encoder > CRC32 of "123456789" is 0xCBF43926 1ms
+ ✓ scripts/render-samples.test.ts > PNG encoder > IDAT inflates to filter-0 rows reproducing the raster; encoding is deterministic 2ms
+ ✓ scripts/render-samples.test.ts > committed samples manifest > lists the 8 samples plus contact sheet, no timestamps, files exist 3ms
+ ✓ scripts/render-samples.test.ts > committed samples manifest > disk bytes, manifest hash and freshly encoded bytes agree for the card samples 195ms
+ ✓ src/optical/transforms.test.ts > algebra on patterns > R180^2 = Fh^2 = R90^4 = identity 6ms
+ ✓ src/optical/transforms.test.ts > algebra on patterns > every transform preserves popcount 3ms
+ ✓ src/optical/transforms.test.ts > symmetry rules > R180-symmetric patterns satisfy R180.P == P 2ms
+ ✓ src/optical/transforms.test.ts > symmetry rules > Fh-symmetric patterns satisfy Fh.P == P 1ms
+ ✓ src/optical/transforms.test.ts > symmetry rules > frozen base patterns are not invariant under any non-identity transform 8ms
+ ✓ src/optical/codebook.test.ts > frozen codebook structure > has exactly the 52 expected keys in order, no jokers, valid 25-bit integers 9ms
+ ✓ src/optical/codebook.test.ts > frozen codebook structure > has 52 pairwise distinct base patterns 0ms
+ ✓ src/optical/codebook.test.ts > frozen codebook structure > has base popcount in [9, 16] 2ms
+ ✓ src/optical/codebook.test.ts > 416 templates > are pairwise distinct with all 86,320 pairs at Hamming distance >= 5; stored dId/dSelf match 10ms
+ ✓ src/optical/codebook.test.ts > 416 templates > property: any two distinct (card, transform) pairs differ in >= 5 bits 12ms
+ ✓ src/optical/codebook.test.ts > suit-specific second fragment (pattern level) > is R180.P for hearts/diamonds and Fh.P for clubs/spades, distinct from P by >= 5, within the orbit 16ms
+ ✓ src/optical/codebook.test.ts > determinism and generation > two generations are byte-identical and equal the frozen file 22ms
+ ✓ src/optical/codebook.test.ts > determinism and generation > a different seed yields a different, still valid codebook 15ms
+ ✓ src/optical/codebook.test.ts > determinism and generation > throws when the attempt cap is exhausted instead of returning a partial codebook 3ms
+ ✓ src/optical/codebook.test.ts > SHA-256 > matches the compact JSON of the content without the sha256 field 1ms
+ ✓ scripts/render-samples.test.ts > committed samples manifest > contact sheet: hash matches manifest and disk 20ms
+ ✓ scripts/render-samples.test.ts > committed samples manifest > contact sheet: each of the 52 cells has exactly two non-white marker footprints 42ms
+ ✓ src/optical/render.test.ts > renderMarker geometry > modulePx 2: size, margin ring, border ring, data cells 171ms
+ ✓ src/optical/decode-fragment.test.ts > 1. clean bit patterns > 416 templates x radius 1 and 2: IDENTIFIED with the right card, transform and distance 0 20ms
+ ✓ src/optical/decode-fragment.test.ts > 2. image path (rotation 0) > 52 cards x 8 transforms, modulePx 4..8: render -> detect -> decode gives the exact card and transform 332ms
+ ✓ src/optical/verify-codebook.test.ts > A. positive cases > freshly generated codebooks (default seed and seed+1) pass 272ms
+ ✓ src/optical/decode-fragment.test.ts > 2. image path (rotation 0) > 52 card layers x orientation 0/180: two fragments, both decode to the source card 108ms
+ ✓ src/optical/verify-codebook.test.ts > A. positive cases > is deterministic for the same input 194ms
+ ✓ src/optical/decode-fragment.test.ts > 3. rotated, scaled and tilted images > rotation + scale + subpixel shift (24 seeded cases): card equals the source, transform = R90^k . g 234ms
+ ✓ src/optical/verify-codebook.test.ts > B. verifier independence > verifier imports only node:crypto 2ms
+ ✓ src/optical/verify-codebook.test.ts > B. verifier independence > CLI script does not import generator modules 2ms
+ ✓ src/optical/verify-codebook.test.ts > C. negative cases > 1. identical base patterns -> base-distinct 114ms
+ ✓ src/optical/render.test.ts > renderMarker geometry > modulePx 4: size, margin ring, border ring, data cells 435ms
+ ✓ src/optical/verify-codebook.test.ts > C. negative cases > 2. card replaced by another card template under another transform -> min-distance, d-id 118ms
+ ✓ src/optical/decode-fragment.test.ts > 3. rotated, scaled and tilted images > perspective tilt 10..40 deg with random in-plane rotation (12 seeded cases): same relation 182ms
+stdout | src/optical/decode-fragment.test.ts > 4. corrupted data > direct bit flips k = 0..8 (random templates): guaranteed regions exact, rest agrees with brute force
+direct false acceptances (random): {"r1k0":0,"r1k1":0,"r1k2":0,"r1k3":0,"r1k4":0,"r1k5":0,"r1k6":0,"r1k7":0,"r1k8":0,"r2k0":0,"r2k1":0,"r2k2":0,"r2k3":0,"r2k4":0,"r2k5":0,"r2k6":0,"r2k7":1,"r2k8":0}
+targeted false acceptances: {"r1k2":0,"r1k3":0,"r1k4":5,"r1k5":20,"r1k6":56,"r1k7":42,"r2k2":0,"r2k3":6,"r2k4":18,"r2k5":60,"r2k6":58,"r2k7":44} of 1400 checked
+
+stdout | src/optical/decode-fragment.test.ts > 4. corrupted data > image path: corrupted patterns rendered, detected and decoded (k = 0..8)
+image-path false acceptances: {"r1k0":0,"r2k0":0,"r1k1":0,"r2k1":0,"r1k2":0,"r2k2":0,"r1k3":0,"r2k3":0,"r1k4":0,"r2k4":0,"r1k5":0,"r2k5":0,"r1k6":0,"r2k6":0,"r1k7":0,"r2k7":0,"r1k8":0,"r2k8":0}
+
+ ✓ src/optical/decode-fragment.test.ts > 4. corrupted data > direct bit flips k = 0..8 (random templates): guaranteed regions exact, rest agrees with brute force 40ms
+ ✓ src/optical/decode-fragment.test.ts > 4. corrupted data > property: up to r flips of any template are corrected (seed 20251112) 12ms
+ ✓ src/optical/decode-fragment.test.ts > 4. corrupted data > image path: corrupted patterns rendered, detected and decoded (k = 0..8) 41ms
+ ✓ src/optical/decode-fragment.test.ts > 5. agreement with the exact enumeration > radius 1: every accepted word is IDENTIFIED with the reference card and distance 520ms
+ ✓ src/optical/verify-codebook.test.ts > C. negative cases > 3. another card template with 1-3 bits flipped -> min-distance with distance < 5 864ms
+ ✓ src/optical/decode-fragment.test.ts > 5. agreement with the exact enumeration > radius 2: every accepted word is IDENTIFIED with the reference card and distance 499ms
+ ✓ src/optical/verify-codebook.test.ts > C. negative cases > 4. weight out of range -> weight-range 388ms
+ ✓ src/optical/verify-codebook.test.ts > C. negative cases > 5. R180-symmetric and Fh-symmetric patterns with weight in range -> d-self / min-distance 189ms
+ ✓ scripts/verify-bound.test.ts > codebook capacity bound (exhaustive 2^25 enumeration) > measured values equal the stated claims and bound >= 52 2409ms
+ ✓ src/optical/render.test.ts > renderMarker geometry > modulePx 8: size, margin ring, border ring, data cells 1633ms
+ ✓ src/optical/verify-codebook.test.ts > C. negative cases > 6. card key set / order problems -> card-keys 207ms
+ ✓ src/optical/render.test.ts > raster-level transform equivalence (Property 21) > render(applyTransform(g,P)) == ownTransform(g, render(P)) == applyImageTransform, modulePx 1 22ms
+ ✓ src/optical/render.test.ts > raster-level transform equivalence (Property 21) > render(applyTransform(g,P)) == ownTransform(g, render(P)) == applyImageTransform, modulePx 2 26ms
+ ✓ src/optical/render.test.ts > raster-level transform equivalence (Property 21) > render(applyTransform(g,P)) == ownTransform(g, render(P)) == applyImageTransform, modulePx 3 34ms
+ ✓ src/optical/render.test.ts > card layer symmetry (Property 14) > modulePx 2: H/D point symmetric, C/S reflection symmetric, and not the other 11ms
+ ✓ src/optical/render.test.ts > card layer symmetry (Property 14) > modulePx 2: physical rotation law layer(180) == rot180(layer(0)) 13ms
+ ✓ src/optical/render.test.ts > card layer symmetry (Property 14) > modulePx 4: H/D point symmetric, C/S reflection symmetric, and not the other 17ms
+ ✓ src/optical/render.test.ts > card layer symmetry (Property 14) > modulePx 4: physical rotation law layer(180) == rot180(layer(0)) 36ms
+ ✓ src/optical/render.test.ts > blank corners and layer size > modulePx 1 20ms
+ ✓ src/optical/render.test.ts > blank corners and layer size > modulePx 2 23ms
+ ✓ src/optical/render.test.ts > blank corners and layer size > modulePx 4 42ms
+ ✓ src/optical/render.test.ts > slot geometry > modulePx 1: TL/BR point-symmetric, TL/BL and TR/BR mirror about horizontal axis 1ms
+ ✓ src/optical/render.test.ts > slot geometry > modulePx 2: TL/BR point-symmetric, TL/BL and TR/BR mirror about horizontal axis 0ms
+ ✓ src/optical/render.test.ts > slot geometry > modulePx 3: TL/BR point-symmetric, TL/BL and TR/BR mirror about horizontal axis 0ms
+ ✓ src/optical/render.test.ts > slot geometry > modulePx 4: TL/BR point-symmetric, TL/BL and TR/BR mirror about horizontal axis 0ms
+ ✓ src/optical/render.test.ts > slot geometry > modulePx 5: TL/BR point-symmetric, TL/BL and TR/BR mirror about horizontal axis 0ms
+ ✓ src/optical/render.test.ts > slot geometry > modulePx 6: TL/BR point-symmetric, TL/BL and TR/BR mirror about horizontal axis 0ms
+ ✓ src/optical/render.test.ts > slot geometry > modulePx 7: TL/BR point-symmetric, TL/BL and TR/BR mirror about horizontal axis 0ms
+ ✓ src/optical/render.test.ts > slot geometry > modulePx 8: TL/BR point-symmetric, TL/BL and TR/BR mirror about horizontal axis 0ms
+ ✓ src/optical/render.test.ts > marker readback against the model (not a decoder test) > sampleMarkerBits at each printed corner equals placedFragments 14ms
+ ✓ src/optical/render.test.ts > determinism and input validation > renders are byte-identical and hashes repeat 10ms
+ ✓ src/optical/render.test.ts > determinism and input validation > modulePx 0 throws RangeError 1ms
+ ✓ src/optical/render.test.ts > determinism and input validation > modulePx -1 throws RangeError 0ms
+ ✓ src/optical/render.test.ts > determinism and input validation > modulePx 1.5 throws RangeError 0ms
+ ✓ src/optical/render.test.ts > determinism and input validation > modulePx null throws RangeError 0ms
+ ✓ src/optical/render.test.ts > determinism and input validation > modulePx "2" throws RangeError 0ms
+ ✓ src/optical/render.test.ts > fast-check properties > layer(card,180) == ownRot180(layer(card,0)) and layer(card,0) == ownRot180(layer(card,180)) 45ms
+ ✓ src/optical/render.test.ts > fast-check properties > suit symmetry invariants hold 56ms
+ ✓ src/optical/render.test.ts > fast-check properties > club/spade shared corners differ by >= 5 bits 3ms
+ ✓ src/optical/verify-codebook.test.ts > C. negative cases > 7. invalid pattern values -> pattern-values 3ms
+ ✓ src/optical/verify-codebook.test.ts > C. negative cases > 8. metadata lies -> metadata-agreement or sha256 816ms
+ ✓ src/optical/verify-codebook.test.ts > C. negative cases > 9. non-object inputs -> shape failure, no throw 6ms
+ ✓ src/optical/verify-codebook.test.ts > C. negative cases > 10. deep-frozen input does not throw and nothing is mutated 96ms
+stdout | src/optical/decode-fragment.test.ts > 5. agreement with the exact enumeration > 200,000 uniform words + 20,000 template-plus-k-flips (k = 0..12): classification equals the reference
+sample of 220000 words: accepted r1=3145, r2=5490
+
+ ✓ src/optical/decode-fragment.test.ts > 5. agreement with the exact enumeration > 200,000 uniform words + 20,000 template-plus-k-flips (k = 0..12): classification equals the reference 1722ms
+stdout | src/optical/decode-fragment.test.ts > 9. cell confidence (reported only) > blur lowers cell confidence, a looser threshold flags the weakest cell, status unchanged
+blur r=3, modulePx 8: minCellConfidence 0.360, uncertain at default threshold: []
+
+ ✓ src/optical/decode-fragment.test.ts > 5. agreement with the exact enumeration > exact statistics satisfy the guarantees 1ms
+ ✓ src/optical/decode-fragment.test.ts > 6. invalid, solid and odd markers > solid black 7x7 marker: DETECTED 0x1FFFFFF, decoded as CORRUPTED_FRAGMENT with the reference nearest distance 1ms
+ ✓ src/optical/decode-fragment.test.ts > 6. invalid, solid and odd markers > all-white data (bits 0) is CORRUPTED_FRAGMENT 1ms
+ ✓ src/optical/decode-fragment.test.ts > 6. invalid, solid and odd markers > a marker with one non-corner border cell white is INVALID_MARKER (passed through, no identity) 1ms
+ ✓ src/optical/decode-fragment.test.ts > 6. invalid, solid and odd markers > a blank image is NOT_DETECTED (not CORRUPTED_FRAGMENT) 0ms
+ ✓ src/optical/decode-fragment.test.ts > 6. invalid, solid and odd markers > valid + invalid marker in one image: DECODED with the valid fragment, the invalid one only in rejected 3ms
+ ✓ src/optical/decode-fragment.test.ts > 7. injected custom codebooks > (a) observation at distance 1 from two cards is AMBIGUOUS with both candidates (radius 1 and 2) 0ms
+ ✓ src/optical/decode-fragment.test.ts > 7. injected custom codebooks > (a2) an exact template of A with B at distance 2: radius 1 identifies A, radius 2 refuses to pick the closer card 0ms
+ ✓ src/optical/decode-fragment.test.ts > 7. injected custom codebooks > (b) R180-symmetric base pattern: IDENTIFIED with every tied transform, not AMBIGUOUS 1ms
+ ✓ src/optical/decode-fragment.test.ts > 7. injected custom codebooks > (c) two different cards with an identical template throw RangeError 0ms
+ ✓ src/optical/decode-fragment.test.ts > 7. injected custom codebooks > (d) a distant pair behaves like the frozen codebook 18ms
+ ✓ src/optical/decode-fragment.test.ts > 8. options and safety > invalid radius throws RangeError; default is 1 1ms
+ ✓ src/optical/decode-fragment.test.ts > 8. options and safety > does not mutate its input and is deterministic 1ms
+ ✓ src/optical/decode-fragment.test.ts > 8. options and safety > static scan: only ./transforms, ./detect (types) and node:fs / node:url; no board or game inputs 2ms
+ ✓ src/optical/decode-fragment.test.ts > 8. options and safety > NOT_DETECTED and INVALID_MARKER are passed through, never converted 0ms
+ ✓ src/optical/decode-fragment.test.ts > 9. cell confidence (reported only) > a mid-gray data cell is flagged and the status is unchanged 4ms
+ ✓ src/optical/decode-fragment.test.ts > 9. cell confidence (reported only) > blur lowers cell confidence, a looser threshold flags the weakest cell, status unchanged 6ms
+ ✓ src/optical/decode-fragment.test.ts > 9. cell confidence (reported only) > raw number input has no confidence; threshold option moves the flagged set 1ms
+stdout | src/optical/decode-fragment.bitflip.test.ts > G1. exhaustive guaranteed regions through decodeFragment > all 416 templates x all flip masks of weight 0..3 (2,626 per template), radius 1 and 2
+G1: 2184832 decodeFragment calls in 7.0 s
+
+ ✓ src/optical/decode-fragment.bitflip.test.ts > G1. exhaustive guaranteed regions through decodeFragment > all 416 templates x all flip masks of weight 0..3 (2,626 per template), radius 1 and 2 7400ms
+stdout | src/optical/decode-fragment.bitflip.test.ts > G1. exhaustive guaranteed regions through decodeFragment > radius 2, weight 3: no status is asserted; decodeFragment equals the brute-force reference in all 956,800 cases
+G1 radius 2 weight 3: false acceptances 2720 of 956800 (exact enumeration: 2720), correct 0, rejected 954080
+
+stdout | src/optical/decode-fragment.bitflip.test.ts > G2. false acceptance needs at least d_id - radius flips (inherent limit of the code) > (ii) attainment: flipping d_id - radius of the differing bits toward another card yields IDENTIFIED as that other card
+G2 attainment: {"1":{"pairs":272,"choices":1360},"2":{"pairs":272,"choices":2720}} (ordered template pairs of different cards at distance 5; all choices decode as the other card)
+
+stdout | src/optical/decode-fragment.bitflip.test.ts > G3. same card, different transform beyond the guaranteed radius > radius 1: enumerated wrong-transform cases; first 50 decode as same card, other unique transform; counts per weight equal the exact statistics
+G3 radius 1: 75712 wrong-transform events; first weight 5
+
+ ✓ src/optical/detect.test.ts > 1. clean valid markers > all 52 base patterns at modulePx 4 on a larger canvas: exact bits, size 28, rotation 0 22ms
+ ✓ src/optical/detect.test.ts > 1. clean valid markers > all 52 x 8 D4-transformed renders are read faithfully (bits = applyTransform(g, P)) 212ms
+ ✓ src/optical/detect.test.ts > 2. card layers and contact sheet > 52 cards x orientation 0/180: two markers with the placed bits at the slot centres (+-1 px) 110ms
+stdout | src/optical/decode-fragment.bitflip.test.ts > G3. same card, different transform beyond the guaranteed radius > radius 2: enumerated wrong-transform cases; first 50 decode as same card, other unique transform; counts per weight equal the exact statistics
+G3 radius 2: 949312 wrong-transform events; first weight 4
+
+ ✓ src/optical/decode-fragment.bitflip.test.ts > G1. exhaustive guaranteed regions through decodeFragment > radius 2, weight 3: no status is asserted; decodeFragment equals the brute-force reference in all 956,800 cases 0ms
+ ✓ src/optical/decode-fragment.bitflip.test.ts > G2. false acceptance needs at least d_id - radius flips (inherent limit of the code) > independent d_id is at least 5 and agrees with the generator report 0ms
+ ✓ src/optical/decode-fragment.bitflip.test.ts > G2. false acceptance needs at least d_id - radius flips (inherent limit of the code) > (i) lower bound: no cross-card IDENTIFIED below d_id - radius flips (exhaustive, from G1) 0ms
+ ✓ src/optical/decode-fragment.bitflip.test.ts > G2. false acceptance needs at least d_id - radius flips (inherent limit of the code) > (ii) attainment: flipping d_id - radius of the differing bits toward another card yields IDENTIFIED as that other card 43ms
+ ✓ src/optical/decode-fragment.bitflip.test.ts > G3. same card, different transform beyond the guaranteed radius > radius 1: enumerated wrong-transform cases; first 50 decode as same card, other unique transform; counts per weight equal the exact statistics 33ms
+ ✓ src/optical/decode-fragment.bitflip.test.ts > G3. same card, different transform beyond the guaranteed radius > radius 2: enumerated wrong-transform cases; first 50 decode as same card, other unique transform; counts per weight equal the exact statistics 542ms
+ ✓ src/optical/decode-fragment.bitflip.test.ts > G3. same card, different transform beyond the guaranteed radius > symmetric pattern: flips keep every tied transform listed, never AMBIGUOUS 128ms
+ ✓ src/optical/decode-fragment.bitflip.test.ts > G4. five outcomes are distinct end to end through the image pipeline > variation 0: modulePx/offset/rotation { mp: 4, ox: 12, oy: 12, rot: 0 } 23ms
+ ✓ src/optical/decode-fragment.bitflip.test.ts > G4. five outcomes are distinct end to end through the image pipeline > variation 1: modulePx/offset/rotation { mp: 5, ox: 20, oy: 15, rot: 90 } 71ms
+ ✓ src/optical/decode-fragment.bitflip.test.ts > G4. five outcomes are distinct end to end through the image pipeline > variation 2: modulePx/offset/rotation { mp: 6, ox: 14, oy: 28, rot: 180 } 35ms
+ ✓ src/optical/detect.test.ts > 2. card layers and contact sheet > contact sheet (52 cards, modulePx 2): 104 markers found with expected bits and locations 63ms
+ ✓ src/optical/detect.test.ts > 3. blank and negative images > never reports DETECTED for blank, noise, gradient, bar or disk images (false positives: 0) 2ms
+ ✓ src/optical/detect.test.ts > 3. blank and negative images > blank, disk, bar, gradient and tiny images are NOT_DETECTED, not INVALID_MARKER 1ms
+ ✓ src/optical/detect.test.ts > 3. blank and negative images > a solid black 7x7 square with a white margin is DETECTED with all-ones data (decided behaviour) 0ms
+ ✓ src/optical/detect.test.ts > 4. positions > 300 seeded placements (modulePx 3..12, integer and sub-pixel) are all DETECTED with exact bits 570ms
+ ✓ src/optical/decode-fragment.bitflip.test.ts > G4. five outcomes are distinct end to end through the image pipeline > variation 3: modulePx/offset/rotation { mp: 7, ox: 30, oy: 12, rot: 270 } 43ms
+ ✓ src/optical/decode-fragment.bitflip.test.ts > G4. five outcomes are distinct end to end through the image pipeline > variation 4: modulePx/offset/rotation { mp: 8, ox: 25, oy: 25, rot: 0 } 9ms
+ ✓ src/optical/decode-fragment.bitflip.test.ts > G4. five outcomes are distinct end to end through the image pipeline > variation 5: modulePx/offset/rotation { mp: 9, ox: 18, oy: 33, rot: 90 } 68ms
+ ✓ src/optical/detect.test.ts > 4. positions > property: any 25-bit pattern at any integer position and module size is read back exactly 151ms
+ ✓ src/optical/decode-fragment.bitflip.test.ts > G4. five outcomes are distinct end to end through the image pipeline > variation 6: modulePx/offset/rotation { mp: 10, ox: 33, oy: 21, rot: 180 } 79ms
+ ✓ src/optical/decode-fragment.bitflip.test.ts > G4. five outcomes are distinct end to end through the image pipeline > variation 7: modulePx/offset/rotation { mp: 8, ox: 22, oy: 26, rot: 23.5 } 45ms
+ ✓ src/optical/detect.test.ts > 5. rotations > every 5 degrees, 10 patterns: DETECTED; bits = R90^k . P (k = round(theta/90)) away from +-45 1ms
+ ✓ src/optical/detect.test.ts > 5. rotations > the analytic relation holds with the design cell map and the reported canonical rotation is in (-45, 45] 117ms
+ ✓ src/optical/decode-fragment.bitflip.test.ts > G4. five outcomes are distinct end to end through the image pipeline > variation 8: modulePx/offset/rotation { mp: 8, ox: 26, oy: 20, rot: 61 } 49ms
+ ✓ src/optical/decode-fragment.bitflip.test.ts > G4. five outcomes are distinct end to end through the image pipeline > variation 9: modulePx/offset/rotation { mp: 10, ox: 24, oy: 24, rot: 143.7 } 109ms
+ ✓ src/optical/detect.test.ts > 6. scaling (measured thresholds) > crisp integer modulePx 2..24, all 52 patterns: exact bits for sizePx >= 14 (min exact modulePx = 2) 1363ms
+stdout | src/optical/decode-fragment.bitflip.test.ts > G5. recorded counterexamples > the files on disk are byte-identical to a fresh regeneration; image cells are consistent
+r1 k0: n=300 correct=300 falseAccept=0 rejected=0 upper95=0.00993608
+r1 k1: n=300 correct=300 falseAccept=0 rejected=0 upper95=0.00993608
+r1 k2: n=300 correct=0 falseAccept=0 rejected=300 upper95=0.00993608
+r1 k3: n=300 correct=0 falseAccept=0 rejected=300 upper95=0.00993608
+r1 k4: n=300 correct=0 falseAccept=0 rejected=300 upper95=0.00993608
+r1 k5: n=300 correct=0 falseAccept=1 rejected=299 upper95=null
+r1 k6: n=300 correct=0 falseAccept=0 rejected=300 upper95=0.00993608
+r1 k7: n=300 correct=0 falseAccept=0 rejected=300 upper95=0.00993608
+r1 k8: n=300 correct=0 falseAccept=0 rejected=300 upper95=0.00993608
+r2 k0: n=300 correct=300 falseAccept=0 rejected=0 upper95=0.00993608
+r2 k1: n=300 correct=300 falseAccept=0 rejected=0 upper95=0.00993608
+r2 k2: n=300 correct=300 falseAccept=0 rejected=0 upper95=0.00993608
+r2 k3: n=300 correct=0 falseAccept=0 rejected=300 upper95=0.00993608
+r2 k4: n=300 correct=0 falseAccept=4 rejected=295 upper95=null
+r2 k5: n=300 correct=0 falseAccept=1 rejected=299 upper95=null
+r2 k6: n=300 correct=0 falseAccept=1 rejected=298 upper95=null
+r2 k7: n=300 correct=0 falseAccept=1 rejected=299 upper95=null
+r2 k8: n=300 correct=0 falseAccept=0 rejected=300 upper95=0.00993608
+
+ ✓ src/optical/decode-fragment.bitflip.test.ts > G5. recorded counterexamples > every recorded counterexample reproduces through decodeFragment and render -> detect -> decode 59ms
+ ✓ src/optical/decode-fragment.bitflip.test.ts > G5. recorded counterexamples > the files on disk are byte-identical to a fresh regeneration; image cells are consistent 3337ms
+stdout | src/optical/decode-fragment.bitflip.test.ts > G6. adversarial agreement with the brute-force reference (seed 20251112) > template + flips toward another card + random extra flips: status, card and distance equal the reference
+G6: 2000 property evaluations (including shrinking), 33 false acceptances reached
+
+ ✓ src/optical/decode-fragment.bitflip.test.ts > G6. adversarial agreement with the brute-force reference (seed 20251112) > template + flips toward another card + random extra flips: status, card and distance equal the reference 24ms
+ ✓ src/optical/verify-codebook.test.ts > C. negative cases > 11. property: verifier.ok equals brute-force verdict after random 1-4 bit corruption 9301ms
+ ✓ src/optical/detect.test.ts > 6. scaling (measured thresholds) > 1 px modules (7 px marker) are never DETECTED and never wrong 2ms
+ ✓ src/optical/detect.test.ts > 6. scaling (measured thresholds) > blurred non-integer scales: exact for effective modulePx >= 2.5 (sizePx >= 17.5), spec range 0.5..3x of modulePx 8 included 2801ms
+ ✓ src/optical/verify-codebook.test.ts > D. runVerification > is deterministic, writes exactly what it returns, and does not touch the frozen file 169ms
+ ✓ src/optical/detect.test.ts > 6. scaling (measured thresholds) > below the exact threshold (2.0..2.25 blurred) results may be rejected but are never wrong 113ms
+ ✓ src/optical/verify-codebook.test.ts > D. runVerification > reports failure for a corrupted temp copy and leaves the frozen file untouched 88ms
+ ✓ src/optical/verify-codebook.test.ts > D. runVerification > reports failure for unparsable input without throwing 4ms
+ ✓ src/optical/verify-codebook.test.ts > E. verifier template bits vs applyTransform > verifier transform names equal TRANSFORM_NAMES exactly 0ms
+ ✓ src/optical/verify-codebook.test.ts > E. verifier template bits vs applyTransform > verifier transform matches applyTransform for 52 base patterns x 8 transforms (416) 5ms
+ ✓ src/optical/verify-codebook.test.ts > E. verifier template bits vs applyTransform > helper throws on an unknown transform name 0ms
+ ✓ src/optical/detect.test.ts > 7. perspective (plane tilt, camera distance 5 marker edges) > exact bits for 20 seeded cases (random rotation, random tilt axis) at 0, 10, 20, 30, 40 and 50 degrees 0ms
+ ✓ src/optical/detect.test.ts > 7. perspective (plane tilt, camera distance 5 marker edges) > 60 degrees: partial recall is allowed (measured 16/20) but wrong bits are never returned 0ms
+ ✓ src/optical/detect.test.ts > 8. invalid borders and damaged markers > never DETECTED with wrong bits and never DETECTED when the structure is invalid 0ms
+ ✓ src/optical/detect.test.ts > 8. invalid borders and damaged markers > (a) every non-corner border cell white: INVALID_MARKER / BORDER_NOT_BLACK (60 of 60) 0ms
+ ✓ src/optical/detect.test.ts > 8. invalid borders and damaged markers > (b) every corner border cell white: INVALID_MARKER / BORDER_NOT_BLACK (12 of 12) 0ms
+ ✓ src/optical/detect.test.ts > 8. invalid borders and damaged markers > (c) a whole border side white is rejected 0ms
+ ✓ src/optical/detect.test.ts > 8. invalid borders and damaged markers > (d) a single gray (128) border cell is BORDER_NOT_BLACK; a single darker gray (100) cell is a still-valid marker 0ms
+ ✓ src/optical/detect.test.ts > 8. invalid borders and damaged markers > (e) black margin touching the border is never DETECTED 0ms
+ ✓ src/optical/detect.test.ts > 8. invalid borders and damaged markers > (e2) one isolated dark dot in the margin is tolerated; eight are MARGIN_NOT_WHITE 0ms
+ ✓ src/optical/detect.test.ts > 8. invalid borders and damaged markers > (f) marker cut by the image edge: 25 % visible is NOT_DETECTED, 50 % and 75 % are TOUCHES_IMAGE_EDGE 0ms
+ ✓ src/optical/detect.test.ts > 8. invalid borders and damaged markers > (g) white occluders: DETECTED only when the border is intact and the bits equal what the raster shows 0ms
+ ✓ src/optical/detect.test.ts > 8. invalid borders and damaged markers > (h) two markers touching are never DETECTED 0ms
+ ✓ src/optical/detect.test.ts > 9. determinism and input safety > same input twice gives deep-equal results 2ms
+ ✓ src/optical/detect.test.ts > 9. determinism and input safety > does not mutate the input image 9ms
+ ✓ src/optical/detect.test.ts > 9. determinism and input safety > throws RangeError only for malformed image objects 1ms
+ ✓ src/optical/detect.test.ts > 9. determinism and input safety > returns NOT_DETECTED without throwing for degenerate sizes 0ms
+ ✓ src/optical/detect.test.ts > 9. determinism and input safety > optional adaptive binarization reads a clean marker and a strong illumination ramp 469ms
+
+ Test Files  11 passed (11)
+      Tests  190 passed (190)
+   Start at  14:11:28
+   Duration  13.96s (tests 82%, import 17%, transform 1%)
+
+
+## exit code: 0
+
+==============================================================================
+## check:codebook
+## command: npm run check:codebook
+## started: 2026-11-13T14:11:42.8160803+09:00
+==============================================================================
+
+> qroker-kiroween@0.0.0 check:codebook
+> tsx scripts/generate-codebook.ts --check
+
+check ok: regenerated codebook is byte-identical to codebook.v1.json
+
+## exit code: 0
+
+==============================================================================
+## verify:codebook
+## command: npm run verify:codebook
+## started: 2026-11-13T14:11:43.7868376+09:00
+==============================================================================
+
+> qroker-kiroween@0.0.0 verify:codebook
+> tsx scripts/verify-codebook.ts
+
+codebook verification PASS (dId=5, dSelf=6, minDistance=5)
+
+## exit code: 0
+
+==============================================================================
+## verify:bound
+## command: npm run verify:bound
+## started: 2026-11-13T14:11:44.8296532+09:00
+==============================================================================
+
+> qroker-kiroween@0.0.0 verify:bound
+> tsx scripts/verify-bound.ts
+
+# Codebook capacity bound (exhaustive enumeration)
+
+Enumerated all 2^25 patterns independently of `src/optical`. Runtime: 1.8 s.
+
+Overall: all stated claims matched.
+
+| field | expected (claim) | measured | match |
+|---|---|---|---|
+| balanceFail | 3,615,562 | 3,615,562 | yes |
+| selfDistanceFail | 7,152,896 | 7,152,896 | yes |
+| eitherFail | 9,456,896 | 9,456,896 | yes |
+| F | 24,097,536 | 24,097,536 | yes |
+| V4 | 15,276 | 15,276 | yes |
+| bound | 198 | 198 | yes |
+| d6Bound | 45 | 45 | yes |
+| d7Bound | 7 | 7 | yes |
+| perTransform.R90 | 74,624 | 74,624 | yes |
+| perTransform.R270 | 74,624 | 74,624 | yes |
+| perTransform.R180 | 647,168 | 647,168 | yes |
+| perTransform.Fh | 1,835,008 | 1,835,008 | yes |
+| perTransform.Fv | 1,835,008 | 1,835,008 | yes |
+| perTransform.Dm | 1,835,008 | 1,835,008 | yes |
+| perTransform.Da | 1,835,008 | 1,835,008 | yes |
+
+Bound = ceil(|F| / (8 * V(25, d-1))). Measured |F| / V:
+- d=5: |F| = 24,097,536, V(25,4) = 15,276, bound 198
+- d=6: |F| = 24,097,536, V(25,5) = 68,406, bound 45
+- d=7: |F| = 13,746,176, V(25,6) = 245,506, bound 7
+
+
+## exit code: 0
+
+==============================================================================
+## measure:detection
+## command: npm run measure:detection
+## started: 2026-11-13T14:11:47.4852953+09:00
+==============================================================================
+
+> qroker-kiroween@0.0.0 measure:detection
+> tsx scripts/measure-detection.ts
+
+wrote m4-1-detection.json and m4-1-detection.md to D:\Project\QRoker\qroker-kiroween\docs\optical\results\
+
+## exit code: 0
+
+==============================================================================
+## measure:decode-fragment
+## command: npm run measure:decode-fragment
+## started: 2026-11-13T14:12:01.5632399+09:00
+==============================================================================
+
+> qroker-kiroween@0.0.0 measure:decode-fragment
+> tsx scripts/measure-decode-fragment.ts
+
+# Fragment decoder: exact enumeration (task 4.2)
+
+**Synthetic model, not real cameras.** This is an EXACT enumeration of the independent-uniform-bit-flip
+model, not a sample, so there is no sampling error and no confidence bound is needed. It is not a model of real
+image corruption (blur, misaligned sampling and lighting do not flip independent bits).
+
+Model: a template T (52 cards x 8 D4 transforms = 416) is corrupted by exactly k independent,
+uniformly chosen bit flips; every one of the C(25,k) masks is equally likely. Each (T, mask) pair is visited once,
+so the number of events at weight k is 416 x C(25,k). The decoder accepts a word iff exactly one DISTINCT card has a
+template within the radius. correct = accepted as the source card (any transform); exact transform = the source
+template is the nearest template of that card; falseAccept = accepted as a different card; rejected = the rest
+(CORRUPTED_FRAGMENT or AMBIGUOUS).
+
+Codebook SHA-256: 515ECEB318648C14A47574496788236A2B1BBDFC7062387DB09303CB717CC2D4 (matches the frozen hash)
+
+## Radius 1
+
+- accepted words (unique card within radius): 10,816
+- ambiguous words (within radius of two or more distinct cards): 0
+- accepted words with tied nearest transform: 0
+- smallest k with a false acceptance: 4
+- k <= 1 all correct: true; all with the exact transform: true
+- k in {2, 3} all rejected: true
+- k = 4..8 pooled (750,944,480 events): correct 0.0000127413, false acceptance 0.000303149, rejected 0.999684
+
+| k | events | correct (any transform) | correct, exact transform | correct, other transform | false acceptance | rejected | of which ambiguous | correct rate | false-acceptance rate | rejected rate |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 416 | 416 | 416 | 0 | 0 | 0 | 0 | 1 | 0 | 0 |
+| 1 | 10,400 | 10,400 | 10,400 | 0 | 0 | 0 | 0 | 1 | 0 | 0 |
+| 2 | 124,800 | 0 | 0 | 0 | 0 | 124,800 | 0 | 0 | 0 | 1 |
+| 3 | 956,800 | 0 | 0 | 0 | 0 | 956,800 | 0 | 0 | 0 | 1 |
+| 4 | 5,262,400 | 0 | 0 | 0 | 1,360 | 5,261,040 | 0 | 0 | 0.000258437 | 0.999742 |
+| 5 | 22,102,080 | 1,344 | 0 | 1,344 | 5,072 | 22,095,664 | 0 | 0.0000608088 | 0.000229481 | 0.999710 |
+| 6 | 73,673,600 | 224 | 0 | 224 | 22,032 | 73,651,344 | 0 | 0.00000304044 | 0.000299049 | 0.999698 |
+| 7 | 199,971,200 | 7,584 | 0 | 7,584 | 61,616 | 199,902,000 | 0 | 0.0000379255 | 0.000308124 | 0.999654 |
+| 8 | 449,935,200 | 416 | 0 | 416 | 137,568 | 449,797,216 | 0 | 9.24578e-7 | 0.000305751 | 0.999693 |
+| 9 | 849,877,600 | 14,912 | 0 | 14,912 | 264,480 | 849,598,208 | 0 | 0.0000175461 | 0.000311198 | 0.999671 |
+| 10 | 1,359,804,160 | 784 | 0 | 784 | 435,216 | 1,359,368,160 | 0 | 5.76554e-7 | 0.000320058 | 0.999679 |
+| 11 | 1,854,278,400 | 19,248 | 0 | 19,248 | 582,960 | 1,853,676,192 | 0 | 0.0000103803 | 0.000314386 | 0.999675 |
+| 12 | 2,163,324,800 | 624 | 0 | 624 | 703,648 | 2,162,620,528 | 0 | 2.88445e-7 | 0.000325262 | 0.999674 |
+| 13 | 2,163,324,800 | 16,400 | 0 | 16,400 | 676,192 | 2,162,632,208 | 0 | 0.00000758092 | 0.000312571 | 0.999680 |
+| 14 | 1,854,278,400 | 592 | 0 | 592 | 596,496 | 1,853,681,312 | 0 | 3.19262e-7 | 0.000321686 | 0.999678 |
+| 15 | 1,359,804,160 | 9,456 | 0 | 9,456 | 418,224 | 1,359,376,480 | 0 | 0.00000695394 | 0.000307562 | 0.999685 |
+| 16 | 849,877,600 | 184 | 0 | 184 | 273,168 | 849,604,248 | 0 | 2.16502e-7 | 0.000321420 | 0.999678 |
+| 17 | 449,935,200 | 3,240 | 0 | 3,240 | 138,384 | 449,793,576 | 0 | 0.00000720104 | 0.000307564 | 0.999685 |
+| 18 | 199,971,200 | 88 | 0 | 88 | 64,848 | 199,906,264 | 0 | 4.40063e-7 | 0.000324287 | 0.999675 |
+| 19 | 73,673,600 | 616 | 0 | 616 | 21,104 | 73,651,880 | 0 | 0.00000836120 | 0.000286453 | 0.999705 |
+| 20 | 22,102,080 | 0 | 0 | 0 | 8,464 | 22,093,616 | 0 | 0 | 0.000382950 | 0.999617 |
+| 21 | 5,262,400 | 0 | 0 | 0 | 1,520 | 5,260,880 | 0 | 0 | 0.000288842 | 0.999711 |
+| 22 | 956,800 | 0 | 0 | 0 | 528 | 956,272 | 0 | 0 | 0.000551839 | 0.999448 |
+| 23 | 124,800 | 0 | 0 | 0 | 48 | 124,752 | 0 | 0 | 0.000384615 | 0.999615 |
+| 24 | 10,400 | 0 | 0 | 0 | 0 | 10,400 | 0 | 0 | 0 | 1 |
+| 25 | 416 | 0 | 0 | 0 | 0 | 416 | 0 | 0 | 0 | 1 |
+
+## Radius 2
+
+- accepted words (unique card within radius): 135,616
+- ambiguous words (within radius of two or more distinct cards): 0
+- accepted words with tied nearest transform: 0
+- smallest k with a false acceptance: 3
+- k <= 2 all correct: true; all with the exact transform: true
+- k = 4..8 pooled (750,944,480 events): correct 0.000240060, false acceptance 0.00382366, rejected 0.995936
+
+| k | events | correct (any transform) | correct, exact transform | correct, other transform | false acceptance | rejected | of which ambiguous | correct rate | false-acceptance rate | rejected rate |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 416 | 416 | 416 | 0 | 0 | 0 | 0 | 1 | 0 | 0 |
+| 1 | 10,400 | 10,400 | 10,400 | 0 | 0 | 0 | 0 | 1 | 0 | 0 |
+| 2 | 124,800 | 124,800 | 124,800 | 0 | 0 | 0 | 0 | 1 | 0 | 0 |
+| 3 | 956,800 | 0 | 0 | 0 | 2,720 | 954,080 | 0 | 0 | 0.00284281 | 0.997157 |
+| 4 | 5,262,400 | 3,360 | 0 | 3,360 | 13,360 | 5,245,680 | 0 | 0.000638492 | 0.00253877 | 0.996823 |
+| 5 | 22,102,080 | 1,344 | 0 | 1,344 | 79,648 | 22,021,088 | 0 | 0.0000608088 | 0.00360364 | 0.996336 |
+| 6 | 73,673,600 | 37,408 | 0 | 37,408 | 267,792 | 73,368,400 | 0 | 0.000507753 | 0.00363484 | 0.995857 |
+| 7 | 199,971,200 | 7,584 | 0 | 7,584 | 763,312 | 199,200,304 | 0 | 0.0000379255 | 0.00381711 | 0.996145 |
+| 8 | 449,935,200 | 130,576 | 0 | 130,576 | 1,747,248 | 448,057,376 | 0 | 0.000290211 | 0.00388333 | 0.995826 |
+| 9 | 849,877,600 | 14,912 | 0 | 14,912 | 3,355,728 | 846,506,960 | 0 | 0.0000175461 | 0.00394848 | 0.996034 |
+| 10 | 1,359,804,160 | 216,144 | 0 | 216,144 | 5,347,152 | 1,354,240,864 | 0 | 0.000158952 | 0.00393230 | 0.995909 |
+| 11 | 1,854,278,400 | 19,248 | 0 | 19,248 | 7,497,552 | 1,846,761,600 | 0 | 0.0000103803 | 0.00404338 | 0.995946 |
+| 12 | 2,163,324,800 | 234,160 | 0 | 234,160 | 8,508,880 | 2,154,581,760 | 0 | 0.000108241 | 0.00393324 | 0.995959 |
+| 13 | 2,163,324,800 | 16,400 | 0 | 16,400 | 8,763,760 | 2,154,544,640 | 0 | 0.00000758092 | 0.00405106 | 0.995941 |
+| 14 | 1,854,278,400 | 162,512 | 0 | 162,512 | 7,231,728 | 1,846,884,160 | 0 | 0.0000876416 | 0.00390002 | 0.996012 |
+| 15 | 1,359,804,160 | 9,456 | 0 | 9,456 | 5,474,160 | 1,354,320,544 | 0 | 0.00000695394 | 0.00402570 | 0.995967 |
+| 16 | 849,877,600 | 72,704 | 0 | 72,704 | 3,281,856 | 846,523,040 | 0 | 0.0000855464 | 0.00386156 | 0.996053 |
+| 17 | 449,935,200 | 3,240 | 0 | 3,240 | 1,814,688 | 448,117,272 | 0 | 0.00000720104 | 0.00403322 | 0.995960 |
+| 18 | 199,971,200 | 17,800 | 0 | 17,800 | 758,992 | 199,194,408 | 0 | 0.0000890128 | 0.00379551 | 0.996115 |
+| 19 | 73,673,600 | 616 | 0 | 616 | 311,024 | 73,361,960 | 0 | 0.00000836120 | 0.00422165 | 0.995770 |
+| 20 | 22,102,080 | 1,848 | 0 | 1,848 | 81,008 | 22,019,224 | 0 | 0.0000836120 | 0.00366518 | 0.996251 |
+| 21 | 5,262,400 | 0 | 0 | 0 | 26,192 | 5,236,208 | 0 | 0 | 0.00497720 | 0.995023 |
+| 22 | 956,800 | 0 | 0 | 0 | 3,664 | 953,136 | 0 | 0 | 0.00382943 | 0.996171 |
+| 23 | 124,800 | 0 | 0 | 0 | 816 | 123,984 | 0 | 0 | 0.00653846 | 0.993462 |
+| 24 | 10,400 | 0 | 0 | 0 | 48 | 10,352 | 0 | 0 | 0.00461538 | 0.995385 |
+| 25 | 416 | 0 | 0 | 0 | 0 | 416 | 0 | 0 | 0 | 1 |
+
+
+## exit code: 0
+
+==============================================================================
+## collect:decode-counterexamples
+## command: npm run collect:decode-counterexamples
+## started: 2026-11-13T14:12:02.6749328+09:00
+==============================================================================
+
+> qroker-kiroween@0.0.0 collect:decode-counterexamples
+> tsx scripts/collect-decode-counterexamples.ts
+
+wrote m4-3-counterexamples.json/.md (d_id 5)
+
+## exit code: 0
+
+## git status --short
+ M .kiro/specs/qroker-game/tasks.md
+ M .kiro/specs/qroker-game/tasks.meta.json
+ M docs/optical/results/bound.json
+ M docs/optical/results/bound.md
+?? docs/optical/results/m4-4-test-output.txt
+
+## git diff --stat docs/optical/results src
+ docs/optical/results/bound.json | 2 +-
+ docs/optical/results/bound.md   | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+## SHA256 after:
+515ECEB318648C14A47574496788236A2B1BBDFC7062387DB09303CB717CC2D4  src/optical/codebook.v1.json
+E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855  docs/optical/results/.gitkeep
+A044FD6EB693526AF1F538A11A452A5E72828AD428634DEB1BF7EEEF0B06F3C2  docs/optical/results/bound.json
+C272FCCAF36F51DA93CCBAEB63886F6BA0D3081B1330BA59A8A89AC95140B2BD  docs/optical/results/bound.md
+B331EC5E5499BA6831A23880F977A6C7EB2219323F15B8FEDD0BD819DAF1EF36  docs/optical/results/codebook-verification.json
+5698693E994EA3229FE30DDC63A160A9A1C9AC0F13B117A0040CA93D5068EE66  docs/optical/results/codebook-verification.md
+539E7B166CF387B2A6B470FE166654913BB0C7906506A90E42CC1A19542F149F  docs/optical/results/m0-test-output.txt
+7E3ED50F9022774BC1E4A0B1A2A5D262AB76017BB0E4E3884468F3D5DE7ED0DA  docs/optical/results/m1-report.md
+C1FE937D18F62A595C7B7F087C2D21F1975D9B3C12115F1181ADDCB9FC687A55  docs/optical/results/m1-test-output.txt
+7DCB97913FC357D1B2D1AE2ECA5340184E809D9231C6B33F0472E1C325AAE1FA  docs/optical/results/m2-final-output.txt
+9B64E88E34E7040FFE2EF57F9924C336B838347AF488F67140EBB497F5842BEC  docs/optical/results/m2-report.md
+61DBC3B5586AA1E426AF8263EA729ED6698FB72C66B49A4798C013DAFC9F0786  docs/optical/results/m2-test-output.txt
+A22273FF368D0925EF39F733B39DD5D62B0002E47214B708425CD1A17D308741  docs/optical/results/m3-report.md
+F2C1275FDF4AF605CA6B4DB61A4B4A227A013B9DB16A0F1711524DDC1CEC314F  docs/optical/results/m3-test-output.txt
+2DB10D406A06D6CC183889390E7249AC3EAF091A465A0C88F8D0367D8B7AA38D  docs/optical/results/m4-1-detection.json
+441BCB52A1158E4132A3DF3F0518462905DC16AD46F2661FAA72A017118AD47C  docs/optical/results/m4-1-detection.md
+AED437E3ABD22B866EF813E6FDC5147ADC6A0E143258FD83F264E0A8B913AC52  docs/optical/results/m4-2-decode-fragment.json
+179B6FDE1225623453290FB5F7643A1485AE7F12A1F99FF6D706F638FF10F3F3  docs/optical/results/m4-2-decode-fragment.md
+D397D4ABED151FC45D983B0048A900B9C23C3FD9868B28CD1910530250119AD3  docs/optical/results/m4-3-counterexamples.json
+DB029EE39ED3F36A9FDA037298B5FA7C97BCEA7A0E398C4A402818B0178CEC34  docs/optical/results/m4-3-counterexamples.md
+73414C5FBFB0BA7436A6F4F1C2F4D2BE2FEF4B077214196F66F38309EDFEE61A  docs/optical/results/m4-3-coverage.md
+
+## hash diff (before vs after):
+
+InputObject                             
+-----------                             
+A044FD6EB693526AF1F538A11A452A5E72828...
+C272FCCAF36F51DA93CCBAEB63886F6BA0D30...
+23D3CF576BFCA680D52FA5A6BF6E2D7DD27D6...
+47187AAFA396AAF968EA32B06433C69689630...
+
+
+
+
