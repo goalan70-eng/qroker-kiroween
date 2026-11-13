@@ -676,7 +676,28 @@ Whether a point P at (a, a) mm diagonally from the card corner lies inside a rou
 - The maximum radius at which the entire margin stays inside the card is r_max = a·√2/(√2 − 1): Marker_Inset 0.5 module → 2.71 mm, 1 module → 5.42 mm, 1.5 modules → 8.13 mm, 2 modules → 10.84 mm. With Marker_Inset 0.5 module at the baseline radius, the margin corner goes outside the card (clearance −0.19 mm). Marker_Inset 1 module is satisfied up to a radius of 5 mm (clearance 0.17 mm) and is not satisfied at 6 mm (clearance −0.24 mm).
 - Comparison of clearance at the outer corner of the margin (Marker_Inset 1 module / 1.5 modules): at r = 3.175 mm, 0.93 / 2.05 mm; at r = 3.6 mm, 0.75 / 1.88 mm; at r = 4 mm, 0.59 / 1.71 mm.
 - The Central_Void area is 4(1 − π/4)·r²: r = 2 mm → 3.43 mm², 3.175 mm → 8.65 mm², 4 mm → 13.73 mm², 5 mm → 21.46 mm². It has the shape of four horns, each extending r from the center along the seams.
-- Shortest distance between the horn tip of the Central_Void and the corner of the black border (Marker_Inset 1 module): r = 2 mm → 3.39 mm, 3.175 mm → 3.17 mm, 4 mm → 3.28 mm, 5 mm → 3.66 mm, 6 mm → 4.25 mm. In every case the white quiet margin and Marker_Inset (2 modules in total) lie in between, so the void does not touch the black border.
+- Distance between the Central_Void and the corner of the black border. Here a is the offset of the black-border corner from each card edge, a = Marker_Inset + margin (baseline: 2 modules = 3.175 mm at Marker_Inset 1 module and margin 1 module), and r is the Corner_Radius. Two quantities are distinguished, named as in `markerContainment` (`src/optical/testing/physical-card.ts`):
+  - `voidTipToBorderCornerMm` is the distance from the horn tip of the Central_Void (the arc tangent point on the card edge, at distance r from the vertex along the seam) to the black-border corner: √((a − r)² + a²). It is a reference value only.
+  - `voidToBorderCornerMm` is the true minimum Euclidean distance from any point of the Central_Void to the black-border corner. This is the quantity Requirement 15.4 asks the experiment to report.
+  - r = 0: the card corner is square, there is no Central_Void, and no void distance is defined. Neither quantity is reported for r = 0 (the table shows "no void").
+  - 0 < r ≤ a: the nearest void point is the horn tip, so `voidToBorderCornerMm` = `voidTipToBorderCornerMm` = √((a − r)² + a²), which is at least a.
+  - r > a: the nearest void point lies on the arc, on the line from the arc centre (r, r) through the border corner (a, a). The distance is `voidToBorderCornerMm` = r − √2·(r − a), which is less than `voidTipToBorderCornerMm` and less than a. This holds while the value is 0 or more, that is r ≤ a·√2/(√2 − 1) (10.84 mm at a = 3.175 mm); beyond that the border corner lies outside the rounded card and the marker is not contained (see the containment calculation above).
+
+  Values at a = 3.175 mm (Marker_Inset 1 module, margin 1 module), recomputed from the formulas above and consistent with `docs/optical/results/m5-4-physical-card.md`:
+
+  | r (mm) | Case | `voidTipToBorderCornerMm` (mm) | `voidToBorderCornerMm` (mm) |
+  |---|---|---|---|
+  | 0 | no void | not defined | not defined |
+  | 2.0 | r ≤ a | 3.39 | 3.39 |
+  | 3.0 | r ≤ a | 3.18 | 3.18 |
+  | 3.175 (baseline) | r = a | 3.175 | 3.175 |
+  | 3.6 | r > a | 3.20 | 3.00 |
+  | 4.0 | r > a | 3.28 | 2.83 |
+  | 5.0 | r > a | 3.66 | 2.42 |
+  | 6.0 | r > a | 4.25 | 2.00 |
+
+  The horn-tip value alone is not the minimum for r > a: it rises with r while the true minimum falls. The previously tabulated horn-tip values (3.39, 3.17, 3.28, 3.66, 4.25 mm for r = 2, 3.175, 4, 5, 6 mm) are correct as horn-tip distances. At r = 6 mm with Marker_Inset 1 module the margin is outside the card (invalid, clearance −0.24 mm), so that row is a distance for the border corner only and not a valid geometry.
+- For every 0 < r < 10.84 mm, the true minimum distance is greater than 0, so the void does not touch the black border at a = 3.175 mm. For r ≤ 3.175 mm the void is at least 2 modules (3.175 mm) from the border corner, with the white quiet margin and Marker_Inset between them. For r ≥ 3.6 mm the void is closer than 2 modules (3.00, 2.83, 2.42 and 2.00 mm at r = 3.6, 4, 5 and 6 mm), so the arc enters the band occupied by the white quiet margin and Marker_Inset.
 - The white gap between the black squares on the two sides of a seam (clearance 0) is 2(Marker_Inset + margin) modules: Marker_Inset 1 module → 4 modules = 6.35 mm, 1.5 modules → 5 modules = 7.94 mm.
 - Not included in the calculation: card cutting tolerance, print registration error, edge gloss and shadow, seam gap, card warp. Whether the baseline clearance of 0.93 mm is larger than the actual cutting and registration errors is not known.
 
@@ -690,14 +711,14 @@ Whether a point P at (a, a) mm diagonally from the card corner lies inside a rou
 
 - `renderPhysicalCard(card, orientation, geometry)`: places a rounded-corner mask (anti-aliased) and the markers on a raster in mm coordinates, and fills the area outside the mask with the background.
 - `composeBoard(placements, geometry, errors)`: joins the cards with clearance 0 and applies per-card translation and rotation errors.
-- The existing `render.ts` is not modified, and `renderMarker` and `placedFragments` are reused. The containment-clearance function `markerContainment(geometry)` implements the analytic formula above and is compared with the raster result.
+- The existing `render.ts` is not modified, and `renderMarker` and `placedFragments` are reused. The containment-clearance function `markerContainment(geometry)` implements the analytic formula above (including `voidTipToBorderCornerMm` and `voidToBorderCornerMm`) and is compared with the raster result.
 - Double-sided cards take a `face: 'FRONT' | 'BACK'` parameter, and the design models printed content (`printLayers(card)`: the front and back layers in the Body_Frame) separately from observation (`observeFace(card, face, orientation, flip?)`: the view from above). The front-to-back print registration error `duplexRegistration { dxMm, dyMm, rotDeg }` and the cut-outline error are taken as geometry parameters.
 
 ### 5. Incremental optimization order and decision rule
 
 The baseline geometry (standard rounded corner) is evaluated first. If reliability is insufficient, improve only in this order: (1) fragment position and Marker_Inset (1 → 1.5 → 2 modules), (2) marker size and margin, (3) detection and geometric-correction algorithm, (4) evaluation of physical alignment tolerance, (5) only if necessary, reduce Corner_Radius in steps. The geometry is not changed because of a single failure case, and each step decides after recording per-condition aggregates (correct recognition rate, rejection kinds, misidentification count, failure causes) and the geometry parameters.
 
-Hypothesis (unverified): analytically, the containment clearance at the baseline radius is positive and the Central_Void is at least 2 modules away from the black border, so it is possible that no radius reduction is needed. The risks are the small clearance of 0.93 mm and the cutting and registration errors, and Marker_Inset of 1.5 modules (clearance 2.05 mm) is the first improvement candidate to test. There is no evidence for either hypothesis until experiments are run.
+Hypothesis (unverified): analytically, the containment clearance at the baseline radius is positive and the true minimum distance from the Central_Void to the black border (`voidToBorderCornerMm`) is 3.175 mm, which is 2 modules, so it is possible that no radius reduction is needed. The 2-module statement holds only for Corner_Radius ≤ 3.175 mm at Marker_Inset 1 module and margin 1 module (a = 3.175 mm). It does not hold for r ≥ 3.6 mm, where `voidToBorderCornerMm` is 3.00 mm or less. The horn-tip distance must not be used as the minimum. The Task 5.6 radius sweep must therefore record `voidToBorderCornerMm` (the true minimum), and may record `voidTipToBorderCornerMm` only as an additional reference column. For r = 0 the sweep records "no void". The risks are the small clearance of 0.93 mm and the cutting and registration errors, and Marker_Inset of 1.5 modules (clearance 2.05 mm) is the first improvement candidate to test. There is no evidence for either hypothesis until experiments are run.
 
 ### 6. Where the experiments are
 
