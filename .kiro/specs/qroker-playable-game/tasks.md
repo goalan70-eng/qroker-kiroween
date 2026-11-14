@@ -182,8 +182,8 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Depends on: 6.1, 6.2.
     - **Validates: Requirements 7.2, 8.1, 8.2, 8.3, 9.4, 9.5**
 
-- [ ] 7. Draw and turn management
-  - [ ] 7.1 Implement `shouldDraw` and `nextSeat` (`core/draw.ts`, `core/turn.ts`)
+- [x] 7. Draw and turn management
+  - [x] 7.1 Implement `shouldDraw` and `nextSeat` (`core/draw.ts`, `core/turn.ts`)
     - As in design.md. `shouldDraw(player, firstPlacementDone, newCodes)` and the cyclic `nextSeat`.
     - Acceptance: full truth table (first placement yes/no × codes 0/1/2) gives the values of requirements 6.3 to 6.5; `nextSeat` cycles `P0` to `P3` and back.
     - Tests: exhaustive truth-table unit tests. The reducer-level draw property is Property 12 in task 8.3.

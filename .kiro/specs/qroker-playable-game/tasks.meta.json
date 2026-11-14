@@ -258,6 +258,25 @@
         "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
         "timestamp": 1794652497900
       }
+    ],
+    "7.1 Implement `shouldDraw` and `nextSeat` (`core/draw.ts`, `core/turn.ts`)": [
+      {
+        "executionId": "1d50a8a0-f76c-4080-b5ca-35127af0437c",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794653010862
+      },
+      {
+        "executionId": "1d50a8a0-f76c-4080-b5ca-35127af0437c",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794653203599
+      }
+    ],
+    "7. Draw and turn management": [
+      {
+        "executionId": "1d50a8a0-f76c-4080-b5ca-35127af0437c",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794653203665
+      }
     ]
   }
 }
