@@ -122,6 +122,37 @@
         "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
         "timestamp": 1794646312070
       }
+    ],
+    "3.1 Implement the deck (`core/deck.ts`)": [
+      {
+        "executionId": "16e6cd25-bcd7-45b2-9a7c-09dfdbc2b811",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794646702206
+      },
+      {
+        "executionId": "16e6cd25-bcd7-45b2-9a7c-09dfdbc2b811",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794646793767
+      }
+    ],
+    "3.2 Golden deal fixture and deck unit tests": [
+      {
+        "executionId": "16e6cd25-bcd7-45b2-9a7c-09dfdbc2b811",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794646798153
+      },
+      {
+        "executionId": "16e6cd25-bcd7-45b2-9a7c-09dfdbc2b811",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794646982580
+      }
+    ],
+    "3. Deck and dealing": [
+      {
+        "executionId": "16e6cd25-bcd7-45b2-9a7c-09dfdbc2b811",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794646982641
+      }
     ]
   }
 }

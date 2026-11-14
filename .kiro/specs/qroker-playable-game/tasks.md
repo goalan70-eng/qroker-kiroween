@@ -114,14 +114,14 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
 
 ### Milestone P1: Minimal End-to-End Playable
 
-- [ ] 3. Deck and dealing
-  - [ ] 3.1 Implement the deck (`core/deck.ts`)
+- [x] 3. Deck and dealing
+  - [x] 3.1 Implement the deck (`core/deck.ts`)
     - `dealGame(seed)` and `drawTop` as in design.md: shuffle with `mulberry32(seed)`, neutral = first 4, Hand of `Pk` = cards `4+4k` to `7+4k`, deck = remaining 32 with top = last element.
     - Acceptance: partition of 52 cards, no duplicates; `drawTop` on an empty deck returns `card: null` and the same deck.
     - Tests: unit tests for sizes and the empty-deck draw.
     - Depends on: 2.1, 2.2.
     - _Requirements: 2.2, 2.3, 6.6_
-  - [ ] 3.2 Golden deal fixture and deck unit tests
+  - [x] 3.2 Golden deal fixture and deck unit tests
     - Create `src/game/core/deck.test.ts` with the golden full initial deal for seed `1` and one more fixed seed (values recorded when first run and then frozen), plus tests that different seeds usually produce different deals (check 2 specific seeds differ).
     - Acceptance: changing the shuffle order or deal order fails the golden test.
     - Tests: golden snapshot assertions written as explicit arrays, not Vitest snapshots.
