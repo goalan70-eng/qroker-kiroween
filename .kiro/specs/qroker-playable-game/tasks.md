@@ -203,7 +203,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Tests: example scenarios built from hand-picked states (construct a `GameState` through a test helper that overrides hands, deck and board).
     - Depends on: 8.1, 5.1, 7.1, 6.2, 4.1.
     - _Requirements: 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 6.2, 6.3, 6.4, 6.5, 6.6, 7.1, 7.2, 7.3, 7.4, 7.6, 7.9, 8.1, 8.6, 8.7, 8.8, 9.1, 9.2, 9.3, 9.7_
-  - [ ] 8.3 Property tests for the reducer: deal, draw, conservation, authorization
+  - [x] 8.3 Property tests for the reducer: deal, draw, conservation, authorization
     - Create `src/game/core/testing/state-generators.ts` (`arbConfig`, `randomLegalAction`, `arbReachableState`) and `src/game/core/engine.properties.test.ts`.
     - **Property 4: Deterministic deal partition**
     - **Property 12: Draw rule**
@@ -212,7 +212,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Acceptance: Properties pass; generated states are reachable (built only by `newGame` and `reduce`); the draw property includes states with an empty deck.
     - Depends on: 8.2.
     - **Validates: Requirements 2.2, 2.3, 2.4, 3.4, 3.6, 3.7, 5.7, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 7.9, 9.2**
-  - [ ] 8.4 Property tests for guess collection, reveal and game end
+  - [-] 8.4 Property tests for guess collection, reveal and game end
     - Create `src/game/core/engine.reveal.properties.test.ts`.
     - **Property 17: Simultaneous reveal**
     - **Property 18: Submission protocol**

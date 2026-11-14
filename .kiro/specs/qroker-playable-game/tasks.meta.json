@@ -301,6 +301,25 @@
         "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
         "timestamp": 1794655812869
       }
+    ],
+    "8.3 Property tests for the reducer: deal, draw, conservation, authorization": [
+      {
+        "executionId": "1a098ef9-35da-4a40-9521-b7216870823d",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794656963413
+      },
+      {
+        "executionId": "1a098ef9-35da-4a40-9521-b7216870823d",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794658236364
+      }
+    ],
+    "8.4 Property tests for guess collection, reveal and game end": [
+      {
+        "executionId": "1a098ef9-35da-4a40-9521-b7216870823d",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794658244468
+      }
     ]
   }
 }
