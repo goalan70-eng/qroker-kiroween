@@ -368,6 +368,25 @@
         "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
         "timestamp": 1794663505384
       }
+    ],
+    "10.1 Implement replay (`core/replay.ts`)": [
+      {
+        "executionId": "f6190ee8-9f2e-4ac3-b3ed-78ff13411b04",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794700177317
+      },
+      {
+        "executionId": "f6190ee8-9f2e-4ac3-b3ed-78ff13411b04",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794700503394
+      }
+    ],
+    "10.2 Property test for replay and purity": [
+      {
+        "executionId": "f6190ee8-9f2e-4ac3-b3ed-78ff13411b04",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794700507662
+      }
     ]
   }
 }
