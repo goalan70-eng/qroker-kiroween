@@ -387,6 +387,18 @@
         "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
         "timestamp": 1794613724509
       }
+    ],
+    "6.1 Write rejection tests (Property 15)": [
+      {
+        "executionId": "1a3f7c3e-79a2-4bd6-8bf5-dfb1f7a5e703",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794614089290
+      },
+      {
+        "executionId": "1a3f7c3e-79a2-4bd6-8bf5-dfb1f7a5e703",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794615540486
+      }
     ]
   }
 }

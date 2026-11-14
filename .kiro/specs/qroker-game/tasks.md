@@ -183,7 +183,7 @@ Rules for every milestone:
   - Tests (Property 15, with Properties 24 and 25): removing 1 to 3 fragments gives INCOMPLETE_GROUP; a duplicate card gives DUPLICATE_CARD; flipping r_acc+1 to 4−r_acc bits in one fragment gives CORRUPTED_FRAGMENT (non-empty only for r_acc = 1); observed transforms not in the slot table (90°-rotated fragment, ♥ content in a ♦ slot) give INVALID_ARRANGEMENT; three-fragment compositions never give IDENTIFIED; a property-based sweep over all violation types asserts the result kind is never IDENTIFIED; a physical composition with one card absent (rounded-corner voids, three markers around the vertex) gives INCOMPLETE_GROUP; distractor markers from neighboring cards never complete or alter a group; an incomplete group is rejected on either face and after a flip.
   - _Requirements: 5.7, 12.6, 13.4, 13.6, 13.7_
 
-  - [ ] 6.1 Write rejection tests (Property 15)
+  - [x] 6.1 Write rejection tests (Property 15)
     - Cover the list in Tests above.
     - _Requirements: 12.6, 13.4, 13.7_
 

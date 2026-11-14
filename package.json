@@ -18,6 +18,7 @@
     "analyze:45deg": "tsx scripts/geometry-45deg.ts",
     "verify:geometry": "tsx scripts/verify-geometry-results.ts",
     "collect:decode-counterexamples": "tsx scripts/collect-decode-counterexamples.ts",
+    "collect:rejection-counterexamples": "tsx scripts/collect-rejection-counterexamples.ts",
     "check:codebook": "tsx scripts/generate-codebook.ts --check"
   },
   "devDependencies": {
