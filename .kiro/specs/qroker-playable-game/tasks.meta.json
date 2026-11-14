@@ -277,6 +277,18 @@
         "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
         "timestamp": 1794653203665
       }
+    ],
+    "8.1 Implement `GameState`, rules and `newGame` (`core/state.ts`, `core/rules.ts`)": [
+      {
+        "executionId": "484279a7-9696-47ad-8b1b-79cee54e6c22",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794653695339
+      },
+      {
+        "executionId": "484279a7-9696-47ad-8b1b-79cee54e6c22",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794654365094
+      }
     ]
   }
 }

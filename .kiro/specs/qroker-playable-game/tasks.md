@@ -191,7 +191,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - _Requirements: 6.1, 6.3, 6.4, 6.5_
 
 - [ ] 8. Engine state and reducer
-  - [ ] 8.1 Implement `GameState`, rules and `newGame` (`core/state.ts`, `core/rules.ts`)
+  - [x] 8.1 Implement `GameState`, rules and `newGame` (`core/state.ts`, `core/rules.ts`)
     - `GameState`, `PendingBatch`, `RevealRecord`, `NewGameOptions`, `newGame`, `defaultConfig` (1 human `P0` + 3 AI, `DEV_PLACEHOLDER_SCORE_CONFIG`, `OWNER_ONLY`), config validation (`INVALID_CONFIG`, `INVALID_SCORE_CONFIG`). Neutral cards at orientation 0 with owner `NEUTRAL` (OQ-2), `turn = P0`.
     - Acceptance: 20 dealt cards, 32 deck cards; board holds 4 cards on D4, E4, D5, E5; invalid configs return errors; no code is pending at start.
     - Tests: unit tests for the initial state fields and invalid configs (3 seats, duplicate seat id, invalid score config).
