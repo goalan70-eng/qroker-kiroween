@@ -381,7 +381,8 @@ type OpticalDecodeResult =
       hiddenSum: number;
       reflection: 'NOT_REFLECTED' | 'REFLECTED' | 'AMBIGUOUS';
       interpretations: SlotInterpretation[]; // length 2 (reflection determined) or 4 (AMBIGUOUS)
-      readings: FragmentReading[]; }
+      readings: FragmentReading[];
+      vertex: { x: number; y: number }; }    // image-pixel position of the selected group's center vertex (code: Point from detect.ts)
   | { kind: 'NOT_DETECTED' }                          // the marker border itself was not found
   | { kind: 'INCOMPLETE_GROUP'; detected: number }    // fewer than 4 fragments around the target vertex
   | { kind: 'CORRUPTED_FRAGMENT'; nearestDistance: number } // border found but outside the acceptance radius
@@ -623,6 +624,8 @@ The input is only a grayscale image, and no board state is accepted (enforced by
 
 1. **Marker detection**: adaptive binarization → connected components and contours → quadrilateral approximation → 4-corner homography → 7×7 sampling → check that all border cells are black. If none is found, NOT_DETECTED.
 2. **Vertex clustering**: find a set of markers such that one lies in each of the four quadrants around a common center and the distances between centers match, within tolerance, a square arrangement predicted from the marker size. The set closest to the frame center is the target. If fewer than 4 markers surround the target vertex, INCOMPLETE_GROUP. Because the Central_Void exists, the procedure does not assume a connected square formed by the four fragments and uses only the marker center positions, and markers not at the target vertex (Distractor_Marker) are excluded from the cluster.
+
+   **Intentional nearest-complete-group selection (approved decision).** The "target" in this step is defined only by the rule "the complete four-marker set closest to the frame center"; the decoder does not know which group the user intended to scan. Incompleteness is therefore judged on the selected group, not on every vertex in the image. Scenario: a three-fragment (incomplete) vertex lies nearer the frame center, and a complete group lies farther away. The incomplete vertex is not a complete set and is not a candidate, so the decoder returns IDENTIFIED for the FARTHER complete group, built only from that group's own four markers (it never mixes the three fragments of the incomplete vertex into it) and reporting that group's own `vertex`. This is intentional, is consistent with the multi-group interpretation (for example a 3×3 board patch with several complete vertices, where the nearest complete vertex wins; this behaviour is unchanged), and is not a defect (`docs/optical/results/m6-1-defects.md`, observation 1; characterization test in `src/optical/decode-group.rejection.test.ts`, section 8). The check that the reported `vertex` is the intended group is the caller's duty; see "Scoring Companion integration contract: target-group safety" at the end of this section.
 3. **Data reading**: estimate the group axis from the vectors between marker centers (ambiguous up to multiples of 90°), and read each marker's 5×5 data aligned to that axis.
 4. **Template matching**: compute the distance to the 416 templates and obtain the nearest (card, transform g, distance). If the distance ≤ r_acc (default 1, configurable up to 2), accept; otherwise CORRUPTED_FRAGMENT.
 5. **Duplicate check**: the 4 card IDs must all differ. Otherwise DUPLICATE_CARD.
@@ -633,6 +636,36 @@ The input is only a grayscale image, and no board state is accepted (enforced by
 The reading result is passed only to the ScoreEngine's sealed store and, per Requirement 6, is not shown in the UI before prediction collection ends. The reader module itself has no UI.
 
 Error tolerance (assuming the independent bit-flip model): at distance 5, correction within radius 2 or less is guaranteed and the acceptance regions do not overlap. With r_acc = 1: 1-bit errors are guaranteed to be corrected; 2–3-bit errors fall within no template's acceptance region, so CORRUPTED_FRAGMENT rejection is guaranteed; with 4 or more bits, another card can fall within the acceptance region (misidentification is possible). With r_acc = 2: errors up to 2 bits are guaranteed to be corrected, and for 3 or more bits both rejection and misidentification are possible (no guarantee). An ambiguous observation in which two or more templates fall within the acceptance region does not occur structurally at radius ≤ 2. Cases where the cell brightness is close to the threshold and the bit decision itself is uncertain are reported separately, as cell confidence, in the fragment reading stage (task 4.2). Actual image errors (position error, blur, lighting) are not independent bit flips, so the guarantees above do not apply as they are, and only the measured values from the synthetic degradation experiments (Requirement 12.5) serve as evidence. The design does not claim that arbitrary corruption cannot produce another valid identity at any radius. The default is r_acc = 1, and the final default is fixed by the recall and misidentification rate in the synthetic experiments.
+
+#### Scoring Companion integration contract: target-group safety
+
+The decoder reports what it read from the group it selected (step 2) and where that group is (`vertex`). It does not know the intended target, so the Scoring_Companion must verify the target itself (Requirements 9.6–9.11). The contract has six points:
+
+1. **Target selection.** The intended scan target (Target_Group) is identifiable through a camera overlay, a selected region, or an equivalent target-selection mechanism (Requirement 9.6).
+2. **Vertex reporting.** A successfully decoded group returns its detected vertex position, `vertex: { x, y }` in image pixels (the `Point` type of `src/optical/detect.ts`, carried by the IDENTIFIED result and by the other result kinds that are produced after a complete group was selected) (Requirement 9.7, Requirement 13 note).
+3. **Verification before use.** The Scoring_Companion verifies that the returned `vertex` corresponds to the intended target before applying a result (Requirement 9.8).
+4. **No silent cross-application.** A result whose `vertex` belongs to another group is not applied to the intended group without the user's knowledge (Requirement 9.9).
+5. **Fallback.** If the intended target is incomplete, ambiguous, or mismatched, the Scoring_Companion asks the user to reposition, rescan, or enter the cards manually (Requirement 9.10).
+6. **No substitution.** The Scoring_Companion never replaces actually decoded cards with expected card identities. A `ReferenceCheck.compare` mismatch rejects the result and does not substitute the expected value (Requirements 9.11, 13.3, 13.9).
+
+"Corresponds to the intended target" means that the `vertex` lies within the Target_Region (the overlay or selected region) according to a tolerance that the Scoring_Companion chooses. The decoder does not define this tolerance, and this design leaves its value undefined; it is a Scoring_Companion UI decision.
+
+Usage sketch (pseudo-flow, not an implementation of the Companion UI):
+
+```text
+target = selectTarget()                       // overlay or region chosen by the user
+result = decoder.decode(image)                // reads the complete group nearest the frame center
+if result.kind != IDENTIFIED:                 // includes INCOMPLETE_GROUP, CORRUPTED_FRAGMENT, ...
+    requestRepositionRescanOrManualEntry()
+else if not target.region.accepts(result.vertex):   // tolerance chosen by the Companion
+    requestRepositionRescanOrManualEntry()    // vertex mismatch; do not apply the result
+else:
+    result = referenceCheck.compare(result, expectedCards)   // optional
+    if result.kind == REFERENCE_MISMATCH: requestRescanOrManualEntry()
+    else: apply(result)                       // decoded cards only, never the expected ones
+```
+
+The nearest-complete-vertex rule is unchanged for 3×3 boards and other multi-vertex images: the complete vertex closest to the frame center wins, and the Companion's target selection is what makes the choice meaningful to the user.
 
 ### 8. Guarantee-level classification
 
@@ -1027,6 +1060,8 @@ The reader API does not take the board state as input. If the card set differs i
 ### Optical decoding errors
 
 Every error is returned and distinguished by `OpticalDecodeResult.kind` (NOT_DETECTED, INCOMPLETE_GROUP, CORRUPTED_FRAGMENT, DUPLICATE_CARD, INVALID_ARRANGEMENT, REFERENCE_MISMATCH). A detection failure (NOT_DETECTED) and an identification failure (CORRUPTED_FRAGMENT) are distinct results. On error, the Scoring Companion switches to manual input and does not substitute the expected value.
+
+A target-vertex mismatch (the `vertex` of an IDENTIFIED result is not inside the intended Target_Region) is a Scoring Companion-level rejection, not a decoder result kind: the decoder has no knowledge of the target and reports no such kind. The Companion handles it as in the contract "Scoring Companion integration contract: target-group safety" (reposition, rescan, or manual entry), and does not apply the result to the intended group.
 
 ### Deck exhaustion
 

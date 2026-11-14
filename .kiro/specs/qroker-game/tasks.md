@@ -181,13 +181,14 @@ Rules for every milestone:
   - Deliverables: rejection test suite; changes to `decode-group.ts` only where the tests expose gaps. Any failure found is recorded in `docs/optical/results/m6-*`.
   - Acceptance criteria: no result is IDENTIFIED when any rule is violated.
   - Tests (Property 15, with Properties 24 and 25): removing 1 to 3 fragments gives INCOMPLETE_GROUP; a duplicate card gives DUPLICATE_CARD; flipping r_acc+1 to 4−r_acc bits in one fragment gives CORRUPTED_FRAGMENT (non-empty only for r_acc = 1); observed transforms not in the slot table (90°-rotated fragment, ♥ content in a ♦ slot) give INVALID_ARRANGEMENT; three-fragment compositions never give IDENTIFIED; a property-based sweep over all violation types asserts the result kind is never IDENTIFIED; a physical composition with one card absent (rounded-corner voids, three markers around the vertex) gives INCOMPLETE_GROUP; distractor markers from neighboring cards never complete or alter a group; an incomplete group is rejected on either face and after a flip.
+  - Note: nearest-complete-group selection in `decode-group.ts` is intentional (approved; design.md section 7 step 2, `docs/optical/results/m6-1-defects.md` observation 1). Verifying that the returned `vertex` is the intended target is a Scoring Companion integration requirement (Requirement 9.6–9.11), so task 6.2 needs no production change unless a reproducible defect is found.
   - _Requirements: 5.7, 12.6, 13.4, 13.6, 13.7_
 
   - [x] 6.1 Write rejection tests (Property 15)
     - Cover the list in Tests above.
     - _Requirements: 12.6, 13.4, 13.7_
 
-  - [ ] 6.2 Fix gaps in `decode-group.ts` found by 6.1
+  - [-] 6.2 Fix gaps in `decode-group.ts` found by 6.1
     - Make changes only where a test fails. Record each failure and fix.
     - _Requirements: 13.4, 13.6_
 

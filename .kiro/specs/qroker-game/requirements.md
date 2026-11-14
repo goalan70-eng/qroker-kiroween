@@ -45,6 +45,9 @@ The optical marker system, the validity of the game mechanics, and an offline-fi
 - **Face_Local_Frame**: The coordinate system in which one printed face is viewed directly, with the origin at the top-left of that face as the viewer sees it, x pointing right and y pointing down. For the FRONT face, the Face_Local_Frame equals the Body_Frame. For the BACK face, the Face_Local_Frame is the Body_Frame mirrored horizontally (x → W − x). Text and artwork are authored in the Face_Local_Frame of the face on which they are printed.
 - **Flip**: The action of flipping a card left-right about its vertical axis. The x coordinate of the card body changes to W − x.
 - **Observed_Layer**: The optical marker layer that is actually visible when the card is viewed from above (its position in Board coordinates and its pixel shape).
+- **Target_Group**: The Quad_Group that the Scoring_Companion user intends to scan, identified through a camera overlay, a selected region, or an equivalent target-selection mechanism.
+- **Target_Region**: The region of the camera image that the Scoring_Companion associates with the Target_Group. The Scoring_Companion, not the optical reader, defines its shape and its matching tolerance.
+- **Vertex_Position**: The image-coordinate position (`vertex`, an `{ x, y }` point in image pixels) of the shared center vertex of the group that the optical reader selected, as reported in the optical decode result (`OpticalDecodeResult` in design.md).
 
 ---
 
@@ -186,6 +189,12 @@ The optical marker system, the validity of the game mechanics, and an offline-fi
 3. WHEN Guess collection is complete, THE Scoring_Companion SHALL reveal the Hidden_Sum and calculate and display the score distribution.
 4. THE Scoring_Companion SHALL operate offline through the Service_Worker, and all functionality SHALL be usable without a network connection after the initial load.
 5. THE Scoring_Companion SHALL save the in-progress game state to the browser's local storage so that the game can be resumed after an app restart or page refresh.
+6. WHERE the camera scan input method is used, THE Scoring_Companion SHALL make the Target_Group identifiable through a camera overlay, a selected region, or an equivalent target-selection mechanism. (Target Group Safety integration contract, 9.6–9.11.)
+7. WHEN the optical reader successfully decodes a Quad_Group, THE optical reader SHALL return the Vertex_Position of the decoded group in the optical decode result (see the note in Requirement 13).
+8. WHEN the optical reader returns a successfully decoded optical decode result, THE Scoring_Companion SHALL verify that the Vertex_Position corresponds to the Target_Region of the Target_Group before applying the result.
+9. IF the Vertex_Position of a decoded optical decode result does not correspond to the Target_Group, THEN THE Scoring_Companion SHALL discard that result for the Target_Group, so that a result from another vertex is never applied to the Target_Group without the user's knowledge.
+10. IF the Target_Group is incomplete, ambiguous, or mismatched with the returned Vertex_Position, THEN THE Scoring_Companion SHALL request repositioning, a rescan, or manual entry.
+11. THE Scoring_Companion SHALL use only actually decoded card identities from the optical decode result, and SHALL NOT replace them with expected card identities from the Board record (consistent with Requirements 13.2, 13.3, and 13.9: a reference comparison mismatch rejects the result and does not substitute the expected value).
 
 ---
 
@@ -247,6 +256,8 @@ The optical marker system, the validity of the game mechanics, and an offline-fi
 7. THE optical_reader_test_suite SHALL include repeatable randomized tests using a fixed seed, covering the following cases: (a) valid 0° combination — one card of each of the 4 suits (Hearts, Diamonds, Clubs, Spades), in an arrangement where the Fragment_Layout fragment is located at the Inward_Corner of each card, (b) valid 180° combination — an arrangement where Clubs and Spades cards are rotated 180° and the Inward_Corner condition is still satisfied, (c) diagonal pattern equivalence — confirming that the decoding results are identical when Hearts and Diamonds are placed at 0° and at 180°, (d) boundary-value cards — the Hidden_Sum minimum (A+A+A+A=4) and maximum (K+K+K+K=52) combinations, (e) rejection cases — a 90°-rotated fragment, an Inward_Corner with no fragment (incomplete group), a 3-fragment group, a duplicate card ID, and a corrupted fragment.
 8. THE optical_reader_test_suite SHALL be runnable independently of the prototype experiments of Requirement 12, and SHALL target the dedicated fragment reader, not a standard QR decoder.
 9. THE optical reader SHALL determine whether the captured image contains a reflection (mirror image) and report one of `NOT_REFLECTED`, `REFLECTED`, or `AMBIGUOUS`. When the determination is possible because the group contains a Heart or Diamond, it must report the value that matches the fact; when it cannot be determined from the image alone, as with a group made up only of Clubs and Spades, it reports `AMBIGUOUS` and does not guess either way. Whether the image is reflected does not affect card identification or the Hidden_Sum calculation. THE optical reader SHALL NOT substitute Board records or expected values for the result when optical reading fails.
+
+**Note (group selection and target verification; does not change the numbering or wording of 13.1–13.9):** The optical reader selects, among all complete four-marker groups in the image, the group whose vertex is closest to the frame center, and reports that vertex as `vertex` in the optical decode result. The optical reader has no knowledge of the Target_Group. The "incomplete group" rejection of Requirement 13.4 (1) applies to the group selected by this rule: a three-fragment vertex that is closer to the frame center than a complete group does not cause INCOMPLETE_GROUP, and the result is then IDENTIFIED for the farther complete group, built only from that group's own four markers and reporting that group's `vertex`. Verifying that the reported `vertex` belongs to the Target_Group is the responsibility of the caller, as specified in Requirement 9.6–9.11.
 
 ---
 
