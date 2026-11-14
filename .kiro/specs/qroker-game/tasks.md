@@ -203,7 +203,7 @@ Rules for every milestone:
   - Tests (Properties 15, 20, 24, 26): degradation functions are deterministic for a given seed; degradations at zero strength leave images unchanged; a test asserts that `robustness.json` records n, the observed misidentification count and, for zero counts, the 95% upper bound 1 − 0.05^(1/n) (computed correctly) for every condition, and that the observed count is 0 for every condition (the experimental pass criterion, not a mathematical guarantee).
   - _Requirements: 12.5, 12.7_
 
-  - [ ] 7.1 Implement `degrade.ts`
+  - [x] 7.1 Implement `degrade.ts`
     - Each degradation takes an explicit seed and parameters.
     - _Requirements: 12.5_
 
