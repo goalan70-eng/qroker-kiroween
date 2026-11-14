@@ -197,7 +197,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Tests: unit tests for the initial state fields and invalid configs (3 seats, duplicate seat id, invalid score config).
     - Depends on: 3.1, 4.1, 6.1.
     - _Requirements: 2.2, 3.1, 5.7, 6.1, 8.3, 8.4, 12.1, 12.6_
-  - [ ] 8.2 Implement the reducer (`core/engine.ts`)
+  - [x] 8.2 Implement the reducer (`core/engine.ts`)
     - `reduce` for `PLACE`, `SUBMIT_GUESSES`, `ACK_REVEAL` exactly as in design.md "Reducer", plus `actingSeats`. Append every accepted action to `log`.
     - Acceptance: scenarios of the design's Testing Strategy pass: first placement with a code (no draw, guess phase), non-first placement without a code (draw), a placement with two codes (one batch), a Hand-emptying placement with a code (reveal then `ENDED` with bonus), a Hand-emptying placement without a code (`ENDED` immediately), deck exhaustion, all error codes of the Error Handling table.
     - Tests: example scenarios built from hand-picked states (construct a `GameState` through a test helper that overrides hands, deck and board).

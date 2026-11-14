@@ -289,6 +289,18 @@
         "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
         "timestamp": 1794654365094
       }
+    ],
+    "8.2 Implement the reducer (`core/engine.ts`)": [
+      {
+        "executionId": "dc1d58fc-3e7a-42c4-a3c8-c0fb74efa48f",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794655298962
+      },
+      {
+        "executionId": "dc1d58fc-3e7a-42c4-a3c8-c0fb74efa48f",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794655812869
+      }
     ]
   }
 }
