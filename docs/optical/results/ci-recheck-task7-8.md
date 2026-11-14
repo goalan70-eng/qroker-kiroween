@@ -12,3 +12,8 @@ Conditions: an Android emulator (qemu-system-x86_64-headless, an unrelated appli
 | Game suite | npm run test:game | 23 files, 547 tests passed |
 
 Assertion failures: none. Every failure is a 5000 ms timeout of the same load-sensitive tests already documented in docs/optical/results/m5-6-test-suite-stability.md and m6-3-milestone6-validation.md. No assertion was weakened and no optical code was changed. The idle-machine full-suite result for the current HEAD is still outstanding.
+
+## Idle-machine recheck (HEAD f95b230)
+
+The emulator was no longer running (only adb remained); CPU load samples were 12, 7, 1, 20, 7, 4 percent before the run and 10 percent after. `npm run test:ci` (vitest --run --maxWorkers=4) was run once: 48 files, 1242 tests, all passed, 0 failed, duration 39.69 s. The exit code was not captured separately (the summary lines were read through a filter); the all-passed summary is the evidence. This closes the outstanding idle-machine full-suite item for HEAD f95b230. The earlier timeouts occurred only while the emulator was consuming the CPU.
+
