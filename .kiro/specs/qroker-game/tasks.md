@@ -176,7 +176,7 @@ Rules for every milestone:
     - Save output and the 520/128 counts to `docs/optical/results/m5-*`. Record failures; do not hide them.
     - _Requirements: 12.7_
 
-- [ ] 6. Invalid and incomplete composition rejection
+- [x] 6. Invalid and incomplete composition rejection
   - Dependencies: task 5.
   - Deliverables: rejection test suite; changes to `decode-group.ts` only where the tests expose gaps. Any failure found is recorded in `docs/optical/results/m6-*`.
   - Acceptance criteria: no result is IDENTIFIED when any rule is violated.
@@ -188,11 +188,11 @@ Rules for every milestone:
     - Cover the list in Tests above.
     - _Requirements: 12.6, 13.4, 13.7_
 
-  - [-] 6.2 Fix gaps in `decode-group.ts` found by 6.1
+  - [x] 6.2 Fix gaps in `decode-group.ts` found by 6.1
     - Make changes only where a test fails. Record each failure and fix.
     - _Requirements: 13.4, 13.6_
 
-  - [ ] 6.3 Run tests and record results
+  - [x] 6.3 Run tests and record results
     - Save output to `docs/optical/results/m6-*`. Record failures; do not hide them.
     - _Requirements: 12.7_
 

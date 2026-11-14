@@ -1,0 +1,4 @@
+Synthetic images, not real cameras. Raw command output of the final TypeScript check (Milestone 6 task 6.3, HEAD 2133d3d, Node 24, vitest 5.1.0).
+$ npx tsc --noEmit
+(no output: no diagnostics)
+exit code: 0

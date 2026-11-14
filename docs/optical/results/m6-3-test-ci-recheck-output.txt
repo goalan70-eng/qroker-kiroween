@@ -1,0 +1,56 @@
+M6.3 test-suite recheck (disclosure follow-up). Synthetic images, not real cameras.
+Repository HEAD 2133d3d, Node 24, vitest 5.1.0, Windows/PowerShell, 12 logical processors.
+Purpose: one more `npm run test:ci` after the orchestrator saw timeouts in two earlier runs under CPU contention (see "Test-run disclosure (CPU contention)" in m6-3-milestone6-validation.md). This file records the actual result of this single run, whatever it is. It was run once and not repeated; no failure occurred, so no failing file was rerun.
+
+Normalization: wall-clock fields (Start at, Duration, per-test and per-file milliseconds, "JSON report written") are removed, the absolute repository path is not shown and the temporary directory is written as <temp>. Nothing else is edited. IMPORTANT LIMIT OF THIS RECORD: the console capture of this run was hard-wrapped at about 70 columns by the terminal, so the full stdout stream (test names, stdout blocks) is NOT reproduced here. What is reproduced is (1) the unmodified summary lines of vitest, (2) the per-file table taken from the JSON report of the same run. The full console stream was not saved.
+Invocation: `npm run test:ci -- --reporter=default --reporter=json --outputFile.json=<temp>/r.json` (the added reporter flags only produce the per-file table; the package.json command is `vitest --run --maxWorkers=4`).
+
+=== Machine state before the run ===
+Android emulator (qemu-system-x86_64-headless / any qemu* process): NOT running (0 processes). `adb.exe` (pid 30660, ~21 CPU seconds accumulated) was present.
+No vitest or tsx process was running. node.exe processes (accumulated CPU seconds): 1 desktop-assistant runtime (1.5), 5 idle MCP servers (0.1 to 0.2 each); node_repl.exe helpers 0 to 0.1.
+Top CPU consumers in a 5 s window before the run: chrome (5.52 CPU s in 5 s, i.e. about one core of 12), chrome 1.88, ChatGPT 1.16, Kiro 0.66; everything else under 0.6.
+Total CPU load samples (Win32_Processor LoadPercentage, averaged over all logical processors), every ~4 s, before the run:
+  15:59:36 20%   15:59:40 63%   15:59:44 42%   15:59:49 11%
+  15:59:53 28%   15:59:57 29%   16:00:01 28%   16:00:05 34%
+  mean 31.9%, range 11 to 63%
+Single sample immediately before the start of the suite: 16:00:36 79%.
+Classification: NOT the quiet machine of the recorded m6-3-test-ci-output.txt run (0 to 8%), and NOT the sustained high load (emulator, over 50% sustained) of the two failed runs. Moderate and fluctuating background load from browser and desktop applications, with the emulator closed.
+
+=== Result ===
+exit code: 0
+ Test Files  21 passed (21)
+      Tests  487 passed (487)
+(wall time of the command as measured by the shell: about 45 s; vitest-reported duration 42.7 s)
+No test timed out, no test failed, none skipped.
+
+=== Machine state after the run ===
+16:01:22 35% (single sample right after the run)
+Samples after the run, every ~4 s:
+  16:01:31 23%   16:01:35 25%   16:01:39 15%   16:01:43 46%
+  16:01:47 39%   16:01:51 29%   16:01:55 16%
+  mean 27.6%, range 15 to 46%
+Emulator still not running (0 qemu* processes); no vitest/tsx process left; node.exe processes as before the run.
+
+=== Per-file counts (sorted by path; taken from the JSON report of the same single run) ===
+scripts/render-samples.test.ts                     tests   7  passed   7  failed 0  skipped/other 0
+scripts/verify-bound.test.ts                       tests   1  passed   1  failed 0  skipped/other 0
+src/optical/codebook.test.ts                       tests  10  passed  10  failed 0  skipped/other 0
+src/optical/decode-fragment.bitflip.test.ts        tests  21  passed  21  failed 0  skipped/other 0
+src/optical/decode-fragment.test.ts                tests  29  passed  29  failed 0  skipped/other 0
+src/optical/decode-group.properties.test.ts        tests  23  passed  23  failed 0  skipped/other 0
+src/optical/decode-group.rejection.test.ts         tests  54  passed  54  failed 0  skipped/other 0
+src/optical/decode-group.test.ts                   tests  44  passed  44  failed 0  skipped/other 0
+src/optical/detect.test.ts                         tests  32  passed  32  failed 0  skipped/other 0
+src/optical/fragments.test.ts                      tests  25  passed  25  failed 0  skipped/other 0
+src/optical/reference-check.test.ts                tests  32  passed  32  failed 0  skipped/other 0
+src/optical/render.test.ts                         tests  32  passed  32  failed 0  skipped/other 0
+src/optical/smoke.test.ts                          tests   2  passed   2  failed 0  skipped/other 0
+src/optical/testing/geometry-45deg.test.ts         tests   8  passed   8  failed 0  skipped/other 0
+src/optical/testing/geometry-design.test.ts        tests  17  passed  17  failed 0  skipped/other 0
+src/optical/testing/geometry-report.test.ts        tests   9  passed   9  failed 0  skipped/other 0
+src/optical/testing/geometry-trial.test.ts         tests  14  passed  14  failed 0  skipped/other 0
+src/optical/testing/physical-card.duplex.test.ts   tests  33  passed  33  failed 0  skipped/other 0
+src/optical/testing/physical-card.test.ts          tests  63  passed  63  failed 0  skipped/other 0
+src/optical/transforms.test.ts                     tests   9  passed   9  failed 0  skipped/other 0
+src/optical/verify-codebook.test.ts                tests  22  passed  22  failed 0  skipped/other 0
+TOTAL (21 files)                                   tests 487  passed 487  failed 0

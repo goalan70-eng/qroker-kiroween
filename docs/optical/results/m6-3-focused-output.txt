@@ -1,0 +1,205 @@
+Synthetic images, not real cameras. Raw command output of the focused rejection and decoder run (Milestone 6 task 6.3, HEAD 2133d3d, Node 24, vitest 5.1.0).
+Normalization applied to the raw output: wall-clock fields (Start at, Duration, per-test and per-file milliseconds, "in N s" timings, "JSON report written" lines), the absolute repository path (replaced by <repo>) and temporary-file paths are removed or replaced. Nothing else is edited. The order of files and of the stdout blocks follows worker completion and can differ between runs; the counts and per-test names do not.
+
+Invocation: `npx vitest --run --maxWorkers=4 --reporter=verbose --reporter=json --outputFile.json=<temp> src/optical/decode-group.rejection.test.ts src/optical/decode-group.test.ts src/optical/decode-group.properties.test.ts src/optical/reference-check.test.ts` (the added `--reporter=verbose` prints one line per test, including every test of the rejection file; the added JSON reporter, written to a temp file, only feeds the per-file table at the end). An earlier attempt used only the verbose reporter, produced no JSON table, and also passed (4 files, 153 tests); it is not kept. This file is the repeat run.
+exit code: 0
+$ npx vitest --run --maxWorkers=4 <4 files>
+
+ RUN  v5.1.0 <repo>
+
+ ✓ src/optical/decode-group.rejection.test.ts > 1. removed fragments: every subset of 1..4 removed fragments, several groups and transforms > removing 1, 2 or 3 fragments gives INCOMPLETE_GROUP with detected = remaining fragments; removing all 4 gives NOT_DETECTED (4 groups x 15 subsets x 8 D4 transforms)
+ ✓ src/optical/reference-check.test.ts > 1. exact match returns the same object > all 81 observed arrangements (identity image)
+ ✓ src/optical/reference-check.test.ts > 1. exact match returns the same object > a seeded sample of image transforms and camera rotations
+ ✓ src/optical/reference-check.test.ts > 1. exact match returns the same object > ReferenceCheck.compare is compareWithReference
+ ✓ src/optical/reference-check.test.ts > 2. permutations of the reference > all 24 orders, as strings, objects and mixed, still match
+ ✓ src/optical/reference-check.test.ts > 3. different card sets are mismatches > (a) same suit, different rank; (b) same rank, different suit; per position
+ ✓ src/optical/reference-check.test.ts > 3. different card sets are mismatches > (c) different cards with the SAME total sum are still a mismatch
+ ✓ src/optical/reference-check.test.ts > 3. different card sets are mismatches > (d) a completely different set, and a partially overlapping one
+ ✓ src/optical/reference-check.test.ts > 4. independent sum > referenceHiddenSum equals the test table for each of the 52 cards
+ ✓ src/optical/reference-check.test.ts > 4. independent sum > 2,000 random 4-sets (seed 20251112)
+ ✓ src/optical/reference-check.test.ts > 4. independent sum > rejects ids outside the deck with RangeError
+ ✓ src/optical/reference-check.test.ts > 4. independent sum > boundary groups: sum 4 and sum 52 (pure and from real decoded images)
+stdout | src/optical/reference-check.test.ts > 11. end to end over the exhaustive 648 images > the correct reference matches (same object); one wrong card mismatches; identities never change
+reference-check end to end: {"images":648,"matched":648,"mismatched":648}
+
+ ✓ src/optical/reference-check.test.ts > 5. tampered IDENTIFIED results > (i) hiddenSum + 1 with unchanged cards: DECODED_SUM_INCONSISTENT, not CARD_SET_DIFFERS
+ ✓ src/optical/reference-check.test.ts > 5. tampered IDENTIFIED results > (ii) one card changed, hiddenSum kept: mismatch (set differs and sum inconsistent)
+ ✓ src/optical/reference-check.test.ts > 5. tampered IDENTIFIED results > (iii) malformed cards / sums: DECODED_RESULT_MALFORMED, no throw
+ ✓ src/optical/reference-check.test.ts > 5. tampered IDENTIFIED results > the original real result was never mutated by building the clones
+ ✓ src/optical/reference-check.test.ts > 6. non-identified results pass through unchanged > the constructions produce the intended kinds
+ ✓ src/optical/reference-check.test.ts > 6. non-identified results pass through unchanged > valid reference: the same object comes back; invalid reference: INVALID_REFERENCE carrying the original
+ ✓ src/optical/reference-check.test.ts > 6. non-identified results pass through unchanged > a mismatching but valid reference does not turn a non-identified result into anything else
+ ✓ src/optical/reference-check.test.ts > 6. non-identified results pass through unchanged > hand-built: AMBIGUOUS_FRAGMENT and an unknown kind are also returned unchanged
+ ✓ src/optical/reference-check.test.ts > 7. invalid references > each case: INVALID_REFERENCE with the right problem, the original result, never IDENTIFIED, no throw
+ ✓ src/optical/reference-check.test.ts > 7. invalid references > the correct card set written with an invalid shape never yields IDENTIFIED
+ ✓ src/optical/reference-check.test.ts > 7. invalid references > a throwing getter in the reference is reported as a problem, not thrown
+ ✓ src/optical/reference-check.test.ts > 8. IDENTIFIED if and only if identified result + valid + set-equal reference > 500 seeded (result, reference) pairs
+ ✓ src/optical/reference-check.test.ts > 8. IDENTIFIED if and only if identified result + valid + set-equal reference > property: over random mismatching sets the decoded and reference identities are never swapped
+ ✓ src/optical/reference-check.test.ts > 9. purity and safety > deeply frozen result and reference are accepted and unchanged (match and mismatch)
+ ✓ src/optical/reference-check.test.ts > 9. purity and safety > deterministic and idempotent
+ ✓ src/optical/reference-check.test.ts > 9. purity and safety > a result that is not an object throws TypeError
+ ✓ src/optical/reference-check.test.ts > 10. module boundaries > reference-check.ts imports only types from ./decode-group
+ ✓ src/optical/reference-check.test.ts > 10. module boundaries > has no board, expected-value, score or game identifiers (comments excluded)
+ ✓ src/optical/reference-check.test.ts > 10. module boundaries > keeps its own Card_Value table (not imported)
+ ✓ src/optical/reference-check.test.ts > 10. module boundaries > decode-group.ts neither imports nor uses reference-check, and takes at most 2 parameters
+ ✓ src/optical/reference-check.test.ts > 11. end to end over the exhaustive 648 images > the correct reference matches (same object); one wrong card mismatches; identities never change
+stdout | src/optical/decode-group.test.ts > 2. all 81 observed arrangements x 8 image transforms > 648 images: IDENTIFIED, right cards/sum/interpretation count, reflection 260 / 260 / 128
+decode-group exhaustive summary: {"images":648,"NOT_REFLECTED":260,"REFLECTED":260,"AMBIGUOUS":128,"interp2":520,"interp4":128}
+
+ ✓ src/optical/decode-group.test.ts > 1. allowed-placement table > the derived table equals the literal design table (section 5)
+ ✓ src/optical/decode-group.test.ts > 1. allowed-placement table > hearts and diamonds accept both orientations, clubs and spades exactly one
+ ✓ src/optical/decode-group.test.ts > 1. allowed-placement table > equals what placedFragments produces (transform of the base pattern, orientation set)
+ ✓ src/optical/decode-group.test.ts > 1. allowed-placement table > D4 helpers: composition and inverses agree with applyTransform; slot maps agree with a real raster; cell maps agree
+ ✓ src/optical/decode-group.test.ts > 2. all 81 observed arrangements x 8 image transforms > has 81 arrangements
+ ✓ src/optical/decode-group.test.ts > 2. all 81 observed arrangements x 8 image transforms > 648 images: IDENTIFIED, right cards/sum/interpretation count, reflection 260 / 260 / 128
+ ✓ src/optical/decode-group.properties.test.ts > oracle self-checks > determinant marks exactly Fh, Fv, Dm, Da as reflections
+ ✓ src/optical/decode-group.properties.test.ts > oracle self-checks > PARTNER[h] is "h then a half turn", proven on a real raster
+ ✓ src/optical/decode-group.properties.test.ts > oracle self-checks > the independent rank table gives A=1, 10=10, K=13 and the two boundary sums
+ ✓ src/optical/decode-group.properties.test.ts > oracle self-checks > generator: 4 distinct deck cards, mode constraints hold, same seed gives the same case
+ ✓ src/optical/decode-group.properties.test.ts > P-A. Property 23: interpretation structure (hypotheses h and h∘R180) > groups with a heart or diamond: exactly the hypotheses {t, t∘R180}, one reflected value, same card set
+ ✓ src/optical/decode-group.test.ts > 2. all 81 observed arrangements x 8 image transforms > the pattern-level oracle agrees with the decoder on every one of the 648 observations
+ ✓ src/optical/decode-group.rejection.test.ts > 1. removed fragments: every subset of 1..4 removed fragments, several groups and transforms > the same subsets at arbitrary camera angles (3 seeded angles each) are rejected the same way
+ ✓ src/optical/decode-group.rejection.test.ts > 1. removed fragments: every subset of 1..4 removed fragments, several groups and transforms > whole-image camera rotation is not a violation: the complete group stays IDENTIFIED at the same angles
+ ✓ src/optical/decode-group.rejection.test.ts > 1. removed fragments: every subset of 1..4 removed fragments, several groups and transforms > all four fragments removed from a PHYSICAL board (rounded-corner voids, markers omitted) and a blank table: NOT_DETECTED
+ ✓ src/optical/decode-group.rejection.test.ts > 3. duplicate card identity -> DUPLICATE_CARD > the same card in two slots in every suit-compatible way (14 suit x slot-pair combinations), identity and a seeded camera view
+ ✓ src/optical/decode-group.rejection.test.ts > 3. duplicate card identity -> DUPLICATE_CARD > a card in all four slots (4 identical fragments) and a second copy shown as ANY of the 8 transforms (12 ordered slot pairs x 8) gives DUPLICATE_CARD, never IDENTIFIED
+ ✓ src/optical/decode-group.properties.test.ts > P-A. Property 23: interpretation structure (hypotheses h and h∘R180) > clubs/spades-only groups: 4 interpretations = 2 non-reflected + 2 reflected, each pair {h, h∘R180}, one contains t
+ ✓ src/optical/decode-group.properties.test.ts > P-B. Property 26: reflection per image transform (determinant oracle) > transform I (rotation): red groups NOT_REFLECTED, clubs/spades-only AMBIGUOUS
+ ✓ src/optical/decode-group.properties.test.ts > P-B. Property 26: reflection per image transform (determinant oracle) > transform R90 (rotation): red groups NOT_REFLECTED, clubs/spades-only AMBIGUOUS
+ ✓ src/optical/decode-group.properties.test.ts > P-B. Property 26: reflection per image transform (determinant oracle) > transform R180 (rotation): red groups NOT_REFLECTED, clubs/spades-only AMBIGUOUS
+ ✓ src/optical/decode-group.properties.test.ts > P-B. Property 26: reflection per image transform (determinant oracle) > transform R270 (rotation): red groups NOT_REFLECTED, clubs/spades-only AMBIGUOUS
+ ✓ src/optical/decode-group.rejection.test.ts > 3. duplicate card identity -> DUPLICATE_CARD > precedence of design.md section 7: a corrupted fragment is reported before the duplicate check
+ ✓ src/optical/decode-group.rejection.test.ts > 4. flipped modules in one fragment (Property 15(c), Property 24) > independent facts behind the guarantees: minimum distance between templates of different cards is 5 (so a competing identity is at least 5 - w away after w flips)
+ ✓ src/optical/decode-group.rejection.test.ts > 4. flipped modules in one fragment (Property 15(c), Property 24) > radius 1, bit level, EXHAUSTIVE: every mask of weight 0..3 on all 24 fragments of 6 groups through decodeFragment; w <= 1 corrected to the same card, w = 2, 3 CORRUPTED_FRAGMENT with distance > 1 to every template
+ ✓ src/optical/decode-group.properties.test.ts > P-B. Property 26: reflection per image transform (determinant oracle) > transform Fh (reflection): red groups REFLECTED, clubs/spades-only AMBIGUOUS
+ ✓ src/optical/decode-group.properties.test.ts > P-B. Property 26: reflection per image transform (determinant oracle) > transform Fv (reflection): red groups REFLECTED, clubs/spades-only AMBIGUOUS
+ ✓ src/optical/decode-group.properties.test.ts > P-B. Property 26: reflection per image transform (determinant oracle) > transform Dm (reflection): red groups REFLECTED, clubs/spades-only AMBIGUOUS
+ ✓ src/optical/decode-group.properties.test.ts > P-B. Property 26: reflection per image transform (determinant oracle) > transform Da (reflection): red groups REFLECTED, clubs/spades-only AMBIGUOUS
+ ✓ src/optical/decode-group.rejection.test.ts > 4. flipped modules in one fragment (Property 15(c), Property 24) > radius 1, pixels: 0 or 1 flipped module is corrected (IDENTIFIED, right cards and sum, distance = flips); 2 or 3 flipped modules give CORRUPTED_FRAGMENT with exactly one corrupted member (6 groups x 4 slots, seeded camera views)
+ ✓ src/optical/decode-group.properties.test.ts > P-C. deck-wide seeded random groups (Property 20 sum, Property 23 identification) > 300 random groups: IDENTIFIED, card set, independent rank-table sum in [4, 52], reflection, interpretation count
+ ✓ src/optical/decode-group.properties.test.ts > P-D. Property 25: no board-state input (type level) > parameters are exactly [image, optional tuning options]; neither type names a board, expected value or reference
+ ✓ src/optical/decode-group.properties.test.ts > P-D. Property 25: no board-state input (type level) > the compiler rejects a board object as option or as an extra argument
+ ✓ src/optical/decode-group.properties.test.ts > P-D. Property 25: no board-state input (type level) > the reference comparison is a separate function and takes the decoded result plus the reference cards only
+ ✓ src/optical/decode-group.properties.test.ts > P-E. Property 25: reference comparison does not influence decoding > decoding before / after / between comparisons (match, mismatch, invalid reference) gives identical results
+ ✓ src/optical/decode-group.properties.test.ts > P-E. Property 25: reference comparison does not influence decoding > a wrong reference with the SAME sum is still REFERENCE_MISMATCH and the decoded cards are kept
+ ✓ src/optical/decode-group.properties.test.ts > P-F. failure messages are reproducible > a deliberately wrong expectation yields messages carrying seed, arrangement, transform and angle
+ ✓ src/optical/decode-group.properties.test.ts > P-F. failure messages are reproducible > a non-IDENTIFIED outcome is also reported with the tag
+ ✓ src/optical/decode-group.properties.test.ts > P-F. failure messages are reproducible > the tag is enough to rebuild the case: same seed gives the same arrangement, transform, angle, pixels and result
+ ✓ src/optical/decode-group.rejection.test.ts > 4. flipped modules in one fragment (Property 15(c), Property 24) > the pixel inversion used here equals rendering the flipped pattern (so "flipped module" means the data bit, row-major bit 5r + c)
+ ✓ src/optical/decode-group.rejection.test.ts > 4. flipped modules in one fragment (Property 15(c), Property 24) > radius 1: one flipped module in EVERY fragment is corrected; two fragments with 2 flips each are both reported corrupted
+ ✓ src/optical/decode-group.rejection.test.ts > 4. flipped modules in one fragment (Property 15(c), Property 24) > radius 2: up to 2 flipped modules are corrected and the result is never silently wrong (IDENTIFIED with the right cards and sum): all single flips, seeded double flips, and two fragments with 2 flips each
+stdout | src/optical/decode-group.rejection.test.ts > 4. flipped modules in one fragment (Property 15(c), Property 24) > radius 2, 3 or more flips: no rejection is asserted; counts and counterexamples are recorded (docs/optical/results/m6-1-counterexamples.*) > the files on disk are byte-identical to a fresh regeneration; every pixel run agrees with the independent brute-force prediction
+radius 2 (seeded groups, one corrupted fragment): k=3: bit 0/180/73420 (source/false/rejected), group IDENTIFIED-wrong 20; k=4: bit 210/1050/403540 (source/false/rejected), group IDENTIFIED-wrong 10; k=5: bit 0/43/9557 (source/false/rejected), group IDENTIFIED-wrong 2; k=6: bit 6/20/9574 (source/false/rejected), group IDENTIFIED-wrong 2; k=7: bit 0/41/9559 (source/false/rejected), group IDENTIFIED-wrong 1; k=8: bit 1/42/9557 (source/false/rejected), group IDENTIFIED-wrong 5; total silent wrong 40 of 2745 pixel runs
+
+ ✓ src/optical/decode-group.rejection.test.ts > 4. flipped modules in one fragment (Property 15(c), Property 24) > radius 2, 3 or more flips: no rejection is asserted; counts and counterexamples are recorded (docs/optical/results/m6-1-counterexamples.*) > the files on disk are byte-identical to a fresh regeneration; every pixel run agrees with the independent brute-force prediction
+ ✓ src/optical/decode-group.rejection.test.ts > 4. flipped modules in one fragment (Property 15(c), Property 24) > radius 2, 3 or more flips: no rejection is asserted; counts and counterexamples are recorded (docs/optical/results/m6-1-counterexamples.*) > the exact all-template counts for k = 3 and 4 equal the m4-2 enumeration
+ ✓ src/optical/decode-group.rejection.test.ts > 4. flipped modules in one fragment (Property 15(c), Property 24) > radius 2, 3 or more flips: no rejection is asserted; counts and counterexamples are recorded (docs/optical/results/m6-1-counterexamples.*) > every recorded group-level counterexample replays from its seed: IDENTIFIED with the recorded wrong cards; the reference comparison reports REFERENCE_MISMATCH and keeps the decoder's cards; at radius 1 the weight-3 words are rejected
+ ✓ src/optical/decode-group.rejection.test.ts > 5. suit-incompatible slot > physically placing a card whose suit has no fragment at the facing corner (heart in TR or BL, diamond in TL or BR, club/spade in the wrong orientation) leaves 3 markers: INCOMPLETE_GROUP, detected 3 (Property 15(a))
+ ✓ src/optical/decode-group.rejection.test.ts > 5. suit-incompatible slot > heart CONTENT shown in a TR or BL slot (or diamond content in TL or BR) is an observed transform outside the slot table: INVALID_ARRANGEMENT, and the oracle also finds no camera rotation or mirror that explains it
+ ✓ src/optical/decode-group.rejection.test.ts > 6. turning ONE fragment gives INVALID_ARRANGEMENT; turning the whole image does not > precondition: turning the pixels of one marker equals rendering the transformed pattern
+ ✓ src/optical/decode-group.rejection.test.ts > 6. turning ONE fragment gives INVALID_ARRANGEMENT; turning the whole image does not > 90 / 270 degree turn (and diagonal reflection) of one fragment: INVALID_ARRANGEMENT for every group and slot (8 groups x 4 slots x 4 transforms); the same groups with the WHOLE image rotated by 90 / 270 / a seeded angle stay IDENTIFIED with the same cards
+stdout | src/optical/decode-group.rejection.test.ts > 6. turning ONE fragment gives INVALID_ARRANGEMENT; turning the whole image does not > a 180 degree turn (or axis reflection) of one fragment is judged by the oracle: INVALID_ARRANGEMENT where the oracle finds no hypothesis, IDENTIFIED with the same cards where it does (a valid composition); decoder and oracle always agree; clubs/spades-only groups produce invalid cases
+one fragment turned by 180/Fh/Fv: oracle invalid 192, valid composition 0
+
+ ✓ src/optical/decode-group.rejection.test.ts > 6. turning ONE fragment gives INVALID_ARRANGEMENT; turning the whole image does not > a 180 degree turn (or axis reflection) of one fragment is judged by the oracle: INVALID_ARRANGEMENT where the oracle finds no hypothesis, IDENTIFIED with the same cards where it does (a valid composition); decoder and oracle always agree; clubs/spades-only groups produce invalid cases
+ ✓ src/optical/decode-group.rejection.test.ts > 7. three-fragment compositions are never IDENTIFIED > 20 groups x 4 missing slots x 8 D4 transforms: INCOMPLETE_GROUP, detected 3, 3 markers
+stdout | src/optical/decode-group.test.ts > 4. camera rotation > every 5 degrees 0..355 and every degree through the +-45 canonical boundaries: same cards, sum, reflection
+rotation: 1040/1040 exact
+
+ ✓ src/optical/decode-group.test.ts > 3. boundary sums > {A-H, A-D, A-C, A-S} sums to 4 and {K-H, K-D, K-C, K-S} to 52 (all 8 image transforms, mirror-invariant ids)
+ ✓ src/optical/decode-group.test.ts > 4. camera rotation > every 5 degrees 0..355 and every degree through the +-45 canonical boundaries: same cards, sum, reflection
+ ✓ src/optical/decode-group.rejection.test.ts > 8. unrelated valid distractor markers > a complete group inside a lattice of valid markers of other cards (neighbour pitch, random occupancy 60%, other complete blocks allowed) stays IDENTIFIED with the identical card set, sum, reflection and interpretations, at seeded camera views
+ ✓ src/optical/decode-group.rejection.test.ts > 8. unrelated valid distractor markers > a 3-fragment target inside a lattice of valid markers of other cards, with no complete block anywhere (every 3-of-4 block could be "completed" by one more marker): INCOMPLETE_GROUP, detected 3, never IDENTIFIED
+ ✓ src/optical/decode-group.rejection.test.ts > 8. unrelated valid distractor markers > a valid marker of another card placed NEAR the missing slot but outside the position tolerance (1.5, 2, 3, 5 modules, outward, every slot) does not complete the group
+ ✓ src/optical/decode-group.rejection.test.ts > 8. unrelated valid distractor markers > CHARACTERIZATION (not a violation of the written design): if the vertex at the image centre has only 3 fragments but another, genuine, complete group is in view, decodeGroup returns that other group, built only from its own four markers, and reports its vertex
+ ✓ src/optical/decode-group.rejection.test.ts > 9/10. physical composition (baseline rounded cards, zero gap): one card absent, both faces, both flips > precondition: the assembled FRONT board is pixel-identical to composeBoard, and a complete group decodes IDENTIFIED in every view
+ ✓ src/optical/decode-group.rejection.test.ts > 9/10. physical composition (baseline rounded cards, zero gap): one card absent, both faces, both flips > one card absent from the 2x2 composition (table gray in its place): three markers around the vertex, INCOMPLETE_GROUP, on FRONT, on BACK after a vertical-axis flip and on BACK after a horizontal-axis flip (4 groups x 4 absent slots x 3 views)
+ ✓ src/optical/decode-group.rejection.test.ts > 9/10. physical composition (baseline rounded cards, zero gap): one card absent, both faces, both flips > a ♥ physically placed in the TR slot (♦ in TL, BR; ♥ in BL) shows no fragment at the facing corner: three markers, INCOMPLETE_GROUP, in every view
+ ✓ src/optical/decode-group.rejection.test.ts > 9/10. physical composition (baseline rounded cards, zero gap): one card absent, both faces, both flips > 3x3 board with five neighbouring cards (their outward and other-vertex fragments are Distractor_Markers; no other vertex has 4 markers): complete centre group IDENTIFIED, one card absent INCOMPLETE_GROUP with detected 3, in every view
+ ✓ src/optical/decode-group.rejection.test.ts > 9/10. physical composition (baseline rounded cards, zero gap): one card absent, both faces, both flips > the faces and flips exercised are exactly FRONT, BACK + vertical-axis flip, BACK + horizontal-axis flip
+ ✓ src/optical/decode-group.rejection.test.ts > 11. spurious candidates cannot fabricate a four-card group > 0x5AC54 at the missing slot of a 3-fragment target (marker + its blob): the result is exactly what the brute-force predictor says for four read markers (CORRUPTED_FRAGMENT), never IDENTIFIED; far away it changes nothing about an incomplete target
+ ✓ src/optical/decode-group.rejection.test.ts > 11. spurious candidates cannot fabricate a four-card group > blobs and noise near the vertex or in the missing slot never complete a 3-fragment group (1x2 and 3x3 black blobs, disc in the Central_Void, 3% salt noise over the slot, 4 groups x 4 slots)
+ ✓ src/optical/decode-group.rejection.test.ts > 11. spurious candidates cannot fabricate a four-card group > four markers that are NOT genuine fragments (solid black 7x7, or an empty frame) in the four slots give CORRUPTED_FRAGMENT, never IDENTIFIED; a genuine group with one such marker in place of a fragment is also rejected
+ ✓ src/optical/decode-group.rejection.test.ts > 12. reference comparison with rejected / incomplete / corrupted / wrong results > 3-fragment, physical-gap-free, spurious-solid and 90-degree results are returned unchanged (same object) for the true reference and for a different valid reference; no hiddenSum is manufactured
+ ✓ src/optical/decode-group.rejection.test.ts > 12. reference comparison with rejected / incomplete / corrupted / wrong results > a wrong IDENTIFIED result (radius-2 false acceptance, from the recorded counterexamples) compared with the TRUE reference is REFERENCE_MISMATCH: decoder result kept, reference cards and sum never substituted
+ ✓ src/optical/decode-group.rejection.test.ts > sweep: every violation type, seeded, deterministic > REMOVE_1: 12 seeded cases are rejected with the expected kind (never IDENTIFIED); reference comparison leaves them unchanged
+ ✓ src/optical/decode-group.rejection.test.ts > sweep: every violation type, seeded, deterministic > REMOVE_2: 12 seeded cases are rejected with the expected kind (never IDENTIFIED); reference comparison leaves them unchanged
+ ✓ src/optical/decode-group.rejection.test.ts > sweep: every violation type, seeded, deterministic > REMOVE_3: 12 seeded cases are rejected with the expected kind (never IDENTIFIED); reference comparison leaves them unchanged
+ ✓ src/optical/decode-group.rejection.test.ts > sweep: every violation type, seeded, deterministic > REMOVE_ALL: 12 seeded cases are rejected with the expected kind (never IDENTIFIED); reference comparison leaves them unchanged
+ ✓ src/optical/decode-group.rejection.test.ts > sweep: every violation type, seeded, deterministic > DUPLICATE_SAME_CARD: 12 seeded cases are rejected with the expected kind (never IDENTIFIED); reference comparison leaves them unchanged
+ ✓ src/optical/decode-group.rejection.test.ts > sweep: every violation type, seeded, deterministic > DUPLICATE_OTHER_TRANSFORM: 12 seeded cases are rejected with the expected kind (never IDENTIFIED); reference comparison leaves them unchanged
+ ✓ src/optical/decode-group.rejection.test.ts > sweep: every violation type, seeded, deterministic > CORRUPT_2_FLIPS: 12 seeded cases are rejected with the expected kind (never IDENTIFIED); reference comparison leaves them unchanged
+ ✓ src/optical/decode-group.rejection.test.ts > sweep: every violation type, seeded, deterministic > CORRUPT_3_FLIPS: 12 seeded cases are rejected with the expected kind (never IDENTIFIED); reference comparison leaves them unchanged
+ ✓ src/optical/decode-group.rejection.test.ts > sweep: every violation type, seeded, deterministic > WRONG_SUIT_CONTENT: 12 seeded cases are rejected with the expected kind (never IDENTIFIED); reference comparison leaves them unchanged
+ ✓ src/optical/decode-group.rejection.test.ts > sweep: every violation type, seeded, deterministic > FRAGMENT_ROTATED_90_OR_270: 12 seeded cases are rejected with the expected kind (never IDENTIFIED); reference comparison leaves them unchanged
+ ✓ src/optical/decode-group.rejection.test.ts > sweep: every violation type, seeded, deterministic > FRAGMENT_DIAGONAL_REFLECTION: 12 seeded cases are rejected with the expected kind (never IDENTIFIED); reference comparison leaves them unchanged
+ ✓ src/optical/decode-group.rejection.test.ts > sweep: every violation type, seeded, deterministic > FRAGMENT_180_OR_AXIS_REFLECTION_INVALID: 12 seeded cases are rejected with the expected kind (never IDENTIFIED); reference comparison leaves them unchanged
+ ✓ src/optical/decode-group.rejection.test.ts > sweep: every violation type, seeded, deterministic > SUIT_ABSENT_AT_CORNER: 12 seeded cases are rejected with the expected kind (never IDENTIFIED); reference comparison leaves them unchanged
+ ✓ src/optical/decode-group.rejection.test.ts > sweep: every violation type, seeded, deterministic > THREE_FRAGMENTS_WITH_DISTRACTORS: 12 seeded cases are rejected with the expected kind (never IDENTIFIED); reference comparison leaves them unchanged
+ ✓ src/optical/decode-group.rejection.test.ts > sweep: every violation type, seeded, deterministic > SPURIOUS_AT_MISSING_SLOT: 12 seeded cases are rejected with the expected kind (never IDENTIFIED); reference comparison leaves them unchanged
+ ✓ src/optical/decode-group.rejection.test.ts > sweep: every violation type, seeded, deterministic > property (fast-check, fixed seed): for any violation type and any seed the result kind is never IDENTIFIED and equals the expected kind
+ ✓ src/optical/decode-group.rejection.test.ts > sweep: every violation type, seeded, deterministic > reproducibility: a case is a function of (seed, violation); same inputs give the same pixels and result, and the message tag carries seed, violation, transform, angle, arrangement and detail
+ ✓ src/optical/decode-group.rejection.test.ts > sweep: every violation type, seeded, deterministic > the violation list covers every clause of Property 15: (a) removed, (b) duplicate, (c) flipped modules, (d) transform outside the table / wrong suit
+stdout | src/optical/decode-group.test.ts > 4. camera rotation > boundary proof: members straddling the canonical +-45 boundary (different quarter turns) still give the exact result
+boundary sweep: 672/672 exact, 108 images with mixed quarter turns
+
+ ✓ src/optical/decode-group.test.ts > 4. camera rotation > boundary proof: members straddling the canonical +-45 boundary (different quarter turns) still give the exact result
+stdout | src/optical/decode-group.test.ts > 4b. scale and perspective (measured) > module sizes 4, 6, 8, 10 px (crisp) are all exact
+integer scale: 40/40
+
+ ✓ src/optical/decode-group.test.ts > 4. camera rotation > observed transforms are rotation-consistent: rotating by 90k and mirroring give the matching hypothesis
+ ✓ src/optical/decode-group.test.ts > 4b. scale and perspective (measured) > module sizes 4, 6, 8, 10 px (crisp) are all exact
+stdout | src/optical/decode-group.test.ts > 4b. scale and perspective (measured) > non-integer scales 0.7..1.5 of an 8 px module render: rate recorded, no wrong IDENTIFIED
+fractional scale 0.7..1.5: 80/80 exact, 0 wrong IDENTIFIED
+
+ ✓ src/optical/decode-group.test.ts > 4b. scale and perspective (measured) > non-integer scales 0.7..1.5 of an 8 px module render: rate recorded, no wrong IDENTIFIED
+stdout | src/optical/decode-group.test.ts > 4b. scale and perspective (measured) > perspective tilt 10, 20, 30 degrees with random in-plane rotation: measured rates, no wrong IDENTIFIED
+perspective tilt 10 {}: 30/30 exact, kinds {"IDENTIFIED":30}
+perspective tilt 20 {}: 30/30 exact, kinds {"IDENTIFIED":30}
+perspective tilt 30 {}: 17/30 exact, kinds {"IDENTIFIED":17,"INCOMPLETE_GROUP":13}
+perspective tilt 30 {"positionToleranceModules":1.25}: 30/30 exact, kinds {"IDENTIFIED":30}
+
+ ✓ src/optical/decode-group.test.ts > 4b. scale and perspective (measured) > perspective tilt 10, 20, 30 degrees with random in-plane rotation: measured rates, no wrong IDENTIFIED
+stdout | src/optical/decode-group.test.ts > 5. reflections > horizontal / vertical mirrors with arbitrary rotations keep card ids; reflection and interpretation counts follow the suits
+mirrored + rotated: 120/120 exact
+
+ ✓ src/optical/decode-group.test.ts > 5. reflections > horizontal / vertical mirrors with arbitrary rotations keep card ids; reflection and interpretation counts follow the suits
+ ✓ src/optical/decode-group.test.ts > 5. reflections > property: random group, random D4 element, random angle gives the exact result (seed 20251112)
+ ✓ src/optical/decode-group.test.ts > 6. errors from real pixels > the base arrangement is valid
+ ✓ src/optical/decode-group.test.ts > 6. errors from real pixels > missing fragments: erase 1, 2 or 3 markers (every subset) gives INCOMPLETE_GROUP with detected 3, 2, 1
+ ✓ src/optical/decode-group.test.ts > 6. errors from real pixels > erasing all four markers is NOT_DETECTED
+ ✓ src/optical/decode-group.test.ts > 6. errors from real pixels > a heart in the TR slot has no inward fragment: only 3 markers, INCOMPLETE_GROUP detected 3
+ ✓ src/optical/decode-group.test.ts > 6. errors from real pixels > duplicate card: the same pattern, or another transform of it, in two slots gives DUPLICATE_CARD
+ ✓ src/optical/decode-group.test.ts > 6. errors from real pixels > invalid arrangements are never IDENTIFIED (oracle says no hypothesis)
+ ✓ src/optical/decode-group.test.ts > 6. errors from real pixels > corrupted member: 2 or 3 flipped bits (radius 1) and a solid black marker give CORRUPTED_FRAGMENT
+ ✓ src/optical/decode-group.test.ts > 6. errors from real pixels > one flipped bit is corrected at radius 1 (still IDENTIFIED)
+ ✓ src/optical/decode-group.test.ts > 6. errors from real pixels > blank and noise images are NOT_DETECTED
+ ✓ src/optical/decode-group.test.ts > 6. errors from real pixels > an image with only a broken-border marker passes INVALID_MARKER through
+ ✓ src/optical/decode-group.test.ts > 6. errors from real pixels > a single isolated valid marker is INCOMPLETE_GROUP with detected 1
+ ✓ src/optical/decode-group.test.ts > 7. unrelated markers and distractors > 2x2 flat card patches: the centre vertex is decoded, outward fragments are DISTRACTOR_FRAGMENT
+ ✓ src/optical/decode-group.test.ts > 7. unrelated markers and distractors > 2x2 patch rotated by 37 degrees and mirrored still decodes the centre group
+ ✓ src/optical/decode-group.test.ts > 7. unrelated markers and distractors > 3x3 patches with several complete vertices: the one nearest the image centre wins, the others are counted
+ ✓ src/optical/decode-group.test.ts > 7. unrelated markers and distractors > valid-pattern markers scattered far away never change the result
+ ✓ src/optical/decode-group.test.ts > 7. unrelated markers and distractors > fragments at other vertices with only 2-3 markers never form a group
+ ✓ src/optical/decode-group.test.ts > 8. spurious markers (the documented 0x5AC54 case) > precondition: the detector returns the real marker plus a small 0x1FFFFFF blob
+ ✓ src/optical/decode-group.test.ts > 8. spurious markers (the documented 0x5AC54 case) > (a) as one member of an otherwise valid group: CORRUPTED_FRAGMENT, blob is not a member
+ ✓ src/optical/decode-group.test.ts > 8. spurious markers (the documented 0x5AC54 case) > (b) far from a valid group: the group is still IDENTIFIED; marker and blob are SPURIOUS_CANDIDATE
+ ✓ src/optical/decode-group.test.ts > 8. spurious markers (the documented 0x5AC54 case) > (c) a small solid blob in the Central_Void region changes nothing
+ ✓ src/optical/decode-group.test.ts > 8. spurious markers (the documented 0x5AC54 case) > (c2) characterisation: a 4 x 4 module black square at the vertex touches all four marker corners and merges them (INVALID_MARKER, never IDENTIFIED)
+ ✓ src/optical/decode-group.test.ts > 9. safety and API > static scan: only allowed imports, no board / expected / score / game identifiers
+ ✓ src/optical/decode-group.test.ts > 9. safety and API > type level: only an image and optional tuning options
+ ✓ src/optical/decode-group.test.ts > 9. safety and API > is deterministic and does not mutate a frozen input
+ ✓ src/optical/decode-group.test.ts > 9. safety and API > radius 2 works; invalid radius throws RangeError (also on a blank image)
+ ✓ src/optical/decode-group.test.ts > 9. safety and API > tiny, blank and odd images do not throw
+ ✓ src/optical/decode-group.test.ts > 9. safety and API > malformed GrayImage throws RangeError
+ ✓ src/optical/decode-group.test.ts > 9. safety and API > result carries no expected-value or reference fields
+
+ Test Files  4 passed (4)
+      Tests  153 passed (153)
+
+Per-file counts (sorted by path; taken from the JSON report of the same single run):
+src/optical/decode-group.properties.test.ts   tests  23  passed  23  failed 0  skipped/other 0
+src/optical/decode-group.rejection.test.ts    tests  54  passed  54  failed 0  skipped/other 0
+src/optical/decode-group.test.ts              tests  44  passed  44  failed 0  skipped/other 0
+src/optical/reference-check.test.ts           tests  32  passed  32  failed 0  skipped/other 0
+TOTAL (4 files)                               tests 153  passed 153  failed 0

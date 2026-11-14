@@ -1,0 +1,241 @@
+Synthetic images, not real cameras. Raw command output of the full suite (Milestone 6 task 6.3, HEAD 2133d3d, Node 24, vitest 5.1.0).
+Normalization applied to the raw output: wall-clock fields (Start at, Duration, per-test and per-file milliseconds, "in N s" timings, "JSON report written" lines), the absolute repository path (replaced by <repo>) and temporary-file paths are removed or replaced. Nothing else is edited. The order of files and of the stdout blocks follows worker completion and can differ between runs; the counts and per-test names do not.
+
+This run used the invocation `npm run test:ci -- --reporter=default --reporter=json --outputFile.json=<temp>` (the added reporter flags only produce the per-file table at the end of this file; the script line below is normalized to the package.json command `vitest --run --maxWorkers=4`). Run once; no test timed out, so no rerun was needed.
+exit code: 0
+$ npm run test:ci
+
+> qroker-kiroween@0.0.0 test:ci
+> vitest --run --maxWorkers=4
+
+ RUN  v5.1.0 <repo>
+
+stdout | src/optical/decode-group.test.ts > 2. all 81 observed arrangements x 8 image transforms > 648 images: IDENTIFIED, right cards/sum/interpretation count, reflection 260 / 260 / 128
+decode-group exhaustive summary: {"images":648,"NOT_REFLECTED":260,"REFLECTED":260,"AMBIGUOUS":128,"interp2":520,"interp4":128}
+
+stdout | src/optical/decode-group.rejection.test.ts > 4. flipped modules in one fragment (Property 15(c), Property 24) > radius 2, 3 or more flips: no rejection is asserted; counts and counterexamples are recorded (docs/optical/results/m6-1-counterexamples.*) > the files on disk are byte-identical to a fresh regeneration; every pixel run agrees with the independent brute-force prediction
+radius 2 (seeded groups, one corrupted fragment): k=3: bit 0/180/73420 (source/false/rejected), group IDENTIFIED-wrong 20; k=4: bit 210/1050/403540 (source/false/rejected), group IDENTIFIED-wrong 10; k=5: bit 0/43/9557 (source/false/rejected), group IDENTIFIED-wrong 2; k=6: bit 6/20/9574 (source/false/rejected), group IDENTIFIED-wrong 2; k=7: bit 0/41/9559 (source/false/rejected), group IDENTIFIED-wrong 1; k=8: bit 1/42/9557 (source/false/rejected), group IDENTIFIED-wrong 5; total silent wrong 40 of 2745 pixel runs
+
+stdout | src/optical/decode-group.rejection.test.ts > 6. turning ONE fragment gives INVALID_ARRANGEMENT; turning the whole image does not > a 180 degree turn (or axis reflection) of one fragment is judged by the oracle: INVALID_ARRANGEMENT where the oracle finds no hypothesis, IDENTIFIED with the same cards where it does (a valid composition); decoder and oracle always agree; clubs/spades-only groups produce invalid cases
+one fragment turned by 180/Fh/Fv: oracle invalid 192, valid composition 0
+
+ ✓ src/optical/verify-codebook.test.ts (22 tests)
+   ✓ C. negative cases (11)
+     ✓ 3. another card template with 1-3 bits flipped -> min-distance with distance < 5
+     ✓ 4. weight out of range -> weight-range
+     ✓ 8. metadata lies -> metadata-agreement or sha256
+     ✓ 11. property: verifier.ok equals brute-force verdict after random 1-4 bit corruption
+stdout | src/optical/decode-group.test.ts > 4. camera rotation > every 5 degrees 0..355 and every degree through the +-45 canonical boundaries: same cards, sum, reflection
+rotation: 1040/1040 exact
+
+ ✓ src/optical/testing/physical-card.duplex.test.ts (33 tests)
+   ✓ Task 5.5 double-sided: print layers (Property 30, Requirement 16.2, 16.6, 16.7) (9)
+     ✓ Body_Frame rasters: front = renderCardLayer, back = per-row reversal of the front, back differs from front (all 52)
+   ✓ Task 5.5 double-sided: observation API (3)
+     ✓ FRONT observation at zero error equals the existing single-card renderer and placedFragments (all 52 x {0,180})
+   ✓ Task 5.5 double-sided: flip equivalence (Property 29, Requirement 16.3, 16.4) (3)
+     ✓ vertical-axis flip: marker layer of the BACK face is pixel-identical to the FRONT observation (52 x {0,180})
+     ✓ horizontal-axis flip equals the FRONT observation at the opposite allowed orientation (52 x {0,180})
+   ✓ Task 5.5 double-sided: the same raster on both faces is rejected (Property 30, Requirement 16.5) (2)
+     ✓ for every card and orientation the post-flip observation differs in corner positions and bits, and is rejected; the real model is accepted
+   ✓ Task 5.5 double-sided: containment under registration and cut error (Property 31, Requirement 16.7, 16.8, 15.3) (7)
+     ✓ zero error: both faces report exactly markerContainment, over the radius x inset sweep and three module sizes
+     ✓ property: the guaranteed clearance subtracts the error magnitudes and never exceeds the exact displaced clearance
+stdout | src/optical/decode-fragment.bitflip.test.ts > G1. exhaustive guaranteed regions through decodeFragment > all 416 templates x all flip masks of weight 0..3 (2,626 per template), radius 1 and 2
+G1: 2184832 decodeFragment calls
+
+stdout | src/optical/decode-fragment.bitflip.test.ts > G1. exhaustive guaranteed regions through decodeFragment > radius 2, weight 3: no status is asserted; decodeFragment equals the brute-force reference in all 956,800 cases
+G1 radius 2 weight 3: false acceptances 2720 of 956800 (exact enumeration: 2720), correct 0, rejected 954080
+
+stdout | src/optical/decode-fragment.bitflip.test.ts > G2. false acceptance needs at least d_id - radius flips (inherent limit of the code) > (ii) attainment: flipping d_id - radius of the differing bits toward another card yields IDENTIFIED as that other card
+G2 attainment: {"1":{"pairs":272,"choices":1360},"2":{"pairs":272,"choices":2720}} (ordered template pairs of different cards at distance 5; all choices decode as the other card)
+
+stdout | src/optical/decode-fragment.bitflip.test.ts > G3. same card, different transform beyond the guaranteed radius > radius 1: enumerated wrong-transform cases; first 50 decode as same card, other unique transform; counts per weight equal the exact statistics
+G3 radius 1: 75712 wrong-transform events; first weight 5
+
+stdout | src/optical/decode-fragment.bitflip.test.ts > G3. same card, different transform beyond the guaranteed radius > radius 2: enumerated wrong-transform cases; first 50 decode as same card, other unique transform; counts per weight equal the exact statistics
+G3 radius 2: 949312 wrong-transform events; first weight 4
+
+ ✓ src/optical/decode-group.rejection.test.ts (54 tests)
+   ✓ 1. removed fragments: every subset of 1..4 removed fragments, several groups and transforms (4)
+     ✓ removing 1, 2 or 3 fragments gives INCOMPLETE_GROUP with detected = remaining fragments; removing all 4 gives NOT_DETECTED (4 groups x 15 subsets x 8 D4 transforms)
+     ✓ the same subsets at arbitrary camera angles (3 seeded angles each) are rejected the same way
+   ✓ 4. flipped modules in one fragment (Property 15(c), Property 24) (9)
+     ✓ radius 1, bit level, EXHAUSTIVE: every mask of weight 0..3 on all 24 fragments of 6 groups through decodeFragment; w <= 1 corrected to the same card, w = 2, 3 CORRUPTED_FRAGMENT with distance > 1 to every template
+     ✓ radius 1, pixels: 0 or 1 flipped module is corrected (IDENTIFIED, right cards and sum, distance = flips); 2 or 3 flipped modules give CORRUPTED_FRAGMENT with exactly one corrupted member (6 groups x 4 slots, seeded camera views)
+     ✓ radius 2: up to 2 flipped modules are corrected and the result is never silently wrong (IDENTIFIED with the right cards and sum): all single flips, seeded double flips, and two fragments with 2 flips each
+     ✓ radius 2, 3 or more flips: no rejection is asserted; counts and counterexamples are recorded (docs/optical/results/m6-1-counterexamples.*) (3)
+       ✓ the files on disk are byte-identical to a fresh regeneration; every pixel run agrees with the independent brute-force prediction
+   ✓ 5. suit-incompatible slot (2)
+     ✓ heart CONTENT shown in a TR or BL slot (or diamond content in TL or BR) is an observed transform outside the slot table: INVALID_ARRANGEMENT, and the oracle also finds no camera rotation or mirror that explains it
+   ✓ 6. turning ONE fragment gives INVALID_ARRANGEMENT; turning the whole image does not (3)
+     ✓ 90 / 270 degree turn (and diagonal reflection) of one fragment: INVALID_ARRANGEMENT for every group and slot (8 groups x 4 slots x 4 transforms); the same groups with the WHOLE image rotated by 90 / 270 / a seeded angle stay IDENTIFIED with the same cards
+   ✓ 7. three-fragment compositions are never IDENTIFIED (1)
+     ✓ 20 groups x 4 missing slots x 8 D4 transforms: INCOMPLETE_GROUP, detected 3, 3 markers
+   ✓ 8. unrelated valid distractor markers (4)
+     ✓ a complete group inside a lattice of valid markers of other cards (neighbour pitch, random occupancy 60%, other complete blocks allowed) stays IDENTIFIED with the identical card set, sum, reflection and interpretations, at seeded camera views
+     ✓ a 3-fragment target inside a lattice of valid markers of other cards, with no complete block anywhere (every 3-of-4 block could be "completed" by one more marker): INCOMPLETE_GROUP, detected 3, never IDENTIFIED
+   ✓ 9/10. physical composition (baseline rounded cards, zero gap): one card absent, both faces, both flips (5)
+     ✓ precondition: the assembled FRONT board is pixel-identical to composeBoard, and a complete group decodes IDENTIFIED in every view
+     ✓ one card absent from the 2x2 composition (table gray in its place): three markers around the vertex, INCOMPLETE_GROUP, on FRONT, on BACK after a vertical-axis flip and on BACK after a horizontal-axis flip (4 groups x 4 absent slots x 3 views)
+     ✓ 3x3 board with five neighbouring cards (their outward and other-vertex fragments are Distractor_Markers; no other vertex has 4 markers): complete centre group IDENTIFIED, one card absent INCOMPLETE_GROUP with detected 3, in every view
+   ✓ sweep: every violation type, seeded, deterministic (18)
+     ✓ THREE_FRAGMENTS_WITH_DISTRACTORS: 12 seeded cases are rejected with the expected kind (never IDENTIFIED); reference comparison leaves them unchanged
+     ✓ property (fast-check, fixed seed): for any violation type and any seed the result kind is never IDENTIFIED and equals the expected kind
+     ✓ reproducibility: a case is a function of (seed, violation); same inputs give the same pixels and result, and the message tag carries seed, violation, transform, angle, arrangement and detail
+stdout | src/optical/decode-fragment.bitflip.test.ts > G5. recorded counterexamples > the files on disk are byte-identical to a fresh regeneration; image cells are consistent
+r1 k0: n=300 correct=300 falseAccept=0 rejected=0 upper95=0.00993608
+r1 k1: n=300 correct=300 falseAccept=0 rejected=0 upper95=0.00993608
+r1 k2: n=300 correct=0 falseAccept=0 rejected=300 upper95=0.00993608
+r1 k3: n=300 correct=0 falseAccept=0 rejected=300 upper95=0.00993608
+r1 k4: n=300 correct=0 falseAccept=0 rejected=300 upper95=0.00993608
+r1 k5: n=300 correct=0 falseAccept=1 rejected=299 upper95=null
+r1 k6: n=300 correct=0 falseAccept=0 rejected=300 upper95=0.00993608
+r1 k7: n=300 correct=0 falseAccept=0 rejected=300 upper95=0.00993608
+r1 k8: n=300 correct=0 falseAccept=0 rejected=300 upper95=0.00993608
+r2 k0: n=300 correct=300 falseAccept=0 rejected=0 upper95=0.00993608
+r2 k1: n=300 correct=300 falseAccept=0 rejected=0 upper95=0.00993608
+r2 k2: n=300 correct=300 falseAccept=0 rejected=0 upper95=0.00993608
+r2 k3: n=300 correct=0 falseAccept=0 rejected=300 upper95=0.00993608
+r2 k4: n=300 correct=0 falseAccept=4 rejected=295 upper95=null
+r2 k5: n=300 correct=0 falseAccept=1 rejected=299 upper95=null
+r2 k6: n=300 correct=0 falseAccept=1 rejected=298 upper95=null
+r2 k7: n=300 correct=0 falseAccept=1 rejected=299 upper95=null
+r2 k8: n=300 correct=0 falseAccept=0 rejected=300 upper95=0.00993608
+
+stdout | src/optical/decode-fragment.bitflip.test.ts > G6. adversarial agreement with the brute-force reference (seed 20251112) > template + flips toward another card + random extra flips: status, card and distance equal the reference
+G6: 2000 property evaluations (including shrinking), 33 false acceptances reached
+
+ ✓ src/optical/decode-fragment.bitflip.test.ts (21 tests)
+   ✓ G1. exhaustive guaranteed regions through decodeFragment (2)
+     ✓ all 416 templates x all flip masks of weight 0..3 (2,626 per template), radius 1 and 2
+   ✓ G3. same card, different transform beyond the guaranteed radius (3)
+     ✓ radius 2: enumerated wrong-transform cases; first 50 decode as same card, other unique transform; counts per weight equal the exact statistics
+   ✓ G5. recorded counterexamples (2)
+     ✓ the files on disk are byte-identical to a fresh regeneration; image cells are consistent
+ ✓ src/optical/testing/physical-card.test.ts (63 tests)
+   ✓ baseline printed pixels (2)
+     ✓ every printed marker pixel of every card at both orientations lies fully inside the card mask
+   ✓ determinism (2)
+     ✓ seeded boards are reproducible, different seeds differ, explicit errors equal the seeded table
+   ✓ card identities and fragment patterns are preserved (4)
+     ✓ baseline print layer is pixel-identical to render.ts renderCardLayer for all 52 cards x {0, 180}
+     ✓ reading the rendered module grid returns placedFragments for every card/orientation (inset 1.5, other module size)
+   ✓ 3x3 boards with Distractor_Markers (4)
+     ✓ a rotated card is rotated about its centre: its corner moves as the clockwise rotation predicts
+   ✓ composer smoke check with decodeGroup (8 seeded baseline boards, no placement error; NOT the 5.6 experiment) (1)
+     ✓ decodeGroup receives only pixels; results are compared with the ground truth afterwards
+stdout | src/optical/decode-fragment.test.ts > 4. corrupted data > direct bit flips k = 0..8 (random templates): guaranteed regions exact, rest agrees with brute force
+direct false acceptances (random): {"r1k0":0,"r1k1":0,"r1k2":0,"r1k3":0,"r1k4":0,"r1k5":0,"r1k6":0,"r1k7":0,"r1k8":0,"r2k0":0,"r2k1":0,"r2k2":0,"r2k3":0,"r2k4":0,"r2k5":0,"r2k6":0,"r2k7":1,"r2k8":0}
+targeted false acceptances: {"r1k2":0,"r1k3":0,"r1k4":5,"r1k5":20,"r1k6":56,"r1k7":42,"r2k2":0,"r2k3":6,"r2k4":18,"r2k5":60,"r2k6":58,"r2k7":44} of 1400 checked
+
+stdout | src/optical/decode-fragment.test.ts > 4. corrupted data > image path: corrupted patterns rendered, detected and decoded (k = 0..8)
+image-path false acceptances: {"r1k0":0,"r2k0":0,"r1k1":0,"r2k1":0,"r1k2":0,"r2k2":0,"r1k3":0,"r2k3":0,"r1k4":0,"r2k4":0,"r1k5":0,"r2k5":0,"r1k6":0,"r2k6":0,"r1k7":0,"r2k7":0,"r1k8":0,"r2k8":0}
+
+stdout | src/optical/decode-fragment.test.ts > 5. agreement with the exact enumeration > 200,000 uniform words + 20,000 template-plus-k-flips (k = 0..12): classification equals the reference
+sample of 220000 words: accepted r1=3145, r2=5490
+
+stdout | src/optical/decode-fragment.test.ts > 9. cell confidence (reported only) > blur lowers cell confidence, a looser threshold flags the weakest cell, status unchanged
+blur r=3, modulePx 8: minCellConfidence 0.360, uncertain at default threshold: []
+
+ ✓ src/optical/decode-fragment.test.ts (29 tests)
+   ✓ 5. agreement with the exact enumeration (4)
+     ✓ radius 1: every accepted word is IDENTIFIED with the reference card and distance
+     ✓ radius 2: every accepted word is IDENTIFIED with the reference card and distance
+     ✓ 200,000 uniform words + 20,000 template-plus-k-flips (k = 0..12): classification equals the reference
+ ✓ src/optical/testing/geometry-trial.test.ts (14 tests)
+   ✓ trials (4)
+     ✓ a clean 3x3 trial is correct; BACK faces at zero error give the same record as FRONT for the same seed
+ ✓ src/optical/decode-group.properties.test.ts (23 tests)
+   ✓ P-A. Property 23: interpretation structure (hypotheses h and h∘R180) (2)
+     ✓ groups with a heart or diamond: exactly the hypotheses {t, t∘R180}, one reflected value, same card set
+     ✓ clubs/spades-only groups: 4 interpretations = 2 non-reflected + 2 reflected, each pair {h, h∘R180}, one contains t
+   ✓ P-C. deck-wide seeded random groups (Property 20 sum, Property 23 identification) (1)
+     ✓ 300 random groups: IDENTIFIED, card set, independent rank-table sum in [4, 52], reflection, interpretation count
+   ✓ P-E. Property 25: reference comparison does not influence decoding (2)
+     ✓ decoding before / after / between comparisons (match, mismatch, invalid reference) gives identical results
+stdout | src/optical/decode-group.test.ts > 4. camera rotation > boundary proof: members straddling the canonical +-45 boundary (different quarter turns) still give the exact result
+boundary sweep: 672/672 exact, 108 images with mixed quarter turns
+
+stdout | src/optical/decode-group.test.ts > 4b. scale and perspective (measured) > module sizes 4, 6, 8, 10 px (crisp) are all exact
+integer scale: 40/40
+
+ ✓ src/optical/render.test.ts (32 tests)
+   ✓ renderMarker geometry (4)
+     ✓ modulePx 4: size, margin ring, border ring, data cells
+     ✓ modulePx 8: size, margin ring, border ring, data cells
+ ✓ scripts/verify-bound.test.ts (1 test)
+   ✓ codebook capacity bound (exhaustive 2^25 enumeration) (1)
+     ✓ measured values equal the stated claims and bound >= 52
+ ✓ src/optical/testing/geometry-45deg.test.ts (8 tests)
+stdout | src/optical/decode-group.test.ts > 4b. scale and perspective (measured) > non-integer scales 0.7..1.5 of an 8 px module render: rate recorded, no wrong IDENTIFIED
+fractional scale 0.7..1.5: 80/80 exact, 0 wrong IDENTIFIED
+
+ ✓ src/optical/testing/geometry-design.test.ts (17 tests)
+ ✓ scripts/render-samples.test.ts (7 tests)
+ ✓ src/optical/testing/geometry-report.test.ts (9 tests)
+ ✓ src/optical/codebook.test.ts (10 tests)
+stdout | src/optical/reference-check.test.ts > 11. end to end over the exhaustive 648 images > the correct reference matches (same object); one wrong card mismatches; identities never change
+reference-check end to end: {"images":648,"matched":648,"mismatched":648}
+
+ ✓ src/optical/reference-check.test.ts (32 tests)
+ ✓ src/optical/transforms.test.ts (9 tests)
+ ✓ src/optical/fragments.test.ts (25 tests)
+ ✓ src/optical/smoke.test.ts (2 tests)
+ ✓ src/optical/detect.test.ts (32 tests)
+   ✓ 4. positions (2)
+     ✓ 300 seeded placements (modulePx 3..12, integer and sub-pixel) are all DETECTED with exact bits
+   ✓ 6. scaling (measured thresholds) (4)
+     ✓ crisp integer modulePx 2..24, all 52 patterns: exact bits for sizePx >= 14 (min exact modulePx = 2)
+     ✓ blurred non-integer scales: exact for effective modulePx >= 2.5 (sizePx >= 17.5), spec range 0.5..3x of modulePx 8 included
+   ✓ 9. determinism and input safety (5)
+     ✓ optional adaptive binarization reads a clean marker and a strong illumination ramp
+stdout | src/optical/decode-group.test.ts > 4b. scale and perspective (measured) > perspective tilt 10, 20, 30 degrees with random in-plane rotation: measured rates, no wrong IDENTIFIED
+perspective tilt 10 {}: 30/30 exact, kinds {"IDENTIFIED":30}
+perspective tilt 20 {}: 30/30 exact, kinds {"IDENTIFIED":30}
+perspective tilt 30 {}: 17/30 exact, kinds {"IDENTIFIED":17,"INCOMPLETE_GROUP":13}
+perspective tilt 30 {"positionToleranceModules":1.25}: 30/30 exact, kinds {"IDENTIFIED":30}
+
+stdout | src/optical/decode-group.test.ts > 5. reflections > horizontal / vertical mirrors with arbitrary rotations keep card ids; reflection and interpretation counts follow the suits
+mirrored + rotated: 120/120 exact
+
+ ✓ src/optical/decode-group.test.ts (44 tests)
+   ✓ 2. all 81 observed arrangements x 8 image transforms (3)
+     ✓ 648 images: IDENTIFIED, right cards/sum/interpretation count, reflection 260 / 260 / 128
+     ✓ the pattern-level oracle agrees with the decoder on every one of the 648 observations
+   ✓ 4. camera rotation (3)
+     ✓ every 5 degrees 0..355 and every degree through the +-45 canonical boundaries: same cards, sum, reflection
+     ✓ boundary proof: members straddling the canonical +-45 boundary (different quarter turns) still give the exact result
+   ✓ 4b. scale and perspective (measured) (3)
+     ✓ non-integer scales 0.7..1.5 of an 8 px module render: rate recorded, no wrong IDENTIFIED
+     ✓ perspective tilt 10, 20, 30 degrees with random in-plane rotation: measured rates, no wrong IDENTIFIED
+   ✓ 5. reflections (2)
+     ✓ horizontal / vertical mirrors with arbitrary rotations keep card ids; reflection and interpretation counts follow the suits
+     ✓ property: random group, random D4 element, random angle gives the exact result (seed 20251112)
+
+ Test Files  21 passed (21)
+      Tests  487 passed (487)
+
+Per-file counts (sorted by path; taken from the JSON report of the same single run):
+scripts/render-samples.test.ts                     tests   7  passed   7  failed 0  skipped/other 0
+scripts/verify-bound.test.ts                       tests   1  passed   1  failed 0  skipped/other 0
+src/optical/codebook.test.ts                       tests  10  passed  10  failed 0  skipped/other 0
+src/optical/decode-fragment.bitflip.test.ts        tests  21  passed  21  failed 0  skipped/other 0
+src/optical/decode-fragment.test.ts                tests  29  passed  29  failed 0  skipped/other 0
+src/optical/decode-group.properties.test.ts        tests  23  passed  23  failed 0  skipped/other 0
+src/optical/decode-group.rejection.test.ts         tests  54  passed  54  failed 0  skipped/other 0
+src/optical/decode-group.test.ts                   tests  44  passed  44  failed 0  skipped/other 0
+src/optical/detect.test.ts                         tests  32  passed  32  failed 0  skipped/other 0
+src/optical/fragments.test.ts                      tests  25  passed  25  failed 0  skipped/other 0
+src/optical/reference-check.test.ts                tests  32  passed  32  failed 0  skipped/other 0
+src/optical/render.test.ts                         tests  32  passed  32  failed 0  skipped/other 0
+src/optical/smoke.test.ts                          tests   2  passed   2  failed 0  skipped/other 0
+src/optical/testing/geometry-45deg.test.ts         tests   8  passed   8  failed 0  skipped/other 0
+src/optical/testing/geometry-design.test.ts        tests  17  passed  17  failed 0  skipped/other 0
+src/optical/testing/geometry-report.test.ts        tests   9  passed   9  failed 0  skipped/other 0
+src/optical/testing/geometry-trial.test.ts         tests  14  passed  14  failed 0  skipped/other 0
+src/optical/testing/physical-card.duplex.test.ts   tests  33  passed  33  failed 0  skipped/other 0
+src/optical/testing/physical-card.test.ts          tests  63  passed  63  failed 0  skipped/other 0
+src/optical/transforms.test.ts                     tests   9  passed   9  failed 0  skipped/other 0
+src/optical/verify-codebook.test.ts                tests  22  passed  22  failed 0  skipped/other 0
+TOTAL (21 files)                                   tests 487  passed 487  failed 0

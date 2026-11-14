@@ -399,6 +399,47 @@
         "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
         "timestamp": 1794615540486
       }
+    ],
+    "6.2 Fix gaps in `decode-group.ts` found by 6.1": [
+      {
+        "executionId": "8535495b-680d-4390-b0c5-723dda99ad48",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794616664707
+      },
+      {
+        "executionId": "8535495b-680d-4390-b0c5-723dda99ad48",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794616883428
+      }
+    ],
+    "6.3 Run tests and record results": [
+      {
+        "executionId": "8535495b-680d-4390-b0c5-723dda99ad48",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794616886446
+      },
+      {
+        "executionId": "8535495b-680d-4390-b0c5-723dda99ad48",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794618797462
+      },
+      {
+        "executionId": "cd7ab670-06a1-4300-8094-e2e9b077e4f5",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794639541109
+      },
+      {
+        "executionId": "cd7ab670-06a1-4300-8094-e2e9b077e4f5",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794639813863
+      }
+    ],
+    "6. Invalid and incomplete composition rejection": [
+      {
+        "executionId": "8535495b-680d-4390-b0c5-723dda99ad48",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794618797683
+      }
     ]
   }
 }

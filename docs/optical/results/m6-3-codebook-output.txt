@@ -1,0 +1,18 @@
+Synthetic images, not real cameras. Raw command output of the codebook checks (Milestone 6 task 6.3, HEAD 2133d3d, Node 24, vitest 5.1.0).
+Normalization applied to the raw output: wall-clock fields (Start at, Duration, per-test and per-file milliseconds, "in N s" timings, "JSON report written" lines), the absolute repository path (replaced by <repo>) and temporary-file paths are removed or replaced. Nothing else is edited. The order of files and of the stdout blocks follows worker completion and can differ between runs; the counts and per-test names do not.
+$ npm run check:codebook
+exit code: 0
+
+> qroker-kiroween@0.0.0 check:codebook
+> tsx scripts/generate-codebook.ts --check
+
+check ok: regenerated codebook is byte-identical to codebook.v1.json
+$ npm run verify:codebook
+exit code: 0
+
+> qroker-kiroween@0.0.0 verify:codebook
+> tsx scripts/verify-codebook.ts
+
+codebook verification PASS (dId=5, dSelf=6, minDistance=5)
+$ (Get-FileHash src/optical/codebook.v1.json -Algorithm SHA256).Hash
+515ECEB318648C14A47574496788236A2B1BBDFC7062387DB09303CB717CC2D4

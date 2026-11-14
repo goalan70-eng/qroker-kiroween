@@ -1,0 +1,24 @@
+Synthetic images, not real cameras. Raw command output of the radius-2 counterexample regeneration (Milestone 6 task 6.3, HEAD 2133d3d, Node 24, vitest 5.1.0).
+Normalization applied to the raw output: wall-clock fields (Start at, Duration, per-test and per-file milliseconds, "in N s" timings, "JSON report written" lines), the absolute repository path (replaced by <repo>) and temporary-file paths are removed or replaced. Nothing else is edited. The order of files and of the stdout blocks follows worker completion and can differ between runs; the counts and per-test names do not.
+
+SHA256 before the run (committed m6-1 files, HEAD 2133d3d):
+  m6-1-counterexamples.json 46764BE466632AA8952A07F2B51C4E814990231C969B5430C15B12425D6C35E2
+  m6-1-counterexamples.md   F2C1E78339696F53D6639A5520DEAEBDF4AC0053AB22B6266DBADF6D4706C729
+
+Step 1 (regeneration to a temporary path, so that nothing committed could be overwritten): the exported functions buildRejectionReport, renderJson and renderMarkdown of scripts/collect-rejection-counterexamples.ts were called by a throwaway script that wrote regen.json / regen.md in a temp directory. Output: "regenerated 2745 40". SHA256 of the temporary files:
+  regen.json 46764BE466632AA8952A07F2B51C4E814990231C969B5430C15B12425D6C35E2 (equal to the committed json)
+  regen.md   F2C1E78339696F53D6639A5520DEAEBDF4AC0053AB22B6266DBADF6D4706C729 (equal to the committed md)
+
+Step 2 (only after step 1 showed byte-identical output; the script writes in place and has no output-path option):
+$ npm run collect:rejection-counterexamples
+exit code: 0
+
+> qroker-kiroween@0.0.0 collect:rejection-counterexamples
+> tsx scripts/collect-rejection-counterexamples.ts
+
+wrote m6-1-counterexamples.json/.md: 2745 pixel runs, 40 IDENTIFIED with wrong cards
+
+SHA256 after the run:
+  m6-1-counterexamples.json 46764BE466632AA8952A07F2B51C4E814990231C969B5430C15B12425D6C35E2
+  m6-1-counterexamples.md   F2C1E78339696F53D6639A5520DEAEBDF4AC0053AB22B6266DBADF6D4706C729
+Before equals after for both files: no difference; `git status` shows no change to either file.
