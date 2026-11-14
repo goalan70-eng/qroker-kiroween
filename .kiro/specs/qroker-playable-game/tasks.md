@@ -76,33 +76,33 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Depends on: none.
     - _Requirements: 1.2, 12.7_
 
-- [ ] 2. Card, PRNG, geometry and fragment-layout primitives
-  - [ ] 2.1 Implement the card catalog (`core/cards.ts`)
+- [x] 2. Card, PRNG, geometry and fragment-layout primitives
+  - [x] 2.1 Implement the card catalog (`core/cards.ts`)
     - `SUITS`, `RANKS`, `ALL_CARDS` (canonical order), `parseCardId`, `suitOf`, `rankOf`, `cardValue`, `hiddenSum`, `groupIdOf`.
     - Acceptance: 52 distinct cards; `parseCardId` returns `INVALID_CARD_ID` for anything else; `hiddenSum` of 4 aces is 4 and of 4 kings is 52; order snapshot matches design.
     - Tests: unit tests for order snapshot, 13 rank values, boundary sums.
     - Depends on: 1.4.
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.6, 5.3_
-  - [ ] 2.2 Implement PRNG and seed parsing (`core/prng.ts`, `core/seed.ts`)
+  - [x] 2.2 Implement PRNG and seed parsing (`core/prng.ts`, `core/seed.ts`)
     - `mulberry32` (own implementation, no import from `src/optical`), `mix32`, `shuffle` (Fisher–Yates), `parseSeed` (decimal range, FNV-1a 32 over UTF-16 code units for other text, `SEED_EMPTY`).
     - Acceptance: two generators with the same seed give identical sequences; `shuffle` is a permutation; input arrays are not mutated.
     - Tests: unit tests with fixed seeds and a recorded first 5 outputs (golden values written when the code is first run).
     - Depends on: 1.4.
     - _Requirements: 2.1, 2.5, 2.6_
-  - [ ] 2.3 Implement board geometry (`core/geometry.ts`)
+  - [x] 2.3 Implement board geometry (`core/geometry.ts`)
     - `BOARD_SIZE`, `toNotation`, `fromNotation`, `inBounds`, `orthogonalNeighbors`, `candidateQuads`, `quadCells`, `quadKey`, `slotOf`.
     - Acceptance: `D4` is `{row: 3, col: 3}`; row 1 is the top row; the 4 candidate quads of an interior cell contain the cell; a corner cell yields 1.
     - Tests: unit tests for corners, edges and interior cells.
     - Depends on: 1.4.
     - _Requirements: 3.1, 5.1, 5.8_
-  - [ ] 2.4 Implement the fragment layout (`core/fragment-layout.ts`) and the parity test
+  - [x] 2.4 Implement the fragment layout (`core/fragment-layout.ts`) and the parity test
     - `FRAGMENT_LAYOUT`, `INWARD_CORNER`, `isValidMember`, `validOrientations` as in design.md.
     - Create `src/game/core/fragment-layout.parity.test.ts`, the only file allowed to import `src/optical`: for all 52 cards and both orientations compare `FRAGMENT_LAYOUT[suit][orientation]` with `visibleCorners` of `src/optical/fragments.ts`. Do not edit the optical module.
     - Acceptance: the 4 examples of qroker-game Requirement 14.4 hold; parity test passes; the runtime module does not import `src/optical`.
     - Tests: unit tests for the 4 examples plus the full 8-row table; the parity test.
     - Depends on: 1.4.
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6_
-  - [ ] 2.5 Property tests for the primitives
+  - [x] 2.5 Property tests for the primitives
     - Create `src/game/core/testing/card-generators.ts` (`arbSeed`, `arbCard`, `arbFourDistinctCards`) and `src/game/core/primitives.properties.test.ts`.
     - **Property 1: Card catalog and CardId round trip**
     - **Property 2: Card_Value and Hidden_Sum**

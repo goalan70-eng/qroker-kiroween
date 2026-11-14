@@ -55,6 +55,73 @@
         "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
         "timestamp": 1794645944174
       }
+    ],
+    "2.1 Implement the card catalog (`core/cards.ts`)": [
+      {
+        "executionId": "33dd06de-7e2f-4e47-851a-dc6185eda25d",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794645960692
+      },
+      {
+        "executionId": "33dd06de-7e2f-4e47-851a-dc6185eda25d",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794646111495
+      }
+    ],
+    "2.2 Implement PRNG and seed parsing (`core/prng.ts`, `core/seed.ts`)": [
+      {
+        "executionId": "33dd06de-7e2f-4e47-851a-dc6185eda25d",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794645960800
+      },
+      {
+        "executionId": "33dd06de-7e2f-4e47-851a-dc6185eda25d",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794646111645
+      }
+    ],
+    "2.3 Implement board geometry (`core/geometry.ts`)": [
+      {
+        "executionId": "33dd06de-7e2f-4e47-851a-dc6185eda25d",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794645961079
+      },
+      {
+        "executionId": "33dd06de-7e2f-4e47-851a-dc6185eda25d",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794646111791
+      }
+    ],
+    "2.4 Implement the fragment layout (`core/fragment-layout.ts`) and the parity test": [
+      {
+        "executionId": "33dd06de-7e2f-4e47-851a-dc6185eda25d",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794645961296
+      },
+      {
+        "executionId": "33dd06de-7e2f-4e47-851a-dc6185eda25d",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794646112062
+      }
+    ],
+    "2.5 Property tests for the primitives": [
+      {
+        "executionId": "33dd06de-7e2f-4e47-851a-dc6185eda25d",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794646121510
+      },
+      {
+        "executionId": "33dd06de-7e2f-4e47-851a-dc6185eda25d",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794646311966
+      }
+    ],
+    "2. Card, PRNG, geometry and fragment-layout primitives": [
+      {
+        "executionId": "33dd06de-7e2f-4e47-851a-dc6185eda25d",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794646312070
+      }
     ]
   }
 }
