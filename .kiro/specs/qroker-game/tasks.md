@@ -207,7 +207,7 @@ Rules for every milestone:
     - Each degradation takes an explicit seed and parameters.
     - _Requirements: 12.5_
 
-  - [ ] 7.2 Implement `scripts/run-robustness.ts`
+  - [-] 7.2 Implement `scripts/run-robustness.ts`
     - Run at least 1,000 trials per condition and write the JSON and Markdown outputs, including failing seeds.
     - _Requirements: 12.5, 12.7_
 

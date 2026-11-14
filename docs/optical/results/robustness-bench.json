@@ -1,0 +1,743 @@
+{
+  "note": "Measured wall-clock timings of a fixed sample (seeds derived from \"bench:<class>\" and the trial index, disjoint from the sweep seeds). Timings, CPU load samples and process lists are machine dependent: they are the only non-deterministic content of the plan and are recorded here, not recomputed by --plan. synthetic images, not real cameras: these are synthetic-test findings about the sampled conditions only; they do not measure or guarantee real-camera performance, and a zero-event bound applies only to the sampled synthetic condition distribution (independent seeded trials).",
+  "machine": {
+    "node": "v24.20.0",
+    "cpu": "Intel(R) Core(TM) i5-10400F CPU @ 2.90GHz",
+    "logicalCores": 12,
+    "totalMemoryGiB": 39.9,
+    "platform": "win32 x64"
+  },
+  "sample": {
+    "warmupTrials": 3,
+    "flatTrials": 100,
+    "physicalTrials": 20,
+    "seedRule": "trialSeed('bench:<class>', i)"
+  },
+  "classes": {
+    "F-plain": {
+      "condition": "A-CLEAN",
+      "trials": 100,
+      "meanMs": {
+        "sceneMs": 0.09,
+        "degradeMs": 0.01,
+        "decodeMs": 1.14,
+        "totalMs": 1.24
+      },
+      "outcomes": {
+        "CORRECT": 100
+      }
+    },
+    "F-camera": {
+      "condition": "A-PROF-MODERATE-N",
+      "trials": 100,
+      "meanMs": {
+        "sceneMs": 0.08,
+        "degradeMs": 6.06,
+        "decodeMs": 1.24,
+        "totalMs": 7.38
+      },
+      "outcomes": {
+        "CORRECT": 77,
+        "REJECTED:INCOMPLETE_GROUP": 23
+      }
+    },
+    "P2-plain": {
+      "condition": "P-BOARD-2x2-C-F",
+      "trials": 20,
+      "meanMs": {
+        "sceneMs": 63.35,
+        "degradeMs": 0.09,
+        "decodeMs": 5.6,
+        "totalMs": 69.03
+      },
+      "outcomes": {
+        "CORRECT": 20
+      }
+    },
+    "P2-camera": {
+      "condition": "P-PROF-MODERATE-2x2-C-F",
+      "trials": 20,
+      "meanMs": {
+        "sceneMs": 61.27,
+        "degradeMs": 42.98,
+        "decodeMs": 7.88,
+        "totalMs": 112.13
+      },
+      "outcomes": {
+        "CORRECT": 16,
+        "REJECTED:INCOMPLETE_GROUP": 4
+      }
+    },
+    "P2-errors": {
+      "condition": "P-DUP-2x2-C-BH-max",
+      "trials": 20,
+      "meanMs": {
+        "sceneMs": 67.88,
+        "degradeMs": 0.09,
+        "decodeMs": 5.57,
+        "totalMs": 73.53
+      },
+      "outcomes": {
+        "CORRECT": 1,
+        "REJECTED:INCOMPLETE_GROUP": 19
+      }
+    },
+    "P2-both": {
+      "condition": "P-ALIGN-MODERATE-2x2-C-BH",
+      "trials": 20,
+      "meanMs": {
+        "sceneMs": 80.16,
+        "degradeMs": 33.27,
+        "decodeMs": 8.62,
+        "totalMs": 122.06
+      },
+      "outcomes": {
+        "CORRECT": 10,
+        "REJECTED:INCOMPLETE_GROUP": 10
+      }
+    },
+    "P3-plain": {
+      "condition": "P-BOARD-3x3-C-F",
+      "trials": 20,
+      "meanMs": {
+        "sceneMs": 167.8,
+        "degradeMs": 0.1,
+        "decodeMs": 10.55,
+        "totalMs": 178.46
+      },
+      "outcomes": {
+        "CORRECT": 20
+      }
+    },
+    "P3-camera": {
+      "condition": "P-PROF-MODERATE-3x3-C-F",
+      "trials": 20,
+      "meanMs": {
+        "sceneMs": 177.02,
+        "degradeMs": 97.28,
+        "decodeMs": 15.33,
+        "totalMs": 289.63
+      },
+      "outcomes": {
+        "CORRECT": 15,
+        "REJECTED:INCOMPLETE_GROUP": 5
+      }
+    },
+    "P3-errors": {
+      "condition": "P-DUP-3x3-C-BH-max",
+      "trials": 20,
+      "meanMs": {
+        "sceneMs": 182.79,
+        "degradeMs": 0.11,
+        "decodeMs": 10.48,
+        "totalMs": 193.37
+      },
+      "outcomes": {
+        "CORRECT": 5,
+        "REJECTED:INCOMPLETE_GROUP": 15
+      }
+    },
+    "P3-both": {
+      "condition": "P-ALIGN-MODERATE-3x3-C-BH",
+      "trials": 20,
+      "meanMs": {
+        "sceneMs": 160.39,
+        "degradeMs": 69.57,
+        "decodeMs": 16.17,
+        "totalMs": 246.13
+      },
+      "outcomes": {
+        "CORRECT": 9,
+        "REJECTED:INCOMPLETE_GROUP": 11
+      }
+    }
+  },
+  "cpuLoad": [
+    {
+      "phase": "before benchmark",
+      "systemCpuPercent": 21.4
+    },
+    {
+      "phase": "after F-plain",
+      "systemCpuPercent": 10.4
+    },
+    {
+      "phase": "after F-camera",
+      "systemCpuPercent": 38
+    },
+    {
+      "phase": "after P2-plain",
+      "systemCpuPercent": 5.8
+    },
+    {
+      "phase": "after P2-camera",
+      "systemCpuPercent": 7.4
+    },
+    {
+      "phase": "after P2-errors",
+      "systemCpuPercent": 10.9
+    },
+    {
+      "phase": "after P2-both",
+      "systemCpuPercent": 40
+    },
+    {
+      "phase": "after P3-plain",
+      "systemCpuPercent": 20.9
+    },
+    {
+      "phase": "after P3-camera",
+      "systemCpuPercent": 17.8
+    },
+    {
+      "phase": "after P3-errors",
+      "systemCpuPercent": 23.5
+    },
+    {
+      "phase": "after P3-both",
+      "systemCpuPercent": 8.5
+    }
+  ],
+  "competingProcesses": [
+    {
+      "name": "powershell",
+      "logicalProcessors": 0.21
+    },
+    {
+      "name": "Kiro",
+      "logicalProcessors": 0.19
+    },
+    {
+      "name": "qemu-system-x86_64-headless",
+      "logicalProcessors": 0.11
+    },
+    {
+      "name": "Kiro",
+      "logicalProcessors": 0.09
+    }
+  ],
+  "peakRssMiB": 120.9,
+  "scaling": [
+    {
+      "processes": 4,
+      "wallSeconds": 12.31,
+      "singleProcessSeconds": 11.39,
+      "speedup": 3.7,
+      "systemCpuPercentMean": 51,
+      "systemCpuPercentMax": 84.1,
+      "childPeakRssMiB": 107.1
+    },
+    {
+      "processes": 8,
+      "wallSeconds": 15.69,
+      "singleProcessSeconds": 11.39,
+      "speedup": 5.81,
+      "systemCpuPercentMean": 80,
+      "systemCpuPercentMax": 98.9,
+      "childPeakRssMiB": 108.1
+    }
+  ],
+  "disk": {
+    "resultFileBytesMax": 2625,
+    "resultFileBytesMean": 1898,
+    "sampleFiles": 4
+  },
+  "flatPilot": {
+    "trialsPerCondition": 30,
+    "seedRule": "trialSeed('pilot:<id>', i): seeds disjoint from the sweep",
+    "conditions": [
+      {
+        "id": "A-CLEAN",
+        "correct": 30,
+        "rejected": 0,
+        "misidentified": 0
+      },
+      {
+        "id": "A-FRAG-0.1",
+        "correct": 30,
+        "rejected": 0,
+        "misidentified": 0
+      },
+      {
+        "id": "A-FRAG-0.25",
+        "correct": 30,
+        "rejected": 0,
+        "misidentified": 0
+      },
+      {
+        "id": "A-TILT-10",
+        "correct": 30,
+        "rejected": 0,
+        "misidentified": 0
+      },
+      {
+        "id": "A-TILT-20",
+        "correct": 30,
+        "rejected": 0,
+        "misidentified": 0
+      },
+      {
+        "id": "A-TILT-30",
+        "correct": 25,
+        "rejected": 5,
+        "misidentified": 0
+      },
+      {
+        "id": "A-TILT-40",
+        "correct": 0,
+        "rejected": 30,
+        "misidentified": 0
+      },
+      {
+        "id": "A-TILT-50",
+        "correct": 0,
+        "rejected": 30,
+        "misidentified": 0
+      },
+      {
+        "id": "A-BLUR-0.5",
+        "correct": 30,
+        "rejected": 0,
+        "misidentified": 0
+      },
+      {
+        "id": "A-BLUR-1",
+        "correct": 30,
+        "rejected": 0,
+        "misidentified": 0
+      },
+      {
+        "id": "A-BLUR-1.5",
+        "correct": 0,
+        "rejected": 30,
+        "misidentified": 0
+      },
+      {
+        "id": "A-BLUR-2",
+        "correct": 0,
+        "rejected": 30,
+        "misidentified": 0
+      },
+      {
+        "id": "A-NOISE-5",
+        "correct": 30,
+        "rejected": 0,
+        "misidentified": 0
+      },
+      {
+        "id": "A-NOISE-10",
+        "correct": 30,
+        "rejected": 0,
+        "misidentified": 0
+      },
+      {
+        "id": "A-NOISE-20",
+        "correct": 30,
+        "rejected": 0,
+        "misidentified": 0
+      },
+      {
+        "id": "A-NOISE-40",
+        "correct": 29,
+        "rejected": 1,
+        "misidentified": 0
+      },
+      {
+        "id": "A-NOISE-80",
+        "correct": 0,
+        "rejected": 30,
+        "misidentified": 0
+      },
+      {
+        "id": "A-ILLUM-0.2",
+        "correct": 30,
+        "rejected": 0,
+        "misidentified": 0
+      },
+      {
+        "id": "A-ILLUM-0.4",
+        "correct": 30,
+        "rejected": 0,
+        "misidentified": 0
+      },
+      {
+        "id": "A-ILLUM-0.6",
+        "correct": 28,
+        "rejected": 2,
+        "misidentified": 0
+      },
+      {
+        "id": "A-ILLUM-0.8",
+        "correct": 0,
+        "rejected": 30,
+        "misidentified": 0
+      },
+      {
+        "id": "A-ROT-0J",
+        "correct": 30,
+        "rejected": 0,
+        "misidentified": 0
+      },
+      {
+        "id": "A-ROT-15J",
+        "correct": 30,
+        "rejected": 0,
+        "misidentified": 0
+      },
+      {
+        "id": "A-ROT-30J",
+        "correct": 20,
+        "rejected": 10,
+        "misidentified": 0
+      },
+      {
+        "id": "A-ROT-45E",
+        "correct": 30,
+        "rejected": 0,
+        "misidentified": 0
+      },
+      {
+        "id": "A-ROT-45J",
+        "correct": 30,
+        "rejected": 0,
+        "misidentified": 0
+      },
+      {
+        "id": "A-ROT-60J",
+        "correct": 21,
+        "rejected": 9,
+        "misidentified": 0
+      },
+      {
+        "id": "A-ROT-75J",
+        "correct": 30,
+        "rejected": 0,
+        "misidentified": 0
+      },
+      {
+        "id": "A-ROT-90E",
+        "correct": 30,
+        "rejected": 0,
+        "misidentified": 0
+      },
+      {
+        "id": "A-ROT-135J",
+        "correct": 30,
+        "rejected": 0,
+        "misidentified": 0
+      },
+      {
+        "id": "A-ROT-180E",
+        "correct": 30,
+        "rejected": 0,
+        "misidentified": 0
+      },
+      {
+        "id": "A-ROT-225J",
+        "correct": 30,
+        "rejected": 0,
+        "misidentified": 0
+      },
+      {
+        "id": "A-ROT-270E",
+        "correct": 30,
+        "rejected": 0,
+        "misidentified": 0
+      },
+      {
+        "id": "A-ROT-315J",
+        "correct": 30,
+        "rejected": 0,
+        "misidentified": 0
+      },
+      {
+        "id": "A-ROT-RANDOM",
+        "correct": 24,
+        "rejected": 6,
+        "misidentified": 0
+      },
+      {
+        "id": "A-RR-FRAG-0.1",
+        "correct": 29,
+        "rejected": 1,
+        "misidentified": 0
+      },
+      {
+        "id": "A-RR-FRAG-0.25",
+        "correct": 28,
+        "rejected": 2,
+        "misidentified": 0
+      },
+      {
+        "id": "A-RR-TILT-10",
+        "correct": 22,
+        "rejected": 8,
+        "misidentified": 0
+      },
+      {
+        "id": "A-RR-TILT-20",
+        "correct": 19,
+        "rejected": 11,
+        "misidentified": 0
+      },
+      {
+        "id": "A-RR-TILT-30",
+        "correct": 10,
+        "rejected": 20,
+        "misidentified": 0
+      },
+      {
+        "id": "A-RR-TILT-40",
+        "correct": 0,
+        "rejected": 30,
+        "misidentified": 0
+      },
+      {
+        "id": "A-RR-TILT-50",
+        "correct": 0,
+        "rejected": 30,
+        "misidentified": 0
+      },
+      {
+        "id": "A-RR-BLUR-0.5",
+        "correct": 27,
+        "rejected": 3,
+        "misidentified": 0
+      },
+      {
+        "id": "A-RR-BLUR-1",
+        "correct": 30,
+        "rejected": 0,
+        "misidentified": 0
+      },
+      {
+        "id": "A-RR-BLUR-1.5",
+        "correct": 0,
+        "rejected": 30,
+        "misidentified": 0
+      },
+      {
+        "id": "A-RR-BLUR-2",
+        "correct": 0,
+        "rejected": 30,
+        "misidentified": 0
+      },
+      {
+        "id": "A-RR-NOISE-5",
+        "correct": 26,
+        "rejected": 4,
+        "misidentified": 0
+      },
+      {
+        "id": "A-RR-NOISE-10",
+        "correct": 17,
+        "rejected": 13,
+        "misidentified": 0
+      },
+      {
+        "id": "A-RR-NOISE-20",
+        "correct": 17,
+        "rejected": 13,
+        "misidentified": 0
+      },
+      {
+        "id": "A-RR-NOISE-40",
+        "correct": 2,
+        "rejected": 28,
+        "misidentified": 0
+      },
+      {
+        "id": "A-RR-NOISE-80",
+        "correct": 0,
+        "rejected": 30,
+        "misidentified": 0
+      },
+      {
+        "id": "A-RR-ILLUM-0.2",
+        "correct": 24,
+        "rejected": 6,
+        "misidentified": 0
+      },
+      {
+        "id": "A-RR-ILLUM-0.4",
+        "correct": 23,
+        "rejected": 7,
+        "misidentified": 0
+      },
+      {
+        "id": "A-RR-ILLUM-0.6",
+        "correct": 25,
+        "rejected": 5,
+        "misidentified": 0
+      },
+      {
+        "id": "A-RR-ILLUM-0.8",
+        "correct": 0,
+        "rejected": 30,
+        "misidentified": 0
+      },
+      {
+        "id": "A-REFL-Fh",
+        "correct": 30,
+        "rejected": 0,
+        "misidentified": 0
+      },
+      {
+        "id": "A-RR-REFL-Fh",
+        "correct": 26,
+        "rejected": 4,
+        "misidentified": 0
+      },
+      {
+        "id": "A-REFL-Fv",
+        "correct": 30,
+        "rejected": 0,
+        "misidentified": 0
+      },
+      {
+        "id": "A-RR-REFL-Fv",
+        "correct": 22,
+        "rejected": 8,
+        "misidentified": 0
+      },
+      {
+        "id": "A-PROF-MILD-N",
+        "correct": 29,
+        "rejected": 1,
+        "misidentified": 0
+      },
+      {
+        "id": "A-PROF-MILD-Fh",
+        "correct": 28,
+        "rejected": 2,
+        "misidentified": 0
+      },
+      {
+        "id": "A-PROF-MILD-Fv",
+        "correct": 28,
+        "rejected": 2,
+        "misidentified": 0
+      },
+      {
+        "id": "A-PROF-MODERATE-N",
+        "correct": 19,
+        "rejected": 11,
+        "misidentified": 0
+      },
+      {
+        "id": "A-PROF-MODERATE-Fh",
+        "correct": 19,
+        "rejected": 11,
+        "misidentified": 0
+      },
+      {
+        "id": "A-PROF-MODERATE-Fv",
+        "correct": 16,
+        "rejected": 14,
+        "misidentified": 0
+      },
+      {
+        "id": "A-PROF-STRESS-N",
+        "correct": 0,
+        "rejected": 30,
+        "misidentified": 0
+      },
+      {
+        "id": "A-PROF-STRESS-Fh",
+        "correct": 0,
+        "rejected": 30,
+        "misidentified": 0
+      },
+      {
+        "id": "A-PROF-STRESS-Fv",
+        "correct": 0,
+        "rejected": 30,
+        "misidentified": 0
+      },
+      {
+        "id": "A-PAIR-FRAG0.25+TILT30",
+        "correct": 5,
+        "rejected": 25,
+        "misidentified": 0
+      },
+      {
+        "id": "A-PAIR-FRAG0.25+BLUR1",
+        "correct": 27,
+        "rejected": 3,
+        "misidentified": 0
+      },
+      {
+        "id": "A-PAIR-FRAG0.25+NOISE20",
+        "correct": 16,
+        "rejected": 14,
+        "misidentified": 0
+      },
+      {
+        "id": "A-PAIR-FRAG0.25+ILLUM0.6",
+        "correct": 26,
+        "rejected": 4,
+        "misidentified": 0
+      },
+      {
+        "id": "A-PAIR-TILT30+BLUR1",
+        "correct": 10,
+        "rejected": 20,
+        "misidentified": 0
+      },
+      {
+        "id": "A-PAIR-TILT30+NOISE20",
+        "correct": 5,
+        "rejected": 25,
+        "misidentified": 0
+      },
+      {
+        "id": "A-PAIR-TILT30+ILLUM0.6",
+        "correct": 10,
+        "rejected": 20,
+        "misidentified": 0
+      },
+      {
+        "id": "A-PAIR-BLUR1+NOISE20",
+        "correct": 6,
+        "rejected": 24,
+        "misidentified": 0
+      },
+      {
+        "id": "A-PAIR-BLUR1+ILLUM0.6",
+        "correct": 3,
+        "rejected": 27,
+        "misidentified": 0
+      },
+      {
+        "id": "A-PAIR-NOISE20+ILLUM0.6",
+        "correct": 1,
+        "rejected": 29,
+        "misidentified": 0
+      },
+      {
+        "id": "A-INC-CLEAN",
+        "correct": 0,
+        "rejected": 30,
+        "misidentified": 0
+      },
+      {
+        "id": "A-INC-MILD",
+        "correct": 0,
+        "rejected": 30,
+        "misidentified": 0
+      },
+      {
+        "id": "A-INC-MODERATE",
+        "correct": 0,
+        "rejected": 30,
+        "misidentified": 0
+      },
+      {
+        "id": "A-INC-STRESS",
+        "correct": 0,
+        "rejected": 30,
+        "misidentified": 0
+      }
+    ]
+  }
+}

@@ -14,6 +14,7 @@
     "measure:decode-fragment": "tsx scripts/measure-decode-fragment.ts",
     "measure:geometry": "tsx scripts/measure-geometry.ts",
     "merge:geometry": "tsx scripts/merge-geometry.ts",
+    "robustness": "tsx scripts/run-robustness.ts",
     "analyze:geometry": "tsx scripts/geometry-failures.ts",
     "analyze:45deg": "tsx scripts/geometry-45deg.ts",
     "verify:geometry": "tsx scripts/verify-geometry-results.ts",

@@ -2,3 +2,5 @@ node_modules/
 .vitest/
 .geometry-work/
 .geometry-smoke/
+.robustness-work/
+.robustness-smoke/
