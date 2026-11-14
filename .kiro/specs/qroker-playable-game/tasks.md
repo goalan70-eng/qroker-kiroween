@@ -190,7 +190,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Depends on: 3.1.
     - _Requirements: 6.1, 6.3, 6.4, 6.5_
 
-- [ ] 8. Engine state and reducer
+- [x] 8. Engine state and reducer
   - [x] 8.1 Implement `GameState`, rules and `newGame` (`core/state.ts`, `core/rules.ts`)
     - `GameState`, `PendingBatch`, `RevealRecord`, `NewGameOptions`, `newGame`, `defaultConfig` (1 human `P0` + 3 AI, `DEV_PLACEHOLDER_SCORE_CONFIG`, `OWNER_ONLY`), config validation (`INVALID_CONFIG`, `INVALID_SCORE_CONFIG`). Neutral cards at orientation 0 with owner `NEUTRAL` (OQ-2), `turn = P0`.
     - Acceptance: 20 dealt cards, 32 deck cards; board holds 4 cards on D4, E4, D5, E5; invalid configs return errors; no code is pending at start.
@@ -212,7 +212,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Acceptance: Properties pass; generated states are reachable (built only by `newGame` and `reduce`); the draw property includes states with an empty deck.
     - Depends on: 8.2.
     - **Validates: Requirements 2.2, 2.3, 2.4, 3.4, 3.6, 3.7, 5.7, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 7.9, 9.2**
-  - [-] 8.4 Property tests for guess collection, reveal and game end
+  - [x] 8.4 Property tests for guess collection, reveal and game end
     - Create `src/game/core/engine.reveal.properties.test.ts`.
     - **Property 17: Simultaneous reveal**
     - **Property 18: Submission protocol**
