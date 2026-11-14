@@ -144,14 +144,14 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Depends on: 4.1.
     - **Validates: Requirements 3.2, 3.3, 3.6, 3.7, 3.8, 3.9**
 
-- [ ] 5. Composite Code detection
-  - [ ] 5.1 Implement the detector (`core/composite-code.ts`)
+- [x] 5. Composite Code detection
+  - [x] 5.1 Implement the detector (`core/composite-code.ts`)
     - `detect(board, placedAt, scoredGroups)` returning `CompositeCodeResult[]` ordered by `quadKey`, with `groupId` sealed for engine use only.
     - Acceptance: a quad with 4 occupied cells but one invalid member returns no code; a quad with 4 valid members returns one code with the correct Hidden_Sum; a `groupId` already in `scoredGroups` is not returned; the starting 2×2 is never returned because it is not examined when no cell is newly placed.
     - Tests: fixtures built by hand on a board for the 4 valid/invalid examples of qroker-game Requirement 14.4, a two-codes-at-once placement, and a recorded `groupId` skip.
     - Depends on: 4.1, 2.4, 2.1.
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.7, 5.8_
-  - [ ] 5.2 Property tests for detection and member validity
+  - [x] 5.2 Property tests for detection and member validity
     - Create `src/game/core/composite-code.properties.test.ts`.
     - **Property 9: Member validity equals fragment-corner membership**
     - **Property 10: Detection structure**

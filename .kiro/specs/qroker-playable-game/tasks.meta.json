@@ -184,6 +184,37 @@
         "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
         "timestamp": 1794648140256
       }
+    ],
+    "5.1 Implement the detector (`core/composite-code.ts`)": [
+      {
+        "executionId": "6c9e4e54-855f-4b80-a5e1-3b658786f02e",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794651078278
+      },
+      {
+        "executionId": "6c9e4e54-855f-4b80-a5e1-3b658786f02e",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794651368769
+      }
+    ],
+    "5.2 Property tests for detection and member validity": [
+      {
+        "executionId": "6c9e4e54-855f-4b80-a5e1-3b658786f02e",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794651368956
+      },
+      {
+        "executionId": "6c9e4e54-855f-4b80-a5e1-3b658786f02e",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794651743995
+      }
+    ],
+    "5. Composite Code detection": [
+      {
+        "executionId": "6c9e4e54-855f-4b80-a5e1-3b658786f02e",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794651744040
+      }
     ]
   }
 }
