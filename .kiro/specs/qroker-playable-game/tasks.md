@@ -128,14 +128,14 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Depends on: 3.1.
     - _Requirements: 2.2, 2.8_
 
-- [ ] 4. Board and placement validation
-  - [ ] 4.1 Implement the board and PlacementValidator (`core/board.ts`)
+- [x] 4. Board and placement validation
+  - [x] 4.1 Implement the board and PlacementValidator (`core/board.ts`)
     - `emptyBoard`, `cellAt`, `cardCount`, `validatePlacement` (precedence `INVALID_ORIENTATION`, `OUT_OF_BOUNDS`, `OCCUPIED`, `NOT_ADJACENT`), `placeOnBoard`, `legalCells` (row-major).
     - Acceptance: board is an immutable 64-element array; placing returns a new board; the starting 2×2 plus any adjacent cell is accepted; non-adjacent is rejected.
     - Tests: unit tests for each error code and for the 8 cells adjacent to the starting group.
     - Depends on: 2.3, 1.4.
     - _Requirements: 3.1, 3.2, 3.3, 3.5, 3.6, 3.8_
-  - [ ] 4.2 Property tests for the board
+  - [x] 4.2 Property tests for the board
     - Create `src/game/core/testing/board-generators.ts` (`arbBoard` by repeated legal placements from the starting 2×2) and `src/game/core/board.properties.test.ts`.
     - **Property 6: Placement validation completeness and board immutability**
     - **Property 7: Board card count increases by one**

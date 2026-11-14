@@ -153,6 +153,37 @@
         "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
         "timestamp": 1794646982641
       }
+    ],
+    "4.1 Implement the board and PlacementValidator (`core/board.ts`)": [
+      {
+        "executionId": "ea81fad5-cd0b-44f0-8fb9-2541159f19b0",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794647756949
+      },
+      {
+        "executionId": "ea81fad5-cd0b-44f0-8fb9-2541159f19b0",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794647922412
+      }
+    ],
+    "4.2 Property tests for the board": [
+      {
+        "executionId": "ea81fad5-cd0b-44f0-8fb9-2541159f19b0",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794647923014
+      },
+      {
+        "executionId": "ea81fad5-cd0b-44f0-8fb9-2541159f19b0",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794648140191
+      }
+    ],
+    "4. Board and placement validation": [
+      {
+        "executionId": "ea81fad5-cd0b-44f0-8fb9-2541159f19b0",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794648140256
+      }
     ]
   }
 }
