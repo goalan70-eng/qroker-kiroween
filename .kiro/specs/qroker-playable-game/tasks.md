@@ -222,13 +222,13 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - **Validates: Requirements 7.3, 7.4, 7.6, 7.7, 8.6, 8.7, 8.8, 9.1, 9.3**
 
 - [ ] 9. Player views and information isolation
-  - [ ] 9.1 Implement the ViewProjector (`core/view.ts`)
+  - [x] 9.1 Implement the ViewProjector (`core/view.ts`)
     - `PlayerView`, `viewFor`, `unseenCards`, `legalCellsFor`, with both Identity_Visibility rules and the visibility table of design.md. Hand returned in canonical order. The view contains no seed, groupId, deck contents or other Hands.
     - Acceptance: for a fixed state, `OWNER_ONLY` shows the viewer's own placed cards, Neutral_Cards and revealed cards and hides the rest; `FACE_UP` shows all; `unseenCards` plus visible identities plus own Hand equals the 52 catalog.
     - Tests: unit tests for both modes and for the unseen-pool identity.
     - Depends on: 8.2.
     - _Requirements: 5.8, 7.5, 10.1, 10.2, 10.3, 10.4, 10.5_
-  - [ ] 9.2 Leakage and non-interference property tests
+  - [-] 9.2 Leakage and non-interference property tests
     - Create `src/game/core/testing/perturb.ts` (`arbHiddenPerturbation`) and `src/game/core/view.properties.test.ts`.
     - **Property 22: No leakage of pending or hidden information in views**
     - **Property 23: View non-interference**

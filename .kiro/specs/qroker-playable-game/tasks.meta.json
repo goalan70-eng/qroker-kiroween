@@ -332,6 +332,30 @@
         "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
         "timestamp": 1794661098643
       }
+    ],
+    "9.1 Implement the ViewProjector (`core/view.ts`)": [
+      {
+        "executionId": "02200b6a-5ba0-4254-b1b5-502102b675ff",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794661733057
+      },
+      {
+        "executionId": "1eb503de-797d-469f-9a52-a5394bafade7",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794661831898
+      },
+      {
+        "executionId": "1eb503de-797d-469f-9a52-a5394bafade7",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794662313775
+      }
+    ],
+    "9.2 Leakage and non-interference property tests": [
+      {
+        "executionId": "1eb503de-797d-469f-9a52-a5394bafade7",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794662321232
+      }
     ]
   }
 }
