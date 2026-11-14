@@ -160,20 +160,20 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Depends on: 5.1.
     - **Validates: Requirements 4.1, 4.4, 4.5, 5.1, 5.2, 5.3, 5.5, 5.6, 5.8**
 
-- [ ] 6. Scoring, configuration and ranking
-  - [ ] 6.1 Implement the score engine (`core/score.ts`)
+- [x] 6. Scoring, configuration and ranking
+  - [x] 6.1 Implement the score engine (`core/score.ts`)
     - `RULES_VERSION`, `DEV_PLACEHOLDER_SCORE_CONFIG` (with the "development placeholder, no balance claim" comment and `provisional: true`), `validateScoreConfig`, `score`, `validateGuess`.
     - Acceptance: the placeholder passes `validateScoreConfig`; invalid tables (empty, negative, increasing, first value 0, NaN, negative bonus) are rejected with `INVALID_SCORE_CONFIG`; `validateGuess(3.5)` gives `GUESS_NOT_INTEGER`, `validateGuess(53)` gives `GUESS_OUT_OF_RANGE`.
     - Tests: unit tests for table boundaries e = length − 1, length, length + 1; the numeric-literal scan from task 1.3 passes with this file as the only owner of a table.
     - Depends on: 1.4.
     - _Requirements: 8.1, 8.3, 8.4, 8.5, 7.2_
-  - [ ] 6.2 Implement ranking (`core/ranking.ts`)
+  - [x] 6.2 Implement ranking (`core/ranking.ts`)
     - `rankPlayers(scores)` with competition ranking, ordered by rank then seat.
     - Acceptance: scores `[5,5,3,0]` give ranks `[1,1,3,4]`; all equal gives `[1,1,1,1]`.
     - Tests: unit tests for the two examples.
     - Depends on: 1.4.
     - _Requirements: 9.4, 9.5_
-  - [ ] 6.3 Property tests for scoring and ranking
+  - [x] 6.3 Property tests for scoring and ranking
     - Create `src/game/core/scoring.properties.test.ts`.
     - **Property 15: Score function and configuration validation**
     - **Property 16: Guess validation**

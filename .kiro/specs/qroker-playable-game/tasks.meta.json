@@ -215,6 +215,49 @@
         "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
         "timestamp": 1794651744040
       }
+    ],
+    "6.1 Implement the score engine (`core/score.ts`)": [
+      {
+        "executionId": "05f132c7-cfba-414c-894a-8beccd789e8a",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794651947584
+      },
+      {
+        "executionId": "05f132c7-cfba-414c-894a-8beccd789e8a",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794652085606
+      }
+    ],
+    "6.2 Implement ranking (`core/ranking.ts`)": [
+      {
+        "executionId": "05f132c7-cfba-414c-894a-8beccd789e8a",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794651947723
+      },
+      {
+        "executionId": "05f132c7-cfba-414c-894a-8beccd789e8a",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794652085704
+      }
+    ],
+    "6.3 Property tests for scoring and ranking": [
+      {
+        "executionId": "05f132c7-cfba-414c-894a-8beccd789e8a",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794652089532
+      },
+      {
+        "executionId": "05f132c7-cfba-414c-894a-8beccd789e8a",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794652497849
+      }
+    ],
+    "6. Scoring, configuration and ranking": [
+      {
+        "executionId": "05f132c7-cfba-414c-894a-8beccd789e8a",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794652497900
+      }
     ]
   }
 }
