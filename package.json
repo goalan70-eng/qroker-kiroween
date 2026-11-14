@@ -20,7 +20,10 @@
     "verify:geometry": "tsx scripts/verify-geometry-results.ts",
     "collect:decode-counterexamples": "tsx scripts/collect-decode-counterexamples.ts",
     "collect:rejection-counterexamples": "tsx scripts/collect-rejection-counterexamples.ts",
-    "check:codebook": "tsx scripts/generate-codebook.ts --check"
+    "check:codebook": "tsx scripts/generate-codebook.ts --check",
+    "typecheck": "tsc -p tsconfig.json",
+    "typecheck:game": "tsc -p tsconfig.game.json",
+    "test:game": "vitest --run src/game"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",

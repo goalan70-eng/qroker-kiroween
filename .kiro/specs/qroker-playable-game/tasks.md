@@ -47,14 +47,14 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
 
 ### Milestone P0: Foundations
 
-- [ ] 1. Project structure, toolchain and guards
-  - [ ] 1.1 Document the module layout and dependency rules
+- [x] 1. Project structure, toolchain and guards
+  - [x] 1.1 Document the module layout and dependency rules
     - Create `src/game/README.md` with the folder layout and the dependency table from design.md (Architecture), the rule that `src/optical` is not a dependency, and the command list.
     - Acceptance: the file lists `core/`, `ai/`, `sim/`, `persistence/`, `i18n/`, `ui/` and the allowed imports per folder.
     - Tests: none (document). Reviewed with task 1.3.
     - Depends on: none.
     - _Requirements: 12.2, 12.3, 21.6, 22.1_
-  - [ ] 1.2 Add the game type-check configuration and npm scripts
+  - [x] 1.2 Add the game type-check configuration and npm scripts
     - Modify `tsconfig.json`: add `"exclude": ["src/game/ui/**", "src/game/pwa/**"]` and change nothing else. Create `tsconfig.game.json` extending `./tsconfig.json` with `lib: ["ES2022", "DOM", "DOM.Iterable"]`, `types: ["node"]`, and `include: ["src/game/**/*.ts", "vite.config.ts", "scripts/build-sw.ts", "scripts/simulate.ts"]` with an empty `exclude`.
     - Modify `package.json` scripts: `typecheck` (`tsc -p tsconfig.json`), `typecheck:game` (`tsc -p tsconfig.game.json`), `test:game` (`vitest --run src/game`). Do not modify `vitest.config.ts` (its include glob `src/**/*.test.ts` already covers `src/game`) and do not change existing scripts.
     - Record the result of `npm run typecheck` before the change; after the change the result for files under `src/optical` must be identical.
@@ -62,14 +62,14 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Tests: run the commands; record outputs in the task notes.
     - Depends on: none.
     - _Requirements: 12.2, 21.5, 21.6_
-  - [ ] 1.3 Implement the boundary and scan test
+  - [x] 1.3 Implement the boundary and scan test
     - Create `src/game/boundaries.test.ts` that scans non-test files under `src/game/**` and `scripts/` game files and fails on: any import path containing `optical` (allow-list only `src/game/core/fragment-layout.parity.test.ts`); any `node:` import in `core/`, `ai/`, `persistence/`, `ui/`; DOM globals (`window`, `document`, `localStorage`, `navigator`) in `core/` and `ai/`; `Math.random`, `Date`, `performance.now`, `crypto` in `core/` and `ai/`; imports in `ai/` of `core/state`, `core/engine`, `core/deck`, `core/replay`, `core/rules`; `fetch`, `XMLHttpRequest`, `WebSocket`, `sendBeacon` outside `ui/public/sw.js`; numeric score tables outside `core/score.ts` (pattern: array literals assigned to `rewardByError`).
     - Strip comments and string literals before matching, so that documentation does not trigger the scan. The test passes vacuously while folders are empty.
     - Acceptance: a deliberately planted violation in a temporary file makes the test fail (verified once manually or with a fixture string passed to the scanner function), and the real tree passes.
     - Tests: scanner unit tests with fixture strings for each rule.
     - Depends on: none.
     - _Requirements: 2.6, 10.1, 11.8, 12.2, 12.3, 19.7, 21.3, 22.1_
-  - [ ] 1.4 Define the core types
+  - [x] 1.4 Define the core types
     - Create `src/game/core/types.ts` exactly as in design.md "Core Types": `Suit`, `Rank`, `CardId`, `Orientation`, `Corner`, `Slot`, `PlayerId`, `Owner`, `Difficulty`, `QuadKey`, `GridPosition`, `Result`, `EngineError`, `ErrorCode`, `ScoreConfig`, `NamedScoreConfig`, `IdentityVisibility`, `SeatConfig`, `GameConfig`, `Action`.
     - Acceptance: compiles under `npm run typecheck` and `npm run typecheck:game`; every `ErrorCode` named in the design Error Handling table exists; no runtime code other than type exports.
     - Tests: type-level compile check (a `types.test-d`-style file using `satisfies` assertions, run by `tsc`).
