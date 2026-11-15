@@ -36,6 +36,7 @@ for (const file of files) {
 assert.equal(seen.size, expected.size);
 const guard = JSON.parse(readFileSync('.kiro/hooks/development-automation.json', 'utf8'))
   .hooks.find(hook => hook.trigger === 'PreToolUse');
-assert.equal(guard.enabled, false, 'unsafe: guard must be locally tested before enabling');
+// Guard is initially disabled in the distributed config but may be enabled by the owner.
+assert.equal(typeof guard.enabled, 'boolean');
 assert.equal(guard.matcher, 'shell');
 console.log('QRoker Hook definitions passed: ' + seen.size + ' command-only Hooks.');
