@@ -170,6 +170,9 @@ export async function main(args) {
     return;
   }
 
+  if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY.length < 16) {
+    throw Error('OPENAI_API_KEY is missing. Configure it in the Windows user environment.');
+  }
   const dir = localDir();
   reserveDailyAttempt(dir);
   const { result, usage } = await requestReview(options.model, diff);
