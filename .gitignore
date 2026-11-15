@@ -5,3 +5,8 @@ node_modules/
 .robustness-work/
 .robustness-smoke/
 dist/
+
+# Local environment files must never contain committed notification topics
+.env
+.env.*
+!.env.example
