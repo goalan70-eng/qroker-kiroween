@@ -428,7 +428,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - _Requirements: 8.2, 13.1, 13.6, 14.7, 15.2, 16.9, 17.3, 14.1, 14.2, 14.3, 14.8, 15.3, 15.4, 15.5, 16.1, 17.1, 17.2, 17.4, 17.7_
 
 - [ ] 20. Persistence
-  - [ ] 20.1 Save format, validation and migration (`persistence/save-format.ts`)
+  - [x] 20.1 Save format, validation and migration (`persistence/save-format.ts`)
     - `SaveEnvelope`, `serializeSave`, `parseSave` with hand-written type guards, `MIGRATIONS` (empty), `SAVE_VERSION = 1`.
     - Acceptance: a valid envelope parses to `OK`; a lower version with a test migration returns `MIGRATED`; an unknown version returns `INCOMPATIBLE`; garbage returns `CORRUPT`; no function throws.
     - Tests: unit tests for each result kind.
