@@ -295,7 +295,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Depends on: 13.1.
     - **Validates: Requirements 9.6, 9.7, 20.2, 20.3**
 
-- [ ] 14. Checkpoint: headless game complete
+- [x] 14. Checkpoint: headless game complete
   - Ensure all tests pass. Ask the user if questions arise, in particular whether to keep the placeholder score values for P1 playtests.
 
 - [ ] 15. Localization
