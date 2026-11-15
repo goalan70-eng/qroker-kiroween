@@ -8,7 +8,6 @@
 import { readFileSync, statSync } from 'node:fs';
 import { isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import ts from 'typescript';
 import {
   PROJECT_ROOT, currentRevision, notifyMobile, readHookEvent, recordEvidence
 } from './hook-support.mjs';
@@ -70,7 +69,8 @@ export function gameFileRelativePath(file) {
   return /^src\/game\/[^.].*\.tsx?$/.test(rel) ? rel : null;
 }
 
-export function syntaxDiagnosticCount(source, filename) {
+export async function syntaxDiagnosticCount(source, filename) {
+  const ts = await import('typescript');
   const kind = filename.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
   const parsed = ts.createSourceFile(filename, source, ts.ScriptTarget.Latest, true, kind);
   return parsed.parseDiagnostics.length;
@@ -110,7 +110,7 @@ async function main() {
     try {
       const abs = resolve(PROJECT_ROOT, rel);
       if (statSync(abs).size > 2_000_000) return;
-      const errors = syntaxDiagnosticCount(readFileSync(abs, 'utf8'), rel);
+      const errors = await syntaxDiagnosticCount(readFileSync(abs, 'utf8'), rel);
       if (errors) {
         recordEvidence('syntax-fail', { revision: currentRevision(), errorCount: errors });
         console.error('QRoker: saved TypeScript file has ' + errors + ' syntax diagnostics.');
