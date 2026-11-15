@@ -57,6 +57,11 @@ Scope, in priority order:
 - **Simulation_Runner**: The component that plays many headless games with an injected ScoreConfig and reports statistics (qroker-game design, GameSimulator).
 - **Milestone_P1**: The minimal end-to-end playable milestone defined in tasks.md.
 - **Schematic_Code_View**: A rule-level drawing of a Composite_Code that shows which corner of each card carries a fragment and which corner is the Inward_Corner. It does not draw optical pixel patterns.
+- **Placement_Draft**: The temporary, UI-only record of the unconfirmed placement choice of the active human Seat. It holds a target cell (or none), a card of that Seat's own Hand (or none), and a draft orientation of 0 or 180. It is not part of the Game_State and not part of the Action_Log until the placement is confirmed.
+- **Drag_Gesture**: A pointer movement that starts on a Hand card of the active human Seat and moves farther than the movement threshold defined in the design, so that the interaction is a drag and not a tap.
+- **Edge_Adjacent_Cell**: A cell inside the 8×8 grid that is empty and shares at least one full grid edge with a cell that holds a card. The Edge_Adjacent_Cells of a Board are the cells that `legalCellsFor(view)` lists and that the Placement_Validator accepts (Requirement 3 Criterion 2).
+- **Rotation_Control**: The control labelled "180° rotation" (Korean "180° 회전") that switches the draft orientation of a Placement_Draft between 0 and 180.
+- **Meaningful_Rotation**: The property of a card identity that rotating the card by 180° changes its printed fragment-corner arrangement in the Fragment_Layout. It is true for clubs and spades and false for hearts and diamonds (Requirement 4 Criterion 2).
 
 Terms defined in qroker-game (Board, Card, Card_Value, Quad_Group, Composite_Code, Hidden_Sum, Guess, Score, Placement_Action, Card_Orientation, Inward_Corner, Suit_Group, Fragment_Layout, Draw_Rule, Hand_Empty_End) keep their approved meaning.
 
@@ -265,19 +270,60 @@ Terms defined in qroker-game (Board, Card, Card_Value, Quad_Group, Composite_Cod
 
 ### Requirement 13: Playable Board, Hand and Placement Interface
 
-**User Story:** As a human player, I want to see the Board and my Hand and place cards by tap or click, so that I can play complete turns without reading documentation.
+**User Story:** As a human player, I want to see the Board and my Hand and place a card either by dragging it onto the Board or by choosing a position first and a card second, so that I can play complete turns by mouse, touch or keyboard without reading documentation.
 
 #### Acceptance Criteria
 
 1. THE Practice_UI SHALL render the Board as an 8×8 grid of 64 focusable button elements, with column labels A–H and row labels 1–8, using DOM elements and CSS (Design Decision D2).
 2. THE Practice_UI SHALL display, for the active human Seat, the Hand cards as selectable buttons, and SHALL NOT display the Hand of any other Seat.
-3. WHEN the human Seat selects a Hand card, THE Practice_UI SHALL highlight all legal target cells obtained from the Placement_Validator and SHALL show an orientation toggle with the values 0° and 180°.
-4. WHEN the human Seat taps or clicks a legal cell with a card selected, THE Practice_UI SHALL show a preview of the card at that cell with the chosen orientation and SHALL show a confirm button, and SHALL send the `PLACE` Action only when the confirm button is activated.
+3. WHEN the human Seat selects a Hand card or a legal empty cell, THE Practice_UI SHALL store the selection in the Placement_Draft in either order of selection and SHALL highlight all legal target cells obtained from `legalCellsFor(view)`, which lists the same cells as the Placement_Validator (Requirement 3 Criterion 8).
+4. WHEN the Placement_Draft holds both a target cell and a card of the active human Seat's own Hand, THE Practice_UI SHALL show a preview of the card at that cell with the draft orientation, SHALL show the "Confirm placement" ("배치 확정") and "Cancel" ("취소") controls, and SHALL send the `PLACE` Action only when the confirm control is activated.
 5. WHEN the human Seat taps or clicks a cell that is not legal, THE Practice_UI SHALL show the localized message for the corresponding Error_Code and SHALL NOT change the Game_State.
 6. WHILE an AI Seat is the active Seat, THE Practice_UI SHALL disable the placement controls and SHALL display a status that names the active AI Seat.
 7. THE Practice_UI SHALL render each visible card as its rank and suit symbol (♥ ♦ ♣ ♠), with the suit shown by shape and not by color alone, an indicator of the orientation, and the owner of the card.
 8. WHERE a placed card is hidden from the viewer, THE Practice_UI SHALL render the card as a face-down card that shows the owner and the orientation but not the rank or suit.
 9. WHEN a Composite_Code has been formed, THE Practice_UI SHALL mark its 2×2 region on the Board, and WHERE the Schematic_Code_View is available, THE Practice_UI SHALL show it for the marked region (qroker-game Requirement 8.3; Open Question OQ-12).
+10. WHEN the active human Seat starts a Drag_Gesture on a card of that Seat's own Hand during the `PLACEMENT` turn of that Seat, THE Practice_UI SHALL run the gesture as follows (owner-directed update, see IC-11):
+    - a. WHILE the Drag_Gesture is active, THE Practice_UI SHALL highlight every legal empty target cell listed by `legalCellsFor(view)`.
+    - b. WHEN the Drag_Gesture ends over a legal empty cell, THE Practice_UI SHALL snap the preview to that exact cell, SHALL set the Placement_Draft to that cell and the dragged card (the orientation rule of Criterion 11 item a applies when the card differs from the previous draft card), and SHALL show the preview, the "Confirm placement" ("배치 확정") control and the "Cancel" ("취소") control, and the Rotation_Control where Criterion 12 applies.
+    - c. WHEN the Drag_Gesture ends, THE Practice_UI SHALL NOT send a `PLACE` Action, SHALL NOT remove the card from the real Hand, and SHALL NOT change a Score, draw a card or advance the turn.
+    - d. IF the Drag_Gesture ends outside the Board or over a cell that is not legal, THEN THE Practice_UI SHALL create no placement and SHALL NOT move the drop to a nearby legal cell (the message of Criterion 5 applies to a drop on a cell that is not legal).
+    - e. THE Practice_UI SHALL make no card draggable other than the cards of the active human Seat's own Hand.
+11. WHEN the human Seat selects a legal empty cell while the Placement_Draft holds no card, THE Practice_UI SHALL keep that cell selected as the draft target while the Seat chooses a Hand card, and SHALL create the preview at that target when the Seat selects a card:
+    - a. WHEN the Seat selects a different Hand card while a target is set, THE Practice_UI SHALL keep the target if the target is still legal in the latest PlayerView (and otherwise clear the target), and SHALL reset the draft orientation to 0°.
+    - b. WHEN the Seat selects a different legal target while a card is drafted, THE Practice_UI SHALL move the draft target to the new cell and SHALL keep the drafted card and the draft orientation.
+    - c. WHEN the Seat activates the "Cancel" control, THE Practice_UI SHALL clear the Placement_Draft without changing the Game_State.
+    - d. THE Practice_UI SHALL make the position-first path fully usable without a Drag_Gesture, including by keyboard alone.
+    - e. WHERE the Seat selects a Hand card before any target (card-first selection), THE Practice_UI SHALL accept the selection, SHALL highlight the legal cells, and SHALL apply Criterion 4 as soon as the Seat chooses a legal target; card-first selection is allowed and is not required.
+12. THE Practice_UI SHALL offer the Rotation_Control for the drafted card as follows:
+    - a. WHERE the drafted card has Meaningful_Rotation (a club or a spade), THE Practice_UI SHALL show the Rotation_Control with an accessible name.
+    - b. IF the drafted card does not have Meaningful_Rotation (a heart or a diamond), THEN THE Practice_UI SHALL show no Rotation_Control and SHALL keep the draft orientation at 0°.
+    - c. WHEN the Rotation_Control is activated, THE Practice_UI SHALL switch the draft orientation between 0° and 180° only, SHALL rotate only the preview of the Placement_Draft (a rotation, not a card flip), SHALL keep the draft target unchanged, and SHALL NOT select an orientation automatically.
+    - d. THE Practice_UI SHALL derive Meaningful_Rotation only from the identity of a card in the viewer's own Hand, delivered as safe metadata by the trusted controller, and SHALL show no Rotation_Control for the cards of other Seats or for committed Board cards.
+    - e. WHEN a Placement_Draft is confirmed, THE Practice_UI SHALL send the draft orientation as the orientation of the `PLACE` Action, while the Game_Engine, the AI_Player modules and the replay of stored Action_Logs SHALL keep the orientations 0 and 180 valid for every card (Requirement 3 Criterion 3; Requirement 4 Criterion 5).
+13. THE Practice_UI SHALL accept a placement target by grid snapping only, as follows:
+    - a. THE Practice_UI SHALL treat a cell as a legal target if and only if `legalCellsFor(view)` lists the cell as an Edge_Adjacent_Cell, so that a cell that shares two or more grid edges with placed cards is legal and a cell that touches placed cards only diagonally is not.
+    - b. THE Practice_UI SHALL snap every target to one of the 64 cells and SHALL NOT support free positions, overlaps, offsets or collision physics.
+    - c. THE Placement_Validator of the Game_Engine SHALL remain the final authority over legality, and THE Practice_UI SHALL NOT derive legality from CSS proximity or from pixel geometry.
+    - d. THE Practice_UI SHALL render the footprints of adjacent cells touching, with a gap of 0 CSS pixels between them, and SHALL draw borders, focus rings and selection indicators without changing the logical cell size.
+    - e. THE Practice_UI SHALL accept a legal target whether or not the placement completes a Composite_Code, and the draw rules of Requirement 6 SHALL apply unchanged.
+14. THE Practice_UI SHALL send the `PLACE` Action only when the "Confirm placement" control is activated, with the following safeguards:
+    - a. WHEN the confirm control is activated, THE Practice_UI SHALL validate the Placement_Draft against the latest PlayerView: the card is still in the viewer's Hand, it is still the `PLACEMENT` turn of that human Seat, and the target is still legal.
+    - b. IF the validation of item a fails, THEN THE Practice_UI SHALL send no Action, SHALL invalidate the Placement_Draft, and SHALL show a localized message.
+    - c. WHEN the confirm control is activated, THE Practice_UI SHALL send exactly one `PLACE` Action, and the duplicate-submission and stale-callback protections of the controller SHALL stay in force.
+    - d. WHEN the viewer, the phase or the game changes, or the drafted card leaves the viewer's Hand, or the game is restarted, abandoned or disposed, THE Practice_UI SHALL cancel any active Drag_Gesture and SHALL invalidate the Placement_Draft.
+    - e. WHEN the Escape key is pressed, THE Practice_UI SHALL cancel an active Drag_Gesture or, if no gesture is active, clear the Placement_Draft, without changing the Game_State.
+15. THE Practice_UI SHALL handle drag input from mouse and touch through Pointer Events, as follows:
+    - a. WHEN a pointer moves less than the movement threshold between press and release on a Hand card, THE Practice_UI SHALL treat the interaction as a tap that selects the card, and WHEN the pointer moves farther, THE Practice_UI SHALL treat the interaction as a Drag_Gesture.
+    - b. WHEN a Drag_Gesture ends, THE Practice_UI SHALL determine the target cell from the actual pointer coordinates at release, and SHALL NOT use the captured event target or the drag overlay as the target.
+    - c. IF the browser cancels the pointer or the pointer capture is lost during a Drag_Gesture, THEN THE Practice_UI SHALL cancel the gesture, create no placement, and send no Action.
+    - d. WHEN a Drag_Gesture has ended, THE Practice_UI SHALL suppress the click event that follows the gesture, so that the click selects neither a card nor a cell.
+    - e. THE Practice_UI SHALL keep scrolling and zooming of the page enabled and SHALL restrict touch-action handling to the draggable Hand cards (Requirement 17 Criterion 7).
+16. THE Practice_UI SHALL render the drag, draft and rotation features from PlayerView data and permitted UI metadata only, as follows:
+    - a. THE Practice_UI SHALL NOT use an identity hidden from the viewer to preview, highlight or announce that a placement completes a Composite_Code.
+    - b. THE Practice_UI SHALL NOT place an identity hidden from the viewer (suit, rank, CardId or fragment layout) in any label, tooltip, attribute, CSS class or drag payload.
+    - c. THE Practice_UI SHALL show no Rotation_Control on the cards of other Seats and none on committed Board cards.
+    - d. THE Practice_UI SHALL leave the Identity_Visibility rules (`OWNER_ONLY`, `FACE_UP`), the reveal rules, the scoring rules and the initial-state rules unchanged by the placement interaction.
 
 ---
 
@@ -343,6 +389,7 @@ Terms defined in qroker-game (Board, Card, Card_Value, Quad_Group, Composite_Cod
 4. THE Practice_UI SHALL perform every function by pointer events and keyboard events, and SHALL NOT require hover.
 5. THE Practice_UI SHALL include a viewport meta tag and SHALL define font sizes in relative units.
 6. THE team SHALL record a manual verification matrix of viewports and browsers in `docs/`, and the report SHALL state that no browser outside the matrix was tested.
+7. THE Practice_UI SHALL apply touch-action only to the draggable Hand cards and SHALL NOT apply touch-action to the page, so that scrolling and pinch zoom of the page remain available at every viewport size (Requirement 13 Criterion 15).
 
 ---
 
@@ -448,7 +495,7 @@ Each item has a provisional default that the design and tasks use. Changing a de
 
 ## Inconsistencies and Gaps Found in the Approved Documents
 
-None of these changes an approved rule. Each is resolved here by a provisional default.
+None of these changes an approved rule. Each is resolved here by a provisional default. IC-11 and IC-12 record an owner-directed update of this spec and its effect on earlier wording of this spec; they do not concern the approved qroker-game documents.
 
 - **IC-1**: qroker-game design `AIStrategy.selectPlacement(view, deck: CardId[])` passes the deck contents to the AI, which conflicts with qroker-game Requirement 7.4 and with information isolation. This spec passes only the Player_View.
 - **IC-2**: qroker-game design defines `CardId` as an object `{ suit, rank }` in Core Types but uses a `"suit-rank"` string in `DeckState`, `groupId` and the optical keys (`H-7`). This spec uses the string form.
@@ -460,3 +507,5 @@ None of these changes an approved rule. Each is resolved here by a provisional d
 - **IC-8**: qroker-game Requirement 11.4 says to "document the tiebreaking rule" while Requirement 3.9 says no separate tiebreak applies. This spec treats equal Guesses as equal scores and equal final Scores as shared ranks, and documents that no tiebreak exists.
 - **IC-9**: Requirement 2.7 reveals earned scores together with the Hidden_Sum. With a strictly decreasing reward table, an observer can infer the absolute error of each Seat, but not the sign. This is inherent in the approved text and is recorded here, not changed.
 - **IC-10**: qroker-game design `GamePhase` contains `INIT`, which no consumer can observe because `newGame` returns an already dealt state. This spec omits `INIT`.
+- **IC-11** (owner-directed update to this spec, not an inconsistency of the approved qroker-game documents): The owner updated the human card-placement interaction. The update supersedes the earlier wording of Requirement 13 Criteria 3 and 4, which required card-first selection (select a Hand card, then a cell) and an orientation toggle with the values 0° and 180° for every card. The new interaction has two input paths that produce one Placement_Draft (drag and drop of an own-Hand card, and position first, card second), a Rotation_Control only for cards with Meaningful_Rotation, edge-adjacent grid snapping, and confirmation as the only path that sends `PLACE` (Requirement 13 Criteria 3, 4 and 10 to 16; Requirement 17 Criterion 7). Card-first selection stays allowed but is not required. This update is recorded as owner-directed and is not claimed to be approved earlier. It does not resolve OQ-1, OQ-3 or OQ-10, and it leaves the Identity_Visibility, reveal, scoring and initial-state policies unchanged.
+- **IC-12**: The Rotation_Control is a human-input simplification. The Game_Engine, the `Orientation` type, the optical rules, the AI_Player actions, stored Games and replay logs keep orientation 180 valid for hearts and diamonds (Requirement 3 Criterion 3; Requirement 4 Criterion 5; Requirement 11 Criterion 2). A human Seat therefore never places a heart or diamond at 180°, while an AI_Player Seat may do so, and Requirement 13 Criteria 7 and 8 (orientation indicator on every visible or face-down card) still apply to cards placed by AI_Player Seats and to stored games.

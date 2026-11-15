@@ -29,6 +29,8 @@ This design implements `requirements.md` of this spec: the QRoker game engine an
 | D8 | A second `tsconfig.game.json` adds the DOM library for `ui/` and `pwa/`. The root `tsconfig.json` excludes those two folders. | Keeps `src/optical` type checking unchanged and keeps DOM types out of `core/` and `ai/` at compile time. | Add `DOM` to the root `lib` (affects optical). | none |
 | D9 | Hand-written `sw.js` plus `scripts/build-sw.ts` that injects the file list and a content hash after `vite build`. | No extra dependency, small, and fully testable. | Workbox or a Vite PWA plugin (dependency). | none |
 | D10 | Identity_Visibility is an engine option, default `OWNER_ONLY`. | Makes the Guess a real inference (OQ-1) while keeping the approved text valid in `FACE_UP`. | One fixed mode. | **User decision** (OQ-1) |
+| D11 | Human placement goes through one UI-only `PlacementDraft` that two input paths fill: drag and drop of an own-Hand card, and position first then card. Only the explicit confirm action dispatches `PLACE`. The human `Rotation_Control` is offered only when a 180° rotation changes the printed fragment corners (clubs and spades). | One draft, one validation and one confirmation keep the two paths equivalent and make "no state change before confirmation" a property of one module. Hearts and diamonds have the same corner set at 0° and 180° in `FRAGMENT_LAYOUT`, so a rotation control for them would change nothing. The engine, the `Orientation` type, the AI and replay logs are unchanged (IC-12). | Card-first selection with an orientation toggle on every card (the earlier wording of requirement 13.3 and 13.4). | **Owner-directed update** (IC-11); not claimed as approved earlier |
+| D12 | Drag input uses Pointer Events in one small module (`ui/pointer-gesture.ts`), with the drop cell found by hit-testing the pointer coordinates. No drag-and-drop dependency. | One code path for mouse, touch and pen, and a pure gesture state machine that is testable without a browser. | The HTML Drag and Drop API or a drag-and-drop library. Revisit only if a real-device check shows that Pointer Events are insufficient; adding a dependency then needs a user decision. | **Owner-directed update** (IC-11) |
 
 ---
 
@@ -52,7 +54,7 @@ src/game/
   i18n/            string tables and lookup
     index.ts  types.ts  strings/<area>.ts   (one file per UI area, each exports { en, ko })
   ui/              DOM layer (Vite root)
-    index.html  main.ts  dom.ts  store.ts  controller.ts
+    index.html  main.ts  dom.ts  store.ts  controller.ts  placement-draft.ts  pointer-gesture.ts
     components/  screens/  overlays/  styles/  public/ (manifest, icons, sw.js)  testing/
   README.md
 scripts/build-sw.ts   scripts/simulate.ts
@@ -89,6 +91,7 @@ graph TD
     CTRL --> AI
     CTRL --> PERS
     CTRL --> REP
+    CTRL --> FL
     PERS --> REP
     SIM --> ENG
     SIM --> AI
@@ -122,7 +125,8 @@ Rules enforced by the boundary test (task 1.3):
 | `ai/` | `core/types`, `core/cards`, `core/geometry`, `core/fragment-layout`, `core/board` (pure helpers), `core/score`, `core/prng`, `core/view` (types and `unseenCards`) | `core/state`, `core/engine`, `core/deck`, `core/replay`, `core/rules` internals; the `GameState` type; same bans as `core/` |
 | `sim/` | `core/`, `ai/` | DOM, `src/optical` |
 | `persistence/` | `core/replay`, `core/types` | DOM globals (storage is injected), `node:*`, `src/optical` |
-| `ui/`, `i18n/` | `core/view`, `core/engine` through `controller`, `core/types`, `ai/registry`, `persistence/` | `src/optical`, any network API |
+| `ui/` screen-class modules (every `ui/` file except `ui/controller.ts`, including `ui/placement-draft.ts` and `ui/pointer-gesture.ts`), `i18n/` | from `core/` only `core/view` and `core/types`; `i18n/`; `ui/` helpers | `core/engine`, `core/state`, `core/fragment-layout`, `ai/`, `src/optical`, any network API |
+| `ui/controller.ts` (the trusted module that owns the sealed `GameState`) | `core/view`, `core/engine`, `core/types`, `ai/registry`, `persistence/` and the other modules already allowed by task 16.2, plus **`core/fragment-layout`** (added by the owner-directed placement update, IC-11, solely to compute the rotation capability of the viewer's own Hand cards; see "Rotation capability metadata") | `core/deck`, `core/rules`, `src/optical`, any network API; the controller never hands `GameState` or `FRAGMENT_LAYOUT` to a screen |
 | test files | any, but only `core/fragment-layout.parity.test.ts` may import `src/optical` | |
 
 ### Game Phase State Machine
@@ -266,6 +270,10 @@ export const INWARD_CORNER: Readonly<Record<Slot, Corner>> = { TL: 'BR', TR: 'BL
 export function isValidMember(card: CardId, orientation: Orientation, slot: Slot): boolean;
 // = FRAGMENT_LAYOUT[suitOf(card)][orientation].includes(INWARD_CORNER[slot])
 export function validOrientations(card: CardId, slot: Slot): readonly Orientation[]; // used by AI and the schematic view
+export function rotationChangesCorners(card: CardId): boolean;
+// Additive export (owner-directed placement update, IC-11). True iff the corner SET of FRAGMENT_LAYOUT[suit][0]
+// differs from the corner set of FRAGMENT_LAYOUT[suit][180] (order-insensitive): C and S true, H and D false.
+// The table and every existing export stay unchanged. Consumed only by ui/controller.ts (see "Rotation capability metadata").
 ```
 
 The table is the one in the qroker-game design (Core Types and "Per-slot participation conditions"). A test-only parity file compares it with the corner sets of `src/optical/fragments.ts` (`visibleCorners`) for all 52 cards and both orientations.
@@ -592,7 +600,7 @@ export interface AppModel {
   game: { seed: number; state: GameState } | null;      // sealed state stays inside the controller; screens receive views
   humanSeat: PlayerId | null;                           // seat currently shown (null while a gate is shown)
   gate: { forSeat: PlayerId; reason: 'GUESS' | 'TURN' } | null;
-  placement: { card: CardId | null; orientation: Orientation; preview: GridPosition | null };
+  draft: PlacementDraft;                                // see "Placement interaction"; supersedes the earlier `placement` record and the `UiSelection` of task 16.2
   guessDraft: Record<QuadKey, string>;
   overlay: 'NONE' | 'HELP' | 'ABANDON_CONFIRM';
   notices: Notice[];                                    // offline, update available, storage unavailable, save discarded
@@ -609,7 +617,7 @@ export function mountApp(deps: AppDeps): { dispatch(e: UiEvent): void; destroy()
 Behavior:
 - Rendering: a function `render(model, views)` rebuilds the changed screen region from plain data using a small `h(tag, props, children)` helper. Focus is restored by a `data-focus-key` after each render. With 64 cells this needs no virtual DOM.
 - Controller: after every accepted Action it saves, then drains AI work: while the acting Seat is AI, it computes the Action from `viewFor` and applies it through `deps.schedule` with a presentation delay (`AI_DELAY_MS = 600`, at most 1000). Human Seats stop the loop.
-- Placement flow: select a Hand card → highlight `legalCellsFor(view)` → choose orientation (0°/180°) → tap a legal cell to preview → confirm. A tap on an illegal cell shows the Error_Code message from `validatePlacement` and changes nothing.
+- Placement flow (owner-directed update, IC-11; supersedes the earlier card-first flow with an orientation toggle for every card): two input paths fill one `PlacementDraft`. Path A, drag and drop: drag an own-Hand card onto a legal cell. Path B, position first: select a legal empty cell, keep it selected, then select a Hand card (card-first selection stays allowed, not required). Both paths show the preview, the `Rotation_Control` only for clubs and spades, "Confirm placement" ("배치 확정") and "Cancel" ("취소"), and only the confirm action sends `PLACE`. Legality comes from `legalCellsFor(view)`; the message for an illegal cell comes from the engine through `controller.explainTarget` (see "Placement interaction"). Nothing in the draft changes the `GameState`.
 - Gate flow (only when 2 or more human Seats): when the Seat to show changes from one human Seat to another, the DOM of the previous Seat's private area is removed, the gate is shown, and the next Seat's content is rendered only after "I am ready". AI Seats never need a gate because their information is never rendered.
 - Guess flow: AI Seats submit immediately in the controller. Each human Seat in seat order sees (gate) → one numeric input per code, labelled with the code's Quad_Key and a Board highlight → submit. No Hidden_Sum is on screen. After the last submission the reveal screen shows `lastReveal`.
 - Reveal screen: per code the 4 cards face up, the Hidden_Sum, and optionally the Schematic_Code_View; a table of earned and cumulative scores per Seat; a continue button that sends `ACK_REVEAL` (or moves to the final screen when `phase = ENDED`).
@@ -617,15 +625,189 @@ Behavior:
 - Banner: shown on every game screen while `rules.scoreConfig.provisional`.
 
 Accessibility and styling:
-- Board: `role="grid"` with `role="row"` and `role="gridcell"` wrappers, each cell a `<button>` with `aria-label` such as "D4, empty, legal placement" or "E5, card H-7, rotated 180 degrees, owner Player 1" (localized). Roving `tabindex` and arrow-key movement.
+- Board: `role="grid"` with `role="row"` and `role="gridcell"` wrappers, each cell a `<button>` with `aria-label` such as "D4, empty, legal placement" or "E5, card H-7, rotated 180 degrees, owner Player 1" (localized). Roving `tabindex` and arrow-key movement. The label adds the state "selected target" for the draft target, and carries no identity that is hidden from the viewer. Cell attributes and the board DOM contract for drag and drop are in "Placement interaction".
 - Live region: `aria-live="polite"` for turn changes, errors and reveal summary.
 - Tokens (`styles/tokens.css`): color custom properties with a contrast test; suits use glyph shapes as well as color; `@media (prefers-reduced-motion: reduce)` removes transitions.
 - Layout: CSS Grid. `--cell: clamp(24px, calc((100vw - 16px) / 8), 64px)`. At 320 px width the cell is 38 px, above the 24 px minimum; other controls have `min-height: 44px; min-width: 44px`. Portrait stacks Board, Hand, scoreboard; landscape (`@media (orientation: landscape) and (min-width: 600px)`) places Board left and Hand and scoreboard right. A viewport meta tag is in `index.html`. Fonts use `rem`.
+- Touching cells: the Board grid has `gap: 0`, cells and card footprints fill their grid cell with no margin, and borders, focus rings and selection indicators are drawn inside the cell box (`box-sizing: border-box`, `outline-offset` negative, or `box-shadow: inset`), so that they never change `--cell`. Adjacent card footprints touch (requirement 13.13 item d).
+- Touch handling: `touch-action: none` is set only on the draggable Hand card class (`.hand-card--draggable`), never on `html`, `body`, the Board or any container, so page scrolling and pinch zoom stay available (requirements 13.15 item e and 17.7).
 
 Build and run (decision D3):
 - `vite.config.ts`: `root: 'src/game/ui'`, `base: './'`, `build.outDir: '../../../dist'`, `build.target: 'es2022'`, `publicDir: 'public'`.
 - npm scripts: `dev` (`vite`), `build` (`tsc -p tsconfig.game.json --noEmit && vite build && tsx scripts/build-sw.ts`), `preview` (`vite preview`), `typecheck`, `typecheck:game`, `test:game`.
 - `dist/` is added to `.gitignore`.
+
+### Placement interaction (`ui/placement-draft.ts`, `ui/pointer-gesture.ts`, controller additions)
+
+Owner-directed update (IC-11, requirement 13 Criteria 3, 4 and 10 to 16, requirement 17 Criterion 7; decisions D11 and D12). It supersedes the earlier card-first flow and the orientation toggle for every card. It does not change the engine, `Orientation`, the optical rules, the AI actions, stored games or replay logs (IC-12), and it leaves OQ-1, OQ-3, the score policy and the reveal policy unchanged and unresolved.
+
+#### Placement_Draft model and state machine (`ui/placement-draft.ts`)
+
+The module is pure TypeScript. It imports only `core/types` and `core/view` (screen-class module, see the dependency table) and has no DOM access.
+
+```typescript
+export interface PlacementDraft {
+  readonly target: GridPosition | null;   // a cell that was legal when it was chosen
+  readonly card: CardId | null;           // always a card of the viewer's own Hand (myHand)
+  readonly orientation: Orientation;      // 0 | 180; 180 only for a card with rotationChangesCorners
+}
+export const EMPTY_DRAFT: PlacementDraft;                            // { target: null, card: null, orientation: 0 }
+export type DraftState = 'IDLE' | 'TARGET_SELECTED' | 'CARD_SELECTED' | 'PREVIEW';
+export function draftState(d: PlacementDraft): DraftState;          // derived: no card and no target -> IDLE; target only -> TARGET_SELECTED; card only -> CARD_SELECTED; both -> PREVIEW
+
+export type DraftEvent =
+  | { readonly type: 'selectTarget'; readonly cell: GridPosition }                 // click or Enter on a Board cell
+  | { readonly type: 'selectCard'; readonly card: CardId }                         // click or Enter on a Hand card
+  | { readonly type: 'dragStart'; readonly card: CardId }                          // gesture began; the draft does not change
+  | { readonly type: 'dropOnCell'; readonly cell: GridPosition; readonly card: CardId }
+  | { readonly type: 'dropOutside' }                                               // released outside the Board or on no cell
+  | { readonly type: 'dragCancel' }                                                // pointercancel, lost capture, Escape during a gesture
+  | { readonly type: 'toggleRotation' }
+  | { readonly type: 'cancel' }                                                    // "Cancel" control or Escape without a gesture
+  | { readonly type: 'invalidate'; readonly reason: 'VIEWER' | 'PHASE' | 'TURN' | 'GAME' | 'HAND' | 'RESTART' | 'ABANDON' | 'DISPOSE' };
+
+export type RotationInfoMap = Readonly<Partial<Record<CardId, { readonly rotationChangesCorners: boolean }>>>;   // keys: the viewer's own Hand CardIds only
+export interface DraftContext {
+  readonly legal: ReadonlySet<string>;      // 'row,col' keys of legalCellsFor(view), recomputed from the latest view for every event
+  readonly hand: readonly CardId[];         // view.myHand
+  readonly rotation: RotationInfoMap;
+}
+export type DraftNotice = 'TARGET_NOT_LEGAL' | 'CARD_NOT_IN_HAND';
+export interface DraftResult { readonly draft: PlacementDraft; readonly notice: DraftNotice | null }
+export function reduceDraft(d: PlacementDraft, e: DraftEvent, ctx: DraftContext): DraftResult;
+```
+
+`confirm` is not a reducer event, because it must produce an Action. The controller method `confirmPlacement` (below) validates the draft with `validateDraft` and dispatches; the accepted Action then resets the draft through `invalidate`.
+
+```mermaid
+stateDiagram-v2
+    [*] --> IDLE
+    IDLE --> TARGET_SELECTED : selectTarget (legal)
+    IDLE --> CARD_SELECTED : selectCard
+    IDLE --> PREVIEW : dropOnCell (legal)
+    TARGET_SELECTED --> TARGET_SELECTED : selectTarget (other legal cell)
+    TARGET_SELECTED --> PREVIEW : selectCard, dropOnCell (legal)
+    CARD_SELECTED --> CARD_SELECTED : selectCard (other card), toggleRotation
+    CARD_SELECTED --> PREVIEW : selectTarget (legal), dropOnCell (legal)
+    PREVIEW --> PREVIEW : selectTarget (other legal cell), dropOnCell (legal), toggleRotation
+    PREVIEW --> PREVIEW : selectCard (other card, target still legal)
+    PREVIEW --> CARD_SELECTED : selectCard (other card, target no longer legal)
+    TARGET_SELECTED --> IDLE : cancel, invalidate
+    CARD_SELECTED --> IDLE : cancel, invalidate
+    PREVIEW --> IDLE : cancel, invalidate, confirm accepted
+```
+
+Reducer rules. Every rule returns a new draft or the same object when nothing changes, and never mutates its input.
+
+| Event | Rule |
+|-------|------|
+| `selectCard(c)` | `c` not in `ctx.hand`: unchanged, notice `CARD_NOT_IN_HAND`. `c` equals `d.card`: unchanged. Otherwise `card = c`, `orientation = 0` (a new card always resets the rotation), `target` kept if `ctx.legal` still contains it and cleared otherwise. |
+| `selectTarget(cell)` | Not in `ctx.legal`: unchanged, notice `TARGET_NOT_LEGAL`. Otherwise `target = cell`; `card` and `orientation` are kept. |
+| `dragStart(c)` | Draft unchanged. The gesture itself lives in `pointer-gesture.ts`; this event exists so that tests can assert that a gesture alone creates no draft and no Action. |
+| `dropOnCell(cell, c)` | `c` not in `ctx.hand`: unchanged, notice `CARD_NOT_IN_HAND`. `cell` not in `ctx.legal`: unchanged (the earlier draft stays), notice `TARGET_NOT_LEGAL`; the drop is never moved to a nearby legal cell. Otherwise `target = cell` exactly, `card = c`, `orientation` kept when `c` equals `d.card` and `0` otherwise. |
+| `dropOutside`, `dragCancel` | Unchanged, no notice. |
+| `toggleRotation` | No card, or `ctx.rotation[card]` missing or `rotationChangesCorners` false: unchanged. Otherwise `orientation` switches between 0 and 180; `target` and `card` are kept. Never 90 or 270, never automatic. |
+| `cancel`, `invalidate` | `EMPTY_DRAFT`. |
+
+Invariants that hold after every event for a context built from one `PlayerView`: `card` is null or in `ctx.hand`; `target` is null or in `ctx.legal`; `orientation = 180` implies a non-null `card` with `rotationChangesCorners`. Path equivalence: for a card `c` and a legal cell `x` from `EMPTY_DRAFT`, `dropOnCell(x, c)`, `selectTarget(x)` then `selectCard(c)`, and `selectCard(c)` then `selectTarget(x)` all produce the same draft `{ target: x, card: c, orientation: 0 }`.
+
+Draft validation against the latest `PlayerView`:
+
+```typescript
+export type DraftIssue = 'NO_CARD' | 'NO_TARGET' | 'WRONG_PHASE' | 'NOT_VIEWER_TURN' | 'CARD_NOT_IN_HAND' | 'TARGET_NOT_LEGAL' | 'ROTATION_NOT_MEANINGFUL';
+export type DraftCheck =
+  | { readonly ok: true; readonly place: { readonly card: CardId; readonly pos: GridPosition; readonly orientation: Orientation } }
+  | { readonly ok: false; readonly issue: DraftIssue };
+export function validateDraft(d: PlacementDraft, view: PlayerView, rotation: RotationInfoMap): DraftCheck;
+// checks in this order: card and target present; view.phase === 'PLACEMENT'; view.turn === view.viewer;
+// d.card in view.myHand; d.target in legalCellsFor(view); orientation 180 only with rotationChangesCorners.
+```
+
+`validateDraft` is a fast guard that gives early, localized feedback. The engine `reduce` remains the final authority: an Action that passes the guard but is rejected by the engine returns its `ErrorCode` and leaves the state unchanged.
+
+#### Controller additions (`ui/controller.ts`)
+
+The controller keeps the draft in `AppModel.draft` and exposes these functions to screens through `RenderHandlers` (they replace the `select(patch)` function and the `UiSelection` model of task 16.2). Screens still receive no `GameState`.
+
+```typescript
+interface RenderHandlers {
+  readonly draftEvent: (e: DraftEvent) => DraftResult;     // reduceDraft against the latest view; stores model.draft; may return a notice
+  readonly confirmPlacement: () => OpResult;               // the ONLY function that dispatches PLACE for a human Seat
+  readonly explainTarget: (cell: GridPosition) => ErrorCode | null;   // message code for a cell that is not legal; never decides legality
+  // existing: dispatch, startGame, restart, abandon, setLanguage
+}
+interface RenderInput { /* existing fields */ readonly rotationInfo: RotationInfoMap }   // for model.viewer only
+export type OpResult = /* existing */ | { readonly ok: false; readonly reason: 'DRAFT_INVALID'; readonly issue: DraftIssue };
+```
+
+- `confirmPlacement()` takes no argument, so a stale screen closure cannot carry an old draft. It runs in the controller's existing re-entrancy and epoch protection: it returns `DISPOSED` or `BUSY` as `dispatchHuman` does; it reads `model.draft` and `viewFor(state, viewer)`; it calls `validateDraft`; on failure it sends nothing, resets the draft, and stores the localized message (`CARD_NOT_IN_HAND`, `NOT_YOUR_TURN`, `WRONG_PHASE`, or the code from `explainTarget` for `TARGET_NOT_LEGAL`); on success it dispatches exactly one `PLACE` Action through the same path as `dispatchHuman` (save, AI drain, epoch check). A second activation finds `EMPTY_DRAFT` (`NO_CARD`) and sends nothing.
+- `explainTarget(cell)` returns the `ErrorCode` that the engine gives for a `PLACE` at `cell` by calling `reduce` on the current state with a probe Action (the viewer's first Hand card, orientation 0) and discarding the result. `reduce` does not mutate its input (requirement 12.1), so the probe has no effect. The code is geometry only (`OUT_OF_BOUNDS`, `OCCUPIED`, `NOT_ADJACENT`) and reveals nothing hidden. It supplies the message text of requirement 13.5. Legality in the UI is always decided by `legalCellsFor(view)`; the controller adds no import of `core/board` for this purpose.
+- Invalidation: the controller sets `draft = EMPTY_DRAFT` when `viewer`, `screen`, the game epoch, `actionCount` or the phase changes, when `view.turn` is no longer the viewer, when the drafted card is no longer in `view.myHand`, and on `startGame`, `restart`, `abandon` and `dispose`. The render host cancels an active gesture at the same moments (`gesture.cancel('INVALIDATED')`).
+
+#### Rotation capability metadata
+
+```typescript
+// ui/controller.ts, the only ui/ module that imports core/fragment-layout
+function rotationInfoFor(view: PlayerView): RotationInfoMap;
+// for each card of view.myHand only: { rotationChangesCorners: rotationChangesCorners(card) }
+// exposed as RenderInput.rotationInfo (and Controller.rotationInfo()); the record has no key for any other card
+```
+
+`rotationChangesCorners(card)` is the canonical helper of `core/fragment-layout.ts`: true for clubs and spades, false for hearts and diamonds, because only `C` and `S` have different corner sets at 0° and 180° in `FRAGMENT_LAYOUT`. It is computed only from the identity of the viewer's own Hand cards, which the viewer already sees. Screens receive booleans, never `FRAGMENT_LAYOUT`, never a corner set and never a suit. Rationale for the additive export in `core/` rather than a controller-local copy: one definition next to the table, covered by the existing parity test of the table. The only change to the boundary rules is that `ui/controller.ts` may import `core/fragment-layout`; screen-class modules stay limited to `core/view` and `core/types`.
+
+#### Pointer gesture module (`ui/pointer-gesture.ts`)
+
+Two layers: a pure state machine that unit tests drive without a DOM, and a thin DOM adapter. Imports: `core/types` only.
+
+```typescript
+export const DRAG_THRESHOLD_PX = 8;                       // named, provisional; confirmed or changed by real-device checks
+export type GestureState = { kind: 'IDLE' } | { kind: 'PRESSED'; pointerId: number; x0: number; y0: number }
+                         | { kind: 'DRAGGING'; pointerId: number };
+export type GestureInput =
+  | { type: 'down'; pointerId: number; isPrimary: boolean; button: number; x: number; y: number }
+  | { type: 'move' | 'up'; pointerId: number; x: number; y: number }
+  | { type: 'cancel' | 'lostcapture'; pointerId: number }
+  | { type: 'escape' } | { type: 'invalidate' };
+export type GestureOutput =
+  | { type: 'dragStart' } | { type: 'dragMove'; x: number; y: number } | { type: 'drop'; x: number; y: number }   // drop: x, y of the pointer at release
+  | { type: 'cancelled'; reason: 'POINTERCANCEL' | 'LOST_CAPTURE' | 'ESCAPE' | 'INVALIDATED' }
+  | { type: 'suppressNextClick' };
+export function stepGesture(s: GestureState, i: GestureInput, threshold?: number): { state: GestureState; out: readonly GestureOutput[] };
+
+export interface HitTestHost { elementFromPoint(x: number, y: number): Element | null }   // production: document; tests: a stub
+export function cellFromPoint(host: HitTestHost, x: number, y: number): GridPosition | null;
+export function attachHandGestures(container: HTMLElement, opts: {
+  host: HitTestHost; enabled: () => boolean; cardAt: (el: Element) => CardId | null;
+  onDragStart(card: CardId, x: number, y: number): void; onDragMove(x: number, y: number, over: GridPosition | null): void;
+  onDrop(card: CardId, over: GridPosition | null): void; onCancel(reason: string): void;
+}): { cancel(reason: 'INVALIDATED'): void; detach(): void };
+```
+
+Rules:
+- Only a primary pointer starts a gesture (mouse button 0, any primary touch or pen contact); a second pointer is ignored. `enabled()` is false during an AI turn, behind a gate, and when the pressed card is not in the viewer's own Hand, and then `down` is ignored.
+- `down` moves to `PRESSED` and captures the pointer. A `move` that goes farther than `DRAG_THRESHOLD_PX` from the press point (Euclidean distance) moves to `DRAGGING` and emits `dragStart`; smaller movement stays `PRESSED`. `up` in `PRESSED` emits nothing: the browser `click` then handles the tap (`selectCard`), which also covers keyboard activation.
+- `up` in `DRAGGING` emits `drop` with the pointer coordinates of that `up` event and `suppressNextClick`. The adapter then calls `cellFromPoint(host, x, y)`: `host.elementFromPoint(x, y)`, then `closest('[data-row][data-col]')`, with both integers parsed and checked to be in 0 to 7. An element inside `[data-drag-overlay]` is treated as no cell. The adapter never reads `event.target` or `event.currentTarget` to find the cell, so neither a captured target nor the drag overlay can decide the drop. `null` becomes `dropOutside`; a cell becomes `dropOnCell`.
+- `cancel` (pointercancel) and `lostcapture` before `up`, `escape` and `invalidate` while `PRESSED` or `DRAGGING` emit `cancelled`, return to `IDLE`, and produce no `drop`. A re-render that removes the pressed element ends the gesture through `lostcapture`, so nothing is placed. `lostpointercapture` after a normal `up` is ignored.
+- Click suppression: after `suppressNextClick` the adapter registers one capture-phase `click` listener on `document` that calls `preventDefault` and `stopPropagation` once and removes itself. A fallback removal runs on the next scheduled task, so a missed click cannot swallow a later real click.
+- The Escape key listener is on `document`, active only while a gesture is active; Escape with no gesture clears the draft through `draftEvent({ type: 'cancel' })` in the game screen.
+- No `preventDefault` on `pointerdown`, `pointermove` or `wheel` for the page. `touch-action: none` and `user-select: none` apply to `.hand-card--draggable` only. The drag overlay follows the pointer with `position: fixed`, `pointer-events: none`, `aria-hidden="true"`, and is added only during a gesture.
+- No drag-and-drop library and no HTML Drag and Drop API (D12).
+
+#### Board and Hand DOM contract
+
+| Element | Required | Forbidden |
+|---------|----------|-----------|
+| Cell (`<button>` in `role="gridcell"`) | `data-row` and `data-col` as integers 0 to 7; localized `aria-label` with notation and state, including "selected target"; state classes `board-cell--legal`, `board-cell--target`, `board-cell--drop-ok`, `board-cell--occupied` | CardId, suit, rank, fragment corners or layout in any attribute, class or `title`; a hidden card's identity anywhere |
+| Preview ghost | A child of the target cell element (so the preview snaps to the exact cell by construction, not by pixel position); `aria-hidden="true"`; renders the face of the viewer's own drafted card | Any pixel-based `top` or `left` positioning |
+| Hand card (`<button>`) | Class `hand-card hand-card--draggable` while draggable; `data-hand-index`; accessible name with rank and suit of the viewer's own card | `data-card` or a CardId in an attribute (defense in depth; the adapter maps the index to the card through the view); the Hand of any other Seat |
+| Drag overlay | `data-drag-overlay`, `pointer-events: none`, `aria-hidden="true"`, removed when the gesture ends | A drag payload that carries an identity (no `DataTransfer` is used) |
+| Placement controls | "Confirm placement" ("배치 확정"), "Cancel" ("취소"), and "180° rotation" ("180° 회전", a button with `aria-pressed` for the rotated state) only while the drafted card has `rotationChangesCorners`; each at least 44×44 CSS pixels | A rotation control on a committed Board card or on another Seat's card |
+
+Strings (English / Korean) live in `i18n/strings/hand.ts` and `i18n/strings/board.ts`: confirm "Confirm placement" / "배치 확정", cancel "Cancel" / "취소", rotation "180° rotation" / "180° 회전", plus localized live-region messages for preview created, rotation changed, draft cancelled and drop rejected. None of them names a hidden card.
+
+Keyboard path (no drag needed): Tab to a Hand card and press Enter or Space (`selectCard`); arrow keys move the Board focus and Enter or Space on a legal cell sets the target (`selectTarget`); in either order the preview appears when both are set; Tab to the rotation control when offered, then to "Confirm placement" or "Cancel"; Escape clears the draft.
+
+Residual risk: the pure layers (`reduceDraft`, `validateDraft`, `stepGesture`, `rotationInfoFor`) are verifiable in Node. Pointer capture, `elementFromPoint` against a real layout, click suppression order and browser touch behavior are verified only by the manual real-device checks (Testing Strategy, evidence classes). This design makes no claim about them before those checks are recorded.
 
 ### PWA (`ui/public/`, `scripts/build-sw.ts`, `ui/pwa-register.ts`)
 
@@ -908,7 +1090,8 @@ The Korean strings for the last 12 rows are new texts proposed by this design; t
 
 | Situation | Handling |
 |-----------|----------|
-| Illegal cell tapped | Message for the Error_Code from `validatePlacement`, shown in the live region and next to the Board. No state change. |
+| Illegal cell tapped, selected by keyboard, or used as a drop target | Message for the Error_Code from `controller.explainTarget` (the engine's `OUT_OF_BOUNDS`, `OCCUPIED` or `NOT_ADJACENT`), shown in the live region and next to the Board. The draft is unchanged and no state changes. A drop outside the Board shows no message and changes nothing. |
+| Confirm with a stale or incomplete draft | `validateDraft` fails (card left the Hand, turn or phase changed, target no longer legal, no card or no target): no Action is sent, the draft is reset, and a localized message is shown. |
 | Invalid Guess text | Inline message for `GUESS_NOT_INTEGER` or `GUESS_OUT_OF_RANGE`; the submit button stays disabled until the value is valid. |
 | Save incompatible or corrupt | Notice "saved game cannot be continued", the save is removed, the setup screen opens. |
 | `localStorage` unavailable or full | Persistent notice "cannot save", the game continues from memory. |
@@ -933,6 +1116,7 @@ Saves are replay logs (Requirement 18). A replay rejection or a version mismatch
 - Property tests (`fast-check`) cover the 30 properties above. Each property is one test, runs at least 100 iterations (`fc.assert(..., { numRuns: 100 })` or more), and has the comment `// Feature: qroker-playable-game, Property N: <property text>`.
 - Example and unit tests cover specific scenarios, rejection cases, tables, DOM behavior and documents.
 - Library: `fast-check` (already a devDependency). No property-testing code is written from scratch.
+- Placement interaction (IC-11): no new numbered Property is added; the 30 properties above are unchanged. The draft reducer, `validateDraft`, `stepGesture` and `rotationInfoFor` are pure and covered by example-based tests (below). Adjacency legality is already covered by Properties 6 and 8, because `legalCellsFor(view)` lists the cells that `validatePlacement` accepts.
 
 ### Generators (`src/game/core/testing/`, test support only: `card-generators.ts`, `board-generators.ts`, `state-generators.ts`, `perturb.ts`)
 
@@ -952,12 +1136,19 @@ Saves are replay logs (Requirement 18). A replay rejection or a version mismatch
 - Reducer scenarios: a first placement that completes a code (no draw, guess phase), a non-first placement without a code (draw), a placement with two codes (one batch with two Quad_Keys), a placement that empties the Hand with a code (reveal then `ENDED` with bonus), deck exhaustion.
 - Score fixtures: table boundaries e = length − 1, length, length + 1.
 - AI: registry has 3 ids, each with Korean and English labels; Work_Budget constants exist; recorded decision times per tier (fail above 3000 ms).
-- Boundary and scan tests (task 1.3): imports and banned globals, score-constant scan, network API scan.
+- Boundary and scan tests (task 1.3): imports and banned globals, score-constant scan, network API scan. Extended by task 17.4: `ui/controller.ts` may import `core/fragment-layout`, every other `ui/` file may not; a fixture shows that a screen-class file importing `core/fragment-layout` fails.
+- Placement draft (model tests, node environment, task 17.4): path equivalence (`dropOnCell`, position-first and card-first give the same draft from `EMPTY_DRAFT`); an event sequence of `dragStart`, `dragCancel`, `dropOutside` and an illegal `dropOnCell` leaves the draft unchanged and never creates a draft target; `selectCard` of a different card keeps a still-legal target and resets the orientation to 0; a new target keeps the card; `cancel` and every `invalidate` reason give `EMPTY_DRAFT`; the invariants (card in Hand, target legal, 180 only with `rotationChangesCorners`) hold after each event of a scripted sequence.
+- Rotation capability (model tests): `rotationChangesCorners` is true for every club and spade and false for every heart and diamond (52 cards, derived from `FRAGMENT_LAYOUT`, and equal to the corner-set comparison of the parity test data); `rotationInfoFor` returns exactly the keys of `myHand`, never a key for another Seat's or a Board card; switching the draft from a rotated club or spade to a heart or diamond gives orientation 0 and no rotation control.
+- Edge adjacency (model tests): with `legalCellsFor(view)` on fixed boards, an orthogonally adjacent empty cell is legal, a diagonal-only cell and an isolated cell are not, a cell that shares two or more edges is legal, an occupied cell and a cell outside the grid are not.
+- `validateDraft` (model tests): one case per `DraftIssue`; a draft whose card left the Hand, whose turn passed, whose phase changed or whose target became occupied is rejected without an Action.
+- Pointer gestures (model tests on `stepGesture`): movement at or below the threshold stays a tap (no `dragStart`, no click suppression); movement above it starts a drag; `up` after a drag emits `drop` and `suppressNextClick`; `cancel`, `lostcapture`, `escape` and `invalidate` emit `cancelled` and never `drop`; a second pointer is ignored.
 
 ### Integration and End-to-End Tests
 
 - Headless E2E (task 13.2): `playGame` for a configurable range of Seeds (default 200) and several strategy mixes; asserts Properties 13, 21 and 26 on every game. The range is configurable so the CI run time can be tuned after measuring; this design makes no run-time claim.
 - UI smoke tests (tasks 21.2, 21.3) in `happy-dom`: mount the app with a memory store and an immediate scheduler; play a complete game from the setup screen to the final ranking by dispatching DOM events; with 2 human Seats verify that the Pass_Device_Gate appears and that no private content is in the DOM while it is shown; switch language; trigger one placement error and one Guess error; reload (re-mount) mid-game and continue from the save; corrupt the save and verify the notice.
+- Placement interaction in `happy-dom` (fake-DOM tests, written in task 21.3 because `happy-dom` arrives with task 21.1; tasks 17.3 and 17.4 provide the DOM-free model and controller tests): synthetic pointer events with a stubbed `elementFromPoint` check that the drop cell comes from the pointer coordinates and not from the event target (a `pointerup` whose target is the pressed card but whose coordinates fall on a cell), that the drag overlay is never the drop cell, that the click after a drag is suppressed and a later genuine click is not, that only own-Hand cards start a gesture, that no `PLACE` is dispatched by a drop, a cancelled pointer, Escape or an invalid drop, that exactly one `PLACE` is dispatched by "Confirm placement" (also on a double activation), that a stale draft (card gone, turn passed, viewer changed, restart, dispose) cannot place, and that no CardId, suit, rank or fragment layout of a hidden card appears in any attribute, class, `aria-label`, `title` or drag-overlay text of the rendered DOM. Keyboard-only play uses the position-first path and covers the rotation control, "Confirm placement" and Escape.
+- Evidence classes. Each result is reported under exactly one class and never as a stronger class: (1) model tests, pure functions in Node; (2) fake-DOM tests, `happy-dom` with synthetic events and a stubbed hit test, which do not model real layout, touch or capture behavior; (3) emulated touch, browser DevTools or Playwright touch emulation, optional and deferred (OQ-11); (4) real-device checks, recorded manually. Only class 4 may support a statement about physical touch behavior.
 - Persistence tests use `memoryStore` and a throwing store.
 - Service Worker logic tests run `sw.js` source in a stubbed scope (mock `caches`, `self`, `clients`) to check install, activate cleanup and the absence of automatic `skipWaiting`.
 
@@ -966,6 +1157,7 @@ Saves are replay logs (Requirement 18). A replay rejection or a version mismatch
 - Browser matrix: latest 2 versions of Chrome, Firefox and Safari, desktop and mobile where available.
 - Responsive matrix: 320×568, 360×640, 390×844 portrait; 844×390 landscape; 1280×800 desktop.
 - Offline check: load once online, switch the browser to offline, reload, play; then deploy a changed build and check the update notice.
+- Touch drag check (class 4 evidence, where a physical touch device is available): drag an own-Hand card onto a legal cell and onto an illegal cell, release outside the Board, start a drag and let the system cancel it (for example by a scroll or an incoming system gesture), tap a Hand card without dragging, scroll and pinch-zoom the page outside the Hand cards, and confirm that no `PLACE` is sent before "Confirm placement". Record device, browser and version, date, and the result of each step in `docs/responsive-checklist.md`. Emulated results are labelled as such and are not real-device results.
 - Results go to `docs/responsive-checklist.md` and `docs/offline-checklist.md` with the date and the browser versions tested. Playwright (real browser automation) is a deferred option (OQ-11).
 
 ### Commands
@@ -983,4 +1175,4 @@ Saves are replay logs (Requirement 18). A replay rejection or a version mismatch
 
 ### What Is Not Claimed
 
-This design makes no claim about score balance, strategic soundness (qroker-game Requirement 11.1 and 11.2 are deferred to P3), AI strength ordering, performance, real-device layout, real-browser offline behavior or any optical or camera behavior. Each is either measured and recorded later or left to the manual checklists.
+This design makes no claim about score balance, strategic soundness (qroker-game Requirement 11.1 and 11.2 are deferred to P3), AI strength ordering, performance, real-device layout, real-browser offline behavior, real-device touch and drag behavior (the value of `DRAG_THRESHOLD_PX` is a provisional constant until the touch drag check is recorded) or any optical or camera behavior. Each is either measured and recorded later or left to the manual checklists.

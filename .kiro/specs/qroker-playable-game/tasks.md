@@ -328,24 +328,43 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - _Requirements: 10.1, 11.6, 12.1_
 
 - [ ] 17. Board, card faces and placement interaction
+  - Owner-directed update (IC-11, not claimed as approved earlier): the human placement interaction is a `PlacementDraft` filled by drag and drop of an own-Hand card or by position first then card, with a `Rotation_Control` only for clubs and spades, edge-adjacent grid snapping, and confirm as the only path that sends `PLACE`. It supersedes the card-first flow and the orientation toggle for every card in the earlier text of 17.2 and 17.3. Task 17.4 is appended without renumbering; implement it before or together with 17.3. See design.md "Placement interaction".
   - [ ] 17.1 Card face component (`ui/components/card-face.ts`, `ui/styles/tokens.css`, `ui/styles/card.css`)
     - Render face-up cards as rank plus suit glyph with a shape cue per suit and a 180° indicator, and face-down cards with owner and orientation only. Define the color tokens used everywhere. Mobile-first sizing with a `--cell` custom property.
-    - Acceptance: a face-down card has no rank or suit text in its DOM subtree; every card has an accessible name.
-    - Tests: component unit tests in `happy-dom` (environment docblock) after task 21.1; until then the tests run in the controller-free node environment by testing a pure `cardFaceModel` function.
+    - The same face component renders the draft preview ghost and the drag overlay, for the viewer's own cards only. The 180° indicator is a visual orientation mark and never a control.
+    - Acceptance: a face-down card has no rank or suit text in its DOM subtree; every card has an accessible name; the DOM of a face-down card, including attributes, classes and `title`, contains no rank, suit, CardId or fragment layout; a visible card puts its identity only in its text and accessible name, never in `data-*` attributes or class names.
+    - Tests: component unit tests in `happy-dom` (environment docblock) after task 21.1; until then the tests run in the controller-free node environment by testing a pure `cardFaceModel` function. The model test serializes the model of every hidden card and asserts that no rank, suit or CardId string appears in it (model-test evidence).
     - Depends on: 16.2.
-    - _Requirements: 13.7, 13.8, 16.7_
+    - _Requirements: 13.7, 13.8, 13.16, 16.7_
   - [ ] 17.2 Board component (`ui/components/board.ts`, `ui/styles/board.css`, `i18n/strings/board.ts`)
-    - 8×8 grid with `role="grid"`, 64 `<button>` cells, labels A–H and 1–8, legal-cell highlight, preview ghost, arrow-key roving focus, accessible names (notation, state, owner), highlight of pending-code regions.
-    - Acceptance: 64 buttons; arrow keys move focus within the grid; legal cells carry a visible marker that does not rely on color alone.
-    - Tests: board model unit tests (pure functions for names and highlights); DOM tests join in task 21.3.
+    - 8×8 grid with `role="grid"`, 64 `<button>` cells, labels A–H and 1–8, arrow-key roving focus, accessible names (notation, state including "selected target", owner), highlight of pending-code regions. For the placement interaction: legal-target highlighting from `legalCellsFor(view)` while a card, a target or a drag is active; drop targets (each cell carries `data-row` and `data-col`, integers 0 to 7, and no identity in any attribute, class or `title`); the preview ghost as a child of the target cell (snapped by construction); touching cells in `board.css` (`gap: 0`, no cell or card margin, borders, focus rings and selection indicators drawn inside the cell box so that `--cell` never changes).
+    - Acceptance: 64 buttons; arrow keys move focus within the grid; legal cells carry a visible marker that does not rely on color alone; legal cells equal `legalCellsFor(view)` (a diagonal-only or isolated cell is not marked, a multi-edge cell is); the target cell and the ghost are marked without a color-only cue; the board root has no gap between neighboring cells and no style rule changes the cell size for borders or selection.
+    - Tests: board model unit tests (pure functions for names, highlights and the legal/target/drop classes, including adjacency cases on fixed boards, and a serialized-model scan for hidden identities); a CSS scan test that `board.css` sets `gap: 0` and has no margin on cell or card classes; DOM tests join in task 21.3 (fake-DOM evidence).
     - Depends on: 17.1.
-    - _Requirements: 13.1, 13.3, 13.9, 16.6, 16.7, 17.2_
+    - _Requirements: 13.1, 13.3, 13.9, 13.10, 13.13, 13.16, 16.6, 16.7, 17.2_
   - [ ] 17.3 Hand and placement controls (`ui/components/hand.ts`, `ui/components/placement-controls.ts`, `i18n/strings/hand.ts`)
-    - Hand of the active human Seat only, orientation toggle (0°/180°), preview then confirm flow, error message display for illegal cells, disabled state with AI status text while an AI Seat acts.
-    - Acceptance: the confirm button is the only path that sends `PLACE`; controls are at least 44 px tall in CSS.
-    - Tests: placement-state reducer unit tests (select, toggle, preview, confirm, cancel).
+    - Hand of the active human Seat only, as the drag source (`.hand-card--draggable`, `touch-action: none` on these cards only) and as keyboard-selectable buttons; the draft preview with "Confirm placement" ("배치 확정") and "Cancel" ("취소"); the "180° rotation" ("180° 회전") control shown only while the drafted card has `rotationChangesCorners` (from `RenderInput.rotationInfo`); error message display for illegal cells and illegal drops through `explainTarget`; disabled state with AI status text while an AI Seat acts. The components use the model, gesture module and controller functions of task 17.4 and call only `draftEvent`, `confirmPlacement` and `explainTarget`.
+    - Acceptance: the confirm control is the only path that sends `PLACE` (it calls `confirmPlacement()`); a drop, a tap, a rotation, a cancel and Escape send no Action; the rotation control is absent for hearts, diamonds, other Seats' cards and committed cards; Cancel and Escape clear the draft without a state change; the position-first path works with keyboard only; all placement controls and Hand cards are at least 44×44 px in CSS; no Hand card of another Seat is rendered.
+    - Tests: component model tests for control visibility and disabled states (which controls exist for a club, a spade, a heart, a diamond, no card, an AI turn); the draft reducer tests of task 17.4 replace the earlier placement-state reducer tests; DOM and drag tests are the fake-DOM tests of task 21.3.
     - Depends on: 17.1.
-    - _Requirements: 13.2, 13.3, 13.4, 13.5, 13.6, 17.2_
+    - Ordering note (no renumbering, no new dependency edge): 17.4 provides `ui/placement-draft.ts`, `ui/pointer-gesture.ts` and the controller functions that 17.3 consumes. Run 17.4 before 17.3, or implement both in one session; the dependency graph places 17.3 in the wave after 17.4.
+    - _Requirements: 13.2, 13.3, 13.4, 13.5, 13.6, 13.10, 13.11, 13.12, 13.14, 13.16, 17.2, 17.7_
+  - [ ] 17.4 Placement draft model, rotation capability and pointer gestures (`ui/placement-draft.ts`, `ui/pointer-gesture.ts`, `ui/controller.ts`, `core/fragment-layout.ts`, `src/game/boundaries.test.ts`)
+    - Implement design.md "Placement interaction": `PlacementDraft`, `DraftEvent`, the pure `reduceDraft`, `validateDraft` and `draftState` in `ui/placement-draft.ts` (imports `core/types` and `core/view` only); `stepGesture`, `cellFromPoint`, `attachHandGestures` and `DRAG_THRESHOLD_PX` in `ui/pointer-gesture.ts` (imports `core/types` only, no drag-and-drop dependency); in `ui/controller.ts` the functions `draftEvent`, `confirmPlacement`, `explainTarget` and `rotationInfo` (also `RenderInput.rotationInfo`), the `AppModel.draft` field with its invalidation rules (viewer, screen, epoch, `actionCount`, phase, turn, Hand, restart, abandon, dispose), keeping the re-entrancy, epoch and stale-callback protections of 16.2; in `core/fragment-layout.ts` the additive pure export `rotationChangesCorners(card)` (table and existing exports unchanged); in `boundaries.test.ts` the allow-list change that lets `ui/controller.ts` import `core/fragment-layout` and keeps every other `ui/` file limited to `core/view` and `core/types`. The `UiSelection` and `select(patch)` of 16.2 are superseded by `AppModel.draft` and `draftEvent`; update their users and tests in this task.
+    - Acceptance (ten focused tests). Evidence class in brackets: model = pure functions or the DOM-free controller with a stub renderer in Node; fake-DOM = `happy-dom` with synthetic events, written in task 21.3 because `happy-dom` arrives with 21.1.
+      1. Drag and drop and position-first produce equivalent drafts: `dropOnCell(x, c)`, `selectTarget(x)` then `selectCard(c)`, and `selectCard(c)` then `selectTarget(x)` all give `{ target: x, card: c, orientation: 0 }` [model].
+      2. No game-state change before confirmation: after any sequence of draft events and gesture outputs the controller's state, `log` and view are unchanged and no `PLACE` is dispatched (Hand, deck, Scores, turn and `actionCount` equal their values before the sequence) [model; fake-DOM variant in 21.3].
+      3. Rotation availability: `rotationChangesCorners` is true for all clubs and spades and false for all hearts and diamonds; `toggleRotation` switches only between 0 and 180 for a club or spade and is a no-op for a heart or diamond; the control is offered only for the former; the target is unchanged by a toggle [model; control visibility in 17.3 tests].
+      4. Switching a rotated club or spade draft to a heart or diamond (and to any different card) resets the orientation to 0, and a still-legal target is kept [model].
+      5. Edge adjacency through `legalCellsFor(view)` on fixed boards: an orthogonally adjacent empty cell passes; a diagonal-only cell and an isolated cell fail; a cell that shares two or more edges passes; an occupied cell and an out-of-grid cell fail; the engine rejects an Action for any cell that is not legal [model].
+      6. Invalid drops, pointer cancellation and Escape never dispatch `PLACE`: `dropOutside`, `dropOnCell` on an illegal cell, `dragCancel`, `cancelled` outputs for `POINTERCANCEL`, `LOST_CAPTURE`, `ESCAPE` and `INVALIDATED`, and `cancel` leave the draft as specified and call no dispatch [model with `stepGesture`; adapter behavior in fake-DOM, 21.3].
+      7. Confirmation dispatches exactly one Action: `confirmPlacement()` after a valid draft dispatches one `PLACE` with the draft card, target and orientation; a second call, a double activation and a call during an in-progress application send nothing (`NO_CARD` or `BUSY`) [model, DOM-free controller test].
+      8. Stale selections and drag-generated clicks cannot place: a draft whose card left the Hand, whose turn or phase changed, whose target became occupied, or that survived a viewer change, restart, abandon or dispose is rejected by `confirmPlacement` with no Action; the click that follows a drag is suppressed and a later genuine click is not [model for the draft and controller; click suppression in `stepGesture` outputs and fake-DOM, 21.3].
+      9. Hidden information is absent from rendered and accessibility data: the serialized board model, hand model, `aria-label` and live-region strings, drag overlay model and `rotationInfo` contain no suit, rank, CardId or fragment layout of a hidden card; `rotationInfo` has keys for the viewer's own Hand only [model scan; DOM attribute, class, `title` and `aria-label` scan in fake-DOM, 21.3].
+      10. Evidence classes are distinguished: every test file and the task notes label each result as model, fake-DOM, emulated touch or real-device; the notes state that real-device touch behavior is not verified by classes 1 to 3 and that `DRAG_THRESHOLD_PX` stays provisional until a real-device result is recorded in `docs/responsive-checklist.md`.
+    - Tests: `ui/placement-draft.test.ts`, `ui/pointer-gesture.test.ts` (pure `stepGesture` and `cellFromPoint` with a stub `HitTestHost`), `ui/controller.test.ts` (extended), `core/fragment-layout.test.ts` (extended with the 52-card `rotationChangesCorners` table), `src/game/boundaries.test.ts` (extended, with a fixture that fails a screen-class file importing `core/fragment-layout`). No new numbered Property; the 30 design properties are unchanged.
+    - Depends on: 17.1, 16.2. Must precede, or be implemented together with, 17.3 (see the ordering note of 17.3).
+    - _Requirements: 13.3, 13.4, 13.5, 13.10, 13.11, 13.12, 13.13, 13.14, 13.15, 13.16, 4.2, 4.5, 17.7_
 
 - [ ] 18. Guess entry, privacy gate, reveal and scoreboard
   - [ ] 18.1 Pass_Device_Gate and Guess entry (`ui/screens/privacy-gate.ts`, `ui/screens/guess-entry.ts`, `i18n/strings/guess.ts`)
@@ -599,6 +618,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
 - The approved documents contain gaps and inconsistencies IC-1 to IC-10 (listed in `requirements.md`). None changes an approved rule; each has a provisional default above.
 - Property tests follow the tag format `// Feature: qroker-playable-game, Property N: <text>` and run at least 100 iterations.
 - Do not mark a checkbox until the task's acceptance criteria and tests pass.
+- Owner-directed placement update (IC-11): tasks 17.1 to 17.4 carry the new interaction. The fake-DOM placement tests named in task 17.4 (acceptance tests 2, 6, 8 and 9, DOM variants) are written in task 21.3, because `happy-dom` arrives with task 21.1. Real-device touch behavior is verified only by the manual check in design.md "Manual Verification".
 - Commands such as `npm run dev` start long-running servers and must be run by the user in a terminal, not by an automated agent.
 
 ## Task Dependency Graph
@@ -616,17 +636,18 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     { "id": 7, "tasks": ["12.2", "20.2"] },
     { "id": 8, "tasks": ["12.3", "16.2", "20.3"] },
     { "id": 9, "tasks": ["12.4", "13.1", "17.1", "18.1", "18.2", "19.1", "19.2", "19.3"] },
-    { "id": 10, "tasks": ["13.2", "17.2", "17.3"] },
-    { "id": 11, "tasks": ["19.4"] },
-    { "id": 12, "tasks": ["20.4", "21.1"] },
-    { "id": 13, "tasks": ["21.2", "21.3", "22.1"] },
-    { "id": 14, "tasks": ["22.2"] },
-    { "id": 15, "tasks": ["23.1", "24.3", "24.4", "25.1", "25.2"] },
-    { "id": 16, "tasks": ["23.2", "23.3", "23.4", "24.1", "25.3"] },
-    { "id": 17, "tasks": ["24.2", "25.4"] },
-    { "id": 18, "tasks": ["26.1"] },
-    { "id": 19, "tasks": ["27.1"] },
-    { "id": 20, "tasks": ["27.2", "27.3", "27.4"] }
+    { "id": 10, "tasks": ["13.2", "17.2", "17.4"] },
+    { "id": 11, "tasks": ["17.3"] },
+    { "id": 12, "tasks": ["19.4"] },
+    { "id": 13, "tasks": ["20.4", "21.1"] },
+    { "id": 14, "tasks": ["21.2", "21.3", "22.1"] },
+    { "id": 15, "tasks": ["22.2"] },
+    { "id": 16, "tasks": ["23.1", "24.3", "24.4", "25.1", "25.2"] },
+    { "id": 17, "tasks": ["23.2", "23.3", "23.4", "24.1", "25.3"] },
+    { "id": 18, "tasks": ["24.2", "25.4"] },
+    { "id": 19, "tasks": ["26.1"] },
+    { "id": 20, "tasks": ["27.1"] },
+    { "id": 21, "tasks": ["27.2", "27.3", "27.4"] }
   ]
 }
 ```
