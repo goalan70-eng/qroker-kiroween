@@ -70,7 +70,8 @@ export function gameFileRelativePath(file) {
 }
 
 export async function syntaxDiagnosticCount(source, filename) {
-  const ts = await import('typescript');
+  const module = await import('typescript');
+  const ts = module.default ?? module;
   const kind = filename.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
   const parsed = ts.createSourceFile(filename, source, ts.ScriptTarget.Latest, true, kind);
   return parsed.parseDiagnostics.length;
