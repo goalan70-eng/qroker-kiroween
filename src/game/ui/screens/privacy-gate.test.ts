@@ -19,6 +19,7 @@ import { captureFocus } from '../dom';
 import type { FocusDoc } from '../dom';
 import { asFake, FakeDocument } from '../testing/fake-dom';
 import type { FakeEl } from '../testing/fake-dom';
+import { passGate } from '../testing/pass-gate';
 import { nextGate, PRIVACY_GATE_ACK_ID, PRIVACY_GATE_STRING_KEYS, renderPrivacyGate } from './privacy-gate';
 import type { GateCurrent, GateInput, GateModel, PrivacyGateDocument, PrivacyGateOptions } from './privacy-gate';
 
@@ -99,6 +100,8 @@ function advanceToBatch(g: Game, wanted: number): boolean {
       for (const seat of g.humans) {
         const v = viewOf(g, seat);
         if (!v.guessSubmitted[seat]) {
+          passGate(g.ctl);
+          passGate(g.ctl);
           g.ctl.dispatchHuman({ type: 'SUBMIT_GUESSES', player: seat, guesses: Object.fromEntries(v.pendingQuadKeys.map((k) => [k, 20])) });
         }
       }
@@ -106,8 +109,10 @@ function advanceToBatch(g: Game, wanted: number): boolean {
         /* AI Seats submit */
       }
     } else if (view.phase === 'REVEAL') {
+      passGate(g.ctl);
       g.ctl.dispatchHuman({ type: 'ACK_REVEAL' });
     } else if (g.humans.includes(view.turn)) {
+      passGate(g.ctl);
       g.ctl.dispatchHuman(getStrategy('BEGINNER').choosePlacement(viewOf(g, view.turn), { decisionSeed: i }) as Action);
     } else if (!g.queue.step()) {
       throw new Error('AI turn without a scheduled step');
@@ -254,6 +259,7 @@ describe('nextGate [model]', () => {
         const view = viewOf(g, 'P0');
         expect(view.pendingQuadKeys).toHaveLength(wanted);
         expect(nextGate(gateInputOf(view))).toEqual({ forSeat: 'P0', name: 'Alice', purpose: 'GUESS' });
+        passGate(g.ctl);
         g.ctl.dispatchHuman({ type: 'SUBMIT_GUESSES', player: 'P0', guesses: Object.fromEntries(view.pendingQuadKeys.map((k) => [k, 9])) });
         const next = viewOf(g, 'P1');
         expect(next.phase).toBe('GUESS_COLLECT');
@@ -266,6 +272,7 @@ describe('nextGate [model]', () => {
         let view = viewOf(g, 'P0');
         for (const [i, seat] of SEAT_IDS.entries()) {
           expect(nextGate(gateInputOf(view))).toEqual({ forSeat: seat, name: NAMES[i], purpose: 'GUESS' });
+          passGate(g.ctl);
           g.ctl.dispatchHuman({ type: 'SUBMIT_GUESSES', player: seat, guesses: Object.fromEntries(view.pendingQuadKeys.map((k) => [k, 9])) });
           view = viewOf(g, 'P0');
         }
@@ -572,6 +579,7 @@ describe('the gate model and the gate DOM contain public data only', () => {
   it('a real view of a Seat holding cards and Guesses leaks none of them into the gate that precedes the next Seat', () => {
     const g = findBatch(['HUMAN', 'HUMAN', 'AI', 'AI'], 1);
     const view = viewOf(g, 'P0');
+    passGate(g.ctl);
     g.ctl.dispatchHuman({ type: 'SUBMIT_GUESSES', player: 'P0', guesses: Object.fromEntries(view.pendingQuadKeys.map((k) => [k, 37])) });
     const next = viewOf(g, 'P1');
     const model = nextGate(gateInputOf(next, { lastPrivateSeat: 'P0' })) as GateModel;

@@ -9,6 +9,7 @@ import type { ErrorStringKey, Lang } from '../i18n';
 import type { ErrorCode, PlayerId } from '../core/types';
 import { EMPTY_DRAFT } from './placement-draft';
 import type { PlacementDraft } from './placement-draft';
+import type { GatePurpose } from './screens/privacy-gate';
 
 /**
  * The last error shown to the player. It stores the code and the string KEY, never the text: the text is looked
@@ -30,8 +31,17 @@ export type ScreenName = 'SETUP' | 'GAME' | 'END';
 export interface AppModel {
   readonly language: Lang;
   readonly screen: ScreenName;
-  /** The seat whose view the screens render (the first human seat), or `null` when no private view is shown. */
+  /**
+   * The seat whose private view the screens render, or `null` when none is shown. One human seat: that seat always.
+   * Two to four human seats (task 19.4): the seat to show per the controller's table, `null` during a gate, an AI
+   * turn, `REVEAL` and `ENDED`. No game or only AI seats: `null`.
+   */
   readonly viewer: PlayerId | null;
+  /**
+   * The Pass_Device_Gate that is due before the next private view (task 19.4), or `null`. Public data only (the
+   * fields of `GateModel`: seat id, public name, purpose). While it is not `null`, `viewer` is `null`.
+   */
+  readonly gate: { readonly forSeat: PlayerId; readonly name: string; readonly purpose: GatePurpose } | null;
   /**
    * The placement draft of the viewer (task 17.4; supersedes the 16.2 `UiSelection`). UI state only: it never
    * changes the game and holds a CardId of the viewer's OWN Hand, which must not be rendered into attributes.
@@ -59,6 +69,7 @@ export function initialModel(language: Lang): AppModel {
     language,
     screen: 'SETUP',
     viewer: null,
+    gate: null,
     draft: EMPTY_DRAFT,
     gestureEpoch: 0,
     lastError: null,

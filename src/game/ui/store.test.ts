@@ -41,6 +41,7 @@ describe('initialModel', () => {
       language: 'ko',
       screen: 'SETUP',
       viewer: null,
+      gate: null,
       draft: EMPTY_DRAFT,
       gestureEpoch: 0,
       lastError: null,

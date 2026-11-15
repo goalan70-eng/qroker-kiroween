@@ -67,6 +67,17 @@
 //     `actionCount`, phase, turn; or when the drafted card is no longer in the viewer's Hand; and on an
 //     `invalidate` draft event or a failed confirmation.
 //
+// Seat to show and gate (task 19.4; design "Task 19.4 composition contracts")
+//   * One human seat: `viewer` is that seat in every phase, never a gate, `publicView` null (unchanged behaviour).
+//   * Two to four human seats: `candidateSeat` gives the seat that may see its private view (turn seat in PLACEMENT when
+//     human; first unsubmitted human seat in GUESS_COLLECT; none for an AI turn, REVEAL, ENDED). The pure `nextGate`
+//     decides whether a gate comes first. `viewer` is null while a gate is pending; `lastPrivateSeat` and
+//     `acknowledgedSeat` live in this closure. `acknowledgeGate` is the only way past a gate, and `dispatchHuman` is
+//     refused (`STALE_GATE`) while one is pending.
+//   * Game start: no gate for the first seat to show (it counts as the last private seat, see `begin`).
+//   * `viewer`/`gate` are derived inside `setModel` from the game, so every state change keeps them consistent; a viewer
+//     change clears the draft and bumps `gestureEpoch` through the existing fingerprint.
+//
 // No clock, no randomness and no global is used here: the scheduler, the seed provider, the language provider and
 // the strategy lookup are injected (`AppDeps`).
 
@@ -76,7 +87,7 @@ import { actingSeats, reduce } from '../core/engine';
 import { rotationChangesCorners } from '../core/fragment-layout';
 import { mix32 } from '../core/prng';
 import { parseSeed } from '../core/seed';
-import { defaultConfig, newGame } from '../core/state';
+import { deepFreeze, defaultConfig, newGame } from '../core/state';
 import type { GameState } from '../core/state';
 import type { Action, CardId, Difficulty, ErrorCode, GameConfig, GridPosition, IdentityVisibility, PlayerId } from '../core/types';
 import { viewFor } from '../core/view';
@@ -84,6 +95,8 @@ import type { PlayerView } from '../core/view';
 import { DEFAULT_LANGUAGE, errorMessageKey, getLanguage, isLang, setLanguage, t } from '../i18n';
 import type { Lang } from '../i18n';
 import { renderWithFocus } from './dom';
+import { nextGate } from './screens/privacy-gate';
+import type { GatePurpose } from './screens/privacy-gate';
 import { draftContextFor, EMPTY_DRAFT, errorCodeForIssue, reduceDraft, validateDraft } from './placement-draft';
 import type { DraftEvent, DraftIssue, DraftResult, RotationInfoMap } from './placement-draft';
 import { mountShell } from './shell';
@@ -136,11 +149,14 @@ export interface PracticeOptions {
  * - `DISPOSED`: the controller was disposed; nothing was done.
  * - `DRAFT_INVALID`: `confirmPlacement` found the draft incomplete (`NO_CARD`, `NO_TARGET`) or stale; no Action was sent.
  * - `PLACE_NOT_ALLOWED`: a `PLACE` was passed to `RenderHandlers.dispatch`; placements go through the draft only.
+ * - `STALE_GATE` (task 19.4): `acknowledgeGate` got a binding that does not match the pending gate (none pending, wrong
+ *   seat or purpose, older `actionCount`, already acknowledged); or `dispatchHuman` was called while a gate is pending
+ *   (the next Seat has not acknowledged yet, so no Action may be sent). Nothing was done.
  */
 export type OpResult =
   | { readonly ok: true }
   | { readonly ok: false; readonly reason: 'ENGINE'; readonly code: ErrorCode }
-  | { readonly ok: false; readonly reason: 'BUSY' | 'NO_GAME' | 'DISPOSED' | 'PLACE_NOT_ALLOWED' }
+  | { readonly ok: false; readonly reason: 'BUSY' | 'NO_GAME' | 'DISPOSED' | 'PLACE_NOT_ALLOWED' | 'STALE_GATE' }
   | { readonly ok: false; readonly reason: 'DRAFT_INVALID'; readonly issue: DraftIssue };
 
 /** The functions a screen may call. Created once; they stay valid after dispose and then do nothing. */
@@ -165,12 +181,37 @@ export interface RenderHandlers {
   readonly confirmPlacement: () => OpResult;
   /** The engine's `ErrorCode` for a cell that cannot take a card (`null` when it can); shows its message. */
   readonly explainTarget: (cell: GridPosition) => ErrorCode | null;
+  /**
+   * Acknowledges the pending Pass_Device_Gate (task 19.4). Single use: it does nothing and returns `STALE_GATE` unless
+   * `model.gate` still equals `(forSeat, purpose)` and `model.actionCount === actionCount`. On success the gate Seat
+   * becomes `model.viewer` and the gate is cleared.
+   */
+  readonly acknowledgeGate: (ack: GateAck) => OpResult;
+}
+
+/** The binding of a gate acknowledgement (what `PrivacyGate`'s `onAcknowledge` passes). */
+export interface GateAck {
+  readonly forSeat: PlayerId;
+  readonly purpose: GatePurpose;
+  readonly actionCount: number;
 }
 
 /** Everything a renderer or screen receives. No `GameState`, no controller. */
 export interface RenderInput {
-  /** The view of `model.viewer`, or `null` when no game runs or no human seat exists. */
+  /**
+   * The view of `model.viewer`, or `null` when no game runs, no human seat exists, or (several human seats) no
+   * private view may be shown: during a gate, an AI turn, `REVEAL` and `ENDED`.
+   */
   readonly view: PlayerView | null;
+  /**
+   * Task 19.4. Non-null only in a game with two to four human seats, while a game exists and `model.viewer` is null.
+   * It is NOT a private view: the `viewer` field only keeps the `PlayerView` shape (it is the first human seat), `myHand`
+   * is empty, `myGuesses` is null, and a board cell carries its identity only when all four seats see it. For the
+   * scoreboard, banner, Seed line, status line, reveal, end screen and a read-only Board; never for a Hand or a Guess form.
+   */
+  readonly publicView: PlayerView | null;
+  /** The Seed of the running game, or `null` when no game runs (requirement 15.2). */
+  readonly seed: number | null;
   readonly model: AppModel;
   readonly displayError: DisplayError | null;
   /** Rotation capability of the cards of the viewer's OWN Hand (no key for any other card); `{}` without a view. */
@@ -219,6 +260,8 @@ export interface Controller {
   draftEvent(event: DraftEvent): DraftResult;
   confirmPlacement(): OpResult;
   explainTarget(cell: GridPosition): ErrorCode | null;
+  /** Same as `RenderHandlers.acknowledgeGate`. */
+  acknowledgeGate(ack: GateAck): OpResult;
   /** Rotation capability of the Hand cards of `viewer` (keys: that seat's own Hand only); `{}` without a game. */
   rotationInfo(viewer: PlayerId): RotationInfoMap;
   subscribe(listener: (model: AppModel) => void): () => void;
@@ -238,6 +281,7 @@ interface Game {
 const NOOP_UNSUBSCRIBE = (): void => undefined;
 const MAX_RENDER_PASSES = 5;
 const NO_ROTATION_INFO: RotationInfoMap = Object.freeze({});
+const ALL_SEAT_IDS: readonly PlayerId[] = ['P0', 'P1', 'P2', 'P3'];
 
 /**
  * Rotation capability for each card of `view.myHand` and for no other card. The identity of these cards is already
@@ -264,6 +308,9 @@ export function createController(deps: AppDeps): Controller {
   let scheduledHandle: ScheduleHandle | null = null;
   /** The last accepted human Action and the log length right after it (double-click guard). */
   let lastAccepted: { readonly action: Action; readonly logLength: number } | null = null;
+  /** Gate sequencing markers (design "Gate sequencing model"). Closure state, not part of the model. */
+  let lastPrivateSeat: PlayerId | null = null;
+  let acknowledgedSeat: PlayerId | null = null;
 
   const startLanguage = ((): Lang => {
     const wanted: unknown = deps.language();
@@ -277,6 +324,68 @@ export function createController(deps: AppDeps): Controller {
   const seatKind = (config: GameConfig, seat: PlayerId): 'HUMAN' | 'AI' | undefined =>
     config.seats.find((s) => s.id === seat)?.kind;
   const hasHuman = (config: GameConfig): boolean => config.seats.some((s) => s.kind === 'HUMAN');
+
+  const humanSeatsOf = (config: GameConfig): PlayerId[] => config.seats.filter((s) => s.kind === 'HUMAN').map((s) => s.id);
+
+  /**
+   * The seat whose private view may be shown now (design "Controller: seat-to-show and gate"), ignoring the gate.
+   * One human seat: that seat, always. Two to four: the turn seat in PLACEMENT when it is human; in GUESS_COLLECT the
+   * first human seat (seat order) that has not submitted; otherwise `null` (AI turn, REVEAL, ENDED). No human: `null`.
+   */
+  function candidateSeat(g: Game): PlayerId | null {
+    const humans = humanSeatsOf(g.config);
+    if (humans.length < 2) return humans[0] ?? null;
+    const state = g.state;
+    if (state.phase === 'PLACEMENT') return humans.includes(state.turn) ? state.turn : null;
+    if (state.phase === 'GUESS_COLLECT') {
+      const submitted = viewFor(state, 'P0').guessSubmitted; // public flags
+      return humans.find((seat) => !submitted[seat]) ?? null;
+    }
+    return null;
+  }
+
+  /**
+   * The viewer and the gate for the current game. The gate comes from the pure `nextGate` with the public seat
+   * configuration, phase, turn, `guessSubmitted` and the two markers. When a private view is shown, `lastPrivateSeat`
+   * becomes that seat and `acknowledgedSeat` is cleared unless it is that seat (design: cleared when another Seat's
+   * private view is rendered). With a gate pending, nothing private is shown: `viewer` is `null`.
+   */
+  function planSeat(): { readonly viewer: PlayerId | null; readonly gate: AppModel['gate'] } {
+    const g = game;
+    if (g === null) return { viewer: null, gate: null };
+    const candidate = candidateSeat(g);
+    if (humanSeatsOf(g.config).length < 2 || candidate === null) return { viewer: candidate, gate: null };
+    const gate = nextGate({
+      seats: g.config.seats,
+      phase: g.state.phase,
+      turn: g.state.turn,
+      guessSubmitted: viewFor(g.state, 'P0').guessSubmitted,
+      lastPrivateSeat,
+      acknowledgedSeat,
+    });
+    if (gate !== null) return { viewer: null, gate };
+    lastPrivateSeat = candidate;
+    if (acknowledgedSeat !== candidate) acknowledgedSeat = null;
+    return { viewer: candidate, gate: null };
+  }
+
+  /**
+   * `PlayerView` for the scoreboard, banner, Seed line, reveal, end screen and a read-only Board of a multi-human game
+   * while no private view is shown. It starts from the view of the first human seat and removes everything private: no
+   * Hand, no own Guesses, and a board identity only when ALL FOUR seats see it (read from the four `viewFor` results,
+   * so the visibility rules stay in core/view). Not a private view; `viewer` is kept for the type only.
+   */
+  function publicViewOf(g: Game): PlayerView {
+    const first = humanSeatsOf(g.config)[0] as PlayerId;
+    const views = ALL_SEAT_IDS.map((seat) => viewFor(g.state, seat));
+    const base = viewFor(g.state, first);
+    const board = base.board.map((cell, index) =>
+      cell === null
+        ? null
+        : { owner: cell.owner, orientation: cell.orientation, card: views.every((v) => v.board[index]?.card != null) ? cell.card : null },
+    );
+    return deepFreeze({ ...base, board, myHand: [], myGuesses: null });
+  }
 
   /**
    * What a draft depends on: the game epoch, the viewer, the screen, the accepted-Action count, the phase and the
@@ -294,12 +403,15 @@ export function createController(deps: AppDeps): Controller {
    * Applies `patch` to the model together with the values derived from the game, and notifies. It also applies
    * the invalidation rules of the placement draft (see the module comment).
    */
-  function setModel(patch: Partial<AppModel>): void {
+  function setModel(patch: Partial<Omit<AppModel, 'viewer' | 'gate'>>): void {
+    const seat = planSeat(); // viewer and gate are always derived from the game and the gate markers
     store.update((m) => {
       const next: AppModel = {
         ...m,
         screen: game === null ? 'SETUP' : game.state.phase === 'ENDED' ? 'END' : 'GAME',
         actionCount: game === null ? 0 : game.state.log.length,
+        viewer: seat.viewer,
+        gate: seat.gate,
         ...patch,
       };
       const fingerprint = draftFingerprint(next);
@@ -334,7 +446,10 @@ export function createController(deps: AppDeps): Controller {
         const model = store.get();
         const view = game !== null && model.viewer !== null ? viewFor(game.state, model.viewer) : null;
         const rotationInfo = view === null ? NO_ROTATION_INFO : rotationInfoFor(view);
-        deps.renderer({ view, model, displayError: displayErrorOf(model), rotationInfo, handlers });
+        const publicView =
+          game !== null && model.viewer === null && humanSeatsOf(game.config).length >= 2 ? publicViewOf(game) : null;
+        const seed = game === null ? null : game.state.seed;
+        deps.renderer({ view, publicView, seed, model, displayError: displayErrorOf(model), rotationInfo, handlers });
         if (!renderAgain || disposed) break;
       }
     } finally {
@@ -483,6 +598,8 @@ export function createController(deps: AppDeps): Controller {
     if (inFlight) return { ok: false, reason: 'BUSY' };
     const g = game;
     if (g === null) return { ok: false, reason: 'NO_GAME' };
+    // A pending gate means the next Seat has not taken the device yet: no human Action may be sent around it.
+    if (store.get().gate !== null) return { ok: false, reason: 'STALE_GATE' };
     inFlight = true;
     try {
       const state = g.state;
@@ -527,8 +644,11 @@ export function createController(deps: AppDeps): Controller {
       invalidate();
       game = { state: created.value, config };
       lastAccepted = null;
-      const human = config.seats.find((s) => s.kind === 'HUMAN');
-      setModel({ viewer: human === undefined ? null : human.id, lastError: null, aiStalled: false }); // new epoch: draft cleared
+      // No gate at game start: the person who started the game holds the device and is the first Seat to show, so that
+      // Seat (when there is one) counts as the last private Seat. If an AI moves first, the first human Seat gets a gate.
+      lastPrivateSeat = candidateSeat(game);
+      acknowledgedSeat = null;
+      setModel({ lastError: null, aiStalled: false }); // new epoch: draft cleared; viewer and gate are derived
     } finally {
       inFlight = false;
     }
@@ -598,7 +718,9 @@ export function createController(deps: AppDeps): Controller {
       invalidate();
       game = null;
       lastAccepted = null;
-      setModel({ viewer: null, lastError: null, aiStalled: false }); // new epoch: draft cleared
+      lastPrivateSeat = null;
+      acknowledgedSeat = null;
+      setModel({ lastError: null, aiStalled: false }); // new epoch: draft cleared; viewer and gate are null without a game
     } finally {
       inFlight = false;
     }
@@ -684,6 +806,34 @@ export function createController(deps: AppDeps): Controller {
     return dispatchHuman(action); // accepted: actionCount changes and the draft is cleared; rejected: state and draft stay
   }
 
+  /**
+   * Single-use, guarded acknowledgement of the pending gate (see `RenderHandlers.acknowledgeGate`). The binding must
+   * equal the current gate and `actionCount`; the controller has no other check because every state change (a new
+   * game, abandon, an accepted Action) replaces the gate and bumps the count. The gate Seat becomes the last private
+   * and the acknowledged Seat, and `planSeat` then shows it (`nextGate` returns null for it).
+   */
+  function acknowledgeGate(ack: GateAck): OpResult {
+    if (disposed) return { ok: false, reason: 'DISPOSED' };
+    if (inFlight) return { ok: false, reason: 'BUSY' };
+    if (game === null) return { ok: false, reason: 'NO_GAME' };
+    const model = store.get();
+    const gate = model.gate;
+    const raw: unknown = ack;
+    const given = typeof raw === 'object' && raw !== null ? (raw as Partial<GateAck>) : {};
+    if (gate === null || gate.forSeat !== given.forSeat || gate.purpose !== given.purpose || model.actionCount !== given.actionCount) {
+      return { ok: false, reason: 'STALE_GATE' };
+    }
+    inFlight = true;
+    try {
+      lastPrivateSeat = gate.forSeat;
+      acknowledgedSeat = gate.forSeat;
+      setModel({}); // viewer = gate Seat, gate = null; the viewer change clears the draft and bumps gestureEpoch
+    } finally {
+      inFlight = false;
+    }
+    return { ok: true };
+  }
+
   function dispose(): void {
     if (disposed) return;
     invalidate();
@@ -704,6 +854,7 @@ export function createController(deps: AppDeps): Controller {
     draftEvent,
     confirmPlacement,
     explainTarget,
+    acknowledgeGate,
   });
 
   const controller: Controller = Object.freeze({
@@ -721,6 +872,7 @@ export function createController(deps: AppDeps): Controller {
     draftEvent,
     confirmPlacement,
     explainTarget,
+    acknowledgeGate,
     rotationInfo,
     subscribe: (listener: (model: AppModel) => void) => (disposed ? NOOP_UNSUBSCRIBE : store.subscribe(listener)),
     dispose,

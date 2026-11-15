@@ -10,6 +10,7 @@ import type { PlayerView } from '../core/view';
 import { errorMessageKey, setLanguage, t, resetLanguage } from '../i18n';
 import { createController } from './controller';
 import type { Controller, Schedule } from './controller';
+import { passGate } from './testing/pass-gate';
 import { buildGuesses, GUESS_MAX, GUESS_MIN, guessFormToken, isBlankGuessText, isGuessFormStale, parseGuessText, regionCells } from './guess-model';
 
 // ---------------------------------------------------------------------------------------------------------
@@ -69,15 +70,18 @@ function advanceToBatch(g: Game, wanted: number): boolean {
         const v = viewOf(g, seat);
         if (v.guessSubmitted[seat]) continue;
         const guesses = Object.fromEntries(v.pendingQuadKeys.map((k) => [k, 20]));
+        passGate(g.ctl);
         g.ctl.dispatchHuman({ type: 'SUBMIT_GUESSES', player: seat, guesses });
       }
       while (g.queue.step()) {
         /* AI Seats submit */
       }
     } else if (view.phase === 'REVEAL') {
+      passGate(g.ctl);
       g.ctl.dispatchHuman({ type: 'ACK_REVEAL' });
     } else if (g.humans.includes(view.turn)) {
       const own = viewOf(g, view.turn);
+      passGate(g.ctl);
       g.ctl.dispatchHuman(getStrategy('BEGINNER').choosePlacement(own, { decisionSeed: i }) as Action);
     } else if (!g.queue.step()) {
       throw new Error('AI turn without a scheduled step');

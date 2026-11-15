@@ -18,6 +18,7 @@ import { createController } from '../controller';
 import type { Controller, RenderInput, Schedule } from '../controller';
 import { asFake, FakeDocument } from '../testing/fake-dom';
 import type { FakeEl } from '../testing/fake-dom';
+import { passGate } from '../testing/pass-gate';
 import { buildRevealModel, REVEAL_STRING_KEYS, renderReveal } from './reveal';
 import type { RevealAckAction, RevealDispatchResult, RevealDocument, RevealHandle, RevealInput, RevealOptions } from './reveal';
 
@@ -117,6 +118,7 @@ function drive(g: Game, stop: (view: PlayerView) => boolean): boolean {
         if (!v.guessSubmitted[seat]) {
           const values = humanGuesses(seat, v.pendingQuadKeys);
           g.guesses.push({ batch: v.history.length, values: Object.values(values) });
+          passGate(g.ctl);
           g.ctl.dispatchHuman({ type: 'SUBMIT_GUESSES', player: seat, guesses: values });
         }
       }
@@ -124,8 +126,10 @@ function drive(g: Game, stop: (view: PlayerView) => boolean): boolean {
         /* AI Seats submit */
       }
     } else if (view.phase === 'REVEAL') {
+      passGate(g.ctl);
       g.ctl.dispatchHuman({ type: 'ACK_REVEAL' });
     } else if (g.humans.includes(view.turn)) {
+      passGate(g.ctl);
       g.ctl.dispatchHuman(getStrategy('BEGINNER').choosePlacement(viewOf(g, view.turn), { decisionSeed: i }) as Action);
     } else if (!g.queue.step()) {
       throw new Error('AI turn without a scheduled step');

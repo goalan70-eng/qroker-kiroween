@@ -882,6 +882,14 @@ describe("rule: ui/ screens must not import core/state, engine, deck, replay, ru
     expect(rules(controller, `import { a } from "../core/deck";`)).toEqual(["ui-internal-import", "ui-allow-list"]);
     expect(rules(controller, `import { a } from "../core/rules";`)).toEqual(["ui-internal-import", "ui-allow-list"]);
   });
+  it("lets the controller import nextGate and GateModel from ui/screens/privacy-gate (task 19.4): ui/ siblings are already allowed, no new entry is needed", () => {
+    expect(rules(controller, `import { nextGate } from "./screens/privacy-gate";`)).toEqual([]);
+    expect(rules(controller, `import type { GateModel } from "./screens/privacy-gate";`)).toEqual([]);
+    // the store takes only the GatePurpose type from it, and still may not reach the engine or the state
+    expect(rules("src/game/ui/store.ts", `import type { GatePurpose } from "./screens/privacy-gate";`)).toEqual([]);
+    expect(rules("src/game/ui/store.ts", `import { reduce } from "../core/engine";`)).toEqual(["ui-internal-import", "ui-allow-list"]);
+    expect(rules("src/game/ui/screens/game.ts", `import { newGame } from "../../core/state";`)).toEqual(["ui-internal-import", "ui-allow-list"]);
+  });
   it("keeps sim/ and the other ai/ modules out of the controller (the decision seed is re-derived)", () => {
     expect(rules(controller, `import { decisionSeed } from "../sim/play-game";`)).toEqual(["ui-allow-list"]);
     expect(rules(controller, `import { a } from "../ai/heuristic";`)).toEqual(["ui-allow-list"]);

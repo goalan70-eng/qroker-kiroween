@@ -30,6 +30,7 @@ import type { AppDeps, Controller, OpResult, RenderHandlers, RenderInput, Render
 import { EMPTY_DRAFT } from './placement-draft';
 import type { DraftEvent } from './placement-draft';
 import type { SetupOptions } from './setup-model';
+import { passGate } from './testing/pass-gate';
 import { INITIAL_GESTURE, stepGesture } from './pointer-gesture';
 import type { GestureInput, GestureState } from './pointer-gesture';
 
@@ -471,13 +472,15 @@ describe('what a renderer receives', () => {
     expect(phases).toEqual(new Set(['PLACEMENT', 'GUESS_COLLECT', 'REVEAL', 'ENDED']));
     expect(stub.calls.length).toBeGreaterThan(30);
     for (const call of stub.calls) {
-      expect(Object.keys(call).sort()).toEqual(['displayError', 'handlers', 'model', 'rotationInfo', 'view']);
-      expect(bannedKeyPaths(call)).toEqual([]);
+      expect(Object.keys(call).sort()).toEqual(['displayError', 'handlers', 'model', 'publicView', 'rotationInfo', 'seed', 'view']);
+      // seed is the public Seed field of RenderInput (requirement 15.2); every other path must be free of sealed keys
+      expect(bannedKeyPaths(call).filter((path) => path !== '$.seed')).toEqual([]);
+      expect(call.seed === null || typeof call.seed === 'number').toBe(true);
       expect(Object.isFrozen(call.model)).toBe(true);
       if (call.view !== null) expect(Object.isFrozen(call.view)).toBe(true);
       // task 17.4: `select` (16.2) is replaced by the draft API
       expect(Object.keys(call.handlers).sort()).toEqual([
-        'abandon', 'confirmPlacement', 'dispatch', 'draftEvent', 'explainTarget', 'replaySameSeed', 'restart', 'setLanguage', 'startFromSetup', 'startGame',
+        'abandon', 'acknowledgeGate', 'confirmPlacement', 'dispatch', 'draftEvent', 'explainTarget', 'replaySameSeed', 'restart', 'setLanguage', 'startFromSetup', 'startGame',
       ]);
       expect(Object.values(call.handlers).every((f) => typeof f === 'function')).toBe(true);
     }
@@ -489,7 +492,7 @@ describe('what a renderer receives', () => {
     const { ctl } = make(immediate);
     ctl.startGame({ seed: 9 });
     expect(Object.keys(ctl).sort()).toEqual([
-      'abandon', 'confirmPlacement', 'dispatchHuman', 'dispose', 'draftEvent', 'explainTarget', 'getDisplayError', 'getModel',
+      'abandon', 'acknowledgeGate', 'confirmPlacement', 'dispatchHuman', 'dispose', 'draftEvent', 'explainTarget', 'getDisplayError', 'getModel',
       'getView', 'replaySameSeed', 'restart', 'rotationInfo', 'setLanguage', 'startFromSetup', 'startGame', 'startPracticeGame', 'subscribe',
     ]);
     expect(Object.values(ctl).every((v) => typeof v === 'function')).toBe(true);
@@ -1408,13 +1411,14 @@ describe('task 17.4: acceptance 8, stale drafts cannot place', () => {
     const x = t.legal[0] as GridPosition;
     t.ctl.draftEvent({ type: 'dropOnCell', cell: x, card: t.plain });
     const epoch = t.ctl.getModel().gestureEpoch;
-    // somebody places another card elsewhere (the turn moves to P1; the viewer is still P0)
+    // somebody places another card elsewhere (the turn moves to P1, a second human: the gate for P1 is pending, no viewer)
     const other = t.hand.find((c) => c !== t.plain) as CardId;
     expect(t.ctl.dispatchHuman({ type: 'PLACE', player: 'P0', card: other, pos: t.legal[1] as GridPosition, orientation: 0 })).toEqual({ ok: true });
     expect(t.ctl.getModel().draft).toBe(EMPTY_DRAFT);
     expect(t.ctl.getModel().gestureEpoch).toBeGreaterThan(epoch);
     expect(t.view().turn).toBe('P1');
-    expect(t.ctl.confirmPlacement()).toEqual({ ok: false, reason: 'DRAFT_INVALID', issue: 'NO_CARD' });
+    expect(t.ctl.getModel().viewer).toBeNull();
+    expect(t.ctl.confirmPlacement()).toEqual({ ok: false, reason: 'NO_GAME' }); // no private view while the gate is pending
     expect(t.ctl.getModel().actionCount).toBe(1);
   });
 
@@ -1574,7 +1578,7 @@ describe('task 17.4: acceptance 9, hidden information is absent from the draft, 
     expect(stub.calls.length).toBeGreaterThan(30);
     const FRAGMENT_WORDS = /"(?:TL|TR|BL|BR)"|FRAGMENT|corner set|layout/i;
     for (const call of stub.calls) {
-      expect(bannedKeyPaths(call)).toEqual([]);
+      expect(bannedKeyPaths(call).filter((path) => path !== '$.seed')).toEqual([]); // seed: the public Seed field
       if (call.view === null) {
         expect(call.rotationInfo).toEqual({});
         continue;
@@ -2016,5 +2020,654 @@ describe('task 19.2: restart and replaySameSeed', () => {
     expect(ctl.abandon()).toEqual({ ok: true });
     expect(ctl.getModel()).toMatchObject({ screen: 'SETUP', viewer: null, actionCount: 0 });
     expect(ctl.getView('P0')).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------
+// Task 19.4 (a): seat to show, gate, publicView, seed. EVIDENCE CLASS model: a DOM-free controller with a stub
+// renderer and real engine games. Nothing here says anything about a browser or about real devices.
+// ---------------------------------------------------------------------------------------------------------
+
+describe('task 19.4: seat to show, gate, publicView and seed', () => {
+  type Kinds = readonly ('HUMAN' | Difficulty)[];
+  const B: Difficulty = 'BEGINNER';
+  const SET_2H2AI: Kinds = ['HUMAN', 'HUMAN', B, B];
+  const SET_P0_P2: Kinds = ['HUMAN', B, 'HUMAN', B];
+  const SET_AI_FIRST: Kinds = [B, 'HUMAN', B, 'HUMAN'];
+  const SET_3H: Kinds = ['HUMAN', 'HUMAN', 'HUMAN', B];
+  const SET_4H: Kinds = ['HUMAN', 'HUMAN', 'HUMAN', 'HUMAN'];
+  const humansOf = (kinds: Kinds): PlayerId[] => SEATS.filter((_, i) => kinds[i] === 'HUMAN');
+
+  function rig(kinds: Kinds, seed: number, visibility?: IdentityVisibility) {
+    const sched = new QueueScheduler();
+    const made = make(sched.schedule);
+    expect(made.ctl.startGame({ config: config(kinds, visibility), seed })).toEqual({ ok: true });
+    return { ...made, sched, kinds };
+  }
+  type Rig = ReturnType<typeof rig>;
+
+  /** The public facts of a render input in a running game (both views carry them), or `null` when idle. */
+  const factsOf = (input: RenderInput): PlayerView | null => input.publicView ?? input.view;
+
+  /** Independent oracle for the gate policy, fed from the render stream (see `installOracle`). */
+  interface Oracle {
+    last: PlayerId | null;
+    acked: PlayerId | null;
+    started: boolean;
+    gates: number;
+  }
+
+  /**
+   * Checks every render of a multi-human game against the design table: the seat to show, "no private view during a
+   * gate / AI turn / REVEAL / ENDED", and that a gate appears exactly when the candidate differs from the last private
+   * seat (and was not just acknowledged). The first seat to show at game start counts as the last private seat.
+   */
+  function installOracle(r: Rig, extra?: (input: RenderInput) => void): Oracle {
+    const oracle: Oracle = { last: null, acked: null, started: false, gates: 0 };
+    const humans = humansOf(r.kinds);
+    r.stub.hook = (input) => {
+      extra?.(input);
+      const v = factsOf(input);
+      if (v === null) return;
+      const model = input.model;
+      let candidate: PlayerId | null = null;
+      if (v.phase === 'PLACEMENT') candidate = humans.includes(v.turn) ? v.turn : null;
+      else if (v.phase === 'GUESS_COLLECT') candidate = humans.find((s) => !v.guessSubmitted[s]) ?? null;
+      expect(input.publicView === null, 'publicView is present exactly when no private view is').toBe(input.view !== null);
+      expect(model.gate === null || model.viewer === null).toBe(true);
+      expect(input.view === null).toBe(model.viewer === null);
+      if (!oracle.started) {
+        oracle.started = true;
+        if (model.actionCount === 0) oracle.last = candidate; // no gate at game start
+      }
+      if (candidate === null) {
+        expect(model.viewer, `${v.phase} turn ${v.turn}`).toBeNull();
+        expect(model.gate).toBeNull();
+        return;
+      }
+      if (model.gate !== null) {
+        expect(model.gate.forSeat).toBe(candidate);
+        expect(model.gate.purpose).toBe(v.phase === 'PLACEMENT' ? 'HAND' : 'GUESS');
+        expect(candidate, 'a gate for the seat that already holds the device').not.toBe(oracle.last);
+        return;
+      }
+      expect(model.viewer).toBe(candidate);
+      expect(candidate === oracle.last || candidate === oracle.acked, `no gate for ${candidate} (last ${oracle.last})`).toBe(true);
+      oracle.last = candidate;
+      oracle.acked = null;
+    };
+    return oracle;
+  }
+
+  /**
+   * Plays the human seats as a person would (acknowledging each gate first) until `stop(phase)` or the end.
+   * Returns the number of gates passed. `guess` gives the Guess value of a seat.
+   */
+  function drive(r: Rig, oracle: Oracle | null, stop: (phase: string) => boolean = () => false, guess: (seat: PlayerId) => number = () => 20): number {
+    let gates = 0;
+    for (let i = 0; i < 1500; i++) {
+      r.sched.drain();
+      const phase = (r.ctl.getView('P0') as PlayerView).phase;
+      if (phase === 'ENDED' || stop(phase)) return gates;
+      const model = r.ctl.getModel();
+      if (model.gate !== null) {
+        if (oracle !== null) {
+          oracle.acked = model.gate.forSeat;
+          oracle.gates++;
+        }
+        gates++;
+        expect(r.ctl.acknowledgeGate({ forSeat: model.gate.forSeat, purpose: model.gate.purpose, actionCount: model.actionCount })).toEqual({ ok: true });
+        continue;
+      }
+      if (phase === 'REVEAL') {
+        expect(r.ctl.dispatchHuman({ type: 'ACK_REVEAL' })).toEqual({ ok: true });
+        continue;
+      }
+      if (model.viewer === null) throw new Error(`stuck in ${phase}: no viewer, no gate, nothing scheduled`);
+      const action = humanAction(r.ctl.getView(model.viewer) as PlayerView, guess(model.viewer));
+      if (action === null) throw new Error(`no action for ${model.viewer} in ${phase}`);
+      expect(r.ctl.dispatchHuman(action), JSON.stringify(action)).toEqual({ ok: true });
+    }
+    throw new Error('game did not end');
+  }
+
+  // ---- one human seat: unchanged ---------------------------------------------------------------------------
+
+  describe('exactly one human seat: unchanged behaviour', () => {
+    for (const [name, kinds] of [
+      ['P0', ['HUMAN', B, B, B]],
+      ['P2', [B, B, 'HUMAN', B]],
+      ['P3 with ADVANCED AI', ['ADVANCED', B, B, 'HUMAN']],
+    ] as const) {
+      it(`the human is ${name}: viewer is that seat, a private view in every phase of a whole game, no gate, no publicView`, () => {
+        const human = SEATS[kinds.indexOf('HUMAN')] as PlayerId;
+        const r = rig(kinds, 9);
+        expect(r.ctl.getModel().viewer).toBe(human);
+        const phases = new Set<string>();
+        for (let i = 0; i < 800; i++) {
+          r.sched.drain();
+          const view = r.ctl.getView(human) as PlayerView;
+          if (view.phase === 'ENDED') break;
+          const action = humanAction(view);
+          if (action === null) throw new Error(`stuck in ${view.phase}`);
+          expect(r.ctl.dispatchHuman(action)).toEqual({ ok: true });
+        }
+        for (const call of r.stub.calls) {
+          if (call.model.screen === 'SETUP') continue;
+          expect(call.model.viewer).toBe(human);
+          expect(call.model.gate).toBeNull();
+          expect(call.view).not.toBeNull();
+          expect((call.view as PlayerView).viewer).toBe(human);
+          expect(call.publicView).toBeNull();
+          phases.add((call.view as PlayerView).phase);
+        }
+        expect(phases).toEqual(new Set(['PLACEMENT', 'GUESS_COLLECT', 'REVEAL', 'ENDED']));
+        expect(r.ctl.getModel().screen).toBe('END');
+        expect(r.ctl.acknowledgeGate({ forSeat: human, purpose: 'HAND', actionCount: 0 })).toEqual({ ok: false, reason: 'STALE_GATE' });
+      });
+    }
+
+    it('all four seats AI: no viewer, no gate, no publicView; the first render is idle with seed null', () => {
+      const r = rig([B, B, B, B], 4);
+      r.sched.drain();
+      expect(r.stub.calls[0]?.seed).toBeNull();
+      for (const call of r.stub.calls.slice(1)) {
+        expect(call.model.viewer).toBeNull();
+        expect(call.model.gate).toBeNull();
+        expect(call.view).toBeNull();
+        expect(call.publicView).toBeNull();
+        expect(call.seed).toBe(4);
+      }
+      expect(r.ctl.getModel().screen).toBe('END');
+    });
+  });
+
+  // ---- several human seats: seat to show and gate --------------------------------------------------------------
+
+  describe('two to four human seats: seat to show and gate follow the design table', () => {
+    for (const [name, kinds, seed] of [
+      ['2 humans (P0, P1) + 2 AI', SET_2H2AI, 21],
+      ['humans P0 and P2 with AI between', SET_P0_P2, 5],
+      ['an AI moves first, humans P1 and P3', SET_AI_FIRST, 8],
+      ['3 humans + 1 AI', SET_3H, 12],
+      ['4 humans', SET_4H, 3],
+    ] as const) {
+      for (const visibility of ['OWNER_ONLY', 'FACE_UP'] as const) {
+        it(`${name}, ${visibility}: every render obeys the table; the game runs to ENDED`, () => {
+          const r = rig(kinds, seed, visibility);
+          const oracle = installOracle(r);
+          const humans = humansOf(kinds);
+          const gates = drive(r, oracle);
+          expect(r.ctl.getModel().screen).toBe('END');
+          expect(r.ctl.getModel().aiStalled).toBe(false);
+          expect(gates, 'a hand-over happens in a multi-human game').toBeGreaterThan(0);
+          const seen = new Set<string>();
+          for (const call of r.stub.calls) {
+            const v = factsOf(call);
+            if (v === null) continue;
+            seen.add(`${v.phase}:${call.model.viewer === null ? (call.model.gate === null ? 'none' : 'gate') : 'viewer'}`);
+            if (call.model.viewer !== null) expect(humans).toContain(call.model.viewer); // an AI seat never gets a viewer
+            if (v.phase === 'REVEAL' || v.phase === 'ENDED') {
+              expect(call.model.viewer).toBeNull();
+              expect(call.view).toBeNull();
+              expect(call.publicView).not.toBeNull();
+            }
+          }
+          expect(seen.has('PLACEMENT:viewer')).toBe(true);
+          expect(seen.has('GUESS_COLLECT:viewer')).toBe(true);
+          expect(seen.has('REVEAL:none')).toBe(true);
+          expect(seen.has('ENDED:none')).toBe(true);
+          expect(seen.has('PLACEMENT:gate') || seen.has('GUESS_COLLECT:gate')).toBe(true);
+          if (kinds.includes(B)) expect(seen.has('PLACEMENT:none'), 'an AI turn shows no private view').toBe(true);
+        });
+      }
+    }
+
+    it('GUESS_COLLECT goes through the human seats in seat order, skips submitted seats, and never shows an AI seat', () => {
+      const r = rig(SET_3H, 12);
+      const order: PlayerId[] = [];
+      r.stub.hook = (input) => {
+        const v = factsOf(input);
+        if (v?.phase !== 'GUESS_COLLECT') return;
+        const shown = input.model.viewer ?? input.model.gate?.forSeat ?? null;
+        if (shown !== null && order[order.length - 1] !== shown) order.push(shown);
+      };
+      drive(r, null, (phase) => phase === 'REVEAL');
+      expect(order.slice(0, 3)).toEqual(['P0', 'P1', 'P2']);
+      expect(order).not.toContain('P3');
+    });
+
+    it('no gate at game start: the first seat to show is P0 at PLACEMENT and sees its Hand at once', () => {
+      const r = rig(SET_2H2AI, 21);
+      const m = r.ctl.getModel();
+      expect([m.viewer, m.gate]).toEqual(['P0', null]);
+      expect((r.stub.last.view as PlayerView).myHand).toHaveLength(r.ctl.getView('P0')!.myHand.length);
+      expect(r.stub.last.publicView).toBeNull();
+    });
+
+    it('when an AI moves first, the first human turn gets a gate (nothing private was rendered before)', () => {
+      const r = rig(SET_AI_FIRST, 8);
+      expect(r.ctl.getModel().viewer).toBeNull();
+      expect(r.ctl.getModel().gate).toBeNull();
+      expect(r.stub.last.publicView).not.toBeNull();
+      r.sched.drain();
+      expect(r.ctl.getModel().gate).toEqual({ forSeat: 'P1', name: 'Human 1', purpose: 'HAND' });
+      expect(r.ctl.getModel().viewer).toBeNull();
+      expect(r.stub.last.view).toBeNull();
+    });
+
+    it('the same seat continuing from placement into its own Guess needs no second gate', () => {
+      // P0 and P2 are the only humans; in 2H games the last placer can be the first unsubmitted human seat.
+      let covered = 0;
+      for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
+        const r = rig(SET_P0_P2, seed);
+        const oracle = installOracle(r);
+        drive(r, oracle);
+        covered++;
+      }
+      expect(covered).toBe(8);
+    });
+  });
+
+  // ---- gate in the model -----------------------------------------------------------------------------------------
+
+  function atGate(seed = 21) {
+    const r = rig(SET_2H2AI, seed);
+    const action = humanAction(r.ctl.getView('P0') as PlayerView) as Action;
+    expect(r.ctl.dispatchHuman(action)).toEqual({ ok: true });
+    const model = r.ctl.getModel();
+    expect(model.gate).toEqual({ forSeat: 'P1', name: 'Human 1', purpose: 'HAND' });
+    return { ...r, model, ack: { forSeat: 'P1' as PlayerId, purpose: 'HAND' as const, actionCount: model.actionCount } };
+  }
+
+  describe('while a gate is pending', () => {
+    it('viewer and view are null, the gate model is public frozen data, publicView is the only board', () => {
+      const t = atGate();
+      expect(t.model.viewer).toBeNull();
+      expect(t.stub.last.view).toBeNull();
+      expect(t.stub.last.publicView).not.toBeNull();
+      expect(t.stub.last.rotationInfo).toEqual({});
+      expect(Object.isFrozen(t.model.gate)).toBe(true);
+      expect(Object.keys(t.model.gate as object).sort()).toEqual(['forSeat', 'name', 'purpose']);
+      expect(t.model.draft).toBe(EMPTY_DRAFT);
+    });
+
+    it('dispatchHuman and handlers.dispatch are refused with STALE_GATE and change nothing (a gate cannot be bypassed)', () => {
+      const t = atGate();
+      const before = JSON.stringify(t.ctl.getView('P1'));
+      const place = humanAction(t.ctl.getView('P1') as PlayerView) as Action;
+      const renders = t.stub.calls.length;
+      expect(t.ctl.dispatchHuman(place)).toEqual({ ok: false, reason: 'STALE_GATE' });
+      expect(t.ctl.dispatchHuman({ type: 'ACK_REVEAL' })).toEqual({ ok: false, reason: 'STALE_GATE' });
+      expect(t.stub.last.handlers.dispatch({ type: 'ACK_REVEAL' })).toEqual({ ok: false, reason: 'STALE_GATE' });
+      expect(t.stub.last.handlers.dispatch({ type: 'SUBMIT_GUESSES', player: 'P1', guesses: {} })).toEqual({ ok: false, reason: 'STALE_GATE' });
+      expect(JSON.stringify(t.ctl.getView('P1'))).toBe(before);
+      expect(t.ctl.getModel()).toBe(t.model); // not even a new model object
+      expect(t.stub.calls.length).toBe(renders);
+      expect(t.ctl.getModel().lastError).toBeNull();
+      // draft events and confirmation have no viewer to act for
+      expect(t.ctl.draftEvent({ type: 'selectCard', card: (t.ctl.getView('P1') as PlayerView).myHand[0] as CardId }).draft).toBe(EMPTY_DRAFT);
+      expect(t.ctl.confirmPlacement()).toEqual({ ok: false, reason: 'NO_GAME' });
+      // after the acknowledgement the same Action is accepted
+      expect(t.ctl.acknowledgeGate(t.ack)).toEqual({ ok: true });
+      expect(t.ctl.dispatchHuman(place)).toEqual({ ok: true });
+    });
+
+    it('in GUESS_COLLECT a human cannot submit around the gate either, for any human seat', () => {
+      const r = rig(SET_2H2AI, 21);
+      drive(r, null, (phase) => phase === 'GUESS_COLLECT');
+      r.sched.drain();
+      const model = r.ctl.getModel();
+      expect(model.gate?.purpose === 'GUESS' || model.viewer !== null).toBe(true);
+      if (model.gate === null) return; // the last placer already holds the device: covered by the oracle tests
+      const keys = (r.ctl.getView('P0') as PlayerView).pendingQuadKeys;
+      for (const seat of ['P0', 'P1'] as const) {
+        const guesses = Object.fromEntries(keys.map((k) => [k, 20]));
+        expect(r.ctl.dispatchHuman({ type: 'SUBMIT_GUESSES', player: seat, guesses })).toEqual({ ok: false, reason: 'STALE_GATE' });
+      }
+      expect((r.ctl.getView('P0') as PlayerView).guessSubmitted.P0).toBe(false);
+    });
+  });
+
+  describe('acknowledgeGate', () => {
+    it('happy path: the gate seat becomes the viewer, the gate is cleared, the draft is clear, gestureEpoch is bumped, one render', () => {
+      const t = atGate();
+      const renders = t.stub.calls.length;
+      expect(t.ctl.acknowledgeGate(t.ack)).toEqual({ ok: true });
+      const m = t.ctl.getModel();
+      expect([m.viewer, m.gate]).toEqual(['P1', null]);
+      expect(m.draft).toBe(EMPTY_DRAFT);
+      expect(m.gestureEpoch).toBeGreaterThan(t.model.gestureEpoch);
+      expect(m.actionCount).toBe(t.model.actionCount);
+      expect(t.stub.calls.length).toBe(renders + 1);
+      const view = t.stub.last.view as PlayerView;
+      expect(view.viewer).toBe('P1');
+      expect(view.myHand).toEqual((t.ctl.getView('P1') as PlayerView).myHand);
+      expect(t.stub.last.publicView).toBeNull();
+      expect(Object.isFrozen(m)).toBe(true);
+    });
+
+    it('is single use: a second acknowledgement is STALE_GATE and does nothing', () => {
+      const t = atGate();
+      expect(t.ctl.acknowledgeGate(t.ack)).toEqual({ ok: true });
+      const m = t.ctl.getModel();
+      const renders = t.stub.calls.length;
+      expect(t.ctl.acknowledgeGate(t.ack)).toEqual({ ok: false, reason: 'STALE_GATE' });
+      expect(t.stub.last.handlers.acknowledgeGate(t.ack)).toEqual({ ok: false, reason: 'STALE_GATE' });
+      expect(t.ctl.getModel()).toBe(m);
+      expect(t.stub.calls.length).toBe(renders);
+    });
+
+    it('a wrong seat, a wrong purpose, an older or newer actionCount, a missing or garbage binding do nothing', () => {
+      const t = atGate();
+      const bad: unknown[] = [
+        { ...t.ack, forSeat: 'P0' },
+        { ...t.ack, forSeat: 'P2' },
+        { ...t.ack, purpose: 'GUESS' },
+        { ...t.ack, actionCount: t.ack.actionCount - 1 },
+        { ...t.ack, actionCount: t.ack.actionCount + 1 },
+        { forSeat: 'P1' },
+        {},
+        null,
+        undefined,
+        'P1',
+      ];
+      const renders = t.stub.calls.length;
+      for (const ack of bad) {
+        expect(t.ctl.acknowledgeGate(ack as Parameters<Controller['acknowledgeGate']>[0]), JSON.stringify(ack)).toEqual({ ok: false, reason: 'STALE_GATE' });
+      }
+      expect(t.ctl.getModel()).toBe(t.model);
+      expect(t.stub.calls.length).toBe(renders);
+      expect(t.ctl.acknowledgeGate(t.ack)).toEqual({ ok: true }); // the gate is still there
+    });
+
+    it('with no gate pending (game start, one human, REVEAL) it is STALE_GATE; without a game it is NO_GAME', () => {
+      const idle = make(immediate);
+      expect(idle.ctl.acknowledgeGate({ forSeat: 'P0', purpose: 'HAND', actionCount: 0 })).toEqual({ ok: false, reason: 'NO_GAME' });
+      const r = rig(SET_2H2AI, 21);
+      expect(r.ctl.acknowledgeGate({ forSeat: 'P0', purpose: 'HAND', actionCount: 0 })).toEqual({ ok: false, reason: 'STALE_GATE' });
+      expect(r.ctl.getModel().viewer).toBe('P0');
+      drive(r, null, (phase) => phase === 'REVEAL');
+      expect(r.ctl.getModel().gate).toBeNull();
+      expect(r.ctl.acknowledgeGate({ forSeat: 'P0', purpose: 'GUESS', actionCount: r.ctl.getModel().actionCount })).toEqual({ ok: false, reason: 'STALE_GATE' });
+    });
+
+    it('returns DISPOSED after dispose, also through a handler captured earlier', () => {
+      const t = atGate();
+      const held = t.stub.last.handlers;
+      t.ctl.dispose();
+      expect(t.ctl.acknowledgeGate(t.ack)).toEqual({ ok: false, reason: 'DISPOSED' });
+      expect(held.acknowledgeGate(t.ack)).toEqual({ ok: false, reason: 'DISPOSED' });
+    });
+
+    it('returns BUSY from inside a render and does nothing; the gate is still pending afterwards', () => {
+      const r = rig(SET_2H2AI, 21);
+      const seen: OpResult[] = [];
+      r.stub.hook = (input) => {
+        const gate = input.model.gate;
+        if (gate !== null) seen.push(input.handlers.acknowledgeGate({ forSeat: gate.forSeat, purpose: gate.purpose, actionCount: input.model.actionCount }));
+      };
+      expect(r.ctl.dispatchHuman(humanAction(r.ctl.getView('P0') as PlayerView) as Action)).toEqual({ ok: true });
+      expect(seen).toEqual([{ ok: false, reason: 'BUSY' }]);
+      expect(r.ctl.getModel().gate?.forSeat).toBe('P1');
+      expect(r.ctl.getModel().viewer).toBeNull();
+    });
+
+    it('a handler captured before restart, replaySameSeed or abandon cannot acknowledge the new game or an ended one', () => {
+      for (const op of ['restart', 'replaySameSeed', 'abandon'] as const) {
+        const t = atGate();
+        const held = t.stub.last.handlers;
+        expect(t.ctl[op]()).toEqual({ ok: true });
+        const m = t.ctl.getModel();
+        const expected = op === 'abandon' ? { ok: false, reason: 'NO_GAME' } : { ok: false, reason: 'STALE_GATE' };
+        expect(held.acknowledgeGate(t.ack), op).toEqual(expected);
+        expect(t.ctl.getModel(), op).toBe(m);
+        expect(m.gate, op).toBeNull();
+        expect(m.viewer, op).toBe(op === 'abandon' ? null : 'P0'); // a new game: P0 first, no gate at start
+      }
+    });
+
+    it('an AI submission while the gate is pending changes actionCount: the old binding is stale, the fresh one works', () => {
+      const r = rig(SET_2H2AI, 21);
+      drive(r, null, (phase) => phase === 'GUESS_COLLECT');
+      const gateBefore = r.ctl.getModel();
+      if (gateBefore.gate === null) return; // see the oracle tests: the same seat kept the device
+      const old = { forSeat: gateBefore.gate.forSeat, purpose: gateBefore.gate.purpose, actionCount: gateBefore.actionCount };
+      expect(r.sched.pending).toBe(1); // the AI seats of the batch submit in one step
+      r.sched.step();
+      const after = r.ctl.getModel();
+      expect(after.actionCount).toBeGreaterThan(gateBefore.actionCount);
+      expect(after.gate).toEqual(gateBefore.gate); // the same gate, rebound to the new count
+      expect(after.viewer).toBeNull();
+      expect(r.ctl.acknowledgeGate(old)).toEqual({ ok: false, reason: 'STALE_GATE' });
+      expect(r.ctl.acknowledgeGate({ ...old, actionCount: after.actionCount })).toEqual({ ok: true });
+      expect(r.ctl.getModel().viewer).toBe(old.forSeat);
+    });
+  });
+
+  // ---- invalidation ------------------------------------------------------------------------------------------------
+
+  describe('every viewer change clears the draft and bumps gestureEpoch', () => {
+    it('viewer to a gate (after placing), gate to viewer, viewer to null at an AI turn', () => {
+      const r = rig(SET_2H2AI, 21);
+      const trail: { viewer: PlayerId | null; epoch: number }[] = [];
+      r.stub.hook = (input) => {
+        const last = trail[trail.length - 1];
+        if (last !== undefined && last.viewer !== input.model.viewer) {
+          expect(input.model.gestureEpoch, `viewer ${last.viewer} -> ${input.model.viewer}`).toBeGreaterThan(last.epoch);
+          expect(input.model.draft).toBe(EMPTY_DRAFT);
+        }
+        trail.push({ viewer: input.model.viewer, epoch: input.model.gestureEpoch });
+      };
+      const view = r.ctl.getView('P0') as PlayerView;
+      const cell = legalCellsFor(view)[0] as GridPosition;
+      r.ctl.draftEvent({ type: 'selectCard', card: view.myHand[0] as CardId });
+      r.ctl.draftEvent({ type: 'selectTarget', cell });
+      expect(r.ctl.getModel().draft).not.toBe(EMPTY_DRAFT);
+      drive(r, null, (phase) => phase === 'REVEAL');
+      const viewers = trail.map((x) => x.viewer).filter((v, i, a) => i === 0 || v !== a[i - 1]);
+      expect(viewers.length).toBeGreaterThan(4);
+      expect(viewers).toContain(null);
+      expect(viewers).toContain('P0');
+      expect(viewers).toContain('P1');
+    });
+
+    it('a draft of P0 does not survive into the view of P1 (the gate in between clears it)', () => {
+      const r = rig(SET_2H2AI, 21);
+      const view = r.ctl.getView('P0') as PlayerView;
+      r.ctl.draftEvent({ type: 'selectCard', card: view.myHand[0] as CardId });
+      expect(r.ctl.getModel().draft.card).not.toBeNull();
+      r.ctl.dispatchHuman(humanAction(view) as Action);
+      passGate(r.ctl);
+      expect(r.ctl.getModel().viewer).toBe('P1');
+      expect(r.ctl.getModel().draft).toBe(EMPTY_DRAFT);
+    });
+  });
+
+  describe('AI submissions in a batch do not break a later human seat', () => {
+    it('humans P0 and P2 with AI P1 and P3: P0 sees the batch change under it, keeps the viewer, and P2 then gets its own gate and view', () => {
+      for (const seed of [1, 2, 3, 4, 5, 6]) {
+        const r = rig(SET_P0_P2, seed);
+        drive(r, null, (phase) => phase === 'GUESS_COLLECT');
+        r.sched.drain(); // the AI seats submit
+        const v0 = r.ctl.getView('P0') as PlayerView;
+        if (v0.phase !== 'GUESS_COLLECT') continue;
+        expect(v0.guessSubmitted).toMatchObject({ P1: true, P3: true });
+        passGate(r.ctl);
+        const m = r.ctl.getModel();
+        expect(m.viewer, `seed ${seed}`).toBe('P0');
+        const keys = v0.pendingQuadKeys;
+        expect(r.ctl.dispatchHuman({ type: 'SUBMIT_GUESSES', player: 'P0', guesses: Object.fromEntries(keys.map((k) => [k, 20])) })).toEqual({ ok: true });
+        expect(r.ctl.getModel().gate).toEqual({ forSeat: 'P2', name: 'Human 2', purpose: 'GUESS' });
+        expect(r.ctl.acknowledgeGate({ forSeat: 'P2', purpose: 'GUESS', actionCount: r.ctl.getModel().actionCount })).toEqual({ ok: true });
+        expect((r.stub.last.view as PlayerView).viewer).toBe('P2');
+        expect(r.ctl.dispatchHuman({ type: 'SUBMIT_GUESSES', player: 'P2', guesses: Object.fromEntries(keys.map((k) => [k, 21])) })).toEqual({ ok: true });
+        expect((r.ctl.getView('P0') as PlayerView).phase).toBe('REVEAL');
+        expect(r.ctl.getModel().viewer).toBeNull();
+        return;
+      }
+      throw new Error('no seed reached a P0 Guess batch with the AI seats submitted first');
+    });
+
+    it('dispatchHuman still refuses a PLACE or a Guess for an AI seat in a multi-human game', () => {
+      const r = rig(SET_P0_P2, 5);
+      const view = r.ctl.getView('P0') as PlayerView;
+      const place = humanAction(view) as Extract<Action, { type: 'PLACE' }>;
+      expect(r.ctl.dispatchHuman({ ...place, player: 'P1' })).toEqual({ ok: false, reason: 'ENGINE', code: 'NOT_YOUR_TURN' });
+      expect(r.ctl.dispatchHuman({ type: 'SUBMIT_GUESSES', player: 'P1', guesses: {} })).toEqual({ ok: false, reason: 'ENGINE', code: 'NOT_YOUR_TURN' });
+    });
+  });
+
+  // ---- seed ----------------------------------------------------------------------------------------------------------
+
+  describe('RenderInput.seed', () => {
+    it('is null before a game, the started seed during it, a NEW seed on restart, the same on replaySameSeed, null after abandon', () => {
+      const sched = new QueueScheduler();
+      const { ctl, stub } = make(sched.schedule); // randomSeed: 100, 101, ...
+      expect(stub.last.seed).toBeNull();
+      ctl.startGame({ config: config(SET_2H2AI), seed: 5 });
+      expect(stub.last.seed).toBe(5);
+      ctl.restart();
+      expect(stub.last.seed).toBe(100);
+      ctl.replaySameSeed();
+      expect(stub.last.seed).toBe(100);
+      ctl.restart();
+      expect(stub.last.seed).toBe(101);
+      for (const call of stub.calls.filter((c) => c.model.screen !== 'SETUP')) expect([5, 100, 101]).toContain(call.seed);
+      ctl.abandon();
+      expect(stub.last.seed).toBeNull();
+      ctl.startGame({ seed: 42 }); // one human, default config
+      expect(stub.last.seed).toBe(42);
+      expect(stub.last.publicView).toBeNull();
+    });
+
+    it('is the Seed on every render of a game, in every phase, with one or several humans', () => {
+      for (const kinds of [SET_2H2AI, ['HUMAN', B, B, B] as Kinds]) {
+        const r = rig(kinds, 7);
+        drive(r, null);
+        const running = r.stub.calls.filter((c) => c.model.screen !== 'SETUP');
+        expect(running.length).toBeGreaterThan(20);
+        expect(running.every((c) => c.seed === 7)).toBe(true);
+      }
+    });
+  });
+
+  // ---- publicView ------------------------------------------------------------------------------------------------------
+
+  const deepFrozen = (value: unknown): boolean =>
+    typeof value !== 'object' || value === null || (Object.isFrozen(value) && Object.values(value).every(deepFrozen));
+
+  describe('RenderInput.publicView', () => {
+    it('is null for one human seat and for no game; non-null in a multi-human game exactly when viewer is null', () => {
+      const r = rig(SET_3H, 12);
+      drive(r, null);
+      let withPublic = 0;
+      for (const call of r.stub.calls) {
+        if (call.model.screen === 'SETUP') {
+          expect(call.publicView).toBeNull();
+          continue;
+        }
+        expect(call.publicView === null).toBe(call.model.viewer !== null);
+        if (call.publicView !== null) withPublic++;
+      }
+      expect(withPublic).toBeGreaterThan(5);
+      expect(r.stub.last.publicView?.phase).toBe('ENDED');
+    });
+
+    it('is built from the four seat views: Hand empty, no own Guesses, a board identity only when all four seats see it; deeply frozen', () => {
+      for (const visibility of ['OWNER_ONLY', 'FACE_UP'] as const) {
+        const r = rig(SET_2H2AI, 21, visibility);
+        let checked = 0;
+        r.stub.hook = (input) => {
+          const pub = input.publicView;
+          if (pub === null) return;
+          const views = SEATS.map((s) => r.ctl.getView(s) as PlayerView);
+          expect(pub.myHand).toEqual([]);
+          expect(pub.myGuesses).toBeNull();
+          expect(deepFrozen(pub)).toBe(true);
+          expect(pub.viewer).toBe('P0'); // the first human seat: the shape only, not a private view
+          expect(pub.board).toHaveLength(64);
+          pub.board.forEach((cell, i) => {
+            const seen = views.map((v) => v.board[i] ?? null);
+            if (cell === null) return expect(seen.every((c) => c === null)).toBe(true);
+            const everyone = seen.every((c) => c !== null && c.card !== null);
+            expect(cell.card !== null, `cell ${i}`).toBe(everyone);
+            if (cell.card !== null) expect(cell.card).toBe(views[0]!.board[i]!.card);
+            expect(cell.owner).toBe(views[0]!.board[i]!.owner);
+            expect(cell.orientation).toBe(views[0]!.board[i]!.orientation);
+          });
+          expect({ ...pub, board: null, myHand: null, myGuesses: null, viewer: null }).toEqual({ ...views[2]!, board: null, myHand: null, myGuesses: null, viewer: null });
+          checked++;
+        };
+        drive(r, null);
+        expect(checked, visibility).toBeGreaterThan(10);
+        const end = r.stub.last.publicView as PlayerView;
+        if (visibility === 'FACE_UP') expect(end.board.every((c) => c === null || c.card !== null)).toBe(true);
+      }
+    });
+
+    it('FACE_UP: every placed identity is public; OWNER_ONLY: placed cards of a seat stay hidden until their code is revealed', () => {
+      const up = rig(SET_2H2AI, 21, 'FACE_UP');
+      up.stub.hook = (input) => {
+        if (input.publicView !== null) expect(input.publicView.board.every((c) => c === null || c.card !== null)).toBe(true);
+      };
+      drive(up, null, (phase) => phase === 'GUESS_COLLECT');
+      expect(up.stub.calls.some((c) => c.publicView?.board.some((cell) => cell !== null && cell.owner !== 'NEUTRAL' && cell.card !== null))).toBe(true);
+      const own = rig(SET_2H2AI, 21, 'OWNER_ONLY');
+      drive(own, null, (phase) => phase === 'GUESS_COLLECT');
+      expect(own.stub.calls.some((c) => c.publicView?.board.some((cell) => cell !== null && cell.owner !== 'NEUTRAL' && cell.card === null))).toBe(true);
+    });
+
+    for (const [kinds, seed] of [[SET_2H2AI, 21], [SET_AI_FIRST, 8], [SET_4H, 3]] as const) {
+      for (const visibility of ['OWNER_ONLY', 'FACE_UP'] as const) {
+        it(`privacy scan, ${kinds.map((k) => (k === 'HUMAN' ? 'H' : 'A')).join('')} ${visibility}: no Hand card and no owner-only identity in any render without a private view`, () => {
+          const r = rig(kinds, seed, visibility);
+          let scanned = 0;
+          r.stub.hook = (input) => {
+            if (input.model.screen === 'SETUP' || input.view !== null) return;
+            const views = SEATS.map((s) => r.ctl.getView(s) as PlayerView);
+            const secrets = new Set<CardId>();
+            for (const v of views) v.myHand.forEach((c) => secrets.add(c));
+            views[0]!.board.forEach((_, i) => {
+              const cards = views.map((v) => v.board[i]?.card ?? null);
+              const some = cards.find((c) => c !== null);
+              if (some !== undefined && cards.some((c) => c === null)) secrets.add(some); // visible to its owner only
+            });
+            const text = JSON.stringify(input); // handlers are functions: not serialized
+            for (const card of secrets) expect(text.includes(`"${card}"`), `secret ${card} (${input.model.screen}, ${input.model.actionCount})`).toBe(false);
+            if (visibility === 'OWNER_ONLY') expect(secrets.size).toBeGreaterThan(0);
+            scanned++;
+          };
+          drive(r, null);
+          expect(scanned).toBeGreaterThan(10);
+        });
+      }
+    }
+
+    it('no Guess value reaches publicView, the gate or any render without a private view: twin games with different Guesses are identical', () => {
+      const run = (human: number) => {
+        const r = rig(SET_2H2AI, 21);
+        const texts: string[] = [];
+        r.stub.hook = (input) => {
+          if (input.view === null && input.model.screen !== 'SETUP') texts.push(JSON.stringify({ ...input, model: { ...input.model } }));
+        };
+        drive(r, null, (phase) => phase === 'REVEAL', () => human);
+        return texts;
+      };
+      const a = run(11);
+      const b = run(47);
+      expect(a.length).toBeGreaterThan(3); // gates and public screens up to the reveal
+      expect(a).toEqual(b);
+    });
+  });
+
+  describe('source of controller.ts for 19.4', () => {
+    const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'controller.ts'), 'utf8');
+    const code = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+    it('takes the gate policy from nextGate and keeps no second visibility rule', () => {
+      expect(code).toMatch(/from '\.\/screens\/privacy-gate'/);
+      expect(code).toMatch(/nextGate\(/);
+      expect(code).not.toMatch(/OWNER_ONLY|FACE_UP/); // visibility is read from the four viewFor results
+    });
   });
 });

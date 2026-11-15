@@ -20,6 +20,7 @@ import { captureFocus, renderWithFocus } from '../dom';
 import type { FocusDoc } from '../dom';
 import { asFake, FakeDocument } from '../testing/fake-dom';
 import type { FakeEl } from '../testing/fake-dom';
+import { passGate } from '../testing/pass-gate';
 import { GUESS_ENTRY_STRING_KEYS, renderGuessEntry } from './guess-entry';
 import type { GuessDispatchResult, GuessEntryDocument, GuessEntryHandle, GuessEntryInput, GuessEntryOptions, GuessSubmitAction } from './guess-entry';
 
@@ -91,6 +92,7 @@ function advanceToBatch(g: Game, wanted: number, minHistory: number): boolean {
       for (const seat of g.humans) {
         const v = viewOf(g, seat);
         if (!v.guessSubmitted[seat]) {
+          passGate(g.ctl);
           g.ctl.dispatchHuman({ type: 'SUBMIT_GUESSES', player: seat, guesses: Object.fromEntries(v.pendingQuadKeys.map((k) => [k, 20])) });
         }
       }
@@ -98,8 +100,10 @@ function advanceToBatch(g: Game, wanted: number, minHistory: number): boolean {
         /* AI Seats submit */
       }
     } else if (view.phase === 'REVEAL') {
+      passGate(g.ctl);
       g.ctl.dispatchHuman({ type: 'ACK_REVEAL' });
     } else if (g.humans.includes(view.turn)) {
+      passGate(g.ctl);
       g.ctl.dispatchHuman(getStrategy('BEGINNER').choosePlacement(viewOf(g, view.turn), { decisionSeed: i }) as Action);
     } else if (!g.queue.step()) {
       throw new Error('AI turn without a scheduled step');
@@ -164,6 +168,7 @@ function rig(g: Game, override?: (a: GuessSubmitAction) => GuessDispatchResult |
       handlers: {
         dispatch: (action) => {
           calls.push(action);
+          passGate(g.ctl); // the person at the device takes it over before the form submits
           const result = override?.(action) ?? g.latest().handlers.dispatch(action);
           results.push(result);
           return result;

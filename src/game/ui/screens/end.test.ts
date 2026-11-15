@@ -29,6 +29,7 @@ import { renderWithFocus } from '../dom';
 import { regionCells } from '../guess-model';
 import { asFake, FakeDocument } from '../testing/fake-dom';
 import type { FakeEl } from '../testing/fake-dom';
+import { passGate } from '../testing/pass-gate';
 import { buildEndModel, END_STRING_KEYS, renderEnd } from './end';
 import type { EndDocument, EndHandle, EndInput, EndOpResult, EndOptions } from './end';
 
@@ -131,6 +132,7 @@ function driveToEnd(g: Game): void {
         if (!v.guessSubmitted[seat]) {
           const values = humanGuesses(seat, v.pendingQuadKeys);
           g.guessValues.push(...Object.values(values));
+          passGate(g.ctl);
           g.ctl.dispatchHuman({ type: 'SUBMIT_GUESSES', player: seat, guesses: values });
         }
       }
@@ -138,9 +140,12 @@ function driveToEnd(g: Game): void {
         /* AI Seats submit */
       }
     } else if (view.phase === 'REVEAL') {
-      if (g.humans.length > 0) g.ctl.dispatchHuman({ type: 'ACK_REVEAL' });
-      else g.queue.step();
+      if (g.humans.length > 0) {
+        passGate(g.ctl);
+        g.ctl.dispatchHuman({ type: 'ACK_REVEAL' });
+      } else g.queue.step();
     } else if (g.humans.includes(view.turn)) {
+      passGate(g.ctl);
       g.ctl.dispatchHuman(getStrategy('BEGINNER').choosePlacement(viewOf(g, view.turn), { decisionSeed: i }) as Action);
     } else if (!g.queue.step()) {
       throw new Error('AI turn without a scheduled step');
