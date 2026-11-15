@@ -1,0 +1,81 @@
+/*
+ * Reveal screen and scoreboard styles (task 18.2). Uses the tokens of tokens.css; load tokens.css and card.css first.
+ * Not linked into the production page yet (the screens are wired in task 19.4).
+ *
+ * Rules of this file:
+ *   - The continue button is at least --touch-min (44 px) in both directions.
+ *   - The active scoreboard row is not told by colour alone: it has the text marker "current turn" (with a glyph) in
+ *     the row header, and a thick inset bar plus bold type here.
+ *   - Tables scroll inside their own box on a narrow screen, never the page.
+ *   - A revealed card face has no owner (the record does not supply one), so it keeps the neutral frame of card.css.
+ *   - No font, image or network reference.
+ */
+.reveal,
+.scoreboard {
+  font-family: var(--font-ui);
+  color: var(--color-ink);
+}
+.reveal-banner,
+.scoreboard-banner {
+  margin: 0 0 var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-banner-fg);
+  background: var(--color-banner-bg);
+  border: var(--stroke) solid var(--color-banner-border);
+}
+.reveal-code {
+  margin: var(--space-3) 0;
+}
+.reveal-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.reveal-points,
+.scoreboard-table {
+  display: block;
+  max-inline-size: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+.reveal-points th,
+.reveal-points td,
+.scoreboard-table th,
+.scoreboard-table td {
+  padding: var(--space-1) var(--space-3);
+  text-align: start;
+}
+.reveal-points td,
+.scoreboard-table td {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+.reveal-continue {
+  box-sizing: border-box;
+  min-inline-size: var(--touch-min);
+  min-block-size: var(--touch-min);
+  padding: var(--space-2) var(--space-4);
+  font: inherit;
+  color: var(--color-inverse);
+  background: var(--color-ink);
+  border: var(--stroke) solid var(--color-ink);
+  cursor: pointer;
+}
+.reveal-continue:focus-visible,
+.reveal-status:focus-visible {
+  outline: var(--stroke-strong) solid var(--color-focus);
+  outline-offset: var(--stroke);
+}
+.reveal-engine-error:empty {
+  display: none;
+}
+.scoreboard-row.is-active {
+  font-weight: 700;
+  box-shadow: inset var(--stroke-strong) 0 0 var(--color-ink);
+}
+.scoreboard-active {
+  margin-inline-start: var(--space-2);
+}

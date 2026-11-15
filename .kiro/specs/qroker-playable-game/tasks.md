@@ -366,7 +366,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Depends on: 17.1, 16.2. Must precede, or be implemented together with, 17.3 (see the ordering note of 17.3).
     - _Requirements: 13.3, 13.4, 13.5, 13.10, 13.11, 13.12, 13.13, 13.14, 13.15, 13.16, 4.2, 4.5, 17.7_
 
-- [ ] 18. Guess entry, privacy gate, reveal and scoreboard
+- [x] 18. Guess entry, privacy gate, reveal and scoreboard
   - [x] 18.1 Pass_Device_Gate and Guess entry (`ui/screens/privacy-gate.ts`, `ui/screens/guess-entry.ts`, `ui/guess-model.ts`, `ui/guess-model.test.ts`, `i18n/strings/guess.ts`, `src/game/boundaries.test.ts`)
     - The gate removes private DOM before it is shown and renders nothing private; Guess entry has one numeric input per Quad_Key with validation by `validateGuess` and inline messages; the draft is cleared after submission.
     - Implement design.md "Task 18 interaction contracts" (gate sequencing model and Guess entry): the pure `nextGate` in `ui/screens/privacy-gate.ts`; `parseGuessText`, `buildGuesses` and `GuessFormToken` in `ui/guess-model.ts`; in `boundaries.test.ts` one additive allow-list entry that lets `ui/guess-model.ts` (that file only) import `core/score` (`validateGuess`, `GUESS_MIN`, `GUESS_MAX`), with every other `ui/` file still limited to `core/view` and `core/types` (extend the fixture test so that a screen file importing `core/score` fails).
@@ -377,7 +377,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Tests: pure model tests for gate sequencing (`nextGate(model)`) and `ui/guess-model.test.ts`; component tests on `ui/testing/fake-dom.ts`; the headless-DOM smoke test stays in task 21.3.
     - Depends on: 16.2, 15.1.
     - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 16.2, 16.6_
-  - [ ] 18.2 Reveal screen and scoreboard (`ui/screens/reveal.ts`, `ui/components/scoreboard.ts`, `i18n/strings/reveal.ts`)
+  - [x] 18.2 Reveal screen and scoreboard (`ui/screens/reveal.ts`, `ui/components/scoreboard.ts`, `i18n/strings/reveal.ts`)
     - Reveal shows per code the 4 revealed cards and the Hidden_Sum, and a table of earned and cumulative points; no Guess values. Scoreboard shows scores, Hand sizes, Seat names and deck size on every game screen.
     - Acceptance: the reveal view model contains no Guess field (type-level and test).
     - Acceptance (sharpened), per design.md "Task 18 interaction contracts" (`buildRevealModel`, `buildScoreboardModel`): `RevealViewModel` has no Guess field (a type-level test on `keyof` plus a scan of the serialized model against the Guesses submitted in the test game); the four-card contract is rendered as the record supplies it (the one-card versus four-card product policy stays open and is not decided here); the continue control sends `ACK_REVEAL` once (it captures `actionCount`, and a second activation or a changed `actionCount` sends nothing); in `ENDED` the screen shows no ACK control; the scoreboard is an accessible table with a caption, column headers and row headers, with Seat name, score and Hand count per row plus the deck count; the active Seat is marked by a text or glyph marker and a class, never by color alone; the provisional flag of the model comes from `rules.scoreConfig.provisional` and carries no point value; Korean and English strings exist for every key with equal placeholder names.

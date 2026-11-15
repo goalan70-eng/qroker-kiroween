@@ -303,4 +303,3 @@ describe('guessFormToken and isGuessFormStale on real views', () => {
     expect(isGuessFormStale(token, viewOf(g, 'P1'), g.ctl.getModel().actionCount)).toBe('VIEWER');
   });
 });
-
