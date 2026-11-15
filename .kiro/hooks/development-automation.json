@@ -26,14 +26,14 @@
     },
     {
       "name": "QRoker fast TypeScript syntax check",
-      "description": "Check the just-saved src/game TypeScript file syntax only. Does not auto-format or change code.",
+      "description": "Run the established game typecheck at most once every 60 seconds after saved src/game TypeScript files; do not modify code.",
       "trigger": "PostFileSave",
       "matcher": "src[/\\\\]game[/\\\\].*\\.tsx?$",
       "action": {
         "type": "command",
         "command": "node scripts/automation-hooks.mjs check-file"
       },
-      "timeout": 15,
+      "timeout": 30,
       "enabled": true
     },
     {
