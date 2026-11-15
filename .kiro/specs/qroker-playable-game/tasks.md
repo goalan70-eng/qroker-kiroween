@@ -298,7 +298,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
 - [x] 14. Checkpoint: headless game complete
   - Ensure all tests pass. Ask the user if questions arise, in particular whether to keep the placeholder score values for P1 playtests.
 
-- [ ] 15. Localization
+- [x] 15. Localization
   - [x] 15.1 Implement the localization core (`i18n/index.ts`, `i18n/types.ts`)
     - `t`, `setLanguage`, `getLanguage`, `detectLanguage`, `errorMessageKey`; area tables merged from `i18n/strings/*.ts`, each exporting `{ en, ko }` with the Korean table typed as `Record<keyof typeof en, string>`. Create `i18n/strings/common.ts` (app title, buttons, seat names, difficulty labels, provisional banner `provisional scoring` / `임시 점수 규칙`).
     - **Property 29: Localization completeness and language detection**
@@ -306,7 +306,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Tests: `src/game/i18n/i18n.properties.test.ts`.
     - Depends on: 1.4.
     - **Validates: Requirements 14.8, 16.2, 16.4, 16.5, 12.7**
-  - [ ] 15.2 Error message strings (`i18n/strings/errors.ts`)
+  - [x] 15.2 Error message strings (`i18n/strings/errors.ts`)
     - One Korean and one English message per `ErrorCode`, with the 5 approved Korean placement messages copied verbatim from the approved qroker-game design (see design.md Error Handling) and the other Korean texts from the design table, marked with a comment `// REVIEW: new text, needs native-speaker check`.
     - Acceptance: every `ErrorCode` has an entry; the 5 verbatim strings match; Property 29 still passes.
     - Tests: unit test comparing the 5 verbatim strings.
