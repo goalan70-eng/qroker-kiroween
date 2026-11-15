@@ -509,6 +509,18 @@
         "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
         "timestamp": 1794712768142
       }
+    ],
+    "15.1 Implement the localization core (`i18n/index.ts`, `i18n/types.ts`)": [
+      {
+        "executionId": "a0eb46ec-771e-43cb-b1bc-92716531fba8",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794713899744
+      },
+      {
+        "executionId": "a0eb46ec-771e-43cb-b1bc-92716531fba8",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794714287203
+      }
     ]
   }
 }

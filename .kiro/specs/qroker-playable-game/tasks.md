@@ -299,7 +299,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
   - Ensure all tests pass. Ask the user if questions arise, in particular whether to keep the placeholder score values for P1 playtests.
 
 - [ ] 15. Localization
-  - [ ] 15.1 Implement the localization core (`i18n/index.ts`, `i18n/types.ts`)
+  - [x] 15.1 Implement the localization core (`i18n/index.ts`, `i18n/types.ts`)
     - `t`, `setLanguage`, `getLanguage`, `detectLanguage`, `errorMessageKey`; area tables merged from `i18n/strings/*.ts`, each exporting `{ en, ko }` with the Korean table typed as `Record<keyof typeof en, string>`. Create `i18n/strings/common.ts` (app title, buttons, seat names, difficulty labels, provisional banner `provisional scoring` / `임시 점수 규칙`).
     - **Property 29: Localization completeness and language detection**
     - Acceptance: the property test passes (keys equal, placeholder names equal, detection rules); the test discovers area files by directory listing so later areas are covered automatically.
