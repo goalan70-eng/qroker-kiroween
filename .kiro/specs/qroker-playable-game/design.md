@@ -618,7 +618,7 @@ Behavior:
 - Rendering: a function `render(model, views)` rebuilds the changed screen region from plain data using a small `h(tag, props, children)` helper. Focus is restored by a `data-focus-key` after each render. With 64 cells this needs no virtual DOM.
 - Controller: after every accepted Action it saves, then drains AI work: while the acting Seat is AI, it computes the Action from `viewFor` and applies it through `deps.schedule` with a presentation delay (`AI_DELAY_MS = 600`, at most 1000). Human Seats stop the loop.
 - Placement flow (owner-directed update, IC-11; supersedes the earlier card-first flow with an orientation toggle for every card): two input paths fill one `PlacementDraft`. Path A, drag and drop: drag an own-Hand card onto a legal cell. Path B, position first: select a legal empty cell, keep it selected, then select a Hand card (card-first selection stays allowed, not required). Both paths show the preview, the `Rotation_Control` only for clubs and spades, "Confirm placement" ("배치 확정") and "Cancel" ("취소"), and only the confirm action sends `PLACE`. Legality comes from `legalCellsFor(view)`; the message for an illegal cell comes from the engine through `controller.explainTarget` (see "Placement interaction"). Nothing in the draft changes the `GameState`.
-- Gate flow (only when 2 or more human Seats): when the Seat to show changes from one human Seat to another, the DOM of the previous Seat's private area is removed, the gate is shown, and the next Seat's content is rendered only after "I am ready". AI Seats never need a gate because their information is never rendered. Gate sequencing model and scope: see "Task 18 interaction contracts".
+- Gate flow (only when 2 or more human Seats): when the Seat to show changes from one human Seat to another, the DOM of the previous Seat's private area is removed, the gate is shown, and the next Seat's content is rendered only after "I am ready". AI Seats never need a gate because their information is never rendered. Gate sequencing model and scope: see "Task 18 interaction contracts". Seat-to-show, the controller-owned gate and the composition host: see "Task 19.4 composition contracts".
 - Guess flow: AI Seats submit immediately in the controller. Each human Seat in seat order sees (gate) → one numeric input per code, labelled with the code's Quad_Key and a Board highlight → submit. No Hidden_Sum is on screen. After the last submission the reveal screen shows `lastReveal`. Input parsing, stale-form and privacy rules: see "Task 18 interaction contracts".
 - Reveal screen: per code the 4 cards face up, the Hidden_Sum, and optionally the Schematic_Code_View; a table of earned and cumulative scores per Seat; a continue button that sends `ACK_REVEAL` (or moves to the final screen when `phase = ENDED`). View model, scoreboard and the PLACE boundary of `handlers.dispatch`: see "Task 18 interaction contracts".
 - End screen: ranking with shared ranks, final scores, all `history` records with Hidden_Sum details, buttons "rematch" (new seed), "replay same seed", "new setup".
@@ -896,6 +896,65 @@ export function buildScoreboardModel(view: PlayerView): ScoreboardModel;
 #### Evidence classes for task 18
 
 Pure model tests (`nextGate`, `parseGuessText`, `buildGuesses`, `buildRevealModel`, `buildScoreboardModel`), DOM-free controller tests (`PLACE_NOT_ALLOWED`, unchanged state), and component-level tests with the existing `ui/testing/fake-dom.ts` harness (evidence class 2 of the Testing Strategy). Assembled-page browser privacy tests stay in tasks 19.4 and 21.
+
+### Task 19.4 composition contracts (seat-to-show, gate, Seed, host, layout, browser verification)
+
+Contracts for task 19.4, which composes the screens of tasks 17 to 19.3 into the production page. They change no engine semantics, score value, reveal policy, Identity_Visibility mode, OQ decision or optical code, and they add no requirement. Names follow the code: `AppModel.viewer` is the `humanSeat` of the earlier `AppModel` sketch.
+
+#### Controller: seat-to-show and gate (`ui/controller.ts`, `ui/store.ts`)
+
+| Game | Phase and condition | Seat to show (`model.viewer`) |
+|------|---------------------|-------------------------------|
+| Exactly one human Seat | any | that Seat, always; no gate (unchanged behaviour) |
+| 2 to 4 human Seats | `PLACEMENT`, a human is on turn | the turn Seat |
+| 2 to 4 human Seats | `GUESS_COLLECT` | the first human Seat in seat order that has not submitted (AI Seats still submit in their one scheduled step) |
+| 2 to 4 human Seats | `PLACEMENT` with an AI Seat on turn, `REVEAL`, `ENDED` | none (no private view; REVEAL and ENDED are public screens) |
+
+- The controller computes the gate with the existing pure `nextGate` (policy unchanged, in particular no gate when the next private Seat equals the last private Seat). `lastPrivateSeat` and `acknowledgedSeat` live in the controller closure; no second state system. A new additive allow-list entry in `boundaries.test.ts` lets `ui/controller.ts` (that file only) import `nextGate` and the `GateModel` type from `ui/screens/privacy-gate.ts`, the same pattern as the `core/fragment-layout` entry of task 17.4.
+- `AppModel` gets `gate: { forSeat: PlayerId; name: string; purpose: GatePurpose } | null`: public data only (the same fields as `GateModel`). It replaces the `gate: { forSeat; reason: 'GUESS' | 'TURN' }` of the earlier sketch. While `gate` is not null, `viewer` is null. The controller invalidates the draft and the Guess form under the existing invalidation rules whenever `viewer` changes.
+- `RenderInput.view` stays `viewFor(state, model.viewer)` and is null whenever `model.viewer` is null, so in a multi-human game a screen cannot render a private view during a gate or an AI turn by construction. Gap found while writing this section: the reveal, end and scoreboard components take a `PlayerView`, so they need one when `viewer` is null. `RenderInput.publicView: PlayerView | null` is non-null only in a multi-human game while a game runs and `viewer` is null. The controller builds it from the view of the first human Seat with `myHand` empty, `myGuesses` null, and every board cell identity cleared unless that identity is visible in the views of all four Seats (Neutral and revealed cards, or every card in `FACE_UP`). It contains no private data by construction; a test serializes it and searches for the Hands, Guesses and owner-only identities of the test game. The host passes it only to the scoreboard, banner, Seed line, status line, reveal and end components, and to a read-only Board (no draft, no legal-cell marks) while an AI Seat acts. It never passes it to the Hand or the Guess form.
+- New handler `acknowledgeGate(ack: { forSeat: PlayerId; purpose: GatePurpose; actionCount: number }): OpResult`, with the new reason `'STALE_GATE'`. It is single use and guarded: it does nothing and returns `STALE_GATE` unless `model.gate` still equals `(forSeat, purpose)` and `model.actionCount` equals `ack.actionCount`; it returns `DISPOSED` or `BUSY` as the other handlers do and does nothing for a wrong Seat or an older game epoch. On success it sets `viewer` to the gate's Seat, sets `lastPrivateSeat`, `acknowledgedSeat` and `gate = null`, and clears the draft and the forms through the invalidation rules. `acknowledgedSeat` is cleared when another Seat's private view is rendered. The `PrivacyGate` component passes the same binding it already uses.
+- Guess forms and AI submissions: the existing `GuessFormToken` rule is kept (a changed `actionCount` makes a form stale). The host therefore mounts a Guess form only when every AI Seat of the batch already has `guessSubmitted` true (public flags), and shows the AI status text until then. No AI submission can then be accepted while a form is open, so AI submissions never invalidate an active human Guess form. This also applies with one human Seat, where the controller itself is unchanged.
+
+#### Seed display (requirement 15.2) and integration conflict IC-13
+
+`RenderInput.seed: number | null` carries the Seed of the running game (null when no game runs); the host shows it on the game screens.
+
+- **IC-13** (integration conflict, recorded here because `requirements.md` is not edited): Requirement 15 Criterion 2 requires the Seed on the game screen, and the Seed determines the whole deal. A determined player can therefore compute the hidden Hands and the deck from the displayed Seed. The Pass_Device_Gate only prevents casual viewing; it is not a defence against this. The requirement is not changed. Open question for the owner, with the current provisional default "display the Seed during play": whether to hide it while a game is in progress.
+
+#### Composition host (`ui/screens/game.ts`, `ui/main.ts`)
+
+`ui/screens/game.ts` exports one host (`createGameScreen`, or an equivalent factory) that `ui/main.ts` passes to `mountApp(...)` as the existing `renderer` hook.
+
+- Persistent handles: the host keeps one handle per component (setup, scoreboard, banner, Seed line, board, hand, placement panel, Guess form, gate, reveal, end, help and abandon overlays) and reconciles them from each `RenderInput` by `update(input)` instead of recreating them, so typed text, focus and active gestures survive re-renders. A handle is created when its component becomes visible and disposed when it stops being visible. The host cancels the gesture when `model.gestureEpoch` changes (existing rule).
+- Gate order: when `model.gate` becomes non-null, the host first removes the Hand, Board, Guess form and every other private DOM synchronously (`clearPrivate`), then creates the gate DOM. It draws nothing else while the gate is shown (an open overlay is closed first, and no overlay opens over a gate). The gate component's `onAcknowledge` calls `handlers.acknowledgeGate`.
+- Banner: one provisional banner from `components/banner.ts` is mounted once; the child screens are created with `{ banner: false }`. The static banner paragraph and the "not connected yet" notice of `mountShell` are removed from the production page, so exactly one banner exists on every screen. The shell keeps the title and the language selector.
+- Overlays: the `OverlayState` is owned by this host only and changes only through `reduceOverlay`, with `CONTEXT` events when the screen or phase changes. While an overlay is open the underlying game controls are inert (the existing modal focus trap plus `inert` or `aria-hidden` on the game region). Help opens from every screen except over a gate; the abandon confirmation opens only for an active game.
+- Boundaries: there is no second game-state system, and screens still receive no `GameState` and no controller. `main.ts` stays the only place with `setTimeout`, `navigator` and `crypto`.
+
+#### Layout (`ui/styles/layout.css`)
+
+- Mobile first. Portrait stacks the Board, the Hand and controls, the scoreboard. Landscape (`@media (orientation: landscape) and (min-width: 600px)`) puts the Board on the left and a side panel (Hand, placement controls, status, scoreboard) on the right.
+- `--cell` keeps the clamp of "Practice UI" (cell 38 px at 320 px width) and, in landscape, is also bounded by the viewport height with the 24 px minimum. Interactive controls other than Board cells are at least 44×44 px.
+- No document-level horizontal overflow at 320 px and 390 px width. No rule depends on hover. `@media (prefers-reduced-motion: reduce)` removes transitions and animations. `touch-action` stays limited to `.hand-card--draggable` (requirement 17.7).
+- The placement "Confirm placement" and "Cancel" controls are reachable without scrolling at 1280×800. At 390×844 they are reachable by scrolling or by a sticky placement bar; the chosen option is documented in `docs/game/ui-progress.md`.
+- CSS linking: the production page links `tokens`, `card`, `board`, `hand`, `placement`, `setup`, `reveal`, `end`, `overlay` and `layout` (in this order: `tokens` first, `layout` last) in addition to `shell.css`.
+
+#### Real-browser verification (Playwright, Chromium, `e2e/game.spec.ts`)
+
+The tests run against the production page `/` (`ui/index.html` through `main.ts`), not the playground. `playwright.config.ts` keeps its `baseURL` and `command` and changes only the `webServer.url` to the page `/`. `@playwright/test` is already a devDependency and `e2e/placement-playground.spec.ts` already uses it; no dependency is added. The OQ-11 text in `tasks.md` is not edited here; the owner decides whether to update it. No test hook exists in production code: the Seed is controlled by a `page.addInitScript` stub of `crypto.getRandomValues` (a queue of Uint32 values for `Uint32Array(1)` calls, delegating to the original otherwise). AI pacing (`AI_DELAY_MS = 600`) is not changed; the full-game scenario uses a longer test timeout or `page.clock`.
+
+| # | Scenario | What it checks |
+|---|----------|----------------|
+| 1 | Full game, one human and three BEGINNER AI Seats | Play from setup to the final ranking with four players; the banner and the Seed are shown at every step |
+| 2 | Placement: drag, and position first | Exactly one accepted placement per confirm; no change of the public state (Hand count, scoreboard, Board occupancy) before "Confirm placement" |
+| 3 | Two human Seats | The gate appears before each Hand and Guess entry; while it is shown the DOM holds no Hand card name, no Guess input and no value of the previous Seat; the next Seat gets its own view |
+| 4 | Reveal and scoring | No Hidden_Sum in the DOM before the reveal; per-Seat earned and cumulative points are consistent (previous cumulative plus earned equals new cumulative); no Guess value or element that names a Guess |
+| 5 | Replay and rematch | "Replay same seed" gives the identical initial deal (own Hand); "rematch" with an injected different Seed gives a different Seed display |
+| 6 | Overlays | Help opens, closes by button and Escape, focus returns to the opener; abandon cancel keeps the game; abandon confirm abandons once |
+| 7 | Mobile | At 390×844 and at 320 px width: no horizontal overflow, Board and Hand visible, placement controls reachable |
+
+Evidence classes (the four classes of the Testing Strategy): Playwright with desktop Chromium is reported as class 2/3: a real browser engine with real layout, an emulated viewport and emulated touch. It is never class 4 and supports no statement about physical touch, other browsers or real devices. The run records the browser name and version (`browser.browserType().name()` and `browser.version()`, attached to the test report and copied into `docs/game/ui-progress.md`). The e2e run does not cover `vite preview` of `dist/`, Firefox, Safari or the offline behaviour.
 
 ### PWA (`ui/public/`, `scripts/build-sw.ts`, `ui/pwa-register.ts`)
 
