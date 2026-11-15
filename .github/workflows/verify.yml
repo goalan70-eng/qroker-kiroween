@@ -28,10 +28,6 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
-      - name: TEMP Generate Playwright lockfile for reproducible dependency addition
-        run: |
-          npm install --package-lock-only --save-dev --save-exact @playwright/test@1.65.1
-          node -e "const fs=require('node:fs');const b=fs.readFileSync('package-lock.json').toString('base64');for(let i=0;i<b.length;i+=700)console.log('QROKER_PW_LOCK_CHUNK:'+b.slice(i,i+700));console.log('QROKER_PW_LOCK_END:'+b.length)"
       - name: Validate command-only Kiro Hooks and run automation self-tests
         run: |
           node --check scripts/verify-task.mjs
@@ -52,3 +48,17 @@ jobs:
         run: npm run test:ci
       - name: Build browser application
         run: npm run build
+      - name: Install Chromium browser and system dependencies
+        run: npx playwright install --with-deps chromium
+      - name: Run real-browser Playwright regressions
+        run: npm run test:e2e
+      - name: Upload browser diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: playwright-browser-failure
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
