@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "QRoker optional OpenAI independent review",
+      "description": "External API request for tracked game changes only; OFF until user explicitly enables and sets local opt-in and API key.",
+      "trigger": "PostTaskExec",
+      "action": {
+        "type": "command",
+        "command": "node scripts/openai-review.mjs --send --hook"
+      },
+      "timeout": 90,
+      "enabled": false
+    }
+  ]
+}

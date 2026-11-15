@@ -11,11 +11,13 @@ const expected = new Map([
   ['QRoker Spec start evidence', 'PreTaskExec'],
   ['QRoker destructive shell guard', 'PreToolUse'],
   ['QRoker fast TypeScript syntax check', 'PostFileSave'],
-  ['QRoker agent turn mobile notification', 'AgentStop']
+  ['QRoker agent turn mobile notification', 'AgentStop'],
+  ['QRoker optional OpenAI independent review', 'PostTaskExec']
 ]);
 const files = [
   '.kiro/hooks/verify-after-task.json',
-  '.kiro/hooks/development-automation.json'
+  '.kiro/hooks/development-automation.json',
+  '.kiro/hooks/optional-openai-review.json'
 ];
 const seen = new Map();
 for (const file of files) {
@@ -25,7 +27,7 @@ for (const file of files) {
   for (const hook of obj.hooks) {
     assert.equal(hook.trigger, expected.get(hook.name), hook.name);
     assert.equal(hook.action?.type, 'command', hook.name);
-    assert.match(hook.action.command, /^node scripts\/[a-z0-9-]+\.mjs(?: [a-z-]+)?$/i);
+    assert.match(hook.action.command, /^node scripts\/[a-z0-9-]+\.mjs(?: (?:--[a-z-]+|[a-z-]+))*$/i);
     assert.equal(typeof hook.timeout, 'number');
     assert.ok(hook.timeout >= 1 && hook.timeout <= 360);
     assert.ok(typeof hook.enabled === 'boolean');

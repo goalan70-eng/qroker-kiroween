@@ -36,6 +36,8 @@ jobs:
           node --check scripts/validate-hook-config.mjs
           node scripts/validate-hook-config.mjs
           node --test scripts/automation-hooks.test.mjs
+          node --check scripts/openai-review.mjs
+          node --test scripts/openai-review.test.mjs
       - name: Type-check project
         run: npm run typecheck
       - name: Type-check browser game
