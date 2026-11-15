@@ -2,8 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   destructiveReason, gameFileRelativePath, savedFilePath,
-  syntaxDiagnosticCount, toolCommands
+  toolCommands
 } from './automation-hooks.mjs';
+import { saveCheckDue } from './hook-support.mjs';
 
 test('detects risky commands without executing them', () => {
   assert.equal(destructiveReason('git reset --hard'), 'git-hard-reset');
@@ -44,8 +45,9 @@ test('targets only game TypeScript paths', () => {
   assert.equal(savedFilePath({}), null);
 });
 
-test('syntax check detects parse errors without needing a full test suite', async () => {
-  assert.equal(await syntaxDiagnosticCount('export const x: number = 1;', 'x.ts'), 0);
-  assert.ok(await syntaxDiagnosticCount('export const x = ;', 'x.ts') > 0);
-  assert.equal(await syntaxDiagnosticCount('export const C = () => <div>OK</div>;', 'x.tsx'), 0);
+test('on-save typecheck throttle limits frequency', () => {
+  assert.equal(saveCheckDue(100000, NaN), true);
+  assert.equal(saveCheckDue(100000, 99999), false);
+  assert.equal(saveCheckDue(100000, 40000), true);
+  assert.equal(saveCheckDue(100000, 200000), true);
 });
