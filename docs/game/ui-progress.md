@@ -43,3 +43,4 @@ Evidence class 2/3: a real Chromium engine with real layout, an emulated viewpor
 ## Next
 - Task 19 is complete. Next: 20.1 (save format) and Task 21 (UI smoke tests, accessibility review). Seat names are English literals (`You`/`Player n`/`AI n`) as in `defaultConfig`; localizing them is open.
 - Save format and privacy of the save text (task 20.1): see [save-format.md](save-format.md).
+- Storage adapters and game loading (task 20.2): see [save-format.md](save-format.md). Not wired into the UI yet (20.4).

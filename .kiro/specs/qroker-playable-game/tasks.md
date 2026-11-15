@@ -434,7 +434,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Tests: unit tests for each result kind.
     - Depends on: 10.1.
     - _Requirements: 18.2, 18.4, 18.5_
-  - [ ] 20.2 Storage adapters and game loading (`persistence/storage.ts`)
+  - [x] 20.2 Storage adapters and game loading (`persistence/storage.ts`)
     - `KeyValueStore`, `memoryStore`, `browserStore` (falls back to memory when `localStorage` access throws), `saveGame`, `loadGame`, prefs read and write under `PREFS_KEY`.
     - Acceptance: `loadGame` on a valid save returns `RESUMABLE` with the replayed state; a rejected replay returns `DISCARDED`; a throwing store does not propagate exceptions.
     - Tests: unit tests with `memoryStore` and a throwing store.
