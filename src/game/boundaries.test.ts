@@ -93,6 +93,14 @@ export const UI_CONTROLLER_ALLOWED_CORE_MODULES: readonly string[] = [
   "fragment-layout",
 ];
 
+/**
+ * The one other ui/ file with a special core import (task 18.1, design "Task 18 interaction contracts"): the pure
+ * Guess input model calls `validateGuess` and reads `GUESS_MIN` and `GUESS_MAX` from `core/score` so that the 4..52
+ * rule stays in one place. Same pattern as `controller.ts` importing `core/fragment-layout`; no other ui/ file may.
+ */
+export const UI_GUESS_MODEL_FILE = "src/game/ui/guess-model.ts";
+export const UI_GUESS_MODEL_ALLOWED_CORE_MODULES: readonly string[] = [...UI_SCREEN_ALLOWED_CORE_MODULES, "score"];
+
 /** The ai/ modules the controller may import: the registry (design table) and the `AIStrategy` types. */
 export const UI_CONTROLLER_ALLOWED_AI_MODULES: readonly string[] = ["registry", "strategy"];
 
@@ -326,7 +334,11 @@ function uiAllowListProblem(file: string, specifier: string): string | undefined
   }
   const controller = file === UI_CONTROLLER_FILE;
   const core = /^src\/game\/core\/([^/]+)$/.exec(resolved);
-  const coreList = controller ? UI_CONTROLLER_ALLOWED_CORE_MODULES : UI_SCREEN_ALLOWED_CORE_MODULES;
+  const coreList = controller
+    ? UI_CONTROLLER_ALLOWED_CORE_MODULES
+    : file === UI_GUESS_MODEL_FILE
+      ? UI_GUESS_MODEL_ALLOWED_CORE_MODULES
+      : UI_SCREEN_ALLOWED_CORE_MODULES;
   if (core !== null && coreList.includes(core[1] as string)) return undefined;
   const ai = /^src\/game\/ai\/([^/]+)$/.exec(resolved);
   if (controller && ai !== null && UI_CONTROLLER_ALLOWED_AI_MODULES.includes(ai[1] as string)) return undefined;
@@ -944,6 +956,48 @@ describe("rule: ui/ screens must not import core/state, engine, deck, replay, ru
     expect(rules(controller, `import { a } from "node:fs";`)).toEqual(["node-import"]);
     expect(rules(controller, `const r = fetch("/x");`)).toEqual(["network-api"]);
     expect(rules(screen, `const v = window.localStorage; const t = Date.now();`)).toEqual([]); // DOM globals are allowed in ui/
+  });
+});
+
+describe("rule: only ui/guess-model.ts (besides the controller) may import core/score (task 18.1)", () => {
+  const score = (depth: string): string => `import { validateGuess, GUESS_MIN, GUESS_MAX } from "${depth}core/score";`;
+
+  it("lists core/types, core/view and core/score for the Guess model and nothing else", () => {
+    expect(UI_GUESS_MODEL_FILE).toBe("src/game/ui/guess-model.ts");
+    expect([...UI_GUESS_MODEL_ALLOWED_CORE_MODULES].sort()).toEqual(["score", "types", "view"]);
+  });
+  it("lets the Guess model import core/score, with or without extension", () => {
+    expect(rules(UI_GUESS_MODEL_FILE, score("../"))).toEqual([]);
+    expect(rules(UI_GUESS_MODEL_FILE, `import { validateGuess } from "../core/score.ts";`)).toEqual([]);
+    expect(rules(UI_GUESS_MODEL_FILE, `import type { PlayerView } from "../core/view";`)).toEqual([]);
+  });
+  it("keeps the engine and the other core modules out of the Guess model", () => {
+    for (const m of ["state", "engine", "deck", "replay", "rules"]) {
+      expect(rules(UI_GUESS_MODEL_FILE, `import { a } from "../core/${m}";`), m).toEqual(["ui-internal-import", "ui-allow-list"]);
+    }
+    expect(rules(UI_GUESS_MODEL_FILE, `import { a } from "../core/fragment-layout";`)).toEqual(["ui-allow-list"]);
+    expect(rules(UI_GUESS_MODEL_FILE, `import { a } from "../core/cards";`)).toEqual(["ui-allow-list"]);
+  });
+  it("fails a screen, a component, the draft, the store and another file named guess-model.ts that import core/score", () => {
+    expect(rules("src/game/ui/screens/guess-entry.ts", score("../../"))).toEqual(["ui-allow-list"]);
+    expect(rules("src/game/ui/screens/privacy-gate.ts", score("../../"))).toEqual(["ui-allow-list"]);
+    expect(rules("src/game/ui/components/hand.ts", score("../../"))).toEqual(["ui-allow-list"]);
+    expect(rules("src/game/ui/placement-draft.ts", score("../"))).toEqual(["ui-allow-list"]);
+    expect(rules("src/game/ui/store.ts", score("../"))).toEqual(["ui-allow-list"]);
+    expect(rules("src/game/ui/screens/guess-model.ts", score("../../"))).toEqual(["ui-allow-list"]);
+  });
+  it("gives the controller no extra module for this: it keeps its own list", () => {
+    expect(UI_CONTROLLER_ALLOWED_CORE_MODULES).not.toContain("score");
+    expect(rules(UI_CONTROLLER_FILE, score("../"))).toEqual(["ui-allow-list"]);
+  });
+  it("the real guess-model.ts imports core/score, core/types and core/view only; no other real ui/ file imports core/score", () => {
+    const specifiers = importSpecifiers(strip(readFileSync(join(REPO_ROOT, UI_GUESS_MODEL_FILE), "utf8"))).map((s) => s.value);
+    expect([...new Set(specifiers)].sort()).toEqual(["../core/score", "../core/types", "../core/view"]);
+    const files = listScannedFiles(REPO_ROOT).filter((f) => f.startsWith("src/game/ui/") && f !== UI_GUESS_MODEL_FILE);
+    for (const file of files) {
+      const found = importSpecifiers(strip(readFileSync(join(REPO_ROOT, file), "utf8"))).map((s) => s.value);
+      expect(found.filter((s) => /core\/score/.test(s)), file).toEqual([]);
+    }
   });
 });
 

@@ -38,6 +38,7 @@ import * as board from './strings/board';
 import * as cards from './strings/cards';
 import * as common from './strings/common';
 import * as errors from './strings/errors';
+import * as guess from './strings/guess';
 import * as hand from './strings/hand';
 import type { ErrorStringKey, Lang, StringParams, StringTable } from './types';
 
@@ -49,12 +50,18 @@ export type { ErrorStringKey, Lang, StringParams, StringTable } from './types';
 // ---------------------------------------------------------------------------------------------------------
 
 /** Keys defined by the area tables (English table of each area). Extend with `| keyof typeof <area>.en`. */
-type AreaKey = keyof typeof common.en | keyof typeof errors.en | keyof typeof cards.en | keyof typeof board.en | keyof typeof hand.en;
+type AreaKey =
+  | keyof typeof common.en
+  | keyof typeof errors.en
+  | keyof typeof cards.en
+  | keyof typeof board.en
+  | keyof typeof hand.en
+  | keyof typeof guess.en;
 
 /** Every key accepted by `t`. The `error.<code>` keys are part of the type from the start (task 15.2 fills them in). */
 export type StringKey = AreaKey | ErrorStringKey;
 
-const AREAS: readonly { readonly en: StringTable; readonly ko: StringTable }[] = [common, errors, cards, board, hand];
+const AREAS: readonly { readonly en: StringTable; readonly ko: StringTable }[] = [common, errors, cards, board, hand, guess];
 
 export const LANGUAGES: readonly Lang[] = Object.freeze(['en', 'ko'] as const);
 export const DEFAULT_LANGUAGE: Lang = 'en';

@@ -367,7 +367,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - _Requirements: 13.3, 13.4, 13.5, 13.10, 13.11, 13.12, 13.13, 13.14, 13.15, 13.16, 4.2, 4.5, 17.7_
 
 - [ ] 18. Guess entry, privacy gate, reveal and scoreboard
-  - [ ] 18.1 Pass_Device_Gate and Guess entry (`ui/screens/privacy-gate.ts`, `ui/screens/guess-entry.ts`, `ui/guess-model.ts`, `ui/guess-model.test.ts`, `i18n/strings/guess.ts`, `src/game/boundaries.test.ts`)
+  - [x] 18.1 Pass_Device_Gate and Guess entry (`ui/screens/privacy-gate.ts`, `ui/screens/guess-entry.ts`, `ui/guess-model.ts`, `ui/guess-model.test.ts`, `i18n/strings/guess.ts`, `src/game/boundaries.test.ts`)
     - The gate removes private DOM before it is shown and renders nothing private; Guess entry has one numeric input per Quad_Key with validation by `validateGuess` and inline messages; the draft is cleared after submission.
     - Implement design.md "Task 18 interaction contracts" (gate sequencing model and Guess entry): the pure `nextGate` in `ui/screens/privacy-gate.ts`; `parseGuessText`, `buildGuesses` and `GuessFormToken` in `ui/guess-model.ts`; in `boundaries.test.ts` one additive allow-list entry that lets `ui/guess-model.ts` (that file only) import `core/score` (`validateGuess`, `GUESS_MIN`, `GUESS_MAX`), with every other `ui/` file still limited to `core/view` and `core/types` (extend the fixture test so that a screen file importing `core/score` fails).
     - Acceptance: with 2 human Seats the gate appears between Seats; no Hand card, Guess value or owner-only identity is in the DOM while the gate is shown; no Hidden_Sum is shown during entry.
