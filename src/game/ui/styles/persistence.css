@@ -1,0 +1,112 @@
+/*
+ * Persistence styles (task 20.4): the notices region and the autosave status line (components/notices.ts) and the resume
+ * prompt (screens/resume.ts). Uses the tokens of tokens.css; linked in index.html after the other area files and BEFORE
+ * layout.css (tokens first, layout last).
+ * Rules of this file:
+ *   - Mobile first: one column, text wraps (`overflow-wrap`), nothing is wider than its container (no horizontal scroll at 320 px).
+ *   - Every button is at least --touch-min (44 px) in both directions. The keyboard focus is always visible.
+ *   - A notice is told by its text and a border, not by colour alone. No rule depends on hover.
+ *   - The empty notices region takes no space: it has no padding or margin of its own (items carry them).
+ *   - No transition or animation. No font, image or network reference.
+ */
+.game-notices-slot {
+  flex: 1 1 100%;
+  min-inline-size: 0;
+}
+.notices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  font-family: var(--font-ui);
+  color: var(--color-ink);
+}
+.notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-paper);
+  border: var(--stroke) solid var(--color-ink);
+  border-inline-start-width: 0.5rem;
+}
+.notice-text,
+.notice-status {
+  margin: 0;
+  flex: 1 1 12rem;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+.notice-status {
+  padding-inline: var(--space-1);
+  font-size: 0.875em;
+}
+.notice-dismiss,
+.resume-button {
+  box-sizing: border-box;
+  min-inline-size: var(--touch-min);
+  min-block-size: var(--touch-min);
+  padding: var(--space-2) var(--space-4);
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-ink);
+  background-color: var(--color-paper);
+  border: var(--stroke) solid var(--color-ink);
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+.notice-dismiss:focus-visible,
+.resume-button:focus-visible {
+  outline: var(--stroke-strong) solid var(--color-focus);
+  outline-offset: 2px;
+}
+.resume {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  box-sizing: border-box;
+  max-inline-size: 32rem;
+  min-inline-size: 0;
+  padding: var(--space-4);
+  font-family: var(--font-ui);
+  color: var(--color-ink);
+  background-color: var(--color-paper);
+  border: var(--stroke-strong) solid var(--color-ink);
+}
+.resume-title,
+.resume-body,
+.resume-saved-at,
+.resume-humans,
+.resume-hint {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.resume-saved-at,
+.resume-humans {
+  font-variant-numeric: tabular-nums;
+}
+.resume-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.resume-continue {
+  font-weight: 700;
+  color: var(--color-inverse);
+  background-color: var(--color-ink);
+}
+.resume-button[disabled] {
+  color: var(--color-disabled-fg);
+  background-color: var(--color-disabled-bg);
+  cursor: default;
+}
+@media (prefers-reduced-motion: reduce) {
+  .notices,
+  .notices *,
+  .resume,
+  .resume * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

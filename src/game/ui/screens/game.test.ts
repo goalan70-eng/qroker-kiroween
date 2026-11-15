@@ -612,12 +612,12 @@ describe('source of screens/game.ts and strings/game.ts', () => {
 
 describe('index.html and layout.css', () => {
   const ui = join(dirname(fileURLToPath(import.meta.url)), '..');
-  it('links shell.css, then tokens, card, board, hand, placement, setup, reveal, end, overlay and layout in this order', () => {
+  it('links shell.css, then tokens, card, board, hand, placement, setup, reveal, end, overlay, persistence and layout in this order', () => {
     const html = readFileSync(join(ui, 'index.html'), 'utf8');
     const links = [...html.matchAll(/<link rel="stylesheet" href="\.\/([^"]+)"/g)].map((m) => m[1]);
     expect(links).toEqual([
       'shell.css',
-      ...['tokens', 'card', 'board', 'hand', 'placement', 'setup', 'reveal', 'end', 'overlay', 'layout'].map((n) => `styles/${n}.css`),
+      ...['tokens', 'card', 'board', 'hand', 'placement', 'setup', 'reveal', 'end', 'overlay', 'persistence', 'layout'].map((n) => `styles/${n}.css`),
     ]);
     expect(html).not.toMatch(/shell__banner|shell__notice/);
   });

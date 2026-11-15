@@ -11,6 +11,7 @@
 //
 //   mode (from `model.screen`, `model.gate`, the phase and whether `view` is private)   handles that exist
 //   SETUP    no game                                                                    setup
+//   RESUME   no game and `model.resume !== null` (task 20.4)                            resume prompt INSTEAD of setup
 //   GATE     `model.gate !== null`                                                      gate ONLY (+ bar banner)
 //   PLACEMENT  phase PLACEMENT and a private `view`                                     panel (board, hand, controls), scoreboard
 //   WAIT     an AI Seat acts and no private view, or a private view while the AI Seats  read-only board, scoreboard, status
@@ -25,6 +26,12 @@
 // (no Seed line, no scoreboard, no opener buttons) and no overlay can open. The gate's `onAcknowledge` calls
 // `handlers.acknowledgeGate` with the binding of the CURRENT render (`update` re-binds the gate on every render, because
 // `actionCount` can change while a gate is open when an AI Seat submits).
+//
+// Persistence (task 20.4). While `model.resume` is set the resume prompt replaces the setup screen (the setup handle is not
+// created); after Continue or Discard the model changes and the next reconcile shows the game, its gate, or the setup
+// screen. The notices region (components/notices.ts) is one handle in the top bar on EVERY screen, outside the private
+// game region and visible during a gate; it carries closed codes only. Help stays hidden over the resume prompt and over a
+// gate. The setup screen starts with `model.setupPrefs` and reports pref changes to `handlers.setSetupPrefs`.
 //
 // One banner. A single `renderBanner` lives in the top bar; the scoreboard, reveal and end screen are created with
 // `{ banner: false }`. Without a game it shows the default "provisional" flag, like the help text.
@@ -44,6 +51,8 @@ import type { PlayerView } from '../../core/view';
 import { t } from '../../i18n';
 import { renderBanner } from '../components/banner';
 import type { BannerHandle } from '../components/banner';
+import { renderNotices } from '../components/notices';
+import type { NoticesHandle } from '../components/notices';
 import { boardModel, renderBoard, viewerOwnerLabel, defaultOwnerLabel } from '../components/board';
 import type { Translate } from '../components/card-face';
 import { renderPlacementPanel } from '../components/placement-panel';
@@ -68,6 +77,8 @@ import { renderGuessEntry } from './guess-entry';
 import type { GuessEntryHandle } from './guess-entry';
 import { renderPrivacyGate } from './privacy-gate';
 import type { GatePurpose, PrivacyGateHandle } from './privacy-gate';
+import { renderResume } from './resume';
+import type { ResumeHandle } from './resume';
 import { renderReveal } from './reveal';
 import type { RevealHandle } from './reveal';
 import { renderSetup } from './setup';
@@ -93,7 +104,7 @@ export interface GameScreen {
   dispose(): void;
 }
 
-type Mode = 'SETUP' | 'GATE' | 'PLACEMENT' | 'WAIT' | 'GUESS' | 'REVEAL' | 'END' | 'EMPTY';
+type Mode = 'SETUP' | 'RESUME' | 'GATE' | 'PLACEMENT' | 'WAIT' | 'GUESS' | 'REVEAL' | 'END' | 'EMPTY';
 
 /** What the banner reads while no game runs: the provisional flag only (the default, like the help text). */
 const NO_GAME_RULES = { rules: { scoreConfig: { provisional: true } } } as unknown as Pick<PlayerView, 'rules'>;
@@ -171,7 +182,8 @@ export function createGameScreen(options: GameScreenOptions): GameScreen {
     },
   });
   const bannerSlot = h('div', { class: 'game-banner-slot' });
-  const bar = h('div', { class: 'game-bar', attrs: { role: 'group' } }, helpButton, abandonButton, bannerSlot);
+  const noticesSlot = h('div', { class: 'game-notices-slot' });
+  const bar = h('div', { class: 'game-bar', attrs: { role: 'group' } }, helpButton, abandonButton, bannerSlot, noticesSlot);
   const seedEl = h('p', { class: 'game-seed' });
   const liveEl = h('div', { class: 'game-live', aria: { live: 'polite', atomic: 'true' } });
   const setupSlot = h('div', { class: 'game-setup-slot' });
@@ -191,6 +203,8 @@ export function createGameScreen(options: GameScreenOptions): GameScreen {
 
   // ---- handles --------------------------------------------------------------------------------------------
 
+  let notices: NoticesHandle | null = null;
+  let resume: ResumeHandle | null = null;
   let setup: SetupHandle | null = null;
   let setupSeedText = '';
   let gate: { readonly handle: PrivacyGateHandle; readonly seat: string; readonly purpose: GatePurpose } | null = null;
@@ -203,6 +217,10 @@ export function createGameScreen(options: GameScreenOptions): GameScreen {
   const disposeSetup = (): void => {
     setup?.dispose();
     setup = null;
+  };
+  const disposeResume = (): void => {
+    resume?.dispose();
+    resume = null;
   };
   const disposePanel = (): void => {
     panel?.dispose();
@@ -330,7 +348,7 @@ export function createGameScreen(options: GameScreenOptions): GameScreen {
   }
 
   function openOverlay(event: OverlayEvent): void {
-    if (disposed || latest === null || latest.model.gate !== null) return; // no overlay opens over a gate
+    if (disposed || latest === null || latest.model.gate !== null || latest.model.resume !== null) return; // no overlay opens over a gate or the resume prompt
     if (overlay === 'NONE') overlayOpener = doc.activeElement as unknown as Pick<HTMLElement, 'focus'> | null;
     applyOverlay(event);
     if (overlay === 'NONE') overlayOpener = null;
@@ -366,7 +384,7 @@ export function createGameScreen(options: GameScreenOptions): GameScreen {
   // ---- reconcile ------------------------------------------------------------------------------------------
 
   function modeOf(input: RenderInput, data: PlayerView | null): Mode {
-    if (input.model.screen === 'SETUP') return 'SETUP';
+    if (input.model.screen === 'SETUP') return input.model.resume !== null ? 'RESUME' : 'SETUP';
     if (input.model.gate !== null) return 'GATE';
     if (data === null) return 'EMPTY';
     switch (data.phase) {
@@ -456,24 +474,36 @@ export function createGameScreen(options: GameScreenOptions): GameScreen {
     setText(helpButton, tr('help.open'));
     setText(abandonButton, tr('abandon.open'));
     bar.setAttribute('aria-label', tr('game.bar.label'));
-    setHidden(helpButton, mode === 'GATE');
+    setHidden(helpButton, mode === 'GATE' || mode === 'RESUME');
     setHidden(abandonButton, mode === 'GATE' || !isAbandonable({ screen: input.model.screen, phase: data === null ? null : data.phase }));
     banner.update({ view: data !== null ? data : mode === 'GATE' ? lastRules : NO_GAME_RULES });
     setHidden(seedEl, !inGame || input.seed === null);
-    setText(seedEl, input.seed === null ? '' : tr('game.seed', { seed: input.seed }));
+    // The Seed text is written only while the line is shown: during a gate (including the one after a resume) the DOM holds no Seed digits.
+    setText(seedEl, inGame && input.seed !== null ? tr('game.seed', { seed: input.seed }) : '');
     setText(liveEl, mode === 'SETUP' || mode === 'EMPTY' ? '' : liveTextOf(input, data));
+
+    showNotices(input);
 
     switch (mode) {
       case 'SETUP':
         disposeGame();
+        disposeResume();
         showSetup(input, previous !== 'SETUP');
         break;
+      case 'RESUME':
+        disposeGame();
+        disposeSetup();
+        showResume(input);
+        break;
       case 'GATE':
+        disposeResume();
         break; // `showGate` already removed everything else
       case 'EMPTY':
+        disposeResume();
         disposeGameplay();
         break;
       default:
+        disposeResume();
         disposeSetup();
         showGame(input, data as PlayerView, previous);
     }
@@ -488,15 +518,36 @@ export function createGameScreen(options: GameScreenOptions): GameScreen {
     abandon.update(abandonInput());
   }
 
+  /** The notices region of the top bar: one handle on every screen, updated on every render. */
+  function showNotices(input: RenderInput): void {
+    // The autosave line is about the running game: an ended game's save is removed on purpose, and the setup has no game, so
+    // `DURABLE` is not shown there as "saved".
+    const storage = input.model.screen === 'GAME' ? input.model.storage : 'UNKNOWN';
+    const next = { model: { notices: input.model.notices, storage }, handlers: input.handlers };
+    if (notices === null) notices = renderNotices(doc, noticesSlot, next, tr);
+    else notices.update(next);
+  }
+
   function showSetup(input: RenderInput, afterGame: boolean): void {
-    const next = { model: input.model, handlers: input.handlers, initialSeedText: setupSeedText };
+    const next = { model: input.model, handlers: input.handlers, initialSeedText: setupSeedText, initialPrefs: input.model.setupPrefs };
     if (setup === null) {
       setupSeedText = options.randomSeedText();
-      setup = renderSetup(doc, setupSlot, { ...next, initialSeedText: setupSeedText }, tr, { randomSeedText: options.randomSeedText });
+      setup = renderSetup(doc, setupSlot, { ...next, initialSeedText: setupSeedText }, tr, {
+        randomSeedText: options.randomSeedText,
+        onPrefsChange: (prefs) => {
+          if (!disposed && latest !== null) latest.handlers.setSetupPrefs(prefs);
+        },
+      });
       if (afterGame) setup.focusFirst(); // the focus was in the game that is gone
     } else {
       setup.update(next);
     }
+  }
+
+  function showResume(input: RenderInput): void {
+    const next = { model: input.model, handlers: input.handlers };
+    if (resume === null) resume = renderResume(doc, setupSlot, next, tr);
+    else resume.update(next);
   }
 
   function showGame(input: RenderInput, data: PlayerView, previous: Mode): void {
@@ -604,7 +655,10 @@ export function createGameScreen(options: GameScreenOptions): GameScreen {
   function dispose(): void {
     if (disposed) return;
     disposeGate();
+    disposeResume();
     disposeGameplay();
+    notices?.dispose();
+    notices = null;
     help.dispose();
     abandon.dispose();
     banner.dispose();
