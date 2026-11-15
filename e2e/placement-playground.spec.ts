@@ -29,7 +29,7 @@ test('dev playground renders a seeded 8x8 board with no browser exceptions', asy
   expect(errors).toEqual([]);
 });
 
-test('position-first placement commits exactly once after confirmation', async ({ page }) => {
+test('position-first placement remains uncommitted until confirmation', async ({ page }) => {
   await page.goto(playground(1));
   const target = boardCell(page, 3, 2); // C4, legal next to the initial neutral group
   await expect(target).toHaveClass(/is-legal/);
