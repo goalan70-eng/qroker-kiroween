@@ -489,6 +489,18 @@
         "executionId": "f25e2421-9727-4394-b774-dc62098b0b65",
         "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
         "timestamp": 1794710785014
+      },
+      {
+        "executionId": "f25e2421-9727-4394-b774-dc62098b0b65",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794712756519
+      }
+    ],
+    "13. Headless play harness and end-to-end test": [
+      {
+        "executionId": "f25e2421-9727-4394-b774-dc62098b0b65",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794712756575
       }
     ]
   }

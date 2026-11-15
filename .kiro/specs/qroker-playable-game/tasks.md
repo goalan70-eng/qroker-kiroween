@@ -281,14 +281,14 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Depends on: 12.2, 12.3, 9.2.
     - **Validates: Requirements 10.7, 11.2, 11.3, 11.4, 11.5**
 
-- [ ] 13. Headless play harness and end-to-end test
+- [x] 13. Headless play harness and end-to-end test
   - [x] 13.1 Implement the headless driver and the simulator types (`sim/play-game.ts`, `sim/types.ts`)
     - `playGame` as in design.md and the `SimulationConfig`, `SimulationResult`, `GameSimulator` interfaces (signatures only). `playGame` checks the invariants of design.md "Invariants" after every Action when `checkInvariants` is true.
     - Acceptance: a 4-AI game ends in `ENDED`; a forced bad strategy that returns an illegal action makes `playGame` throw with the rejected Error_Code.
     - Tests: unit tests for one fixed seed and the bad-strategy case.
     - Depends on: 12.3, 10.1.
     - _Requirements: 20.1, 20.4_
-  - [-] 13.2 End-to-end headless test (`sim/e2e.test.ts`)
+  - [x] 13.2 End-to-end headless test (`sim/e2e.test.ts`)
     - Play `playGame` for Seeds `0..N-1` (N from `E2E_SEEDS`, default 200) with strategy mixes (all `BEGINNER`, all `ADVANCED`, mixed) and both visibility modes; assert termination, zero rejected Actions, invariants, replay equality, and at most 48 `PLACE` Actions.
     - **Property 21: Termination and bounded length**
     - Acceptance: the test passes for the default N. Record the elapsed test time in the task notes; if the run is too slow for CI, lower the default N but keep at least 200 for the P1 acceptance run in task 22.2.
