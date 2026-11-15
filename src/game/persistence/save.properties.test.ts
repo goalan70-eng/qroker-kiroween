@@ -299,7 +299,7 @@ function potential(board: Board): number {
 /**
  * Drives play to a batch of exactly two codes (nobody has submitted): takes a two-code placement whenever one is
  * legal, else one of the three code-free placements with the highest potential. Only CHOOSES legal actions;
- * 
+ *
 educe applies them. Returns the last state (a two-code batch unless the cap or the end came first).
  */
 function driveToTwoCodes(from: GameState, numbers: readonly number[], style: PlayStyle, cap: number): GameState {
