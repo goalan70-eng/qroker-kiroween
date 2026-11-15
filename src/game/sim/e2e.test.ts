@@ -460,6 +460,8 @@ interface Tally {
   elapsedMs: number;
   /** Canonical action log per seed, to compare the two visibility modes of one mix (descriptive diagnostics only). */
   readonly logs: Map<number, string>;
+  /** Batches and multi-code batches per seed, to count each unique game once (descriptive diagnostics only). */
+  readonly batchesBySeed: Map<number, { readonly batches: number; readonly multiCodeBatches: number }>;
 }
 
 function newTally(configuration: Configuration): Tally {
@@ -469,7 +471,7 @@ function newTally(configuration: Configuration): Tally {
     placementsMin: Number.POSITIVE_INFINITY, placementsMax: 0, placementsSum: 0, batches: 0, codes: 0, multiCodeBatches: 0,
     gamesWithMultiCodeBatch: 0, actions: 0, endedAfterGuess: 0, endedByEmptyingPlace: 0, bonusSeat: perSeat(0),
     scoreSum: perSeat(0), outrightWins: perSeat(0), sharedWins: perSeat(0), tiesAtTop: 0, elapsedMs: 0,
-    logs: new Map<number, string>(),
+    logs: new Map<number, string>(), batchesBySeed: new Map<number, { batches: number; multiCodeBatches: number }>(),
   };
 }
 
@@ -524,12 +526,57 @@ function renderDiagnostics(tallies: readonly Tally[], seeds: number): string {
     "",
   );
   L.push("## How the numbers were produced", "");
-  L.push(`- Seeds: 0..${seeds - 1} (N = ${seeds}), every Seed in every configuration, so ${6 * seeds} complete games.`);
+  L.push(`- Seeds: 0..${seeds - 1} (N = ${seeds}), every Seed in every configuration, so ${6 * seeds} complete configuration-specific games (see Counting conventions for the number of unique games).`);
   L.push("- Configurations: strategy mix x identity visibility. ALL_BEGINNER = BEGINNER on P0..P3; ALL_ADVANCED = ADVANCED on P0..P3; MIXED = P0 ADVANCED, P1 BEGINNER, P2 ADVANCED, P3 BEGINNER. Visibility is OWNER_ONLY or FACE_UP.");
   L.push("- Configuration of each game: `defaultConfig()` with `identityVisibility` overridden; the driver assigns an AI strategy to all four seats. The score table is the placeholder `rewardByError [6, 4, 3, 2, 1]`, `handEmptyBonus 3`.");
   L.push("- Every game ran with `checkInvariants: true` and was checked by the independent oracles of the test (see the header of the test file).");
   L.push("- Win means rank 1 of `rankPlayers` (competition ranking, no tiebreak). A game whose rank 1 is held by one seat is an outright win for that seat; a game whose rank 1 is shared counts a shared win for every seat at rank 1 and one tie at the top.");
   L.push("- Regenerate: `E2E_WRITE_DIAGNOSTICS=1 npx vitest --run src/game/sim/e2e.test.ts`.", "");
+
+  // Counting conventions: configuration-specific games, unique games, games with a multi-code batch, multi-code batches.
+  // A FACE_UP game whose complete action log equals the OWNER_ONLY game of the same mix and seed duplicates that game.
+  let uniqueGames = 0, uniqueBatches = 0, uniqueMultiBatches = 0, uniqueGamesWithMulti = 0;
+  let allBatches = 0, allMultiBatches = 0, allGamesWithMulti = 0, allGames = 0;
+  for (const t of tallies) {
+    allGames += t.games;
+    allBatches += t.batches;
+    allMultiBatches += t.multiCodeBatches;
+    allGamesWithMulti += t.gamesWithMultiCodeBatch;
+    const twin = t.configuration.visibility === "FACE_UP"
+      ? tallies.find((o) => o.configuration.mix === t.configuration.mix && o.configuration.visibility === "OWNER_ONLY")
+      : undefined;
+    for (const [seed, log] of t.logs) {
+      if (twin !== undefined && twin.logs.get(seed) === log) continue;
+      const counts = t.batchesBySeed.get(seed);
+      uniqueGames++;
+      uniqueBatches += counts?.batches ?? 0;
+      uniqueMultiBatches += counts?.multiCodeBatches ?? 0;
+      if ((counts?.multiCodeBatches ?? 0) > 0) uniqueGamesWithMulti++;
+    }
+  }
+  const seedList = (t: Tally): string => {
+    const seedsWith = [...t.batchesBySeed].filter(([, c]) => c.multiCodeBatches > 0).map(([seed]) => seed).sort((a, b) => a - b);
+    if (seedsWith.length === 0) return "none";
+    return seedsWith.length <= 20 ? seedsWith.join(", ") : `${seedsWith.slice(0, 20).join(", ")} (+${seedsWith.length - 20} more)`;
+  };
+  L.push("## Counting conventions", "");
+  L.push("- **Configuration-specific game**: one complete game of one seed in one configuration (strategy mix x visibility). The run plays " + String(allGames) + " of them; every `Games played` cell in the tables below counts configuration-specific games.");
+  L.push("- **Unique game**: a configuration-specific game counted once. A FACE_UP game whose complete action log is identical to the OWNER_ONLY game of the same mix and seed is a duplicate of that game (see Visibility comparison) and is not counted again. The run contains " + String(uniqueGames) + " unique games. The two ALL_BEGINNER columns are therefore the same games, not two independent samples.");
+  L.push("- **Game containing a multi-code batch**: a game with at least one batch that completes two or more Composite Codes at once.");
+  L.push("- **Number of multi-code batches**: the count of such batches. A game with two multi-code batches adds 1 to the game count and 2 to the batch count.");
+  L.push("- **Batch denominator**: the number of all prediction batches (one per placement that completes at least one Composite Code), counted over the same set of games as the numerator.", "");
+  table(
+    [
+      ["Games", String(allGames), String(uniqueGames)],
+      ["Games containing a multi-code batch", String(allGamesWithMulti), String(uniqueGamesWithMulti)],
+      ["Multi-code batches", String(allMultiBatches), String(uniqueMultiBatches)],
+      ["All batches (denominator)", String(allBatches), String(uniqueBatches)],
+      ["Multi-code batches / all batches", share(allMultiBatches, allBatches), share(uniqueMultiBatches, uniqueBatches)],
+    ],
+    ["Quantity", "Configuration-specific games", "Unique games"],
+  );
+  L.push("Seeds with a multi-code batch, per configuration:", "");
+  table(tallies.map((t) => [t.configuration.id, seedList(t)]), ["Configuration", "Seeds"]);
 
   L.push("## Results per configuration", "");
   table([
@@ -597,6 +644,7 @@ function renderDiagnostics(tallies: readonly Tally[], seeds: number): string {
   L.push("- The games are synthetic self-play of two simple heuristic strategies, not human play.");
   L.push("- Seat P0 places first in every game; the tables above do not separate seat position from tier.");
   L.push("- Neither strategy aims at a placement that completes two codes at once, so the 2-code rows rest on few games; they say nothing about how often a human player would see such a batch.");
+  L.push("- The six configurations are not six independent samples: a strategy that does not read card identities plays identical games in both visibility modes (see Visibility comparison and Counting conventions).");
   L.push("- The numbers describe these seeds only (0.." + String(seeds - 1) + "); no statistical test was made and none is claimed.");
   L.push("");
   return L.join("\n");
@@ -672,6 +720,7 @@ describe(`end-to-end headless acceptance run: seeds 0..${N - 1} in each of the 6
           const inspection = inspectGame(seed, config, result);
           addFacts(tally, inspection.facts);
           tally.logs.set(seed, canonical(result.log));
+          tally.batchesBySeed.set(seed, { batches: inspection.facts.batches, multiCodeBatches: inspection.facts.multiCodeBatches });
           if (inspection.problems.length > 0) {
             tally.failed++;
             tally.inspectionProblems++;
@@ -866,8 +915,9 @@ describe("Property 21: Termination and bounded length", () => {
 // ---------------------------------------------------------------------------------------------------------
 // Notes (task 13.2)
 // ---------------------------------------------------------------------------------------------------------
-// Acceptance run, N = 200 (default): 6 configurations x 200 seeds (0..199) = 1200 complete games, 200 per configuration,
-// all with checkInvariants true. Result: 1200 passed, 0 failed, 0 rejected actions, 0 invariant violations, 0 replay
+// Acceptance run, N = 200 (default): 6 configurations x 200 seeds (0..199) = 1200 configuration-specific games, 200 per
+// configuration, all with checkInvariants true. They are 1000 unique games: the two ALL_BEGINNER configurations play the
+// same 200 games (identical action logs), see "Counting conventions" in the diagnostics. Result: 1200 passed, 0 failed, 0 rejected actions, 0 invariant violations, 0 replay
 // mismatches, 120 determinism re-runs (seeds 0, 10, ..., 190 in each configuration) identical. PLACE actions per game: min
 // 13, max 45 (never above 48). The descriptive numbers are in docs/game/headless-diagnostics.md.
 //
@@ -880,13 +930,23 @@ describe("Property 21: Termination and bounded length", () => {
 // explicit TIMEOUT_MS (120 s); no delay is inserted.
 //
 // Property 21 (seed 20261321, 150 runs), observed rates of that run:
-//   distinct tier assignments 16 of 16 (every assignment of BEGINNER/ADVANCED to the four seats occurs);
-//   per seat and tier 71 to 79 games; OWNER_ONLY 83 games, FACE_UP 67 games; seats configured HUMAN 312, AI 288;
+//   distinct tier assignments 16 of 16 (2 registered tiers on 4 seats give 2^4 = 16 assignments; every one occurs);
+//   per (seat, tier) marginal 71 to 79 games out of 150 (the two tiers of one seat add up to 150: P0 ADVANCED 79 /
+//   BEGINNER 71, P1 77 / 73, P2 79 / 71, P3 71 / 79). This is NOT the count per complete assignment. The counts per
+//   complete assignment were not recorded when the notes were written. Re-deriving them by regenerating the inputs with
+//   the same fast-check seed and numRuns (the marginals, the visibility split and the HUMAN/AI totals reproduced exactly)
+//   gives 2 to 16 games per assignment, 9.375 on average (the sum is 150); the least frequent assignment is
+//   ADVANCED/ADVANCED/BEGINNER/ADVANCED with 2 games, the most frequent are ADVANCED/ADVANCED/ADVANCED/BEGINNER and
+//   ADVANCED/BEGINNER/ADVANCED/ADVANCED with 16 each. The only guard on assignments is "at least 12 distinct";
+//   OWNER_ONLY 83 games, FACE_UP 67 games; seats configured HUMAN 312, AI 288 (seat counts, 150 games x 4 seats = 600);
 //   batches 708 (about 4.7 per game); batches with two codes 0 (no game with a two-code batch: neither tier aims at one,
-//   so there is no guard for it, and the acceptance run above contains 5 such games, see the diagnostics);
+//   so there is no guard for it). For comparison, the acceptance run above has 9 configuration-specific games with a
+//   two-code batch (ALL_BEGINNER seeds 152, 158, 178, 195 in each of its two visibility modes: 8; MIXED / OWNER_ONLY
+//   seed 21: 1), which are 5 unique games, with 9 and 5 two-code batches (one per game) out of 6055 and 5750 batches
+//   (configuration-specific and unique counts; see the diagnostics);
 //   bonus seat P0 44, P1 38, P2 37, P3 31; games ending after the last guess 113, ending by an emptying PLACE without a
 //   code 37; PLACE count range 13..45; most accepted actions in one game 78 (the guard is 300); replay mismatches 0.
-// Guards (minimum, with the margin to the observed number): each tier on each seat >= 15 (min observed 71); at least 12
+// Guards (minimum, with the margin to the observed number): each tier on each seat >= 15 (per-(seat, tier) marginal, min observed 71); at least 12
 // distinct assignments (16); each visibility >= 50 games (67); HUMAN and AI seats >= 150 (288); bonus seat >= 5 each (31);
 // ending after a guess >= 20 (113); ending by an emptying PLACE >= 5 (37); PLACE range >= 3 (32).
 //

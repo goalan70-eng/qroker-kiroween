@@ -6,12 +6,39 @@ This file is written by `src/game/sim/e2e.test.ts` when the test runs with `E2E_
 
 ## How the numbers were produced
 
-- Seeds: 0..199 (N = 200), every Seed in every configuration, so 1200 complete games.
+- Seeds: 0..199 (N = 200), every Seed in every configuration, so 1200 complete configuration-specific games (see Counting conventions for the number of unique games).
 - Configurations: strategy mix x identity visibility. ALL_BEGINNER = BEGINNER on P0..P3; ALL_ADVANCED = ADVANCED on P0..P3; MIXED = P0 ADVANCED, P1 BEGINNER, P2 ADVANCED, P3 BEGINNER. Visibility is OWNER_ONLY or FACE_UP.
 - Configuration of each game: `defaultConfig()` with `identityVisibility` overridden; the driver assigns an AI strategy to all four seats. The score table is the placeholder `rewardByError [6, 4, 3, 2, 1]`, `handEmptyBonus 3`.
 - Every game ran with `checkInvariants: true` and was checked by the independent oracles of the test (see the header of the test file).
 - Win means rank 1 of `rankPlayers` (competition ranking, no tiebreak). A game whose rank 1 is held by one seat is an outright win for that seat; a game whose rank 1 is shared counts a shared win for every seat at rank 1 and one tie at the top.
 - Regenerate: `E2E_WRITE_DIAGNOSTICS=1 npx vitest --run src/game/sim/e2e.test.ts`.
+
+## Counting conventions
+
+- **Configuration-specific game**: one complete game of one seed in one configuration (strategy mix x visibility). The run plays 1200 of them; every `Games played` cell in the tables below counts configuration-specific games.
+- **Unique game**: a configuration-specific game counted once. A FACE_UP game whose complete action log is identical to the OWNER_ONLY game of the same mix and seed is a duplicate of that game (see Visibility comparison) and is not counted again. The run contains 1000 unique games. The two ALL_BEGINNER columns are therefore the same games, not two independent samples.
+- **Game containing a multi-code batch**: a game with at least one batch that completes two or more Composite Codes at once.
+- **Number of multi-code batches**: the count of such batches. A game with two multi-code batches adds 1 to the game count and 2 to the batch count.
+- **Batch denominator**: the number of all prediction batches (one per placement that completes at least one Composite Code), counted over the same set of games as the numerator.
+
+| Quantity | Configuration-specific games | Unique games |
+| --- | --- | --- |
+| Games | 1200 | 1000 |
+| Games containing a multi-code batch | 9 | 5 |
+| Multi-code batches | 9 | 5 |
+| All batches (denominator) | 6055 | 5750 |
+| Multi-code batches / all batches | 9 / 6055 (0.15 %) | 5 / 5750 (0.09 %) |
+
+Seeds with a multi-code batch, per configuration:
+
+| Configuration | Seeds |
+| --- | --- |
+| ALL_BEGINNER / OWNER_ONLY | 152, 158, 178, 195 |
+| ALL_BEGINNER / FACE_UP | 152, 158, 178, 195 |
+| ALL_ADVANCED / OWNER_ONLY | none |
+| ALL_ADVANCED / FACE_UP | none |
+| MIXED / OWNER_ONLY | 21 |
+| MIXED / FACE_UP | none |
 
 ## Results per configuration
 
@@ -96,4 +123,5 @@ For each strategy mix: the number of Seeds whose complete action log is identica
 - The games are synthetic self-play of two simple heuristic strategies, not human play.
 - Seat P0 places first in every game; the tables above do not separate seat position from tier.
 - Neither strategy aims at a placement that completes two codes at once, so the 2-code rows rest on few games; they say nothing about how often a human player would see such a batch.
+- The six configurations are not six independent samples: a strategy that does not read card identities plays identical games in both visibility modes (see Visibility comparison and Counting conventions).
 - The numbers describe these seeds only (0..199); no statistical test was made and none is claimed.
