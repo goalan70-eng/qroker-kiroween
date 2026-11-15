@@ -618,11 +618,11 @@ Behavior:
 - Rendering: a function `render(model, views)` rebuilds the changed screen region from plain data using a small `h(tag, props, children)` helper. Focus is restored by a `data-focus-key` after each render. With 64 cells this needs no virtual DOM.
 - Controller: after every accepted Action it saves, then drains AI work: while the acting Seat is AI, it computes the Action from `viewFor` and applies it through `deps.schedule` with a presentation delay (`AI_DELAY_MS = 600`, at most 1000). Human Seats stop the loop.
 - Placement flow (owner-directed update, IC-11; supersedes the earlier card-first flow with an orientation toggle for every card): two input paths fill one `PlacementDraft`. Path A, drag and drop: drag an own-Hand card onto a legal cell. Path B, position first: select a legal empty cell, keep it selected, then select a Hand card (card-first selection stays allowed, not required). Both paths show the preview, the `Rotation_Control` only for clubs and spades, "Confirm placement" ("배치 확정") and "Cancel" ("취소"), and only the confirm action sends `PLACE`. Legality comes from `legalCellsFor(view)`; the message for an illegal cell comes from the engine through `controller.explainTarget` (see "Placement interaction"). Nothing in the draft changes the `GameState`.
-- Gate flow (only when 2 or more human Seats): when the Seat to show changes from one human Seat to another, the DOM of the previous Seat's private area is removed, the gate is shown, and the next Seat's content is rendered only after "I am ready". AI Seats never need a gate because their information is never rendered.
-- Guess flow: AI Seats submit immediately in the controller. Each human Seat in seat order sees (gate) → one numeric input per code, labelled with the code's Quad_Key and a Board highlight → submit. No Hidden_Sum is on screen. After the last submission the reveal screen shows `lastReveal`.
-- Reveal screen: per code the 4 cards face up, the Hidden_Sum, and optionally the Schematic_Code_View; a table of earned and cumulative scores per Seat; a continue button that sends `ACK_REVEAL` (or moves to the final screen when `phase = ENDED`).
+- Gate flow (only when 2 or more human Seats): when the Seat to show changes from one human Seat to another, the DOM of the previous Seat's private area is removed, the gate is shown, and the next Seat's content is rendered only after "I am ready". AI Seats never need a gate because their information is never rendered. Gate sequencing model and scope: see "Task 18 interaction contracts".
+- Guess flow: AI Seats submit immediately in the controller. Each human Seat in seat order sees (gate) → one numeric input per code, labelled with the code's Quad_Key and a Board highlight → submit. No Hidden_Sum is on screen. After the last submission the reveal screen shows `lastReveal`. Input parsing, stale-form and privacy rules: see "Task 18 interaction contracts".
+- Reveal screen: per code the 4 cards face up, the Hidden_Sum, and optionally the Schematic_Code_View; a table of earned and cumulative scores per Seat; a continue button that sends `ACK_REVEAL` (or moves to the final screen when `phase = ENDED`). View model, scoreboard and the PLACE boundary of `handlers.dispatch`: see "Task 18 interaction contracts".
 - End screen: ranking with shared ranks, final scores, all `history` records with Hidden_Sum details, buttons "rematch" (new seed), "replay same seed", "new setup".
-- Banner: shown on every game screen while `rules.scoreConfig.provisional`.
+- Banner: shown on every game screen while `rules.scoreConfig.provisional` (model flag in "Task 18 interaction contracts").
 
 Accessibility and styling:
 - Board: `role="grid"` with `role="row"` and `role="gridcell"` wrappers, each cell a `<button>` with `aria-label` such as "D4, empty, legal placement" or "E5, card H-7, rotated 180 degrees, owner Player 1" (localized). Roving `tabindex` and arrow-key movement. The label adds the state "selected target" for the draft target, and carries no identity that is hidden from the viewer. Cell attributes and the board DOM contract for drag and drop are in "Placement interaction".
@@ -808,6 +808,94 @@ Strings (English / Korean) live in `i18n/strings/hand.ts` and `i18n/strings/boar
 Keyboard path (no drag needed): Tab to a Hand card and press Enter or Space (`selectCard`); arrow keys move the Board focus and Enter or Space on a legal cell sets the target (`selectTarget`); in either order the preview appears when both are set; Tab to the rotation control when offered, then to "Confirm placement" or "Cancel"; Escape clears the draft.
 
 Residual risk: the pure layers (`reduceDraft`, `validateDraft`, `stepGesture`, `rotationInfoFor`) are verifiable in Node. Pointer capture, `elementFromPoint` against a real layout, click suppression order and browser touch behavior are verified only by the manual real-device checks (Testing Strategy, evidence classes). This design makes no claim about them before those checks are recorded.
+
+### Task 18 interaction contracts (placement boundary, gate, Guess entry, reveal, scoreboard)
+
+Contracts for requirements 13.14 and 14.1 to 14.8 (tasks 18.1 to 18.3). They change no engine semantics, score value, reveal policy, visibility mode, OQ decision or optical code. The Guess values of other Seats are never displayed anywhere in task 18, so OQ-14 (post-game disclosure of Guesses) does not apply.
+
+#### Placement confirmation boundary (task 18.3)
+
+```typescript
+interface RenderHandlers {
+  readonly dispatch: (action: Exclude<Action, { type: 'PLACE' }>) => OpResult;   // narrowed at type level
+  // draftEvent, confirmPlacement, explainTarget, startGame, restart, abandon, setLanguage: unchanged
+}
+export type OpResult = /* existing */ | { readonly ok: false; readonly reason: 'PLACE_NOT_ALLOWED' };
+```
+
+- At runtime `handlers.dispatch` rejects an Action whose `type` is `'PLACE'` (a caller that bypasses TypeScript) with `PLACE_NOT_ALLOWED`. The check runs before the engine: `reduce` is not called, and `log`, state, `draft`, `actionCount`, `lastAccepted` and AI scheduling do not change.
+- `confirmPlacement()` is the only human UI path to a `PLACE`. `Controller.dispatchHuman` keeps its full `Action` type as the trusted API for the composition root, tests and `confirmPlacement` itself. AI Actions keep using the controller's internal reducer path. There is one placement engine (`reduce`) and no second one.
+
+#### Gate sequencing model (`ui/screens/privacy-gate.ts`, pure part `nextGate`)
+
+```typescript
+export type GatePurpose = 'HAND' | 'GUESS';                       // 'HAND' replaces the sketch's reason 'TURN' in AppModel.gate
+export interface GateInput {
+  readonly seats: PublicRules['seats'];                           // view.rules.seats: real kinds and names
+  readonly phase: GamePhase; readonly turn: PlayerId;
+  readonly guessSubmitted: Readonly<Record<PlayerId, boolean>>;
+  readonly lastPrivateSeat: PlayerId | null;                      // seat whose private view was last rendered
+  readonly acknowledgedSeat: PlayerId | null;                     // seat whose gate was already acknowledged
+}
+export interface GateModel { readonly forSeat: PlayerId; readonly name: string; readonly purpose: GatePurpose }
+export function nextGate(i: GateInput): GateModel | null;
+```
+
+| Condition | Result |
+|-----------|--------|
+| Exactly one human Seat | `null` always: that Seat sees its own eligible view and waits for its own private Guess |
+| 2 to 4 human Seats, `PLACEMENT`, turn Seat is human | candidate = turn Seat, purpose `HAND` |
+| 2 to 4 human Seats, `GUESS_COLLECT` | candidate = first human Seat in seat order with `guessSubmitted` false, purpose `GUESS` |
+| `REVEAL`, `ENDED`, or the turn Seat is an AI | `null` (public screens and AI Seats need no gate) |
+| candidate equals `lastPrivateSeat` or `acknowledgedSeat` | `null` (no hand-over happens) |
+| otherwise | the gate for the candidate |
+
+- Order in the render host: (1) remove the previous Seat's private DOM synchronously, (2) create the gate DOM, (3) after acknowledgement set `acknowledgedSeat` and render the next Seat's private view and set `lastPrivateSeat`. `acknowledgedSeat` is cleared when another Seat's private view is rendered.
+- Acknowledgement is single use. The callback is bound to `(forSeat, purpose, actionCount)` and does nothing unless `nextGate` still returns that gate, so a double click or a stale callback is a no-op. A language change or a re-render while the gate is open renders the same gate again, never the private view.
+- The gate model and the gate DOM contain only the next Seat's id, public name and the phase kind (placement or Guess). No CardId, Guess, owner-only identity or Hidden_Sum appears in text, attributes, `aria-label`, hidden nodes or serialized models.
+- Scope: switching `AppModel.viewer` (today the first human Seat) and activating the gate in the composed page belong to task 19.4. Task 18.1 delivers and tests the isolated gate contract. No claim of full browser privacy is made before tasks 19.4 and 21.
+
+#### Guess entry (`ui/screens/guess-entry.ts`, `ui/guess-model.ts`, `i18n/strings/guess.ts`)
+
+```typescript
+// ui/guess-model.ts: pure; the only ui/ file besides controller.ts with a special core import (core/score)
+export function parseGuessText(text: string): Result<number>;      // trim; /^-?[0-9]+$/ else GUESS_NOT_INTEGER; then validateGuess(Number(text))
+export function buildGuesses(keys: readonly QuadKey[], texts: Readonly<Record<QuadKey, string>>):
+  | { readonly ok: true; readonly guesses: Readonly<Record<QuadKey, number>> }
+  | { readonly ok: false; readonly errors: Readonly<Record<QuadKey, ErrorCode>> };   // one entry per invalid or blank key
+export interface GuessFormToken { readonly viewer: PlayerId; readonly actionCount: number; readonly phase: GamePhase; readonly keys: readonly QuadKey[] }
+```
+
+- Inputs: one numeric text input per key of `view.pendingQuadKeys` and no others, labelled by the public Quad_Key plus localized instructions, and associated with the public 2×2 board region of that code. No Hidden_Sum is shown.
+- Accepted text: a finite integer from `GUESS_MIN` (4) to `GUESS_MAX` (52). Blank, fractional, out-of-range, non-numeric and malformed text (`1e1`, `0x10`, `+`, `--3`, `4.0`, spaces only, a digit string that overflows to `Infinity`) is rejected with the engine's localized `GUESS_NOT_INTEGER` or `GUESS_OUT_OF_RANGE` message shown inline for that key. A blank or missing key is reported and nothing is sent.
+- Boundary: `ui/guess-model.ts` imports `validateGuess`, `GUESS_MIN` and `GUESS_MAX` from `core/score` through one additive allow-list entry in `boundaries.test.ts` for that file only (same pattern as `controller.ts` importing `core/fragment-layout`). No screen imports `core/state` or `core/engine`.
+- Submission: `handlers.dispatch({ type: 'SUBMIT_GUESSES', player: viewer, guesses })` with exactly the current key set. The form captures a `GuessFormToken`. A submit does nothing when the current view's viewer, `actionCount`, phase or key set differs from the token, or when `view.guessSubmitted[viewer]` is already true (stale form). A duplicate submission that reaches the engine is refused by `DUPLICATE_SUBMISSION`, which stays the authority. A failed validation sends nothing and leaves the engine state unchanged.
+- Privacy: after success the input values are cleared and only a submitted or waiting status is shown. No console, storage, data attribute or global holds a Guess. AI Guesses and other humans' Guesses are never displayed.
+
+#### Reveal screen and scoreboard (`ui/screens/reveal.ts`, `ui/components/scoreboard.ts`, `i18n/strings/reveal.ts`)
+
+```typescript
+export interface RevealViewModel {                                 // built from view.lastReveal and view.rules only; no guess field
+  readonly batchIndex: number; readonly placer: { readonly id: PlayerId; readonly name: string };
+  readonly codes: readonly { readonly quadKey: QuadKey; readonly cards: readonly CardId[]; readonly hiddenSum: number }[];
+  readonly seats: readonly { readonly id: PlayerId; readonly name: string; readonly earned: number; readonly cumulative: number }[];
+  readonly canContinue: boolean;                                   // view.phase === 'REVEAL'
+}
+export function buildRevealModel(view: PlayerView): RevealViewModel | null;   // null without lastReveal
+export interface ScoreboardModel {
+  readonly rows: readonly { readonly id: PlayerId; readonly name: string; readonly score: number; readonly handCount: number; readonly active: boolean }[];
+  readonly deckCount: number; readonly provisional: boolean;       // rules.scoreConfig.provisional
+}
+export function buildScoreboardModel(view: PlayerView): ScoreboardModel;
+```
+
+- Reveal: per code it shows the Quad_Key, the card identities the record currently supplies (the existing four-card contract is rendered as is; the one-card versus four-card product policy stays open and is not decided here), the Hidden_Sum, and the earned and cumulative points per Seat. The model has no Guess field in its type (type-level test on `keyof`) and no Guess in its value (a scan of the serialized model against the Guesses submitted in the test game).
+- Continue control: sends `ACK_REVEAL` through `handlers.dispatch` once. It captures `actionCount` and does nothing when it changed or after the first activation (double acknowledgement prevented). It is the public continuation. When `phase` is `ENDED` the screen offers no ACK; the final screen is task 19.2.
+- Scoreboard: an accessible table with a caption, column headers and row headers (`scope`), built from `PlayerView` only. Columns: Seat name, cumulative score, current Hand count, and the active Seat marked by a visually distinct, non-color-only marker (a text or glyph plus a class). The remaining deck count and the provisional-scoring banner (driven by `rules.scoreConfig.provisional`, with no point value in its text) are shown with it. Labels exist in Korean and English.
+
+#### Evidence classes for task 18
+
+Pure model tests (`nextGate`, `parseGuessText`, `buildGuesses`, `buildRevealModel`, `buildScoreboardModel`), DOM-free controller tests (`PLACE_NOT_ALLOWED`, unchanged state), and component-level tests with the existing `ui/testing/fake-dom.ts` harness (evidence class 2 of the Testing Strategy). Assembled-page browser privacy tests stay in tasks 19.4 and 21.
 
 ### PWA (`ui/public/`, `scripts/build-sw.ts`, `ui/pwa-register.ts`)
 

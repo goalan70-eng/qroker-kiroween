@@ -367,18 +367,29 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - _Requirements: 13.3, 13.4, 13.5, 13.10, 13.11, 13.12, 13.13, 13.14, 13.15, 13.16, 4.2, 4.5, 17.7_
 
 - [ ] 18. Guess entry, privacy gate, reveal and scoreboard
-  - [ ] 18.1 Pass_Device_Gate and Guess entry (`ui/screens/privacy-gate.ts`, `ui/screens/guess-entry.ts`, `i18n/strings/guess.ts`)
+  - [ ] 18.1 Pass_Device_Gate and Guess entry (`ui/screens/privacy-gate.ts`, `ui/screens/guess-entry.ts`, `ui/guess-model.ts`, `ui/guess-model.test.ts`, `i18n/strings/guess.ts`, `src/game/boundaries.test.ts`)
     - The gate removes private DOM before it is shown and renders nothing private; Guess entry has one numeric input per Quad_Key with validation by `validateGuess` and inline messages; the draft is cleared after submission.
+    - Implement design.md "Task 18 interaction contracts" (gate sequencing model and Guess entry): the pure `nextGate` in `ui/screens/privacy-gate.ts`; `parseGuessText`, `buildGuesses` and `GuessFormToken` in `ui/guess-model.ts`; in `boundaries.test.ts` one additive allow-list entry that lets `ui/guess-model.ts` (that file only) import `core/score` (`validateGuess`, `GUESS_MIN`, `GUESS_MAX`), with every other `ui/` file still limited to `core/view` and `core/types` (extend the fixture test so that a screen file importing `core/score` fails).
     - Acceptance: with 2 human Seats the gate appears between Seats; no Hand card, Guess value or owner-only identity is in the DOM while the gate is shown; no Hidden_Sum is shown during entry.
-    - Tests: pure model tests for gate sequencing (`nextGate(model)`); DOM tests in task 21.3.
+    - Acceptance (sharpened), pure model tests (`nextGate`, `parseGuessText`, `buildGuesses`): `nextGate` returns `null` for one human Seat, and for two and four human Seats gives the gate between Seats in `PLACEMENT` (purpose `HAND`) and in `GUESS_COLLECT` (purpose `GUESS`, first human Seat in seat order without a submitted Guess); mixed human and AI Seats (AI turns and AI Guess collection need no gate; only human Seats are gated); one-code and two-code batches; no gate in `REVEAL` and `ENDED`; no gate when the candidate equals `lastPrivateSeat` or `acknowledgedSeat`. Validation accepts 4 and 52 and rejects 3 and 53; invalid and malformed text (blank, spaces only, `4.0`, `1e1`, `0x10`, `+`, `--3`, a digit string that overflows to `Infinity`) gives `GUESS_NOT_INTEGER` or `GUESS_OUT_OF_RANGE`; missing keys and blank keys are reported per key and nothing is sent.
+    - Acceptance (sharpened), component tests with the existing `ui/testing/fake-dom.ts`: duplicate and stale submission is a no-op (token mismatch of viewer, `actionCount`, phase or key set, and `guessSubmitted` already true), and a stale or double gate acknowledgement is a no-op; the gate DOM removal order is previous private DOM removed first, then gate DOM created, then the next Seat's private view only after acknowledgement; the gate model and DOM contain no CardId, Guess value, owner-only identity or Hidden_Sum (text, attributes, `aria-label`, hidden nodes and serialized model scan); no Hidden_Sum appears during entry; Korean and English strings exist for every key with equal placeholder names; keyboard operation and focus restoration (focus moves to the gate control, then to the first Guess input or the Hand, and returns to a defined target after submission or acknowledgement).
+    - Scope note: activating the gate in the composed page and switching `AppModel.viewer` between human Seats are task 19.4. Task 18.1 delivers and tests the isolated gate and Guess entry contract only, and makes no claim of full browser privacy. The headless-DOM smoke test remains task 21.3.
+    - Tests: pure model tests for gate sequencing (`nextGate(model)`) and `ui/guess-model.test.ts`; component tests on `ui/testing/fake-dom.ts`; the headless-DOM smoke test stays in task 21.3.
     - Depends on: 16.2, 15.1.
-    - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5_
+    - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 16.2, 16.6_
   - [ ] 18.2 Reveal screen and scoreboard (`ui/screens/reveal.ts`, `ui/components/scoreboard.ts`, `i18n/strings/reveal.ts`)
     - Reveal shows per code the 4 revealed cards and the Hidden_Sum, and a table of earned and cumulative points; no Guess values. Scoreboard shows scores, Hand sizes, Seat names and deck size on every game screen.
     - Acceptance: the reveal view model contains no Guess field (type-level and test).
-    - Tests: view-model unit tests.
-    - Depends on: 16.2.
-    - _Requirements: 14.6, 14.7_
+    - Acceptance (sharpened), per design.md "Task 18 interaction contracts" (`buildRevealModel`, `buildScoreboardModel`): `RevealViewModel` has no Guess field (a type-level test on `keyof` plus a scan of the serialized model against the Guesses submitted in the test game); the four-card contract is rendered as the record supplies it (the one-card versus four-card product policy stays open and is not decided here); the continue control sends `ACK_REVEAL` once (it captures `actionCount`, and a second activation or a changed `actionCount` sends nothing); in `ENDED` the screen shows no ACK control; the scoreboard is an accessible table with a caption, column headers and row headers, with Seat name, score and Hand count per row plus the deck count; the active Seat is marked by a text or glyph marker and a class, never by color alone; the provisional flag of the model comes from `rules.scoreConfig.provisional` and carries no point value; Korean and English strings exist for every key with equal placeholder names.
+    - Tests: view-model unit tests; component tests for the reveal screen and scoreboard on `ui/testing/fake-dom.ts`.
+    - Depends on: 16.2 and 18.3 (a new edge). Implement 18.3 first (see the ordering note of 18.3).
+    - _Requirements: 14.6, 14.7, 14.8, 16.2_
+  - [ ] 18.3 Placement confirmation boundary (`ui/controller.ts`, `ui/controller.test.ts`, existing tests and playground code that call `handlers.dispatch` with `PLACE`)
+    - Implement design.md "Task 18 interaction contracts", "Placement confirmation boundary": narrow `RenderHandlers.dispatch` to `Exclude<Action, { type: 'PLACE' }>` at type level; add the `PLACE_NOT_ALLOWED` reason to `OpResult`; at runtime the screen-facing `handlers.dispatch` rejects an Action whose `type` is `'PLACE'` with `PLACE_NOT_ALLOWED` before the engine is called, so `reduce` is not called and state, `log`, `draft`, `actionCount`, `lastAccepted` and AI scheduling do not change. `Controller.dispatchHuman` (trusted API), `confirmPlacement`, the AI Action path and the Task 17 draft, gesture and keyboard behavior stay unchanged. Update every caller that sends `PLACE` through `handlers.dispatch` (tests, playground) to use `dispatchHuman` or `confirmPlacement`.
+    - Acceptance: regression tests in `ui/controller.test.ts` show that a bypass attempt through `handlers.dispatch` leaves the GameState-derived view, `actionCount` and `log` unchanged. Cases: a call that defeats TypeScript (a cast), with a legal and with an illegal `PLACE` payload, each returning `PLACE_NOT_ALLOWED`; the same attempt during `BUSY` re-entrancy (from inside a render or apply callback); a held draft survives the rejected attempt unchanged; `confirmPlacement` still places exactly once; an all-AI game still plays to `ENDED`; a type-level test (`@ts-expect-error`) shows that `handlers.dispatch({ type: 'PLACE', ... })` does not compile.
+    - Ordering note (no renumbering): implement 18.3 before 18.1 and 18.2 (18.2 depends on it explicitly; 18.1 gains no new dependency edge). The dependency graph places 18.3 in the wave after 17.4 and 18.1 and 18.2 in the wave after 18.3, as it does for 17.3.
+    - Depends on: 17.4.
+    - _Requirements: 13.4, 13.10, 13.14, 11.6_
 
 - [ ] 19. Lifecycle screens and screen composition
   - [ ] 19.1 Setup screen (`ui/screens/setup.ts`, `i18n/strings/setup.ts`)
@@ -635,19 +646,20 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     { "id": 6, "tasks": ["9.2", "10.2", "12.1", "20.1"] },
     { "id": 7, "tasks": ["12.2", "20.2"] },
     { "id": 8, "tasks": ["12.3", "16.2", "20.3"] },
-    { "id": 9, "tasks": ["12.4", "13.1", "17.1", "18.1", "18.2", "19.1", "19.2", "19.3"] },
+    { "id": 9, "tasks": ["12.4", "13.1", "17.1", "19.1", "19.2", "19.3"] },
     { "id": 10, "tasks": ["13.2", "17.2", "17.4"] },
-    { "id": 11, "tasks": ["17.3"] },
-    { "id": 12, "tasks": ["19.4"] },
-    { "id": 13, "tasks": ["20.4", "21.1"] },
-    { "id": 14, "tasks": ["21.2", "21.3", "22.1"] },
-    { "id": 15, "tasks": ["22.2"] },
-    { "id": 16, "tasks": ["23.1", "24.3", "24.4", "25.1", "25.2"] },
-    { "id": 17, "tasks": ["23.2", "23.3", "23.4", "24.1", "25.3"] },
-    { "id": 18, "tasks": ["24.2", "25.4"] },
-    { "id": 19, "tasks": ["26.1"] },
-    { "id": 20, "tasks": ["27.1"] },
-    { "id": 21, "tasks": ["27.2", "27.3", "27.4"] }
+    { "id": 11, "tasks": ["17.3", "18.3"] },
+    { "id": 12, "tasks": ["18.1", "18.2"] },
+    { "id": 13, "tasks": ["19.4"] },
+    { "id": 14, "tasks": ["20.4", "21.1"] },
+    { "id": 15, "tasks": ["21.2", "21.3", "22.1"] },
+    { "id": 16, "tasks": ["22.2"] },
+    { "id": 17, "tasks": ["23.1", "24.3", "24.4", "25.1", "25.2"] },
+    { "id": 18, "tasks": ["23.2", "23.3", "23.4", "24.1", "25.3"] },
+    { "id": 19, "tasks": ["24.2", "25.4"] },
+    { "id": 20, "tasks": ["26.1"] },
+    { "id": 21, "tasks": ["27.1"] },
+    { "id": 22, "tasks": ["27.2", "27.3", "27.4"] }
   ]
 }
 ```
