@@ -104,3 +104,90 @@ are required. Never automatically grant Kiro permissions via a notification.
 - No automatic Git push/commit and no additional AI agent prompts.
 - Normal test failure reports are not equivalent to completed real-device tests.
 - A manual reviewer should still confirm requirements and test evidence.
+
+
+## Extended command-only Kiro Hooks
+
+Shared file: .kiro/hooks/development-automation.json
+
+| Trigger | Default | Behavior |
+| --- | --- | --- |
+| PreTaskExec | enabled | Record a minimal local timestamp and Git revision before Spec execution |
+| PostTaskExec | enabled (existing) | Game typecheck, test:game, local verification record, optional ntfy |
+| PostFileSave | enabled | Run typecheck:game at most every 60 seconds after game file saves |
+| AgentStop | enabled | Optional generic mobile message when an agent response ends |
+| PreToolUse | **disabled until tested** | Detect a limited set of destructive shell commands |
+
+These are local IDE / supported CLI Hooks, not cloud validation. The independent
+GitHub Actions workflow still runs the full suite after push/PR.
+
+### Local evidence: no external upload
+
+Task-start and task-verification events append small JSON-lines records to
+%LOCALAPPDATA%\QRokerHookData\events.jsonl on Windows, or
+~/.local/state/QRokerHookData/events.jsonl elsewhere.
+
+Records contain only timestamps, event type, abbreviated Git revision, check
+names, pass/fail and durations (or a fixed guard reason). They exclude prompts,
+source code, card/guess values, tool input, file paths, stack traces, session
+IDs, and ntfy topics. This journal is never uploaded or committed. A user must
+review evidence before quoting results in a Kiroween submission. The journal
+can be removed locally at any time.
+
+### Throttled PostFileSave typecheck
+
+Only TypeScript files under src/game/ are matched. The existing native
+TypeScript 7 command npm run typecheck:game runs at most once per 60 seconds,
+with a 20-second process timeout. This avoids depending on the removed
+TypeScript 6 JavaScript compiler API. It does not modify code, run AI,
+validate actual DOM privacy, or replace Spec-level/full tests.
+Missing/unrecognized event paths cause a silent skip, not a false success
+claim. Temporary typecheck errors while code is half-written are possible.
+
+### Rate-limited AgentStop notifications
+
+The optional QROKER_NTFY_TOPIC Windows user environment variable enables
+generic ntfy messages; it must never appear in project files or public logs.
+AgentStop sends only "Kiro finished a response. Check your PC."
+It is suppressed for 90 seconds after a successful verification notification
+and for 45 seconds after a prior AgentStop notification, to prevent duplicate
+or excessive pushes. This is **not** an alert for permission/approval requests
+and does not prove that work succeeded.
+
+### Guard deployment
+
+PreToolUse is installed but disabled in shared Hook JSON. This is intentional:
+a false positive could prevent normal development, and command input visibility
+must be confirmed in the installed Kiro version. It is not a sandbox.
+
+On the user's PC:
+1. Run node --test scripts/automation-hooks.test.mjs
+2. Ensure the Kiro IDE displays the guard in Agent Hooks.
+3. Test a harmless command and inspect Kiro Hook logs / event delivery.
+4. Only after confirming accurate detection, enable the guard locally.
+5. Disable again if it blocks normal workflows.
+
+The guard checks explicit common forms of git reset --hard, force clean/push,
+bulk worktree discard, and protected-directory deletion. It cannot catch
+unknown tools, arbitrary shell escaping, manual terminal commands or all
+destructive operations. Keep Kiro permission controls and backups enabled.
+
+### CI verification
+
+The workflow syntax-checks every Hook script, validates all five command-only
+Hook definitions, runs isolated node:test tests for guard and syntax cases,
+then runs the established TypeScript, codebook, Vitest and build checks.
+
+All Hooks use command actions; they do not directly call a language model,
+auto-commit, alter approved rules, or approve permissions. Hook output can
+indirectly enter the Kiro agent context, so all output is deliberately short.
+
+The separate Windows Action Required notification relay remains unimplemented
+and requires local notification permissions and real-device testing.
+
+## Optional OpenAI API code reviewer
+
+A new PostTaskExec Hook is included but **disabled by default**. This is a paid
+external API call, unlike the command-only local verifiers. Its CI tests do not
+call OpenAI. For Windows key, billing, manual preview and opt-in instructions see
+[OpenAI reviewer setup](openai-review-setup.md). Never commit an API key.

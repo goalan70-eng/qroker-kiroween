@@ -26,7 +26,8 @@
     "test:game": "vitest --run src/game",
     "dev": "vite",
     "build": "tsc -p tsconfig.game.json --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "review:openai": "node scripts/openai-review.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
