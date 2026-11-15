@@ -42,6 +42,7 @@ import * as guess from './strings/guess';
 import * as hand from './strings/hand';
 import * as reveal from './strings/reveal';
 import * as scoreboard from './strings/scoreboard';
+import * as setup from './strings/setup';
 import type { ErrorStringKey, Lang, StringParams, StringTable } from './types';
 
 export type { ErrorStringKey, Lang, StringParams, StringTable } from './types';
@@ -60,12 +61,13 @@ type AreaKey =
   | keyof typeof hand.en
   | keyof typeof guess.en
   | keyof typeof reveal.en
-  | keyof typeof scoreboard.en;
+  | keyof typeof scoreboard.en
+  | keyof typeof setup.en;
 
 /** Every key accepted by `t`. The `error.<code>` keys are part of the type from the start (task 15.2 fills them in). */
 export type StringKey = AreaKey | ErrorStringKey;
 
-const AREAS: readonly { readonly en: StringTable; readonly ko: StringTable }[] = [common, errors, cards, board, hand, guess, reveal, scoreboard];
+const AREAS: readonly { readonly en: StringTable; readonly ko: StringTable }[] = [common, errors, cards, board, hand, guess, reveal, scoreboard, setup];
 
 export const LANGUAGES: readonly Lang[] = Object.freeze(['en', 'ko'] as const);
 export const DEFAULT_LANGUAGE: Lang = 'en';

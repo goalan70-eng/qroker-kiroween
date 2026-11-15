@@ -392,7 +392,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - _Requirements: 13.4, 13.10, 13.14, 11.6_
 
 - [ ] 19. Lifecycle screens and screen composition
-  - [ ] 19.1 Setup screen (`ui/screens/setup.ts`, `i18n/strings/setup.ts`)
+  - [x] 19.1 Setup screen (`ui/screens/setup.ts`, `i18n/strings/setup.ts`)
     - Seed field with random default, 1–4 human Seats (default 1), difficulty per AI Seat (`BEGINNER`, `ADVANCED` in P1), Identity_Visibility option (default `OWNER_ONLY`, OQ-1), language switch; validation with `parseSeed`; prefs saved through the storage adapter once task 20.2 exists.
     - Acceptance: starting from the setup screen calls `newGame` with the entered values; empty seed field shows `SEED_EMPTY` message or draws a random seed (as specified in requirement 2.7).
     - Tests: setup model unit tests (options to `GameConfig`).

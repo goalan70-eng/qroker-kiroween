@@ -1,0 +1,91 @@
+/*
+ * Setup screen styles (task 19.1). Uses the tokens of tokens.css; load tokens.css first.
+ * Not linked into the production page yet (the screens are wired and the CSS is linked in task 19.4).
+ *
+ * Rules of this file:
+ *   - Mobile first: one column; every control (inputs, selects, radio rows, buttons) is at least --touch-min (44 px).
+ *   - The keyboard focus is always visible.
+ *   - Error text is told by its text, not by colour alone (the message is written next to the field).
+ *   - No font, image or network reference.
+ */
+.setup {
+  font-family: var(--font-ui);
+  color: var(--color-ink);
+}
+.setup-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-inline-size: 32rem;
+}
+.setup-field,
+.setup-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.setup-legend,
+.setup-label {
+  font-weight: 600;
+}
+.setup-input,
+.setup-select,
+.setup-button,
+.setup-start {
+  box-sizing: border-box;
+  min-block-size: var(--touch-min, 44px);
+  min-inline-size: var(--touch-min, 44px);
+  padding: var(--space-2) var(--space-3);
+  font: inherit;
+}
+.setup-choice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--touch-min, 44px);
+}
+.setup-radio {
+  inline-size: var(--touch-min, 44px);
+  block-size: var(--touch-min, 44px);
+  margin: 0;
+}
+.setup-radio-label {
+  flex: 1;
+  min-block-size: var(--touch-min, 44px);
+  display: flex;
+  align-items: center;
+}
+.setup-ai-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-block-end: var(--space-2);
+}
+.setup-hint {
+  margin: 0;
+}
+.setup-error {
+  margin: 0;
+  font-weight: 600;
+}
+.setup-error:empty {
+  display: none;
+}
+.setup-input:focus-visible,
+.setup-select:focus-visible,
+.setup-radio:focus-visible,
+.setup-button:focus-visible,
+.setup-start:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 2px;
+}
+.setup-input[aria-invalid='true'] {
+  border-width: 3px;
+}
+.setup-start {
+  align-self: stretch;
+  font-weight: 700;
+}

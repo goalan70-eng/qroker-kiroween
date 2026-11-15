@@ -75,6 +75,7 @@ import type { AIStrategy, AiContext } from '../ai/strategy';
 import { actingSeats, reduce } from '../core/engine';
 import { rotationChangesCorners } from '../core/fragment-layout';
 import { mix32 } from '../core/prng';
+import { parseSeed } from '../core/seed';
 import { defaultConfig, newGame } from '../core/state';
 import type { GameState } from '../core/state';
 import type { Action, CardId, Difficulty, ErrorCode, GameConfig, GridPosition, IdentityVisibility, PlayerId } from '../core/types';
@@ -86,6 +87,8 @@ import { renderWithFocus } from './dom';
 import { draftContextFor, EMPTY_DRAFT, errorCodeForIssue, reduceDraft, validateDraft } from './placement-draft';
 import type { DraftEvent, DraftIssue, DraftResult, RotationInfoMap } from './placement-draft';
 import { mountShell } from './shell';
+import { seatsFor, validateSetup } from './setup-model';
+import type { SetupOptions } from './setup-model';
 import { createStore, initialModel } from './store';
 import type { AppModel, DisplayErrorRecord } from './store';
 
@@ -145,6 +148,12 @@ export interface RenderHandlers {
   /** Any Action except `PLACE` (typed out; a `PLACE` that gets through anyway is refused with `PLACE_NOT_ALLOWED`). */
   readonly dispatch: (action: Exclude<Action, { readonly type: 'PLACE' }>) => OpResult;
   readonly startGame: (options?: StartOptions) => OpResult;
+  /**
+   * Starts a game from the setup screen's options (task 19.1): validates them, parses the seed text (`SEED_EMPTY` for
+   * empty text), builds the configuration and starts through the same path as `startGame`. A rejected call leaves a
+   * running game untouched.
+   */
+  readonly startFromSetup: (options: SetupOptions) => OpResult;
   readonly restart: () => OpResult;
   readonly abandon: () => OpResult;
   readonly setLanguage: (lang: Lang) => void;
@@ -191,6 +200,8 @@ export interface Controller {
   getDisplayError(): DisplayError | null;
   dispatchHuman(action: Action): OpResult;
   startGame(options?: StartOptions): OpResult;
+  /** Same as `RenderHandlers.startFromSetup`. */
+  startFromSetup(options: SetupOptions): OpResult;
   /**
    * Starts the default practice game (seat P0 human, three AI seats, `defaultConfig()`) with `seed` and, when given,
    * `identityVisibility`. For composition roots (such as the development playground) that must not import `core/state`.
@@ -527,6 +538,34 @@ export function createController(deps: AppDeps): Controller {
     return begin(options?.config ?? defaultConfig(), options?.seed ?? deps.randomSeed());
   }
 
+  /**
+   * Setup screen start (task 19.1). Order: validate the options (`INVALID_CONFIG`), parse the seed text (`SEED_EMPTY`
+   * for empty or whitespace-only text; `parseSeed` hashes any other non-decimal text), then `begin`, where `newGame`
+   * stays the final authority. `rulesVersion` and the score configuration are those of `defaultConfig()`.
+   */
+  function startFromSetup(options: SetupOptions): OpResult {
+    if (disposed) return { ok: false, reason: 'DISPOSED' };
+    if (inFlight) return { ok: false, reason: 'BUSY' };
+    const reject = (code: ErrorCode): OpResult => {
+      inFlight = true; // the error render may call back into the controller: refuse it as BUSY
+      try {
+        return rejectWith(code);
+      } finally {
+        inFlight = false;
+      }
+    };
+    const checked = validateSetup(options);
+    if (!checked.ok) return reject('INVALID_CONFIG');
+    const seed = parseSeed(checked.value.seedText);
+    if (!seed.ok) return reject(seed.error.code);
+    const config: GameConfig = {
+      ...defaultConfig(),
+      seats: seatsFor(checked.value),
+      identityVisibility: checked.value.identityVisibility,
+    };
+    return begin(config, seed.value);
+  }
+
   function startPracticeGame(options: PracticeOptions): OpResult {
     const base = defaultConfig();
     const config = options.identityVisibility === undefined ? base : { ...base, identityVisibility: options.identityVisibility };
@@ -646,6 +685,7 @@ export function createController(deps: AppDeps): Controller {
   const handlers: RenderHandlers = Object.freeze({
     dispatch: dispatchFromScreen,
     startGame,
+    startFromSetup,
     restart,
     abandon,
     setLanguage: setUiLanguage,
@@ -660,6 +700,7 @@ export function createController(deps: AppDeps): Controller {
     getDisplayError: () => displayErrorOf(store.get()),
     dispatchHuman,
     startGame,
+    startFromSetup,
     startPracticeGame,
     restart,
     abandon,

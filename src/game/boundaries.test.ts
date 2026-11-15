@@ -81,7 +81,8 @@ export const UI_SCREEN_ALLOWED_CORE_MODULES: readonly string[] = ["types", "view
  * is unreachable) and the controller re-derives the same decision seed with `mix32`; controller.test.ts proves the
  * equivalence against `playGame`. `fragment-layout` is allowed for the controller ONLY (task 17.4, design
  * "Rotation capability metadata"): it calls `rotationChangesCorners(card)` for the viewer's own Hand and hands
- * screens booleans. `deck` and `rules` stay forbidden.
+ * screens booleans. `seed` is allowed for the controller ONLY (task 19.1): `startFromSetup` calls `parseSeed` on the
+ * seed text of the setup screen, so that screens never parse a seed. `deck` and `rules` stay forbidden.
  */
 export const UI_CONTROLLER_ALLOWED_CORE_MODULES: readonly string[] = [
   "types",
@@ -91,6 +92,7 @@ export const UI_CONTROLLER_ALLOWED_CORE_MODULES: readonly string[] = [
   "replay",
   "prng",
   "fragment-layout",
+  "seed",
 ];
 
 /**
@@ -831,6 +833,7 @@ describe("rule: ui/ screens must not import core/state, engine, deck, replay, ru
       "fragment-layout",
       "prng",
       "replay",
+      "seed",
       "state",
       "types",
       "view",
@@ -985,6 +988,11 @@ describe("rule: only ui/guess-model.ts (besides the controller) may import core/
     expect(rules("src/game/ui/placement-draft.ts", score("../"))).toEqual(["ui-allow-list"]);
     expect(rules("src/game/ui/store.ts", score("../"))).toEqual(["ui-allow-list"]);
     expect(rules("src/game/ui/screens/guess-model.ts", score("../../"))).toEqual(["ui-allow-list"]);
+  });
+  it("allows core/seed for the controller only (task 19.1): a screen or other ui/ file may not parse seeds", () => {
+    expect(rules(UI_CONTROLLER_FILE, `import { parseSeed } from "../core/seed";`)).toEqual([]);
+    expect(rules("src/game/ui/screens/setup.ts", `import { parseSeed } from "../../core/seed";`)).toEqual(["ui-allow-list"]);
+    expect(rules("src/game/ui/setup-model.ts", `import { parseSeed } from "../core/seed";`)).toEqual(["ui-allow-list"]);
   });
   it("gives the controller no extra module for this: it keeps its own list", () => {
     expect(UI_CONTROLLER_ALLOWED_CORE_MODULES).not.toContain("score");

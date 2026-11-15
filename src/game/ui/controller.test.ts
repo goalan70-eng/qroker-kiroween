@@ -16,6 +16,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { getStrategy } from '../ai/registry';
 import type { AIStrategy } from '../ai/strategy';
 import { ALL_CARDS } from '../core/cards';
+import { fnv1a32, parseSeed } from '../core/seed';
 import { defaultConfig, newGame } from '../core/state';
 import { SEATS } from '../core/turn';
 import type { Action, CardId, Difficulty, GameConfig, GridPosition, IdentityVisibility, PlayerId } from '../core/types';
@@ -28,6 +29,7 @@ import { AI_DELAY_MS, createController, mountApp } from './controller';
 import type { AppDeps, Controller, OpResult, RenderHandlers, RenderInput, Renderer, Schedule, ScheduleHandle } from './controller';
 import { EMPTY_DRAFT } from './placement-draft';
 import type { DraftEvent } from './placement-draft';
+import type { SetupOptions } from './setup-model';
 import { INITIAL_GESTURE, stepGesture } from './pointer-gesture';
 import type { GestureInput, GestureState } from './pointer-gesture';
 
@@ -475,7 +477,7 @@ describe('what a renderer receives', () => {
       if (call.view !== null) expect(Object.isFrozen(call.view)).toBe(true);
       // task 17.4: `select` (16.2) is replaced by the draft API
       expect(Object.keys(call.handlers).sort()).toEqual([
-        'abandon', 'confirmPlacement', 'dispatch', 'draftEvent', 'explainTarget', 'restart', 'setLanguage', 'startGame',
+        'abandon', 'confirmPlacement', 'dispatch', 'draftEvent', 'explainTarget', 'restart', 'setLanguage', 'startFromSetup', 'startGame',
       ]);
       expect(Object.values(call.handlers).every((f) => typeof f === 'function')).toBe(true);
     }
@@ -488,7 +490,7 @@ describe('what a renderer receives', () => {
     ctl.startGame({ seed: 9 });
     expect(Object.keys(ctl).sort()).toEqual([
       'abandon', 'confirmPlacement', 'dispatchHuman', 'dispose', 'draftEvent', 'explainTarget', 'getDisplayError', 'getModel',
-      'getView', 'restart', 'rotationInfo', 'setLanguage', 'startGame', 'startPracticeGame', 'subscribe',
+      'getView', 'restart', 'rotationInfo', 'setLanguage', 'startFromSetup', 'startGame', 'startPracticeGame', 'subscribe',
     ]);
     expect(Object.values(ctl).every((v) => typeof v === 'function')).toBe(true);
     expect(Object.getOwnPropertyNames(ctl).some((k) => /^(?:state|game|deck|hands|log|seed)$/i.test(k))).toBe(false);
@@ -1693,5 +1695,204 @@ describe('task 18.3: RenderHandlers.dispatch refuses PLACE (placement confirmati
     const place: Action = { type: 'PLACE', player: 'P0', card: t.plain, pos: t.legal[0] as GridPosition, orientation: 0 };
     expect(t.ctl.dispatchHuman(place)).toEqual({ ok: true });
     expect(t.stub.last.handlers.dispatch({ type: 'ACK_REVEAL' })).toEqual({ ok: false, reason: 'ENGINE', code: 'WRONG_PHASE' });
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------
+// Task 19.1: startFromSetup (EVIDENCE CLASS: model, DOM-free controller)
+// ---------------------------------------------------------------------------------------------------------
+
+describe('task 19.1: startFromSetup', () => {
+  type Tiers = readonly [Difficulty, Difficulty, Difficulty, Difficulty];
+  const BEGINNERS: Tiers = ['BEGINNER', 'BEGINNER', 'BEGINNER', 'BEGINNER'];
+  const setup = (patch: Record<string, unknown> = {}): SetupOptions =>
+    ({ seedText: '12345', humanCount: 1, difficulties: BEGINNERS, identityVisibility: 'OWNER_ONLY', ...patch }) as SetupOptions;
+  const INVALID: OpResult = { ok: false, reason: 'ENGINE', code: 'INVALID_CONFIG' };
+
+  /** The configuration a setup stands for, written out without the model's helpers. */
+  function expectedConfig(humans: number, tiers: Tiers, visibility: IdentityVisibility): GameConfig {
+    const base = defaultConfig();
+    const seats = SEATS.map((id, i) => {
+      if (i < humans) return { id, kind: 'HUMAN' as const, name: humans === 1 ? 'You' : `Player ${i + 1}` };
+      return { id, kind: 'AI' as const, difficulty: tiers[i] as Difficulty, name: `AI ${i - humans + 1}` };
+    });
+    return { ...base, seats: seats as unknown as GameConfig['seats'], identityVisibility: visibility };
+  }
+
+  /** The deal of a direct `newGame`, as seen by `viewer`. */
+  const directView = (seed: number, config: GameConfig, viewer: PlayerId): PlayerView => {
+    const created = newGame({ seed, config });
+    if (!created.ok) throw new Error(created.error.code);
+    return viewFor(created.value, viewer);
+  };
+
+  it('starts with the entered seed: 0, 4294967295, 12345 and decimal text with spaces and zeros', () => {
+    for (const [text, seed] of [['0', 0], ['4294967295', 4294967295], ['12345', 12345], ['  007 ', 7]] as const) {
+      const { ctl } = make(new QueueScheduler().schedule);
+      expect(ctl.startFromSetup(setup({ seedText: text })), text).toEqual({ ok: true });
+      expect(ctl.getView('P0'), text).toEqual(directView(seed, expectedConfig(1, BEGINNERS, 'OWNER_ONLY'), 'P0'));
+    }
+  });
+
+  it('hashes text that is not a decimal in range: "4294967296" and "qroker" use the FNV-1a seed of parseSeed', () => {
+    for (const text of ['4294967296', 'qroker', '-5', '1.5', '０１２']) {
+      const parsed = parseSeed(text);
+      if (!parsed.ok) throw new Error('unexpected');
+      expect(parsed.value, text).toBe(fnv1a32(text.trim()));
+      const { ctl } = make(new QueueScheduler().schedule);
+      expect(ctl.startFromSetup(setup({ seedText: text })), text).toEqual({ ok: true });
+      expect(ctl.getView('P0'), text).toEqual(directView(parsed.value, expectedConfig(1, BEGINNERS, 'OWNER_ONLY'), 'P0'));
+    }
+  });
+
+  it('rejects empty and whitespace-only seed text with SEED_EMPTY: nothing starts and the setup stays open', () => {
+    for (const text of ['', ' ', '   ', '\t\n', '\u00a0', '\u3000']) {
+      const { ctl, stub } = make(new QueueScheduler().schedule);
+      expect(ctl.startFromSetup(setup({ seedText: text })), JSON.stringify(text)).toEqual({ ok: false, reason: 'ENGINE', code: 'SEED_EMPTY' });
+      expect(ctl.getView('P0')).toBeNull();
+      expect(ctl.getModel().screen).toBe('SETUP');
+      expect(stub.last.displayError).toEqual({ code: 'SEED_EMPTY', message: t('error.SEED_EMPTY') });
+    }
+  });
+
+  it('starts 1 to 4 humans: seat kinds, viewer P0 and names', () => {
+    for (let humans = 1; humans <= 4; humans++) {
+      const sched = new QueueScheduler();
+      const { ctl } = make(sched.schedule);
+      expect(ctl.startFromSetup(setup({ humanCount: humans })), String(humans)).toEqual({ ok: true });
+      const view = ctl.getView('P0') as PlayerView;
+      expect(view.rules.seats.map((s) => s.kind)).toEqual(SEATS.map((_, i) => (i < humans ? 'HUMAN' : 'AI')));
+      expect(view.rules.seats.map((s) => s.name)).toEqual(expectedConfig(humans, BEGINNERS, 'OWNER_ONLY').seats.map((s) => s.name));
+      expect(ctl.getModel().viewer).toBe('P0');
+      expect(ctl.getModel().screen).toBe('GAME');
+      expect(ctl.getView('P0')).toEqual(directView(12345, expectedConfig(humans, BEGINNERS, 'OWNER_ONLY'), 'P0'));
+      // an AI seat that moves first would be scheduled; with 1 or more humans P0 (human) moves first
+      expect(sched.pending).toBe(0);
+    }
+  });
+
+  it('applies the difficulty of each AI seat', () => {
+    const tiers: Tiers = ['BEGINNER', 'ADVANCED', 'BEGINNER', 'ADVANCED'];
+    for (let humans = 1; humans <= 3; humans++) {
+      const { ctl } = make(new QueueScheduler().schedule);
+      expect(ctl.startFromSetup(setup({ humanCount: humans, difficulties: tiers }))).toEqual({ ok: true });
+      const seats = (ctl.getView('P0') as PlayerView).rules.seats;
+      expect(seats.map((s) => s.difficulty), String(humans)).toEqual(SEATS.map((_, i) => (i < humans ? undefined : tiers[i])));
+    }
+  });
+
+  it('applies both visibilities and keeps the rules version and the provisional score config of defaultConfig()', () => {
+    const base = defaultConfig();
+    for (const visibility of ['OWNER_ONLY', 'FACE_UP'] as const) {
+      const { ctl } = make(new QueueScheduler().schedule);
+      expect(ctl.startFromSetup(setup({ identityVisibility: visibility }))).toEqual({ ok: true });
+      const rules = (ctl.getView('P0') as PlayerView).rules;
+      expect(rules.identityVisibility).toBe(visibility);
+      expect(rules.rulesVersion).toBe(base.rulesVersion);
+      expect(rules.scoreConfig).toEqual(base.scoreConfig);
+      expect(rules.scoreConfig.provisional).toBe(true);
+    }
+  });
+
+  it('rejects an invalid human count with INVALID_CONFIG and changes nothing', () => {
+    for (const bad of [0, 5, 2.5, Number.NaN, '2', null, undefined]) {
+      const { ctl } = make(new QueueScheduler().schedule);
+      expect(ctl.startFromSetup(setup({ humanCount: bad })), String(bad)).toEqual(INVALID);
+      expect(ctl.getView('P0')).toBeNull();
+      expect(ctl.getModel().lastError?.code).toBe('INVALID_CONFIG');
+    }
+  });
+
+  it('rejects EXPERT, an unknown tier and an unknown visibility', () => {
+    const cases: Record<string, unknown>[] = [
+      { difficulties: ['BEGINNER', 'EXPERT', 'BEGINNER', 'BEGINNER'] },
+      { difficulties: ['BEGINNER', 'BEGINNER', 'master', 'BEGINNER'] },
+      { difficulties: ['BEGINNER'] },
+      { identityVisibility: 'FACE_DOWN' },
+      { identityVisibility: undefined },
+    ];
+    for (const patch of cases) {
+      const { ctl } = make(new QueueScheduler().schedule);
+      expect(ctl.startFromSetup(setup(patch)), JSON.stringify(patch)).toEqual(INVALID);
+      expect(ctl.getView('P0')).toBeNull();
+    }
+  });
+
+  it('survives calls that defeat TypeScript: garbage options, a non-string seed, a missing seed', () => {
+    const call = (value: unknown): OpResult => make(new QueueScheduler().schedule).ctl.startFromSetup(value as SetupOptions);
+    for (const garbage of [null, undefined, 5, 'x', [], {}, setup({ seedText: 12345 }), setup({ seedText: null }), setup({ seedText: undefined })]) {
+      expect(call(garbage), JSON.stringify(garbage)).toEqual(INVALID);
+    }
+  });
+
+  it('is deterministic: the same setup twice gives the same deal, and it equals a direct newGame with the same seats', () => {
+    const tiers: Tiers = ['BEGINNER', 'ADVANCED', 'ADVANCED', 'BEGINNER'];
+    const seen: string[] = [];
+    for (let run = 0; run < 2; run++) {
+      const { ctl } = make(new QueueScheduler().schedule);
+      expect(ctl.startFromSetup(setup({ seedText: 'qroker', humanCount: 2, difficulties: tiers, identityVisibility: 'FACE_UP' }))).toEqual({ ok: true });
+      seen.push(JSON.stringify(ctl.getView('P0')));
+    }
+    expect(seen[0]).toBe(seen[1]);
+    const direct = directView(fnv1a32('qroker'), expectedConfig(2, tiers, 'FACE_UP'), 'P0');
+    expect(JSON.parse(seen[0] as string)).toEqual(JSON.parse(JSON.stringify(direct)));
+  });
+
+  it('a rejected setup start leaves a running game, its draft and the AI schedule untouched', () => {
+    const t = drafting();
+    t.ctl.draftEvent({ type: 'dropOnCell', cell: t.legal[0] as GridPosition, card: t.plain });
+    const draft = t.ctl.getModel().draft;
+    expect(draft).not.toBe(EMPTY_DRAFT);
+    const before = t.snapshot();
+    const gestureEpoch = t.ctl.getModel().gestureEpoch;
+    for (const bad of [setup({ seedText: '  ' }), setup({ humanCount: 7 }), setup({ difficulties: ['BEGINNER', 'EXPERT', 'BEGINNER', 'BEGINNER'] })]) {
+      expect(t.ctl.startFromSetup(bad).ok).toBe(false);
+      expect(t.snapshot()).toEqual(before);
+      expect(t.ctl.getModel().draft).toBe(draft);
+      expect(t.ctl.getModel().gestureEpoch).toBe(gestureEpoch);
+      expect(t.ctl.getModel().screen).toBe('GAME');
+    }
+  });
+
+  it('a successful setup start replaces a running game: new epoch, draft cleared, stale AI steps cancelled', () => {
+    const t = drafting();
+    t.ctl.draftEvent({ type: 'dropOnCell', cell: t.legal[0] as GridPosition, card: t.plain });
+    const gestureEpoch = t.ctl.getModel().gestureEpoch;
+    expect(t.ctl.startFromSetup(setup({ humanCount: 2, seedText: '99' }))).toEqual({ ok: true });
+    expect(t.ctl.getModel().draft).toBe(EMPTY_DRAFT);
+    expect(t.ctl.getModel().gestureEpoch).toBeGreaterThan(gestureEpoch);
+    expect(t.ctl.getView('P0')).toEqual(directView(99, expectedConfig(2, BEGINNERS, 'OWNER_ONLY'), 'P0'));
+  });
+
+  it('answers BUSY from inside a render and DISPOSED after dispose; the screen handler is the same function', () => {
+    const { ctl, stub } = make(new QueueScheduler().schedule);
+    expect(stub.last.handlers.startFromSetup).toBe(ctl.startFromSetup);
+    const inner: OpResult[] = [];
+    stub.hook = (input) => {
+      if (input.model.screen === 'GAME' && inner.length === 0) inner.push(input.handlers.startFromSetup(setup()));
+    };
+    expect(ctl.startFromSetup(setup())).toEqual({ ok: true });
+    expect(inner).toEqual([{ ok: false, reason: 'BUSY' }]);
+    stub.hook = null;
+    ctl.dispose();
+    expect(ctl.startFromSetup(setup())).toEqual({ ok: false, reason: 'DISPOSED' });
+  });
+
+  it('an error render from a rejected start cannot start a game re-entrantly', () => {
+    const { ctl, stub } = make(new QueueScheduler().schedule);
+    const inner: OpResult[] = [];
+    stub.hook = (input) => {
+      if (input.model.lastError !== null && inner.length === 0) inner.push(input.handlers.startFromSetup(setup()));
+    };
+    expect(ctl.startFromSetup(setup({ seedText: '' }))).toEqual({ ok: false, reason: 'ENGINE', code: 'SEED_EMPTY' });
+    expect(inner).toEqual([{ ok: false, reason: 'BUSY' }]);
+    expect(ctl.getView('P0')).toBeNull();
+  });
+
+  it('keeps startGame and startPracticeGame working', () => {
+    const { ctl } = make(new QueueScheduler().schedule);
+    expect(ctl.startGame({ seed: 5 })).toEqual({ ok: true });
+    expect(ctl.startPracticeGame({ seed: 6 })).toEqual({ ok: true });
+    expect(ctl.getView('P0')).toEqual(directView(6, defaultConfig(), 'P0'));
   });
 });
