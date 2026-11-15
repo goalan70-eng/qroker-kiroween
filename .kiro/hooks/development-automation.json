@@ -1,0 +1,51 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "QRoker Spec start evidence",
+      "description": "Save a minimal local timestamp and commit before Spec execution; no prompts or source contents.",
+      "trigger": "PreTaskExec",
+      "action": {
+        "type": "command",
+        "command": "node scripts/automation-hooks.mjs task-start"
+      },
+      "timeout": 10,
+      "enabled": true
+    },
+    {
+      "name": "QRoker destructive shell guard",
+      "description": "Optional extra protection for recognized destructive shell operations. Disabled until locally tested; Kiro permissions remain the primary security boundary.",
+      "trigger": "PreToolUse",
+      "matcher": "shell",
+      "action": {
+        "type": "command",
+        "command": "node scripts/automation-hooks.mjs guard-shell"
+      },
+      "timeout": 10,
+      "enabled": false
+    },
+    {
+      "name": "QRoker fast TypeScript syntax check",
+      "description": "Run the established game typecheck at most once every 60 seconds after saved src/game TypeScript files; do not modify code.",
+      "trigger": "PostFileSave",
+      "matcher": "src[/\\\\]game[/\\\\].*\\.tsx?$",
+      "action": {
+        "type": "command",
+        "command": "node scripts/automation-hooks.mjs check-file"
+      },
+      "timeout": 30,
+      "enabled": true
+    },
+    {
+      "name": "QRoker agent turn mobile notification",
+      "description": "Optional generic ntfy alert when an agent response ends, throttled and deduplicated against Spec notifications.",
+      "trigger": "AgentStop",
+      "action": {
+        "type": "command",
+        "command": "node scripts/automation-hooks.mjs agent-stop"
+      },
+      "timeout": 10,
+      "enabled": true
+    }
+  ]
+}

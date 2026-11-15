@@ -28,10 +28,14 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
-      - name: Validate local verifier syntax and Kiro Hook definition
+      - name: Validate command-only Kiro Hooks and run automation self-tests
         run: |
           node --check scripts/verify-task.mjs
-          node -e "const fs = require('node:fs'); const config = JSON.parse(fs.readFileSync('.kiro/hooks/verify-after-task.json', 'utf8')); if (config.version !== 'v1' || config.hooks.length !== 1 || config.hooks[0].trigger !== 'PostTaskExec' || config.hooks[0].action.type !== 'command' || config.hooks[0].action.command !== 'node scripts/verify-task.mjs') process.exit(1)"
+          node --check scripts/hook-support.mjs
+          node --check scripts/automation-hooks.mjs
+          node --check scripts/validate-hook-config.mjs
+          node scripts/validate-hook-config.mjs
+          node --test scripts/automation-hooks.test.mjs
       - name: Type-check project
         run: npm run typecheck
       - name: Type-check browser game
