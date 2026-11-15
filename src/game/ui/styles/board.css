@@ -1,0 +1,247 @@
+/*
+ * Board styles (task 17.2). Uses the tokens of tokens.css; load tokens.css and card.css first.
+ *
+ * Rules of this file (design.md, "Touching cells"; checked by board.test.ts):
+ *   - Neighbouring cells touch: the grid has `gap: 0`, and a cell, its grid-cell wrapper and the card or ghost inside
+ *     have no margin. Every cell is exactly `--cell` wide and high.
+ *   - Borders, focus rings and selection marks are drawn INSIDE the cell box (inset box-shadow, an outline with a
+ *     negative offset, absolutely positioned pseudo-elements with `inset: 0`), so none of them changes `--cell`.
+ *     No `border` is set on a cell; the only border is on a pseudo-element that is taken out of the flow.
+ *   - No state is told by colour alone:
+ *       legal cell      a filled dot (::after) plus a dashed inner outline
+ *       target cell     a thick solid double ring (inset shadow), and `aria-selected` / the name say "selected target"
+ *       preview ghost   reduced opacity plus the dashed outline of `.card-face--preview`
+ *       drop target     a diagonal stripe pattern, a larger dot and a solid outline (while a drag is active)
+ *       pending code    a dashed frame (::before) over a hatched wash
+ *       revealed code   a double frame (::before) over a dotted wash
+ *   - `touch-action` is NOT set here: the page and the Board keep scrolling and pinch zoom. Only the draggable Hand
+ *     card class sets it (hand styles, task 17.3).
+ *   - No font, image or network reference.
+ */
+
+.board-frame {
+  --board-line: rgba(26, 26, 26, 0.28);
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--label-size) calc(8 * var(--cell));
+  grid-template-rows: var(--label-size) calc(8 * var(--cell));
+  gap: 0;
+  box-sizing: border-box;
+  inline-size: max-content;
+  margin: 0;
+  padding: 0;
+  color: var(--color-ink);
+  font-family: var(--font-ui);
+}
+
+.board-col-labels {
+  grid-column: 2;
+  grid-row: 1;
+  display: grid;
+  grid-template-columns: repeat(8, var(--cell));
+  gap: 0;
+}
+
+.board-row-labels {
+  grid-column: 1;
+  grid-row: 2;
+  display: grid;
+  grid-template-rows: repeat(8, var(--cell));
+  gap: 0;
+}
+
+.board-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: max(0.75rem, calc(var(--label-size) * 0.6));
+  font-weight: 700;
+  line-height: 1;
+  user-select: none;
+}
+
+/* The grid: 8 rows of 8 cells, each `--cell` square, no gap. */
+.board {
+  grid-column: 2;
+  grid-row: 2;
+  display: grid;
+  grid-template-columns: calc(8 * var(--cell));
+  grid-template-rows: repeat(8, var(--cell));
+  gap: 0;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-board-bg);
+}
+
+.board-row {
+  display: grid;
+  grid-template-columns: repeat(8, var(--cell));
+  gap: 0;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.board-gridcell {
+  box-sizing: border-box;
+  inline-size: var(--cell);
+  block-size: var(--cell);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+}
+
+/* The cell button: a reset, then the hairline between cells as an inset shadow (not a border). */
+.board-cell {
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+  inline-size: 100%;
+  block-size: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  appearance: none;
+  font: inherit;
+  color: inherit;
+  background-color: var(--color-cell-bg);
+  box-shadow: inset 0 0 0 1px var(--board-line);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Legal placement: a dot (shape) and a dashed inner outline (pattern). */
+.board-cell.is-legal {
+  outline: var(--stroke) dashed var(--color-legal);
+  outline-offset: calc(-1 * var(--stroke) - 1px);
+}
+
+.board-cell.is-legal::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  inline-size: 26%;
+  block-size: 26%;
+  box-sizing: border-box;
+  border-radius: 50%;
+  background-color: var(--color-legal);
+  box-shadow: 0 0 0 2px var(--color-paper);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* While a drag is active: stripes, a larger dot and a solid outline mark the drop targets. */
+.board-cell.is-drop-target {
+  outline: var(--stroke-strong) solid var(--color-legal);
+  outline-offset: calc(-1 * var(--stroke-strong));
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0,
+    transparent 5px,
+    rgba(10, 107, 61, 0.28) 5px,
+    rgba(10, 107, 61, 0.28) 8px
+  );
+}
+
+.board-cell.is-drop-target::after {
+  inline-size: 40%;
+  block-size: 40%;
+}
+
+/* Draft target: a thick solid double ring inside the cell. */
+.board-cell.is-target {
+  box-shadow:
+    inset 0 0 0 var(--stroke-strong) var(--color-focus),
+    inset 0 0 0 calc(var(--stroke-strong) + 2px) var(--color-paper);
+}
+
+/* The ghost covers the dot: the card is the mark there. */
+.board-cell.has-preview::after {
+  display: none;
+}
+
+/* Preview ghost: the face of the drafted card, a child of the target cell (snapped by construction). */
+.board-ghost {
+  display: block;
+  box-sizing: border-box;
+  inline-size: 100%;
+  block-size: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+/* Code regions: the frame sits on top of the card, inside the cell box, and takes no pointer events. */
+.board-cell.is-pending-region::before,
+.board-cell.is-revealed-region::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.board-cell.is-pending-region::before {
+  border: var(--stroke-strong) dashed var(--color-focus);
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent 0,
+    transparent 6px,
+    rgba(11, 87, 208, 0.18) 6px,
+    rgba(11, 87, 208, 0.18) 8px
+  );
+}
+
+.board-cell.is-revealed-region::before {
+  border: var(--stroke-strong) double var(--color-ink);
+  background-image: radial-gradient(rgba(26, 26, 26, 0.22) 1px, transparent 1.5px);
+  background-size: 6px 6px;
+}
+
+/* Keyboard focus: an inner ring, solid and thick, on top of any state mark (so it comes after the state rules). */
+.board-cell:focus-visible {
+  z-index: 2;
+  outline: var(--stroke-strong) solid var(--color-focus);
+  outline-offset: calc(-1 * var(--stroke-strong));
+}
+
+/* The description of the markers: read by screen readers, not shown. */
+.board-hint {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* High-contrast mode: system colours for the marks, shapes stay. */
+@media (forced-colors: active) {
+  .board-cell {
+    box-shadow: none;
+    outline: 1px solid CanvasText;
+    outline-offset: -1px;
+  }
+
+  .board-cell.is-legal,
+  .board-cell.is-drop-target {
+    outline: var(--stroke) dashed Highlight;
+  }
+
+  .board-cell.is-legal::after {
+    background-color: Highlight;
+  }
+
+  .board-cell.is-target,
+  .board-cell:focus-visible {
+    outline: var(--stroke-strong) solid Highlight;
+  }
+}

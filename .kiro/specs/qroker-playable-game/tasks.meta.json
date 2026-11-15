@@ -595,6 +595,25 @@
         "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
         "timestamp": 1794723382217
       }
+    ],
+    "17.2 Board component (`ui/components/board.ts`, `ui/styles/board.css`, `i18n/strings/board.ts`)": [
+      {
+        "executionId": "cef27f14-e4d7-40fc-8395-49c4a36c6b3d",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794723428642
+      },
+      {
+        "executionId": "cef27f14-e4d7-40fc-8395-49c4a36c6b3d",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794724131908
+      }
+    ],
+    "17.3 Hand and placement controls (`ui/components/hand.ts`, `ui/components/placement-controls.ts`, `i18n/strings/hand.ts`)": [
+      {
+        "executionId": "cef27f14-e4d7-40fc-8395-49c4a36c6b3d",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794724159641
+      }
     ]
   }
 }
