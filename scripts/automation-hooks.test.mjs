@@ -1,5 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   destructiveReason, gameFileRelativePath, savedFilePath,
   toolCommands
@@ -50,4 +55,30 @@ test('on-save typecheck throttle limits frequency', () => {
   assert.equal(saveCheckDue(100000, 99999), false);
   assert.equal(saveCheckDue(100000, 40000), true);
   assert.equal(saveCheckDue(100000, 200000), true);
+});
+
+
+test('actual PreToolUse entrypoint returns deny for simulated destructive input', () => {
+  // The shell operation is a STRING inside JSON; it is never executed.
+  const temp = mkdtempSync(join(tmpdir(), 'qroker-guard-test-'));
+  const script = fileURLToPath(new URL('./automation-hooks.mjs', import.meta.url));
+  try {
+    const env = { ...process.env, LOCALAPPDATA: temp, QROKER_NTFY_TOPIC: '' };
+    const blocked = spawnSync(process.execPath, [script, 'guard-shell'], {
+      input: JSON.stringify({ tool_input: { command: 'git reset --hard HEAD' } }),
+      encoding: 'utf8', timeout: 5000, env
+    });
+    assert.equal(blocked.status, 2, blocked.stderr);
+    assert.match(blocked.stderr, /blocked recognized destructive/);
+    assert.doesNotMatch(blocked.stderr, /HEAD/);
+
+    const allowed = spawnSync(process.execPath, [script, 'guard-shell'], {
+      input: JSON.stringify({ tool_input: { command: 'git status' } }),
+      encoding: 'utf8', timeout: 5000, env
+    });
+    assert.equal(allowed.status, 0, allowed.stderr);
+    assert.equal(allowed.stdout, '');
+  } finally {
+    rmSync(temp, { recursive: true, force: true });
+  }
 });
