@@ -304,3 +304,8 @@ Each row was verified by reading the code and the design text. Severity: Low mea
 | 20.1 Save format | 10.1 | none |
 
 Ready as soon as their listed predecessors finish: 12.2 (12.1), 12.3 (12.2), 12.4 (12.2, 12.3, 9.2), 13.1 (12.3, 10.1), 15.2 (15.1), 16.2 (16.1, 12.2, 10.1, 15.1), 20.2 (20.1), 20.3 (20.2), 23.1 (12.1, 9.1; P2 milestone, OQ-13), 25.1 (16.1). Tasks 17 to 19 need 16.2 and the OQ-1, OQ-8, OQ-14 and OQ-15 inputs listed in 6.1.
+
+## Addendum: unrestricted npm test recheck (HEAD 1758ef1)
+
+The machine was lightly loaded (CPU 9 to 24 percent while the Android emulator process qemu-system-x86_64-headless was present but not busy). Unrestricted `npm test` (vitest --run): 58 files, 1469 tests, all passed, 0 failed, duration 58.83 s. The exit code of this run was not captured (the output was redirected to a file and the summary lines were read afterwards). `npm run test:ci` (maxWorkers=4): 58 files, 1469 tests, all passed, exit code 0, duration 65.71 s. The earlier optical timeouts were therefore environmental, as recorded in section 5. The Task 11 verification criterion (all tests pass, boundary test passes, typecheck and typecheck:game pass) is met for this HEAD.
+
