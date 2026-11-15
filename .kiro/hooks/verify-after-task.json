@@ -4,7 +4,7 @@
     {
       "name": "QRoker post-task verification",
       "description": "Run existing game checks without an agent prompt; optionally send a generic ntfy status from local environment settings.",
-      "trigger": "PostTaskExecution",
+      "trigger": "PostTaskExec",
       "action": {
         "type": "command",
         "command": "node scripts/verify-task.mjs"
