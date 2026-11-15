@@ -253,7 +253,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
 - [x] 11. Checkpoint: engine complete
   - Ensure all tests pass (`npm test`), the boundary test passes, and `npm run typecheck` and `npm run typecheck:game` pass. Ask the user if questions arise, in particular about OQ-1 to OQ-6.
 
-- [ ] 12. AI opponents, tiers BEGINNER and ADVANCED
+- [x] 12. AI opponents, tiers BEGINNER and ADVANCED
   - [x] 12.1 Define the AI framework (`ai/strategy.ts`)
     - `AiContext`, `AIStrategy`, `DIFFICULTY_LABELS` (Korean and English), work-budget helper `takeBudget` that counts evaluated candidates and truncates enumeration deterministically, and shared candidate enumeration over `PlayerView` (hand cards × legal cells × orientations in fixed order).
     - Acceptance: the framework imports only the modules allowed for `ai/` (boundary test passes); enumeration order is stable.
@@ -272,7 +272,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Tests: fixtures for completing placement and exact-sum guess; hidden-member fixture with a hand-computed expected guess.
     - Depends on: 12.2.
     - _Requirements: 11.1, 11.2, 11.3, 11.4_
-  - [-] 12.4 Property tests for the AI
+  - [x] 12.4 Property tests for the AI
     - Create `src/game/ai/ai.properties.test.ts`.
     - **Property 24: AI action validity and determinism**
     - **Property 25: AI non-interference**
