@@ -10,3 +10,7 @@ dist/
 .env
 .env.*
 !.env.example
+
+# Playwright local browser diagnostics
+playwright-report/
+test-results/
