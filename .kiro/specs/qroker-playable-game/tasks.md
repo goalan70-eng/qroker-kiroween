@@ -391,7 +391,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Depends on: 17.4.
     - _Requirements: 13.4, 13.10, 13.14, 11.6_
 
-- [ ] 19. Lifecycle screens and screen composition
+- [x] 19. Lifecycle screens and screen composition
   - [x] 19.1 Setup screen (`ui/screens/setup.ts`, `i18n/strings/setup.ts`)
     - Seed field with random default, 1–4 human Seats (default 1), difficulty per AI Seat (`BEGINNER`, `ADVANCED` in P1), Identity_Visibility option (default `OWNER_ONLY`, OQ-1), language switch; validation with `parseSeed`; prefs saved through the storage adapter once task 20.2 exists.
     - Acceptance: starting from the setup screen calls `newGame` with the entered values; empty seed field shows `SEED_EMPTY` message or draws a random seed (as specified in requirement 2.7).
@@ -410,7 +410,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Tests: overlay model unit tests.
     - Depends on: 16.2.
     - _Requirements: 14.8, 15.5, 16.1_
-  - [ ] 19.4 Compose the game screen and wire the app (`ui/screens/game.ts`, `ui/main.ts`)
+  - [x] 19.4 Compose the game screen and wire the app (`ui/screens/game.ts`, `ui/main.ts`)
     - Compose scoreboard, banner, seed display, board, hand and controls, guess entry, gate, reveal and end screens into the controller's screen flow; add the mobile-first layout CSS (`ui/styles/layout.css`: portrait stack, landscape side-by-side, `--cell` clamp, 44 px controls, reduced-motion media query).
     - Acceptance: in the browser a full game can be played manually from setup to the final ranking; the seed is displayed; AI turns show the status text.
     - Tests: manual playthrough recorded in task notes; automated coverage arrives with tasks 21.2 and 21.3.
