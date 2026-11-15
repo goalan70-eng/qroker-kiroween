@@ -1,0 +1,163 @@
+/*
+ * Card face styles (task 17.1). Uses the tokens of tokens.css; load tokens.css first.
+ *
+ * Rules of this file:
+ *   - A face never changes the size of the box it sits in: box-sizing is border-box, there is no margin and no
+ *     border; the owner frame is an inset box-shadow, the preview mark is an outline with a negative offset.
+ *   - The suit is not told by colour alone: the glyph shape (heart, diamond, club, spade) is the cue. The owner is
+ *     not told by colour alone: each owner has a pip shape (circle, square, diamond, triangle, ring).
+ *   - A 180 degree card rotates only the glyph block and the indicator mark (transform), never the layout box.
+ *   - A face-down card is drawn with CSS gradients only and has no text.
+ *   - No font, image or network reference.
+ */
+
+.card-face {
+  --owner-color: var(--color-owner-neutral);
+  --card-unit: var(--cell);
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+  inline-size: 100%;
+  block-size: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  color: var(--color-ink);
+  background-color: var(--color-paper);
+  box-shadow: inset 0 0 0 var(--stroke) var(--owner-color);
+  font-family: var(--font-ui);
+  font-size: calc(var(--card-unit) * 0.34);
+  line-height: 1;
+  user-select: none;
+}
+
+.card-face[data-owner="P0"] { --owner-color: var(--color-owner-p0); }
+.card-face[data-owner="P1"] { --owner-color: var(--color-owner-p1); }
+.card-face[data-owner="P2"] { --owner-color: var(--color-owner-p2); }
+.card-face[data-owner="P3"] { --owner-color: var(--color-owner-p3); }
+.card-face[data-owner="NEUTRAL"] { --owner-color: var(--color-owner-neutral); }
+
+/* Sizes. `cell` and `preview` fill their grid cell; `hand` is at least a touch target wide. */
+.card-face--cell,
+.card-face--preview {
+  --card-unit: var(--cell);
+}
+
+.card-face--hand {
+  --card-unit: max(var(--cell), var(--touch-min));
+  inline-size: var(--card-unit);
+  block-size: calc(var(--card-unit) * 1.4);
+  min-inline-size: var(--touch-min);
+  min-block-size: var(--touch-min);
+}
+
+/* Ghost of a drafted card: same face, marked by an outline inside the box. */
+.card-face--preview {
+  opacity: 0.9;
+  outline: var(--stroke-strong) dashed var(--color-focus);
+  outline-offset: calc(-1 * var(--stroke-strong));
+}
+
+/* Owner pip: a small shape in the top-left corner. */
+.card-face::before {
+  content: "";
+  position: absolute;
+  inset-block-start: calc(var(--card-unit) * 0.08);
+  inset-inline-start: calc(var(--card-unit) * 0.08);
+  inline-size: calc(var(--card-unit) * 0.14);
+  block-size: calc(var(--card-unit) * 0.14);
+  box-sizing: border-box;
+  background-color: var(--owner-color);
+}
+
+.card-face[data-owner="P0"]::before { border-radius: 50%; }
+.card-face[data-owner="P1"]::before { border-radius: 0; }
+.card-face[data-owner="P2"]::before { transform: rotate(45deg) scale(0.8); }
+.card-face[data-owner="P3"]::before { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.card-face[data-owner="NEUTRAL"]::before {
+  border-radius: 50%;
+  background-color: transparent;
+  box-shadow: inset 0 0 0 2px var(--owner-color);
+}
+
+/* Face-up: rank over suit glyph, centered. */
+.card-face__glyphs {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--card-unit) * 0.02);
+  transform-origin: 50% 50%;
+}
+
+.card-face__rank {
+  font-weight: 700;
+  font-size: 1em;
+}
+
+.card-face__suit {
+  font-size: 1.15em;
+  line-height: 1;
+}
+
+.card-face--ink-red { color: var(--color-red); }
+.card-face--ink-dark { color: var(--color-dark); }
+
+/* 180 degrees: the glyph block turns upside down; the layout box does not move. */
+.card-face.is-rotated .card-face__glyphs {
+  transform: rotate(180deg);
+}
+
+/* Orientation indicator: a visual mark, never a control (no pointer events, no focus). */
+.card-face__orient {
+  position: absolute;
+  inset-block-end: calc(var(--card-unit) * 0.04);
+  inset-inline-end: calc(var(--card-unit) * 0.04);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2em;
+  padding: 0.1em 0.3em;
+  box-sizing: border-box;
+  color: var(--color-inverse);
+  background-color: var(--color-ink);
+  font-size: max(0.625rem, calc(var(--card-unit) * 0.2));
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.card-face__orient::before {
+  content: "";
+  inline-size: 0;
+  block-size: 0;
+  border-inline: 0.28em solid transparent;
+  border-block-start: 0;
+  border-block-end: 0.5em solid var(--color-inverse);
+}
+
+.card-face.is-rotated .card-face__orient::before {
+  transform: rotate(180deg);
+}
+
+/* Face-down: hatch in the owner colour on the card back. No text. */
+.card-face--down {
+  color: var(--color-ink);
+  background-color: var(--color-card-back);
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--owner-color) 0,
+    var(--owner-color) 2px,
+    transparent 2px,
+    transparent 7px
+  );
+}
+
+@media (forced-colors: active) {
+  .card-face {
+    outline: 1px solid CanvasText;
+    outline-offset: -1px;
+  }
+}

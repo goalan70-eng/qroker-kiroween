@@ -1,0 +1,97 @@
+/*
+ * Design tokens (task 17.1). Custom properties only: no rule here styles an element, except the reduced-motion
+ * reset at the end. System fonts, no external font, image or network reference.
+ *
+ * COLOR CONTRAST. Ratios use the WCAG 2.x relative-luminance formula; they were computed with a script
+ * (Node, the sRGB-to-linear conversion and (L1 + 0.05) / (L2 + 0.05)) for exactly the hex values below.
+ * Text needs >= 4.5:1. Non-text marks (owner colour, focus ring, legal marker) need >= 3:1; they are also all
+ * >= 4.5:1 here.
+ *
+ *   text on paper (#fffdf7)
+ *     --color-ink   #1a1a1a  17.11    --color-red   #b00020   7.20    --color-dark  #101820  17.59
+ *   text on cell background (#e9e5d8)
+ *     --color-ink   #1a1a1a  13.81    --color-red   #b00020   5.81
+ *   owner colours on paper / on the face-down card back (#e9e5d8)
+ *     P0 #0b57d0   6.28 / 5.07        P1 #a04000   6.40 / 5.16        P2 #1b6e3a   6.18 / 4.99
+ *     P3 #7b2d9b   7.67 / 6.19        neutral #595959   6.89 / 5.56
+ *   legal-cell marker #0a6b3d   6.49 on paper, 5.23 on the cell background
+ *   focus ring        #0b57d0   6.28 on paper, 5.07 on the cell background
+ *   disabled text     #5f5f5f   5.02 on the disabled background (#e6e4dc)
+ *   banner text       #4a3b00   9.84 on the banner background (#fff3c4)
+ *   inverse text      #fffdf7  17.11 on ink (#1a1a1a)
+ * Colour is never the only cue: suits have glyph shapes, owners have a pip shape (card.css), legal cells and the
+ * target have a pattern or outline (board.css).
+ *
+ * CELL SIZE. --cell is the side of one Board cell, mobile first:
+ *     --cell = clamp(24px, (100vw - 2 * --board-pad - --label-size) / 8, 64px)
+ * The Board is 8 cells plus one label column (row numbers 1 to 8) and the page padding on both sides, so
+ * 8 * --cell + --label-size + 2 * --board-pad <= 100vw while the cell is above the 24 px minimum.
+ * With --board-pad 8 px and --label-size 20 px: 360 px wide -> 40.5 px, 320 px wide -> 35.5 px, 412 px wide ->
+ * 47 px, and from 548 px wide upward 64 px. (design.md gives (100vw - 16px) / 8 for a board without the label
+ * column; the label column is why the numbers here are 2.5 px smaller.)
+ * A card face inside a cell fills it (100% x 100%); borders are drawn with box-shadow or outline, never with a
+ * border or margin, so a face never changes the logical cell size.
+ */
+:root {
+  color-scheme: light;
+
+  /* Ink and surfaces */
+  --color-ink: #1a1a1a;
+  --color-paper: #fffdf7;
+  --color-inverse: #fffdf7;
+  --color-board-bg: #e9e5d8;
+  --color-cell-bg: #e9e5d8;
+  --color-card-back: #e9e5d8;
+
+  /* Suit tones: hearts and diamonds red, clubs and spades dark */
+  --color-red: #b00020;
+  --color-dark: #101820;
+
+  /* Owners: Seats P0 to P3 and the Neutral_Card owner */
+  --color-owner-p0: #0b57d0;
+  --color-owner-p1: #a04000;
+  --color-owner-p2: #1b6e3a;
+  --color-owner-p3: #7b2d9b;
+  --color-owner-neutral: #595959;
+
+  /* State */
+  --color-legal: #0a6b3d;
+  --color-focus: #0b57d0;
+  --color-disabled-fg: #5f5f5f;
+  --color-disabled-bg: #e6e4dc;
+  --color-banner-fg: #4a3b00;
+  --color-banner-bg: #fff3c4;
+  --color-banner-border: #8a6d00;
+
+  /* Spacing (rem, so it follows the user's font size) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+
+  /* Touch target: every control is at least this big in CSS pixels */
+  --touch-min: 44px;
+
+  /* Board geometry (see CELL SIZE above) */
+  --board-pad: 8px;
+  --label-size: 20px;
+  --cell: clamp(24px, calc((100vw - 2 * var(--board-pad) - var(--label-size)) / 8), 64px);
+
+  /* Strokes drawn inside a box (box-shadow inset or outline), so they never change a size */
+  --stroke: 2px;
+  --stroke-strong: 3px;
+
+  /* Type */
+  --font-ui: system-ui, -apple-system, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", Roboto, sans-serif;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+}
