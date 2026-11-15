@@ -33,6 +33,7 @@
   "devDependencies": {
     "@types/node": "^26.6.6",
     "fast-check": "^4.10.2",
+    "happy-dom": "^21.0.4",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.8",

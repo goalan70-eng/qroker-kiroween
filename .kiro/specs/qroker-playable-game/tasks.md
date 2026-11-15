@@ -469,7 +469,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - _Requirements: 18.1, 18.3, 18.5, 18.6, 18.8, 16.4_
 
 - [ ] 21. UI smoke tests
-  - [ ] 21.1 Add the headless DOM test environment
+  - [x] 21.1 Add the headless DOM test environment
     - Add `happy-dom` as a devDependency. Create `src/game/ui/testing/mount.ts` that builds a DOM root, a `memoryStore`, an immediate scheduler and a fixed `randomSeed`, and helpers `clickByLabel`, `typeInto`, `playHumanTurnAuto` (select first Hand card, first legal cell, confirm). Tests select the environment with `// @vitest-environment happy-dom`; do not change `vitest.config.ts`.
     - Acceptance: a trivial test mounts the setup screen and finds the start button; `npm test` still runs optical tests in the `node` environment.
     - Tests: the trivial mount test.
