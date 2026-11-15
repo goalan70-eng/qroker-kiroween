@@ -260,7 +260,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Tests: unit tests for enumeration order and budget truncation.
     - Depends on: 9.1.
     - _Requirements: 11.3, 11.4, 11.7, 11.8_
-  - [-] 12.2 Implement the BEGINNER strategy and the registry (`ai/random.ts`, `ai/registry.ts`)
+  - [x] 12.2 Implement the BEGINNER strategy and the registry (`ai/random.ts`, `ai/registry.ts`)
     - Uniform legal placement and uniform Guess in 4..52 per code, tie-breaking through `mulberry32(decisionSeed)`. `getStrategy('BEGINNER')`.
     - Acceptance: returned actions are accepted by `reduce` in 100 hand-seeded states; same view and seed give the same action.
     - Tests: unit tests of determinism and validity on 3 fixed seeds.
