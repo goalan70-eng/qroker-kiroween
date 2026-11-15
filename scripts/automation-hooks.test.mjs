@@ -44,8 +44,8 @@ test('targets only game TypeScript paths', () => {
   assert.equal(savedFilePath({}), null);
 });
 
-test('syntax check detects parse errors without needing a full test suite', () => {
-  assert.equal(syntaxDiagnosticCount('export const x: number = 1;', 'x.ts'), 0);
-  assert.ok(syntaxDiagnosticCount('export const x = ;', 'x.ts') > 0);
-  assert.equal(syntaxDiagnosticCount('export const C = () => <div>OK</div>;', 'x.tsx'), 0);
+test('syntax check detects parse errors without needing a full test suite', async () => {
+  assert.equal(await syntaxDiagnosticCount('export const x: number = 1;', 'x.ts'), 0);
+  assert.ok(await syntaxDiagnosticCount('export const x = ;', 'x.ts') > 0);
+  assert.equal(await syntaxDiagnosticCount('export const C = () => <div>OK</div>;', 'x.tsx'), 0);
 });
