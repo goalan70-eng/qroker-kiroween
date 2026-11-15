@@ -236,14 +236,14 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Depends on: 9.1.
     - **Validates: Requirements 5.8, 7.5, 7.8, 10.3, 10.4, 10.5, 10.6**
 
-- [ ] 10. Replay
+- [x] 10. Replay
   - [x] 10.1 Implement replay (`core/replay.ts`)
     - `replay(seed, config, actions)` with `REPLAY_REJECTED` carrying the index and cause; `stateEquals`.
     - Acceptance: replaying a generated log reproduces the state; a log with a corrupted action fails at the right index.
     - Tests: unit tests for success and the failing index.
     - Depends on: 8.2.
     - _Requirements: 12.4, 12.5_
-  - [-] 10.2 Property test for replay and purity
+  - [x] 10.2 Property test for replay and purity
     - Create `src/game/core/replay.properties.test.ts` with deep-freeze helpers.
     - **Property 26: Replay determinism and purity**
     - Acceptance: inputs deep-frozen in the test never cause a thrown mutation error.
