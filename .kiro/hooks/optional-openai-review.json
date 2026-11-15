@@ -10,7 +10,7 @@
         "command": "node scripts/openai-review.mjs --send --hook"
       },
       "timeout": 90,
-      "enabled": false
+      "enabled": true
     }
   ]
 }

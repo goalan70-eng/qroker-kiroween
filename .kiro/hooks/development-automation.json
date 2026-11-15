@@ -22,7 +22,7 @@
         "command": "node scripts/automation-hooks.mjs guard-shell"
       },
       "timeout": 10,
-      "enabled": false
+      "enabled": true
     },
     {
       "name": "QRoker fast TypeScript syntax check",
