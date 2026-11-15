@@ -28,6 +28,10 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
+      - name: TEMP Generate Playwright lockfile for reproducible dependency addition
+        run: |
+          npm install --package-lock-only --save-dev --save-exact @playwright/test@1.65.1
+          node -e "const fs=require('node:fs');const b=fs.readFileSync('package-lock.json').toString('base64');for(let i=0;i<b.length;i+=700)console.log('QROKER_PW_LOCK_CHUNK:'+b.slice(i,i+700));console.log('QROKER_PW_LOCK_END:'+b.length)"
       - name: Validate command-only Kiro Hooks and run automation self-tests
         run: |
           node --check scripts/verify-task.mjs
