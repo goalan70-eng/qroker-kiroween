@@ -1153,7 +1153,7 @@ The following items are currently undecided and will be determined through proto
    - The scope of hiding in Requirement 6 can be finalized only after deciding which face carries the markers and which face up cards are placed. The previous review assumed face-up placement, and this assumption has not been verified.
 
 2. **Center starting group**
-   - 4 random cards may not satisfy the slot conditions (for example, ♥ in the TR slot). How the orientation of the starting ♣ and ♠ is decided, and whether this group is scored, are undefined.
+                 - 4 random cards may not satisfy the slot conditions (for example, ♥ in the TR slot). How the orientation of the starting ♣ and ♠ is decided, and whether this group is scored, are undefined.
 
 3. **Acceptance radius default**
    - Choose between r_acc = 1 (conservative) and 2 (recall-first) based on the recall and misidentification rates from the synthetic degradation experiments.
