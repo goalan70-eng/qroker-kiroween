@@ -34,12 +34,14 @@
 //    by two areas is a programming error and makes the module throw at load.
 
 import type { ErrorCode } from '../core/types';
+import * as abandon from './strings/abandon';
 import * as board from './strings/board';
 import * as cards from './strings/cards';
 import * as common from './strings/common';
 import * as end from './strings/end';
 import * as errors from './strings/errors';
 import * as guess from './strings/guess';
+import * as help from './strings/help';
 import * as hand from './strings/hand';
 import * as reveal from './strings/reveal';
 import * as scoreboard from './strings/scoreboard';
@@ -64,12 +66,14 @@ type AreaKey =
   | keyof typeof reveal.en
   | keyof typeof scoreboard.en
   | keyof typeof setup.en
-  | keyof typeof end.en;
+  | keyof typeof end.en
+  | keyof typeof help.en
+  | keyof typeof abandon.en;
 
 /** Every key accepted by `t`. The `error.<code>` keys are part of the type from the start (task 15.2 fills them in). */
 export type StringKey = AreaKey | ErrorStringKey;
 
-const AREAS: readonly { readonly en: StringTable; readonly ko: StringTable }[] = [common, errors, cards, board, hand, guess, reveal, scoreboard, setup, end];
+const AREAS: readonly { readonly en: StringTable; readonly ko: StringTable }[] = [common, errors, cards, board, hand, guess, reveal, scoreboard, setup, end, help, abandon];
 
 export const LANGUAGES: readonly Lang[] = Object.freeze(['en', 'ko'] as const);
 export const DEFAULT_LANGUAGE: Lang = 'en';

@@ -1,0 +1,132 @@
+/*
+ * Overlay and banner styles (task 19.3): the modal shell shared by the help dialog and the abandon confirmation, and the
+ * provisional-scoring banner. Uses the tokens of tokens.css; load tokens.css first.
+ * Not linked into the production page yet (the host and the linking are task 19.4).
+ *
+ * Rules of this file:
+ *   - Every control is at least --touch-min (44 px) in both directions.
+ *   - The focus ring is a 3 px outline of --color-focus (6.28:1 on paper), never removed.
+ *   - No animation or transition is used, so nothing is needed for prefers-reduced-motion; the block at the end states it
+ *     explicitly so that a later addition cannot break the rule (tokens.css already resets motion globally).
+ *   - The destructive button differs from Cancel by its label, its dark-red fill (#fffdf7 on #b00020 is about 7.2:1, the
+ *     same pair as the red suit tone on paper) and a heavier border, so it is not told by colour alone.
+ *   - The dialog scrolls inside its own box on a small screen, never the page behind it.
+ *   - No font, image or network reference.
+ */
+.overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3);
+  box-sizing: border-box;
+  background: rgba(16, 24, 32, 0.6);
+}
+.overlay-dialog {
+  box-sizing: border-box;
+  inline-size: 100%;
+  max-inline-size: 36rem;
+  max-block-size: 100%;
+  overflow-y: auto;
+  padding: var(--space-4);
+  font-family: var(--font-ui);
+  color: var(--color-ink);
+  background: var(--color-paper);
+  border: var(--stroke-strong) solid var(--color-ink);
+}
+.help-title,
+.abandon-title {
+  margin-block: 0 var(--space-2);
+}
+.help-title:focus-visible,
+.abandon-title:focus-visible {
+  outline: var(--stroke-strong) solid var(--color-focus);
+  outline-offset: var(--stroke);
+}
+.help-intro,
+.abandon-body {
+  margin-block: 0 var(--space-3);
+}
+.help-section {
+  margin-block: var(--space-3);
+}
+.help-section__title {
+  margin-block: 0 var(--space-1);
+  font-size: 1.05rem;
+}
+.help-section__body {
+  margin: 0;
+  line-height: 1.5;
+}
+.help-provisional {
+  margin: 0 0 var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-banner-fg);
+  background: var(--color-banner-bg);
+  border: var(--stroke) solid var(--color-banner-border);
+}
+.help-actions,
+.abandon-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-block-start: var(--space-4);
+}
+.help-close,
+.abandon-cancel,
+.abandon-confirm__danger {
+  box-sizing: border-box;
+  min-inline-size: var(--touch-min);
+  min-block-size: var(--touch-min);
+  padding: var(--space-2) var(--space-4);
+  font: inherit;
+  cursor: pointer;
+}
+.help-close,
+.abandon-cancel {
+  color: var(--color-inverse);
+  background: var(--color-ink);
+  border: var(--stroke) solid var(--color-ink);
+}
+.abandon-confirm__danger {
+  color: var(--color-inverse);
+  background: var(--color-red);
+  border: var(--stroke-strong) double var(--color-inverse);
+  outline: var(--stroke) solid var(--color-red);
+}
+.help-close:focus-visible,
+.abandon-cancel:focus-visible,
+.abandon-confirm__danger:focus-visible {
+  outline: var(--stroke-strong) solid var(--color-focus);
+  outline-offset: var(--stroke);
+}
+.abandon-error:empty {
+  display: none;
+}
+.abandon-error {
+  margin-block: 0 var(--space-3);
+  color: var(--color-red);
+  font-weight: 700;
+}
+
+/* The banner (components/banner.ts). The glyph is a non-colour cue; the text carries the meaning. */
+.banner {
+  margin: 0 0 var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-banner-fg);
+  background: var(--color-banner-bg);
+  border: var(--stroke) solid var(--color-banner-border);
+}
+.banner__glyph {
+  margin-inline-end: var(--space-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay-backdrop,
+  .overlay-dialog {
+    transition: none;
+    animation: none;
+  }
+}

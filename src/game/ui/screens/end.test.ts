@@ -647,6 +647,12 @@ describe('renderEnd structure [fake-DOM, real game]', () => {
     expect(withClass(r2.doc, 'end-banner')).toHaveLength(0);
   });
 
+  it('draws no banner with `banner: false` (a host that mounts components/banner.ts)', () => {
+    const r = rig();
+    r.mount(VIEW_1H, { banner: false });
+    expect(withClass(r.doc, 'end-banner')).toHaveLength(0);
+  });
+
   it('every string key it uses exists in both languages', () => {
     for (const lang of ['en', 'ko'] as const) {
       setLanguage(lang);

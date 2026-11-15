@@ -404,7 +404,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Tests: view-model unit tests including a tie.
     - Depends on: 16.2.
     - _Requirements: 9.4, 9.7, 15.3, 15.4_
-  - [ ] 19.3 Help overlay, provisional banner and settings (`ui/overlays/help.ts`, `ui/components/banner.ts`, `i18n/strings/help.ts`)
+  - [x] 19.3 Help overlay, provisional banner and settings (`ui/overlays/help.ts`, `ui/components/banner.ts`, `i18n/strings/help.ts`)
     - Rules text in Korean and English summarizing placement, orientation, drawing, guess and reveal, ranking and the provisional scoring notice; closes with Escape and a button; banner visible while `scoreConfig.provisional`; abandon-game confirmation overlay.
     - Acceptance: overlay opens from every screen; the abandon confirmation precedes discarding.
     - Tests: overlay model unit tests.

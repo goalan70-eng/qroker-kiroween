@@ -87,8 +87,13 @@ export interface ScoreboardHandle {
   dispose(): void;
 }
 
+export interface ScoreboardOptions {
+  /** Draw the provisional banner inside the scoreboard. Default `true`; a host that mounts components/banner.ts passes `false`. */
+  readonly banner?: boolean;
+}
+
 /** Mounts the scoreboard of `view` into `root`. */
-export function renderScoreboard(doc: CreateDoc, root: HTMLElement, view: PlayerView, t: Translate): ScoreboardHandle {
+export function renderScoreboard(doc: CreateDoc, root: HTMLElement, view: PlayerView, t: Translate, options: ScoreboardOptions = {}): ScoreboardHandle {
   const h = createH(doc);
   const slot = h('section', { class: 'scoreboard' });
   let disposed = false;
@@ -96,7 +101,7 @@ export function renderScoreboard(doc: CreateDoc, root: HTMLElement, view: Player
   function paint(next: PlayerView): void {
     const model = buildScoreboardModel(next);
     while (slot.firstChild !== null) slot.removeChild(slot.firstChild);
-    if (model.provisional) {
+    if (model.provisional && options.banner !== false) {
       slot.appendChild(h('p', { class: 'scoreboard-banner', attrs: { role: 'note' } }, t('common.provisionalScoring')));
     }
     const head = h(

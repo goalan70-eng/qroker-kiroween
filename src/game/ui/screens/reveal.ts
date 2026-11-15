@@ -163,6 +163,8 @@ export interface RevealInput {
 export interface RevealOptions {
   /** Move the focus to the continue button when the screen is shown. Default `true`. */
   readonly autoFocus?: boolean;
+  /** Draw the provisional banner inside the screen. Default `true`; a host that mounts components/banner.ts passes `false`. */
+  readonly banner?: boolean;
 }
 
 export type RevealDocument = CreateDoc & Partial<FocusDoc>;
@@ -275,7 +277,7 @@ export function renderReveal(
       contentSlot.appendChild(h('p', { class: 'reveal-empty' }, t('reveal.empty')));
       return;
     }
-    if (model.provisional) {
+    if (model.provisional && options.banner !== false) {
       contentSlot.appendChild(h('p', { class: 'reveal-banner', attrs: { role: 'note' } }, t('common.provisionalScoring')));
     }
     contentSlot.appendChild(

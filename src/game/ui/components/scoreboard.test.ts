@@ -190,6 +190,17 @@ describe('renderScoreboard [fake-DOM]', () => {
     expect(none.doc.all().some((el) => classOf(el).includes('scoreboard-banner'))).toBe(false);
   });
 
+  it('draws no banner with `banner: false` (a host that mounts components/banner.ts), and the rest is unchanged', () => {
+    const { view } = playTo(5, atPhase('PLACEMENT', 30));
+    const plain = mount(view);
+    const doc = new FakeDocument();
+    const root = doc.createElement('div');
+    doc.body.appendChild(root);
+    renderScoreboard(doc as unknown as Document, root as unknown as HTMLElement, view, t, { banner: false });
+    expect(doc.all().some((el) => classOf(el).includes('scoreboard-banner'))).toBe(false);
+    expect(doc.all().length).toBe(plain.doc.all().length - 1);
+  });
+
   it('update re-renders from the newest view, in Korean after a language change; dispose removes the element', () => {
     const first = playTo(5, atPhase('PLACEMENT', 30)).view;
     const later = playTo(5, atPhase('PLACEMENT', 10)).view;

@@ -221,6 +221,8 @@ export interface EndInput {
 export interface EndOptions {
   /** Move the focus to the first control (or the heading) when the screen is shown. Default `true`. */
   readonly autoFocus?: boolean;
+  /** Draw the provisional banner inside the screen. Default `true`; a host that mounts components/banner.ts passes `false`. */
+  readonly banner?: boolean;
 }
 
 export type EndDocument = CreateDoc & Partial<FocusDoc>;
@@ -501,7 +503,7 @@ export function renderEnd(doc: EndDocument, root: HTMLElement, input: EndInput, 
       else contentSlot.appendChild(h('p', { class: 'end-empty' }, t('end.empty')));
       return;
     }
-    if (model.provisional) {
+    if (model.provisional && options.banner !== false) {
       contentSlot.appendChild(h('p', { class: 'end-banner', attrs: { role: 'note' } }, t('common.provisionalScoring')));
     }
     contentSlot.appendChild(paintRanking(model));

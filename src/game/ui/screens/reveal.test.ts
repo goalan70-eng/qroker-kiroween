@@ -466,6 +466,14 @@ describe('renderReveal structure [fake-DOM, real engine]', () => {
     expect(withClass(r2.doc, 'reveal-banner')).toHaveLength(0);
   });
 
+  it('draws no banner with `banner: false` (a host that mounts components/banner.ts)', () => {
+    const g = revealGame(ONE_PLUS_THREE, 1);
+    const r = rig(g);
+    renderReveal(asDoc(r.doc), asRoot(r.root), r.inputFor('P0'), t, { banner: false });
+    expect(withClass(r.doc, 'reveal-banner')).toHaveLength(0);
+    expect(withClass(r.doc, 'reveal-sum').length).toBeGreaterThan(0); // the content is still there
+  });
+
   it('every string key it uses exists in both languages', () => {
     for (const lang of ['en', 'ko'] as const) {
       setLanguage(lang);
