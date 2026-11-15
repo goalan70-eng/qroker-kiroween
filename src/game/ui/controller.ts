@@ -49,6 +49,9 @@
 //   * `AppModel.draft` is the viewer's `PlacementDraft`. `draftEvent(e)` runs the pure `reduceDraft` against a context
 //     built from the LATEST `PlayerView` (legal cells from `legalCellsFor`, Hand, rotation capability). A draft
 //     never touches the game: no Action is dispatched, no log entry, no AI step.
+//   * Placement confirmation boundary (task 18.3): `handlers.dispatch` is typed for non-PLACE Actions and returns
+//     `PLACE_NOT_ALLOWED` for a `PLACE` at runtime (no engine call, no change). `dispatchHuman` is the trusted API
+//     for `confirmPlacement`, tests and the composition root.
 //   * `confirmPlacement()` is the ONLY controller path that builds a `PLACE` for a draft. It takes no argument (a
 //     stale screen closure cannot carry an old draft), refuses with `DISPOSED`/`BUSY`/`NO_GAME` like `dispatchHuman`,
 //     re-validates the draft with `validateDraft` against the latest view, and on success sends exactly ONE `PLACE`
@@ -129,16 +132,18 @@ export interface PracticeOptions {
  * - `NO_GAME`: no game is running.
  * - `DISPOSED`: the controller was disposed; nothing was done.
  * - `DRAFT_INVALID`: `confirmPlacement` found the draft incomplete (`NO_CARD`, `NO_TARGET`) or stale; no Action was sent.
+ * - `PLACE_NOT_ALLOWED`: a `PLACE` was passed to `RenderHandlers.dispatch`; placements go through the draft only.
  */
 export type OpResult =
   | { readonly ok: true }
   | { readonly ok: false; readonly reason: 'ENGINE'; readonly code: ErrorCode }
-  | { readonly ok: false; readonly reason: 'BUSY' | 'NO_GAME' | 'DISPOSED' }
+  | { readonly ok: false; readonly reason: 'BUSY' | 'NO_GAME' | 'DISPOSED' | 'PLACE_NOT_ALLOWED' }
   | { readonly ok: false; readonly reason: 'DRAFT_INVALID'; readonly issue: DraftIssue };
 
 /** The functions a screen may call. Created once; they stay valid after dispose and then do nothing. */
 export interface RenderHandlers {
-  readonly dispatch: (action: Action) => OpResult;
+  /** Any Action except `PLACE` (typed out; a `PLACE` that gets through anyway is refused with `PLACE_NOT_ALLOWED`). */
+  readonly dispatch: (action: Exclude<Action, { readonly type: 'PLACE' }>) => OpResult;
   readonly startGame: (options?: StartOptions) => OpResult;
   readonly restart: () => OpResult;
   readonly abandon: () => OpResult;
@@ -490,6 +495,15 @@ export function createController(deps: AppDeps): Controller {
     return { ok: true };
   }
 
+  /**
+   * The screens' `dispatch`: every Action but `PLACE`. A `PLACE` (TypeScript bypassed) is refused before anything else
+   * is looked at: no engine call, no state change, no scheduling. `dispatchHuman` stays the trusted path.
+   */
+  function dispatchFromScreen(action: Action): OpResult {
+    if ((action as { readonly type?: unknown } | null)?.type === 'PLACE') return { ok: false, reason: 'PLACE_NOT_ALLOWED' };
+    return dispatchHuman(action);
+  }
+
   function begin(config: GameConfig, seed: number): OpResult {
     inFlight = true;
     try {
@@ -630,7 +644,7 @@ export function createController(deps: AppDeps): Controller {
   }
 
   const handlers: RenderHandlers = Object.freeze({
-    dispatch: dispatchHuman,
+    dispatch: dispatchFromScreen,
     startGame,
     restart,
     abandon,

@@ -14,3 +14,4 @@ Latest verified commits: 16.2 dc0d45e (UI controller); 17.x placement UI: see gi
 - OQ-1 (identity visibility default), OQ-3 (starting group scoring), placeholder score values, reveal policy, OQ-14 (post-game guess disclosure), OQ-15 (row direction, provisional: row 1 at top).
 ## Next
 - Task 18 (guess entry, privacy gate, reveal, scoreboard); needs OQ-14 before 18.2.
+- 18.3: `RenderHandlers.dispatch` is typed for non-PLACE Actions and returns `PLACE_NOT_ALLOWED` for a PLACE at runtime; `confirmPlacement` (via the trusted `dispatchHuman`) is the only placement path.

@@ -25,7 +25,7 @@ import { getLanguage, resetLanguage, t } from '../i18n';
 import { playGame, strategiesFor } from '../sim/play-game';
 import * as controllerModule from './controller';
 import { AI_DELAY_MS, createController, mountApp } from './controller';
-import type { AppDeps, Controller, OpResult, RenderInput, Renderer, Schedule, ScheduleHandle } from './controller';
+import type { AppDeps, Controller, OpResult, RenderHandlers, RenderInput, Renderer, Schedule, ScheduleHandle } from './controller';
 import { EMPTY_DRAFT } from './placement-draft';
 import type { DraftEvent } from './placement-draft';
 import { INITIAL_GESTURE, stepGesture } from './pointer-gesture';
@@ -597,10 +597,11 @@ describe('repeated events', () => {
     const results: OpResult[] = [];
     stub.hook = (input) => {
       if (input.model.actionCount === 1 && results.length === 0) {
-        results.push(input.handlers.dispatch({ ...(place as object) } as Action));
+        results.push(input.handlers.dispatch({ type: 'ACK_REVEAL' }));
         results.push(input.handlers.startGame({ seed: 1 }));
         results.push(input.handlers.restart());
         results.push(input.handlers.abandon());
+        results.push(input.handlers.dispatch({ ...(place as object) } as unknown as Parameters<RenderHandlers['dispatch']>[0])); // PLACE is refused before BUSY
       }
     };
     expect(ctl.dispatchHuman(place)).toEqual({ ok: true });
@@ -609,6 +610,7 @@ describe('repeated events', () => {
       { ok: false, reason: 'BUSY' },
       { ok: false, reason: 'BUSY' },
       { ok: false, reason: 'BUSY' },
+      { ok: false, reason: 'PLACE_NOT_ALLOWED' },
     ]);
     // the same scenario without the re-entrant attempts ends in the same place: every action was applied once
     const control = make(immediate);
@@ -1600,5 +1602,96 @@ describe('task 17.4: acceptance 9, hidden information is absent from the draft, 
     ];
     const text = JSON.stringify(outputs);
     for (const card of hidden) expect(text.includes(`"${card}"`), card).toBe(false);
+  });
+});
+
+describe('task 18.3: RenderHandlers.dispatch refuses PLACE (placement confirmation boundary)', () => {
+  type ScreenAction = Parameters<RenderHandlers['dispatch']>[0];
+  /** Everything a refused PLACE must leave alone (`actionCount` is the log length: one log entry per accepted Action). */
+  const state = (t: ReturnType<typeof drafting>) => ({
+    ...t.snapshot(),
+    draft: t.ctl.getModel().draft,
+    gestureEpoch: t.ctl.getModel().gestureEpoch,
+    lastError: t.ctl.getModel().lastError,
+    calls: t.stub.calls.length,
+  });
+  const REFUSED = { ok: false, reason: 'PLACE_NOT_ALLOWED' };
+
+  it('refuses a legal and an illegal PLACE payload, changes nothing, and confirmPlacement still places exactly once', () => {
+    const t = drafting();
+    t.ctl.draftEvent({ type: 'dropOnCell', cell: t.legal[0] as GridPosition, card: t.plain });
+    const before = state(t);
+    const legal = { type: 'PLACE', player: 'P0', card: t.plain, pos: t.legal[0], orientation: 0 };
+    const illegal = { type: 'PLACE', player: 'P0', card: t.plain, pos: { row: 9, col: 9 }, orientation: 90 };
+    const handlers = t.stub.last.handlers;
+    expect(handlers.dispatch(legal as unknown as ScreenAction)).toEqual(REFUSED);
+    expect(handlers.dispatch(illegal as unknown as ScreenAction)).toEqual(REFUSED);
+    expect(handlers.dispatch(legal as unknown as ScreenAction)).toEqual(REFUSED); // the same object again is not a duplicate
+    expect(state(t)).toEqual(before);
+    expect(t.ctl.getModel().actionCount).toBe(0);
+
+    expect(t.ctl.confirmPlacement()).toEqual({ ok: true });
+    expect(t.ctl.getModel().actionCount).toBe(1);
+    expect(t.ctl.confirmPlacement()).toEqual({ ok: false, reason: 'DRAFT_INVALID', issue: 'NO_CARD' });
+    expect(t.ctl.getModel().actionCount).toBe(1);
+  });
+
+  it('refuses a PLACE for an AI seat, an unknown seat, and after dispose or without a game, never reaching the engine', () => {
+    const t = drafting();
+    const before = state(t);
+    for (const player of ['P1', 'P9', undefined]) {
+      const action = { type: 'PLACE', player, card: t.plain, pos: t.legal[0], orientation: 0 };
+      expect(t.stub.last.handlers.dispatch(action as unknown as ScreenAction), String(player)).toEqual(REFUSED);
+    }
+    expect(state(t)).toEqual(before);
+    expect(t.ctl.getModel().lastError).toBeNull(); // an engine rejection would have stored an error
+
+    const none = make(immediate);
+    none.ctl.startGame({ seed: 2 });
+    none.ctl.abandon();
+    expect(none.stub.last.handlers.dispatch({ type: 'PLACE' } as unknown as ScreenAction)).toEqual(REFUSED);
+    const held = t.stub.last.handlers;
+    t.ctl.dispose();
+    expect(held.dispatch({ type: 'PLACE' } as unknown as ScreenAction)).toEqual(REFUSED);
+  });
+
+  it('refuses malformed actions that claim to be a PLACE, and still forwards other malformed ones to the engine path', () => {
+    const t = drafting();
+    const before = state(t);
+    const malformed = [{ type: 'PLACE' }, { type: 'PLACE', player: null, card: 7 }, { type: 'PLACE', pos: 'A1' }];
+    for (const action of malformed) {
+      expect(t.stub.last.handlers.dispatch(action as unknown as ScreenAction), JSON.stringify(action)).toEqual(REFUSED);
+    }
+    expect(state(t)).toEqual(before);
+    // null, undefined and a type-less object are not a PLACE: they take the normal path and do not throw
+    for (const action of [null, undefined, {}, { type: 'NOPE' }]) {
+      const result = t.stub.last.handlers.dispatch(action as unknown as ScreenAction);
+      expect(result.ok, JSON.stringify(action)).toBe(false);
+      expect(result).not.toEqual(REFUSED);
+    }
+    expect(t.ctl.getModel().actionCount).toBe(0);
+    expect(t.sched.scheduled).toBe(before.scheduled);
+  });
+
+  it('a PLACE from inside a render is refused with PLACE_NOT_ALLOWED, not BUSY, and does not disturb the running action', () => {
+    const t = drafting();
+    t.ctl.draftEvent({ type: 'dropOnCell', cell: t.legal[0] as GridPosition, card: t.plain });
+    const results: OpResult[] = [];
+    t.stub.hook = (input) => {
+      if (input.model.actionCount === 1 && results.length === 0) {
+        results.push(input.handlers.dispatch({ type: 'PLACE', player: 'P0' } as unknown as ScreenAction));
+        results.push(input.handlers.confirmPlacement()); // other handlers keep answering BUSY
+      }
+    };
+    expect(t.ctl.confirmPlacement()).toEqual({ ok: true });
+    expect(results).toEqual([REFUSED, { ok: false, reason: 'BUSY' }]);
+    expect(t.ctl.getModel().actionCount).toBe(1);
+  });
+
+  it('dispatchHuman stays the trusted path and the typed non-PLACE actions still go through the screen handler', () => {
+    const t = drafting();
+    const place: Action = { type: 'PLACE', player: 'P0', card: t.plain, pos: t.legal[0] as GridPosition, orientation: 0 };
+    expect(t.ctl.dispatchHuman(place)).toEqual({ ok: true });
+    expect(t.stub.last.handlers.dispatch({ type: 'ACK_REVEAL' })).toEqual({ ok: false, reason: 'ENGINE', code: 'WRONG_PHASE' });
   });
 });
