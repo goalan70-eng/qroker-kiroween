@@ -94,16 +94,18 @@ import { viewFor } from '../core/view';
 import type { PlayerView } from '../core/view';
 import { DEFAULT_LANGUAGE, errorMessageKey, getLanguage, isLang, setLanguage, t } from '../i18n';
 import type { Lang } from '../i18n';
+import { clearSave, loadGame, readPrefs, saveGame, writePrefs } from '../persistence/storage';
+import type { DiscardReason, KeyValueStore, SaveResult } from '../persistence/storage';
 import { renderWithFocus } from './dom';
 import { nextGate } from './screens/privacy-gate';
 import type { GatePurpose } from './screens/privacy-gate';
 import { draftContextFor, EMPTY_DRAFT, errorCodeForIssue, reduceDraft, validateDraft } from './placement-draft';
 import type { DraftEvent, DraftIssue, DraftResult, RotationInfoMap } from './placement-draft';
 import { mountShell } from './shell';
-import { seatsFor, validateSetup } from './setup-model';
-import type { SetupOptions } from './setup-model';
+import { sanitizeSetupPrefs, seatsFor, validateSetup } from './setup-model';
+import type { SetupOptions, SetupPrefs } from './setup-model';
 import { createStore, initialModel } from './store';
-import type { AppModel, DisplayErrorRecord } from './store';
+import type { AppModel, DisplayErrorRecord, Notice, NoticeReason } from './store';
 
 /** Presentation delay between two AI steps (design: `AI_DELAY_MS = 600`, at most 1000). */
 export const AI_DELAY_MS = 600;
@@ -149,6 +151,8 @@ export interface PracticeOptions {
  * - `DISPOSED`: the controller was disposed; nothing was done.
  * - `DRAFT_INVALID`: `confirmPlacement` found the draft incomplete (`NO_CARD`, `NO_TARGET`) or stale; no Action was sent.
  * - `PLACE_NOT_ALLOWED`: a `PLACE` was passed to `RenderHandlers.dispatch`; placements go through the draft only.
+ * - `NO_RESUME` (task 20.4): `continueSaved` or `discardSaved` found no pending resume offer (none, already used, or
+ *   dropped by a new game, abandon or an older epoch). Nothing was done.
  * - `STALE_GATE` (task 19.4): `acknowledgeGate` got a binding that does not match the pending gate (none pending, wrong
  *   seat or purpose, older `actionCount`, already acknowledged); or `dispatchHuman` was called while a gate is pending
  *   (the next Seat has not acknowledged yet, so no Action may be sent). Nothing was done.
@@ -156,7 +160,7 @@ export interface PracticeOptions {
 export type OpResult =
   | { readonly ok: true }
   | { readonly ok: false; readonly reason: 'ENGINE'; readonly code: ErrorCode }
-  | { readonly ok: false; readonly reason: 'BUSY' | 'NO_GAME' | 'DISPOSED' | 'PLACE_NOT_ALLOWED' | 'STALE_GATE' }
+  | { readonly ok: false; readonly reason: 'BUSY' | 'NO_GAME' | 'DISPOSED' | 'PLACE_NOT_ALLOWED' | 'STALE_GATE' | 'NO_RESUME' }
   | { readonly ok: false; readonly reason: 'DRAFT_INVALID'; readonly issue: DraftIssue };
 
 /** The functions a screen may call. Created once; they stay valid after dispose and then do nothing. */
@@ -187,6 +191,14 @@ export interface RenderHandlers {
    * becomes `model.viewer` and the gate is cleared.
    */
   readonly acknowledgeGate: (ack: GateAck) => OpResult;
+  /** Task 20.4: installs the saved game offered at startup (`model.resume`) as the running game. Single use. */
+  readonly continueSaved: () => OpResult;
+  /** Task 20.4: removes the saved game and drops the offer; the preferences stay. Single use. */
+  readonly discardSaved: () => OpResult;
+  /** Task 20.4: removes a notice. Only `SAVE_DISCARDED` and `STORAGE_READ_FAILED` are dismissible; others are ignored. */
+  readonly dismissNotice: (kind: Notice['kind']) => void;
+  /** Task 20.4: sanitizes and stores the setup preferences (`model.setupPrefs`) and writes them to the preferences key. */
+  readonly setSetupPrefs: (prefs: SetupPrefs) => void;
 }
 
 /** The binding of a gate acknowledgement (what `PrivacyGate`'s `onAcknowledge` passes). */
@@ -230,6 +242,10 @@ export interface AppDeps {
   readonly language: () => Lang;
   /** Strategy lookup. Default: the registry (`getStrategy`). Injectable so that tests can force decisions. */
   readonly strategyFor?: (difficulty: Difficulty) => AIStrategy;
+  /** Task 20.4: the injected storage. Persistence is active only when BOTH `store` and `nowIso` are given. */
+  readonly store?: KeyValueStore;
+  /** Task 20.4: the injected clock for `savedAtIso` (ISO-8601 text). The controller never reads a clock itself. */
+  readonly nowIso?: () => string;
 }
 
 export interface Controller {
@@ -262,6 +278,14 @@ export interface Controller {
   explainTarget(cell: GridPosition): ErrorCode | null;
   /** Same as `RenderHandlers.acknowledgeGate`. */
   acknowledgeGate(ack: GateAck): OpResult;
+  /** Same as `RenderHandlers.continueSaved`. */
+  continueSaved(): OpResult;
+  /** Same as `RenderHandlers.discardSaved`. */
+  discardSaved(): OpResult;
+  /** Same as `RenderHandlers.dismissNotice`. */
+  dismissNotice(kind: Notice['kind']): void;
+  /** Same as `RenderHandlers.setSetupPrefs`. */
+  setSetupPrefs(prefs: SetupPrefs): void;
   /** Rotation capability of the Hand cards of `viewer` (keys: that seat's own Hand only); `{}` without a game. */
   rotationInfo(viewer: PlayerId): RotationInfoMap;
   subscribe(listener: (model: AppModel) => void): () => void;
@@ -293,6 +317,20 @@ function rotationInfoFor(view: PlayerView): RotationInfoMap {
   return Object.freeze(info);
 }
 
+/** True only for a store that says `durable === true`. A throwing getter counts as not durable. */
+function isDurableStore(store: KeyValueStore): boolean {
+  try {
+    return store.durable === true;
+  } catch {
+    return false;
+  }
+}
+
+type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
+// Compile-time check: the closed `NoticeReason` of `ui/store.ts` equals the `DiscardReason` of `persistence/storage`.
+const noticeReasonMatchesDiscardReason: Equal<NoticeReason, DiscardReason> = true;
+void noticeReasonMatchesDiscardReason;
+
 export function createController(deps: AppDeps): Controller {
   const strategyFor = deps.strategyFor ?? getStrategy;
 
@@ -312,12 +350,48 @@ export function createController(deps: AppDeps): Controller {
   let lastPrivateSeat: PlayerId | null = null;
   let acknowledgedSeat: PlayerId | null = null;
 
+  // ---- persistence (task 20.4) ----------------------------------------------------------------------------
+  // Active only when BOTH the store and the clock are injected; otherwise nothing below reads, writes or notifies.
+  const persist: { readonly store: KeyValueStore; readonly nowIso: () => string } | null =
+    deps.store !== undefined && deps.nowIso !== undefined ? { store: deps.store, nowIso: deps.nowIso } : null;
+  /** The saved game offered at startup. Sealed here (never in the model); valid only in the epoch that created it. */
+  let pendingResume: { readonly state: GameState; readonly config: GameConfig; readonly epoch: number } | null = null;
+  /** The storage part of the model produced by saves since the last `setModel`; merged and cleared there. */
+  let persistPatch: { storage?: AppModel['storage']; notices?: readonly Notice[] } = {};
+
+  const storedPrefs = persist === null ? null : readPrefs(persist.store);
   const startLanguage = ((): Lang => {
+    if (storedPrefs !== null && isLang(storedPrefs.language)) return storedPrefs.language;
     const wanted: unknown = deps.language();
     return isLang(wanted) ? wanted : DEFAULT_LANGUAGE;
   })();
   setLanguage(startLanguage);
-  const store = createStore<AppModel>(initialModel(startLanguage));
+
+  const startNotices: Notice[] = [];
+  let startResume: AppModel['resume'] = null;
+  if (persist !== null) {
+    if (!isDurableStore(persist.store)) startNotices.push(Object.freeze({ kind: 'STORAGE_NOT_DURABLE' as const }));
+    const loaded = loadGame(persist.store); // ONCE, before the first render
+    if (loaded.kind === 'NONE') {
+      if (loaded.readFailed === true) startNotices.push(Object.freeze({ kind: 'STORAGE_READ_FAILED' as const }));
+    } else if (loaded.kind === 'RESUMABLE') {
+      pendingResume = { state: loaded.state, config: loaded.envelope.config, epoch: epoch };
+      startResume = Object.freeze({
+        savedAtIso: loaded.envelope.savedAtIso,
+        humanSeats: loaded.envelope.config.seats.filter((s) => s.kind === 'HUMAN').length,
+      });
+    } else {
+      startNotices.push(Object.freeze({ kind: 'SAVE_DISCARDED' as const, reason: loaded.reason }));
+    }
+  }
+  const store = createStore<AppModel>(
+    Object.freeze({
+      ...initialModel(startLanguage),
+      resume: startResume,
+      notices: Object.freeze(startNotices),
+      ...(storedPrefs === null ? {} : { setupPrefs: sanitizeSetupPrefs(storedPrefs.setup) }),
+    }),
+  );
 
   // ---- model ----------------------------------------------------------------------------------------------
 
@@ -405,6 +479,8 @@ export function createController(deps: AppDeps): Controller {
    */
   function setModel(patch: Partial<Omit<AppModel, 'viewer' | 'gate'>>): void {
     const seat = planSeat(); // viewer and gate are always derived from the game and the gate markers
+    const saved = persistPatch; // the outcome of saves made since the last model update (task 20.4)
+    persistPatch = {};
     store.update((m) => {
       const next: AppModel = {
         ...m,
@@ -413,12 +489,58 @@ export function createController(deps: AppDeps): Controller {
         viewer: seat.viewer,
         gate: seat.gate,
         ...patch,
+        ...saved,
       };
       const fingerprint = draftFingerprint(next);
       const stale = fingerprint !== lastFingerprint || cardLeftHand(next);
       lastFingerprint = fingerprint;
       return Object.freeze(stale ? { ...next, draft: EMPTY_DRAFT, gestureEpoch: next.gestureEpoch + 1 } : next);
     });
+  }
+
+  // ---- saving (task 20.4) ---------------------------------------------------------------------------------
+
+  /**
+   * Maps one storage result to `storage` and `notices` (held in `persistPatch` until the next `setModel`, which is
+   * always in the same synchronous flow). No saved text and no error object is kept: only the closed outcome.
+   */
+  function recordStorage(result: { readonly ok: boolean; readonly durable?: boolean }): void {
+    const base = persistPatch.notices ?? store.get().notices;
+    const without = (kinds: readonly Notice['kind'][]): Notice[] => base.filter((n) => !kinds.includes(n.kind));
+    const withKind = (list: readonly Notice[], kind: Notice['kind']): readonly Notice[] =>
+      Object.freeze(list.some((n) => n.kind === kind) ? [...list] : [...list, Object.freeze({ kind })]);
+    if (!result.ok) {
+      persistPatch = { storage: 'FAILED', notices: withKind(base, 'STORAGE_WRITE_FAILED') };
+    } else if (result.durable === true) {
+      persistPatch = { storage: 'DURABLE', notices: Object.freeze(without(['STORAGE_NOT_DURABLE', 'STORAGE_WRITE_FAILED'])) };
+    } else {
+      persistPatch = { storage: 'MEMORY_ONLY', notices: withKind(without(['STORAGE_WRITE_FAILED']), 'STORAGE_NOT_DURABLE') };
+    }
+  }
+
+  /**
+   * Saves `state` right after an accepted transition (or a new game). Synchronous, so it runs before the render and
+   * before the next AI step is scheduled. A failure never throws and never undoes the transition.
+   */
+  function saveNow(state: GameState): void {
+    if (persist === null) return;
+    let result: SaveResult;
+    try {
+      result = saveGame(persist.store, state, persist.nowIso());
+    } catch {
+      result = { ok: false, reason: 'INVALID_STATE' }; // an injected clock that throws
+    }
+    recordStorage(result);
+  }
+
+  /** Removes the save. A failed removal is a failed storage: a stale save could resume an abandoned game. */
+  function clearNow(): void {
+    if (persist !== null && !clearSave(persist.store).ok) recordStorage({ ok: false });
+  }
+
+  /** Preference write. A failure is silent. The Seed is never part of it. */
+  function writePrefsNow(language: Lang, setup: SetupPrefs): void {
+    if (persist !== null) writePrefs(persist.store, { language, setup });
   }
 
   const errorRecord = (code: ErrorCode): DisplayErrorRecord => Object.freeze({ code, messageKey: errorMessageKey(code) });
@@ -541,6 +663,7 @@ export function createController(deps: AppDeps): Controller {
         return false;
       }
       g.state = result.value;
+      saveNow(g.state); // every accepted AI Action individually, before the render and before the next step
       return true;
     };
     const decide = (seat: PlayerId): boolean => {
@@ -617,6 +740,7 @@ export function createController(deps: AppDeps): Controller {
       const result = reduce(state, action);
       if (!result.ok) return rejectWith(result.error.code);
       g.state = result.value;
+      saveNow(g.state); // before the render and before the next AI step; a failed save does not undo the Action
       lastAccepted = { action, logLength: result.value.log.length };
       setModel({ lastError: null }); // `actionCount` changed, so `setModel` also clears the draft
     } finally {
@@ -648,7 +772,9 @@ export function createController(deps: AppDeps): Controller {
       // Seat (when there is one) counts as the last private Seat. If an AI moves first, the first human Seat gets a gate.
       lastPrivateSeat = candidateSeat(game);
       acknowledgedSeat = null;
-      setModel({ lastError: null, aiStalled: false }); // new epoch: draft cleared; viewer and gate are derived
+      pendingResume = null; // an offer is never kept for a different game; the save is overwritten below
+      saveNow(created.value);
+      setModel({ lastError: null, aiStalled: false, resume: null }); // new epoch: draft cleared; viewer and gate are derived
     } finally {
       inFlight = false;
     }
@@ -687,7 +813,10 @@ export function createController(deps: AppDeps): Controller {
       seats: seatsFor(checked.value),
       identityVisibility: checked.value.identityVisibility,
     };
-    return begin(config, seed.value);
+    const started = begin(config, seed.value);
+    // The setup preferences (never the seed text: `sanitizeSetupPrefs` keeps the three pref fields only) and the language.
+    if (started.ok) writePrefsNow(store.get().language, sanitizeSetupPrefs(checked.value));
+    return started;
   }
 
   function startPracticeGame(options: PracticeOptions): OpResult {
@@ -720,7 +849,9 @@ export function createController(deps: AppDeps): Controller {
       lastAccepted = null;
       lastPrivateSeat = null;
       acknowledgedSeat = null;
-      setModel({ lastError: null, aiStalled: false }); // new epoch: draft cleared; viewer and gate are null without a game
+      pendingResume = null;
+      clearNow(); // an abandoned game must not resume later
+      setModel({ lastError: null, aiStalled: false, resume: null }); // new epoch: draft cleared; viewer and gate are null without a game
     } finally {
       inFlight = false;
     }
@@ -731,6 +862,70 @@ export function createController(deps: AppDeps): Controller {
     if (disposed || !isLang(lang)) return;
     setLanguage(lang);
     setModel({ language: lang });
+    writePrefsNow(lang, store.get().setupPrefs);
+  }
+
+  // ---- resume and notices (task 20.4) ---------------------------------------------------------------------
+
+  /** True while the offer made at startup is still valid: it exists and no game, abandon or dispose has passed since. */
+  const offerIsLive = (): boolean => pendingResume !== null && pendingResume.epoch === epoch;
+
+  /**
+   * Installs the replayed saved game as the running game (new epoch, so a pending AI step of the old state is dead).
+   * `lastPrivateSeat` and `acknowledgedSeat` stay null: with two to four human Seats `planSeat` then returns the gate
+   * for the first private Seat, so no private view is shown before `acknowledgeGate`. No game is created and nothing is
+   * written: the next write is the next accepted Action.
+   */
+  function continueSaved(): OpResult {
+    if (disposed) return { ok: false, reason: 'DISPOSED' };
+    if (inFlight) return { ok: false, reason: 'BUSY' };
+    const offer = pendingResume;
+    if (offer === null || !offerIsLive()) return { ok: false, reason: 'NO_RESUME' };
+    inFlight = true;
+    try {
+      invalidate();
+      pendingResume = null;
+      game = { state: offer.state, config: offer.config };
+      lastAccepted = null;
+      lastPrivateSeat = null;
+      acknowledgedSeat = null;
+      setModel({ lastError: null, aiStalled: false, resume: null });
+    } finally {
+      inFlight = false;
+    }
+    scheduleNext(); // an AI that must act resumes
+    return { ok: true };
+  }
+
+  /** Removes the saved game and the offer. The preferences are not touched. */
+  function discardSaved(): OpResult {
+    if (disposed) return { ok: false, reason: 'DISPOSED' };
+    if (inFlight) return { ok: false, reason: 'BUSY' };
+    if (!offerIsLive()) return { ok: false, reason: 'NO_RESUME' };
+    inFlight = true;
+    try {
+      pendingResume = null;
+      clearNow();
+      setModel({ resume: null });
+    } finally {
+      inFlight = false;
+    }
+    return { ok: true };
+  }
+
+  const DISMISSIBLE: readonly Notice['kind'][] = ['SAVE_DISCARDED', 'STORAGE_READ_FAILED'];
+
+  function dismissNotice(kind: Notice['kind']): void {
+    if (disposed || !DISMISSIBLE.includes(kind)) return;
+    const notices = store.get().notices;
+    if (notices.some((n) => n.kind === kind)) setModel({ notices: Object.freeze(notices.filter((n) => n.kind !== kind)) });
+  }
+
+  function setSetupPrefs(prefs: SetupPrefs): void {
+    if (disposed) return;
+    const clean = sanitizeSetupPrefs(prefs); // a stale or hostile caller cannot store anything but the three pref fields
+    setModel({ setupPrefs: clean });
+    writePrefsNow(store.get().language, clean);
   }
 
   // ---- placement draft ------------------------------------------------------------------------------------
@@ -842,6 +1037,7 @@ export function createController(deps: AppDeps): Controller {
     invalidate();
     disposed = true;
     game = null;
+    pendingResume = null;
     lastAccepted = null;
     unsubscribeRender();
   }
@@ -858,6 +1054,10 @@ export function createController(deps: AppDeps): Controller {
     confirmPlacement,
     explainTarget,
     acknowledgeGate,
+    continueSaved,
+    discardSaved,
+    dismissNotice,
+    setSetupPrefs,
   });
 
   const controller: Controller = Object.freeze({
@@ -876,6 +1076,10 @@ export function createController(deps: AppDeps): Controller {
     confirmPlacement,
     explainTarget,
     acknowledgeGate,
+    continueSaved,
+    discardSaved,
+    dismissNotice,
+    setSetupPrefs,
     rotationInfo,
     subscribe: (listener: (model: AppModel) => void) => (disposed ? NOOP_UNSUBSCRIBE : store.subscribe(listener)),
     dispose,
@@ -897,6 +1101,9 @@ export interface MountDeps {
   readonly schedule: Schedule;
   readonly randomSeed: () => number;
   readonly strategyFor?: (difficulty: Difficulty) => AIStrategy;
+  /** Task 20.4: the injected storage and clock; persistence is active only when both are given. */
+  readonly store?: KeyValueStore;
+  readonly nowIso?: () => string;
   /** Optional extra renderer for the game screens (tasks 17 to 19); it runs after the shell, inside the focus guard. */
   readonly renderer?: Renderer;
 }
@@ -924,6 +1131,8 @@ export function mountApp(root: HTMLElement, deps: MountDeps): AppHandle {
     schedule: deps.schedule,
     randomSeed: deps.randomSeed,
     ...(deps.strategyFor === undefined ? {} : { strategyFor: deps.strategyFor }),
+    ...(deps.store === undefined ? {} : { store: deps.store }),
+    ...(deps.nowIso === undefined ? {} : { nowIso: deps.nowIso }),
     language: () => getLanguage(), // the shell has just applied detectLanguage(...)
     renderer: (input) =>
       renderWithFocus(doc, () => {

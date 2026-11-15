@@ -10,6 +10,8 @@ import type { ErrorCode, PlayerId } from '../core/types';
 import { EMPTY_DRAFT } from './placement-draft';
 import type { PlacementDraft } from './placement-draft';
 import type { GatePurpose } from './screens/privacy-gate';
+import { DEFAULT_SETUP_PREFS } from './setup-model';
+import type { SetupPrefs } from './setup-model';
 
 /**
  * The last error shown to the player. It stores the code and the string KEY, never the text: the text is looked
@@ -26,6 +28,21 @@ export interface DisplayErrorRecord {
  * idle screen: no game is running and the app shell is shown.
  */
 export type ScreenName = 'SETUP' | 'GAME' | 'END';
+
+/**
+ * Closed codes for a discarded save. Equal to `DiscardReason` of `persistence/storage` (the controller checks the
+ * equality at compile time); declared here because screen-class modules must not import `persistence/`.
+ */
+export type NoticeReason = 'CORRUPT' | 'SAVE_VERSION' | 'RULES_VERSION' | 'REPLAY_REJECTED' | 'GAME_ENDED' | 'INVALID_VALUE';
+
+/** A persistence notice (task 20.4). Closed codes only: no saved text, card, Guess, Seed or engine detail. At most one per kind. */
+export interface Notice {
+  readonly kind: 'STORAGE_NOT_DURABLE' | 'STORAGE_WRITE_FAILED' | 'STORAGE_READ_FAILED' | 'SAVE_DISCARDED';
+  readonly reason?: NoticeReason;
+}
+
+/** What is known about saving: `UNKNOWN` until the first save result (or without persistence). */
+export type StorageStatus = 'UNKNOWN' | 'DURABLE' | 'MEMORY_ONLY' | 'FAILED';
 
 /** UI-only state. Every value is plain data and the whole object is frozen when it is stored. */
 export interface AppModel {
@@ -62,6 +79,16 @@ export interface AppModel {
   readonly actionCount: number;
   /** True when an AI seat could not play (illegal Action or a failing strategy); the AI loop is stopped. */
   readonly aiStalled: boolean;
+  /** Result of the latest save (task 20.4). `MEMORY_ONLY` is not a recovery guarantee. */
+  readonly storage: StorageStatus;
+  /**
+   * A resumable save is waiting for Continue or Discard (task 20.4): saved time and number of human Seats only. The saved
+   * game itself stays sealed in the controller. `null` when there is no offer.
+   */
+  readonly resume: { readonly savedAtIso: string; readonly humanSeats: number } | null;
+  readonly notices: readonly Notice[];
+  /** Setup preferences (everything of the setup but the Seed), restored from storage at startup. */
+  readonly setupPrefs: SetupPrefs;
 }
 
 export function initialModel(language: Lang): AppModel {
@@ -75,6 +102,10 @@ export function initialModel(language: Lang): AppModel {
     lastError: null,
     actionCount: 0,
     aiStalled: false,
+    storage: 'UNKNOWN',
+    resume: null,
+    notices: Object.freeze([]),
+    setupPrefs: DEFAULT_SETUP_PREFS,
   });
 }
 

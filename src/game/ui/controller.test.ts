@@ -493,7 +493,7 @@ describe('what a renderer receives', () => {
       if (call.view !== null) expect(Object.isFrozen(call.view)).toBe(true);
       // task 17.4: `select` (16.2) is replaced by the draft API
       expect(Object.keys(call.handlers).sort()).toEqual([
-        'abandon', 'acknowledgeGate', 'confirmPlacement', 'dispatch', 'draftEvent', 'explainTarget', 'replaySameSeed', 'restart', 'setLanguage', 'startFromSetup', 'startGame',
+        'abandon', 'acknowledgeGate', 'confirmPlacement', 'continueSaved', 'discardSaved', 'dismissNotice', 'dispatch', 'draftEvent', 'explainTarget', 'replaySameSeed', 'restart', 'setLanguage', 'setSetupPrefs', 'startFromSetup', 'startGame',
       ]);
       expect(Object.values(call.handlers).every((f) => typeof f === 'function')).toBe(true);
     }
@@ -505,8 +505,9 @@ describe('what a renderer receives', () => {
     const { ctl } = make(immediate);
     ctl.startGame({ seed: 9 });
     expect(Object.keys(ctl).sort()).toEqual([
-      'abandon', 'acknowledgeGate', 'confirmPlacement', 'dispatchHuman', 'dispose', 'draftEvent', 'explainTarget', 'getDisplayError', 'getModel',
-      'getView', 'replaySameSeed', 'restart', 'rotationInfo', 'setLanguage', 'startFromSetup', 'startGame', 'startPracticeGame', 'subscribe',
+      'abandon', 'acknowledgeGate', 'confirmPlacement', 'continueSaved', 'discardSaved', 'dismissNotice', 'dispatchHuman', 'dispose', 'draftEvent',
+      'explainTarget', 'getDisplayError', 'getModel', 'getView', 'replaySameSeed', 'restart', 'rotationInfo', 'setLanguage', 'setSetupPrefs',
+      'startFromSetup', 'startGame', 'startPracticeGame', 'subscribe',
     ]);
     expect(Object.values(ctl).every((v) => typeof v === 'function')).toBe(true);
     expect(Object.getOwnPropertyNames(ctl).some((k) => /^(?:state|game|deck|hands|log|seed)$/i.test(k))).toBe(false);

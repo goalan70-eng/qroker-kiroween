@@ -1,6 +1,7 @@
 // Tests of the observable store and the initial model (task 16.2).
 import { describe, expect, it } from 'vitest';
 import { EMPTY_DRAFT } from './placement-draft';
+import { DEFAULT_SETUP_PREFS } from './setup-model';
 import { createStore, initialModel } from './store';
 
 describe('createStore', () => {
@@ -47,6 +48,10 @@ describe('initialModel', () => {
       lastError: null,
       actionCount: 0,
       aiStalled: false,
+      storage: 'UNKNOWN',
+      resume: null,
+      notices: [],
+      setupPrefs: DEFAULT_SETUP_PREFS,
     });
     expect(model).not.toHaveProperty('selection');
     expect(Object.isFrozen(model)).toBe(true);
