@@ -74,7 +74,7 @@ import { rotationChangesCorners } from '../core/fragment-layout';
 import { mix32 } from '../core/prng';
 import { defaultConfig, newGame } from '../core/state';
 import type { GameState } from '../core/state';
-import type { Action, CardId, Difficulty, ErrorCode, GameConfig, GridPosition, PlayerId } from '../core/types';
+import type { Action, CardId, Difficulty, ErrorCode, GameConfig, GridPosition, IdentityVisibility, PlayerId } from '../core/types';
 import { viewFor } from '../core/view';
 import type { PlayerView } from '../core/view';
 import { DEFAULT_LANGUAGE, errorMessageKey, getLanguage, isLang, setLanguage, t } from '../i18n';
@@ -114,6 +114,12 @@ export interface StartOptions {
   readonly config?: GameConfig;
   /** Default: `deps.randomSeed()`. */
   readonly seed?: number;
+}
+
+export interface PracticeOptions {
+  readonly seed: number;
+  /** Default: the default configuration's value. */
+  readonly identityVisibility?: IdentityVisibility;
 }
 
 /**
@@ -180,6 +186,11 @@ export interface Controller {
   getDisplayError(): DisplayError | null;
   dispatchHuman(action: Action): OpResult;
   startGame(options?: StartOptions): OpResult;
+  /**
+   * Starts the default practice game (seat P0 human, three AI seats, `defaultConfig()`) with `seed` and, when given,
+   * `identityVisibility`. For composition roots (such as the development playground) that must not import `core/state`.
+   */
+  startPracticeGame(options: PracticeOptions): OpResult;
   /** New game with the same configuration and a new seed from `deps.randomSeed()`. */
   restart(): OpResult;
   /** Drops the game and returns the model to the idle screen. */
@@ -502,6 +513,12 @@ export function createController(deps: AppDeps): Controller {
     return begin(options?.config ?? defaultConfig(), options?.seed ?? deps.randomSeed());
   }
 
+  function startPracticeGame(options: PracticeOptions): OpResult {
+    const base = defaultConfig();
+    const config = options.identityVisibility === undefined ? base : { ...base, identityVisibility: options.identityVisibility };
+    return startGame({ config, seed: options.seed });
+  }
+
   function restart(): OpResult {
     if (disposed) return { ok: false, reason: 'DISPOSED' };
     if (inFlight) return { ok: false, reason: 'BUSY' };
@@ -629,6 +646,7 @@ export function createController(deps: AppDeps): Controller {
     getDisplayError: () => displayErrorOf(store.get()),
     dispatchHuman,
     startGame,
+    startPracticeGame,
     restart,
     abandon,
     setLanguage: setUiLanguage,

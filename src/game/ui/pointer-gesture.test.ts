@@ -295,6 +295,10 @@ class FakeHost implements GestureHost {
   readonly captured: number[] = [];
   readonly released: number[] = [];
   throwOnCapture = false;
+  /** Like Node.contains: the fake card element 'card-element' is inside the host. */
+  contains(other: unknown): boolean {
+    return other === 'card-element';
+  }
   addEventListener(type: string, fn: GestureListener): void {
     this.listeners.set(type, [...(this.listeners.get(type) ?? []), fn]);
   }
@@ -458,6 +462,23 @@ describe('attachHandGestures (fake document, wiring only)', () => {
     expect(click.stopped).toBe(0);
   });
 
+  it('regression (found in a real browser): the pointer is captured when the drag starts, never on press or during a tap', () => {
+    // A captured pointer sends pointerup and the click to the capturing Hand container, so a tap that captured on
+    // press never reached the card's click handler.
+    const t = setup();
+    t.press(10, 10, 0);
+    expect(t.host.captured).toEqual([]);
+    t.send('pointermove', { clientX: 17, clientY: 10 }); // 7 px: still a tap
+    expect(t.host.captured).toEqual([]);
+    t.send('pointermove', { clientX: 18, clientY: 10 }); // 8 px: the drag starts
+    expect(t.host.captured).toEqual([1]);
+    t.send('pointerup', { clientX: 18, clientY: 10, timeStamp: 5 });
+    const tap = setup();
+    tap.press(10, 10, 0);
+    tap.send('pointerup', { clientX: 10, clientY: 10, timeStamp: 5 });
+    expect(tap.host.captured).toEqual([]);
+  });
+
   it('a drag calls dragStart once and drops on the cell under the RELEASE POINT, not on event.target', () => {
     const t = setup();
     const staleTarget = cellEl(7, 7); // what a captured target would suggest
@@ -609,10 +630,57 @@ describe('attachHandGestures (fake document, wiring only)', () => {
     expect(events.map((e) => e.prevented)).toEqual([0, 0, 0]);
   });
 
+  it('regression (found in a real browser): no click follows a captured drag, so the next press or key press clears the suppression', () => {
+    // Edge sends no click after the release of a captured drag. The flag must not swallow the click of the NEXT press
+    // (for example on Confirm) or of a key press that comes within CLICK_SUPPRESS_MS.
+    const drag = (t: ReturnType<typeof setup>): void => {
+      t.press(10, 10, 0);
+      t.send('pointermove', { clientX: 60, clientY: 10 });
+      t.send('pointerup', { clientX: 60, clientY: 10, timeStamp: 100 });
+    };
+    const viaPress = setup();
+    drag(viaPress);
+    viaPress.send('pointerdown', { clientX: 300, clientY: 300, timeStamp: 150, target: 'confirm-button' });
+    expect(viaPress.send('click', { timeStamp: 151 }).prevented).toBe(0);
+
+    const viaKey = setup();
+    drag(viaKey);
+    viaKey.send('keydown', { key: 'Enter', timeStamp: 150 });
+    expect(viaKey.send('click', { timeStamp: 151 }).prevented).toBe(0);
+
+    // the click that DOES follow the release directly (other browsers) is still suppressed, once
+    const direct = setup();
+    drag(direct);
+    expect(direct.send('click', { timeStamp: 101 }).prevented).toBe(1);
+    expect(direct.send('click', { timeStamp: 102 }).prevented).toBe(0);
+
+    // Escape is not a "new action": it leaves the suppression of a drag in place
+    const escape = setup();
+    drag(escape);
+    escape.send('keydown', { key: 'Escape', timeStamp: 120 });
+    expect(escape.send('click', { timeStamp: 121 }).prevented).toBe(1);
+  });
+  it('regression (found with emulated touch): the implicit touch capture of the card is handed over to the host without ending the drag', () => {
+    // A touch pointer is captured by the pressed card; capturing it on the host at drag start makes the browser send
+    // `lostpointercapture` to the CARD. That must not cancel the drag. A lost capture of the host (or untargeted) still does.
+    const t = setup();
+    t.press(10, 10, 0);
+    t.send('pointermove', { clientX: 60, clientY: 10 });
+    t.send('lostpointercapture', { target: 'card-element' });
+    expect(t.log.filter((l) => l.startsWith('cancel'))).toEqual([]);
+    t.send('pointerup', { clientX: 60, clientY: 10, timeStamp: 5 });
+    expect(t.drops).toEqual([{ card: CARD, over: null }]);
+
+    const own = setup();
+    own.press(10, 10, 0);
+    own.send('pointermove', { clientX: 60, clientY: 10 });
+    own.send('lostpointercapture', { target: own.host });
+    expect(own.log).toContain('cancel LOST_CAPTURE');
+  });
   it('detach removes every listener and ends any gesture', () => {
     const t = setup();
     expect(t.host.count()).toBe(1);
-    expect(t.doc.count()).toBe(6);
+    expect(t.doc.count()).toBe(7); // pointermove, pointerup, pointercancel, lostpointercapture, keydown, click and the pointerdown guard
     t.press();
     t.control.detach();
     expect(t.host.count()).toBe(0);

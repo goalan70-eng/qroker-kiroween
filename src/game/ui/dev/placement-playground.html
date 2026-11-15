@@ -1,0 +1,20 @@
+<!doctype html>
+<!-- DEVELOPMENT ONLY (task 17.3 verification). Served by `npm run dev`; not an input of `vite build`, so it is not in dist/. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Placement playground (development only)</title>
+    <link rel="icon" href="data:," />
+    <!-- Linked here (like shell.css in index.html): tsconfig.game.json has no CSS module declaration for `import '*.css'`. -->
+    <link rel="stylesheet" href="../styles/tokens.css" />
+    <link rel="stylesheet" href="../styles/card.css" />
+    <link rel="stylesheet" href="../styles/board.css" />
+    <link rel="stylesheet" href="../styles/hand.css" />
+    <link rel="stylesheet" href="../styles/placement.css" />
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="./placement-playground.ts"></script>
+  </body>
+</html>

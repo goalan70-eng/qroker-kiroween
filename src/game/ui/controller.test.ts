@@ -488,7 +488,7 @@ describe('what a renderer receives', () => {
     ctl.startGame({ seed: 9 });
     expect(Object.keys(ctl).sort()).toEqual([
       'abandon', 'confirmPlacement', 'dispatchHuman', 'dispose', 'draftEvent', 'explainTarget', 'getDisplayError', 'getModel',
-      'getView', 'restart', 'rotationInfo', 'setLanguage', 'startGame', 'subscribe',
+      'getView', 'restart', 'rotationInfo', 'setLanguage', 'startGame', 'startPracticeGame', 'subscribe',
     ]);
     expect(Object.values(ctl).every((v) => typeof v === 'function')).toBe(true);
     expect(Object.getOwnPropertyNames(ctl).some((k) => /^(?:state|game|deck|hands|log|seed)$/i.test(k))).toBe(false);
@@ -1053,6 +1053,32 @@ describe('mountApp composes the existing shell with the controller (fake Documen
     expect(replaced.current).not.toBe(old);
     expect(replaced.current!.focusCalls).toBe(1);
     expect(m.doc.activeElement).toBe(replaced.current);
+  });
+});
+
+describe('startPracticeGame (development composition roots)', () => {
+  it('starts the default game (P0 human, three AI) with the given seed and the default visibility', () => {
+    const { ctl } = make(immediate);
+    expect(ctl.startPracticeGame({ seed: 7 })).toEqual({ ok: true });
+    const view = ctl.getView('P0') as PlayerView;
+    const reference = newGame({ seed: 7, config: defaultConfig() });
+    expect(reference.ok).toBe(true);
+    expect(view.rules.identityVisibility).toBe(defaultConfig().identityVisibility);
+    expect(view.rules.seats.map((s) => s.kind)).toEqual(['HUMAN', 'AI', 'AI', 'AI']);
+    expect([...view.myHand].sort()).toEqual(reference.ok ? [...reference.value.hands.P0].sort() : []);
+    expect(ctl.getModel().viewer).toBe('P0');
+  });
+  it('applies identityVisibility, and a bad value is an engine error that leaves no game', () => {
+    const { ctl } = make(immediate);
+    expect(ctl.startPracticeGame({ seed: 7, identityVisibility: 'FACE_UP' })).toEqual({ ok: true });
+    expect((ctl.getView('P0') as PlayerView).rules.identityVisibility).toBe('FACE_UP');
+    const bad = make(immediate).ctl.startPracticeGame({ seed: 7, identityVisibility: 'NOPE' as unknown as IdentityVisibility });
+    expect(bad.ok).toBe(false);
+  });
+  it('does nothing after dispose', () => {
+    const { ctl } = make(immediate);
+    ctl.dispose();
+    expect(ctl.startPracticeGame({ seed: 7 })).toEqual({ ok: false, reason: 'DISPOSED' });
   });
 });
 

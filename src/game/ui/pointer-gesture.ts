@@ -23,7 +23,9 @@
 //   also ends at the next accepted `down`, and by the timeout, so a missed click cannot swallow a later real one.
 //   A plain tap (up while PRESSED) never sets it. After Escape or `invalidate` with the pointer still held, the
 //   machine waits in CANCELLED for that pointer's `up` (which still produces a click), then suppresses that click
-//   too; `cancel` and `lostcapture` end the pointer without a click, so they suppress nothing.
+//   too; `cancel` and `lostcapture` end the pointer without a click, so they suppress nothing. Real browsers send no
+//   click at all after the release of a captured drag, so `attachHandGestures` also clears the flag on the next
+//   `pointerdown` or non-Escape `keydown` anywhere (the click of a new press must never be swallowed).
 //
 // Hit testing
 //   `cellFromPoint(host, x, y)` uses `host.elementFromPoint(x, y)` with the ACTUAL pointer coordinates of the
@@ -246,6 +248,8 @@ export interface GestureHost {
   removeEventListener(type: string, listener: GestureListener): void;
   setPointerCapture?(pointerId: number): void;
   releasePointerCapture?(pointerId: number): void;
+  /** Node.contains: used to tell the hand-over of a touch pointer's implicit capture from a real lost capture. */
+  contains?(other: unknown): boolean;
 }
 
 export interface HandGestureHandlers {
@@ -273,7 +277,8 @@ export interface HandGestureControl {
  *     (events of a captured pointer bubble to the document; without capture they still arrive);
  *   * `click` and `keydown` in the capture phase on `doc`: the click guard, and Escape for an active gesture
  *     (Escape then does not reach other listeners, so one key press cancels the gesture OR clears the draft).
- * `setPointerCapture` is called inside try/catch; a failure leaves the gesture running. Time comes from
+ * `setPointerCapture` is called when the drag starts (not on `pointerdown`, so that the `click` of a tap still reaches
+ * the card), inside try/catch; a failure leaves the gesture running. Time comes from
  * `event.timeStamp`. Returns a cleanup function in `detach`.
  */
 export function attachHandGestures(host: GestureHost, handlers: HandGestureHandlers, doc: GestureDocument): HandGestureControl {
@@ -300,12 +305,27 @@ export function attachHandGestures(host: GestureHost, handlers: HandGestureHandl
     }
   };
 
+  // The pointer is captured when the drag STARTS, not on `pointerdown`. A browser dispatches `pointerup` and the
+  // following `click` to the capturing element, so a capture on press would send the click of a plain tap to the
+  // Hand container instead of the card and the tap would select nothing (found in a real browser, see
+  // docs/game/placement-verification.md). A drag has no click to keep (the click guard suppresses it).
+  let pressedId = 0;
+  const capture = (): void => {
+    try {
+      host.setPointerCapture?.(pressedId);
+      capturedId = pressedId;
+    } catch {
+      capturedId = null; // capture is an improvement, not a requirement
+    }
+  };
+
   const run = (input: GestureInput, now: number): void => {
     const step = stepGesture(state, input, now);
     state = step.state;
     for (const out of step.out) {
       switch (out.type) {
         case 'dragStart':
+          capture(); // only now: a tap must keep the card as its pointerup and click target (see `capture`)
           if (card !== null) handlers.onDragStart(card, last.x, last.y);
           break;
         case 'dragMove':
@@ -352,13 +372,8 @@ export function attachHandGestures(host: GestureHost, handlers: HandGestureHandl
     );
     if (currentKind() !== 'PRESSED') return; // not a primary pointer or not the primary button
     card = pressed;
+    pressedId = e.pointerId ?? 0;
     last = { x: e.clientX ?? 0, y: e.clientY ?? 0 };
-    try {
-      host.setPointerCapture?.(e.pointerId ?? 0);
-      capturedId = e.pointerId ?? 0;
-    } catch {
-      capturedId = null; // capture is an improvement, not a requirement
-    }
   };
 
   const pointerEvent = (type: 'move' | 'up'): GestureListener => (e) => {
@@ -372,14 +387,31 @@ export function attachHandGestures(host: GestureHost, handlers: HandGestureHandl
     run({ type, pointerId: e.pointerId ?? 0 }, at(e));
   };
   const onCancel = pointerEnd('cancel');
-  const onLost = pointerEnd('lostcapture');
+  const endOnLostCapture = pointerEnd('lostcapture');
+  // A touch pointer is implicitly captured by the pressed card. Capturing it on the host when the drag starts moves the
+  // capture, and the browser then reports `lostpointercapture` on the CARD. That is a hand-over, not the end of the
+  // pointer, so a `lostpointercapture` of an element INSIDE the host is ignored; any other one ends the gesture.
+  const onLost: GestureListener = (e) => {
+    const target: unknown = e.target;
+    if (target !== undefined && target !== null && target !== host && host.contains?.(target) === true) return;
+    endOnLostCapture(e);
+  };
 
   const onKey: GestureListener = (e) => {
+    if (e.key !== 'Escape') disarmSuppression(); // a key press ends the click suppression too
     if (e.key !== 'Escape' || !isGestureActive(state)) return; // no gesture: the screen clears the draft
     run({ type: 'escape' }, at(e));
     e.stopPropagation();
     e.stopImmediatePropagation?.();
   };
+
+  // Any new press or key press elsewhere ends the click suppression: the click it produces is a genuine one. A real
+  // browser sends NO click after the release of a captured drag (verified in Edge, see placement-verification.md),
+  // so without this the flag would swallow the first genuine click (for example on Confirm) within CLICK_SUPPRESS_MS.
+  const disarmSuppression = (): void => {
+    if (state.kind === 'IDLE' && state.suppressClickUntil !== null) state = INITIAL_GESTURE;
+  };
+  const onAnyPress: GestureListener = () => disarmSuppression();
 
   const onClick: GestureListener = (e) => {
     const verdict = consumeClick(state, at(e));
@@ -390,6 +422,7 @@ export function attachHandGestures(host: GestureHost, handlers: HandGestureHandl
     e.stopImmediatePropagation?.();
   };
 
+  doc.addEventListener('pointerdown', onAnyPress, true); // capture phase: runs before the host's own pointerdown
   host.addEventListener('pointerdown', onDown);
   doc.addEventListener('pointermove', onMove);
   doc.addEventListener('pointerup', onUp);
@@ -404,6 +437,7 @@ export function attachHandGestures(host: GestureHost, handlers: HandGestureHandl
     },
     detach() {
       release();
+      doc.removeEventListener('pointerdown', onAnyPress, true);
       host.removeEventListener('pointerdown', onDown);
       doc.removeEventListener('pointermove', onMove);
       doc.removeEventListener('pointerup', onUp);

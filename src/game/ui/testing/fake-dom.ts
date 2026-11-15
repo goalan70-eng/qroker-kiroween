@@ -140,7 +140,8 @@ export class FakeEl {
     return child;
   }
   contains(other: FakeEl | null): boolean {
-    for (let el: FakeEl | null = other; el !== null; el = el.parentNode) if (el === this) return true;
+    // like `Node.contains`: a non-element (the fake document, `undefined`) is not inside anything
+    for (let el: FakeEl | null | undefined = other; el !== null && el !== undefined; el = el.parentNode) if (el === this) return true;
     return false;
   }
 
