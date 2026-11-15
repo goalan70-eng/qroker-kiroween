@@ -1,4 +1,4 @@
-// Persistence notices and the autosave status line (task 20.4; design.md "Task 20.4 persistence integration contracts" f).
+﻿// Persistence notices and the autosave status line (task 20.4; design.md "Task 20.4 persistence integration contracts" f).
 //
 // `renderNotices(doc, root, input, t)` draws ONE `aria-live="polite"` region in the top bar of the host. It lists the
 // localized text of every `model.notices` entry (closed kinds and reason codes only: no saved text, card, Guess, Seed
@@ -7,7 +7,7 @@
 // produce a "saved" text: their notices say that the game cannot be kept.
 //
 // DOM
-//   div.notices[aria-live=polite][aria-atomic=false][aria-label]      always mounted, never `hidden`
+//   div.notices[aria-live=polite][aria-atomic=false][aria-label][tabindex=-1] always mounted, never `hidden`
 //     div.notice[data-notice=<KIND>][data-focus-key=notice-<KIND>]    one per notice, in model order
 //       p.notice-text
 //       button.notice-dismiss                                          only SAVE_DISCARDED and STORAGE_READ_FAILED
@@ -113,7 +113,7 @@ export function renderNotices(doc: NoticesDocument, root: HTMLElement, input: No
   const items = new Map<Notice['kind'], Item>();
   let status: HTMLElement | null = null;
 
-  const region = h('div', { class: 'notices', aria: { live: 'polite', atomic: 'false' } });
+  const region = h('div', { class: 'notices', attrs: { tabindex: -1 }, aria: { live: 'polite', atomic: 'false' } });
 
   function makeItem(kind: Notice['kind']): Item {
     const text = h('p', { class: 'notice-text' });
@@ -143,11 +143,17 @@ export function renderNotices(doc: NoticesDocument, root: HTMLElement, input: No
     const wanted = new Map<Notice['kind'], Notice>();
     for (const notice of notices) if (!wanted.has(notice.kind)) wanted.set(notice.kind, notice);
 
+    let lostFocus = false;
     for (const [kind, item] of [...items]) {
       if (wanted.has(kind)) continue;
+      const active = (doc as unknown as { activeElement?: unknown }).activeElement;
+      if (item.button !== null && active === item.button) lostFocus = true;
       region.removeChild(item.el);
       items.delete(kind);
     }
+    // The focused dismiss button is gone: the focus moves to the region (programmatically focusable, named by its aria-label)
+    // instead of falling to the page body.
+    if (lostFocus) region.focus();
     for (const [kind, notice] of wanted) {
       let item = items.get(kind);
       if (item === undefined) {

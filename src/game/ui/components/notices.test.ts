@@ -146,6 +146,24 @@ describe('renderNotices: dismiss', () => {
     r.handle.update(r.input([]));
     expect(kinds(r)).toEqual([]);
   });
+  it('moves the focus to the region when the focused dismiss button is removed (not to the body)', () => {
+    const r = rig([{ kind: 'SAVE_DISCARDED', reason: 'CORRUPT' }]);
+    const region = r.handle.element as unknown as FakeEl;
+    expect(region.getAttribute('tabindex')).toBe('-1');
+    expect(region.getAttribute('aria-label')).toBe('Saving');
+    expect(region.getAttribute('aria-live')).toBe('polite');
+    (buttons(r)[0] as FakeEl).focus();
+    r.handle.update(r.input([]));
+    expect(r.doc.activeElement).toBe(region);
+  });
+  it('does not take the focus when the removed notice was not focused', () => {
+    const r = rig([{ kind: 'SAVE_DISCARDED', reason: 'CORRUPT' }]);
+    const outside = r.doc.createElement('button');
+    r.doc.body.appendChild(outside);
+    outside.focus();
+    r.handle.update(r.input([]));
+    expect(r.doc.activeElement).toBe(outside);
+  });
   it('a new notice of a dismissed kind gets a fresh item that can be dismissed again', () => {
     const r = rig([{ kind: 'STORAGE_READ_FAILED' }]);
     buttons(r)[0]?.fire('click');

@@ -427,7 +427,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Depends on: 17.2, 17.3, 18.1, 18.2, 19.1, 19.2, 19.3.
     - _Requirements: 8.2, 13.1, 13.6, 14.7, 15.2, 16.9, 17.3, 14.1, 14.2, 14.3, 14.8, 15.3, 15.4, 15.5, 16.1, 17.1, 17.2, 17.4, 17.7_
 
-- [ ] 20. Persistence
+- [x] 20. Persistence
   - [x] 20.1 Save format, validation and migration (`persistence/save-format.ts`)
     - `SaveEnvelope`, `serializeSave`, `parseSave` with hand-written type guards, `MIGRATIONS` (empty), `SAVE_VERSION = 1`.
     - Acceptance: a valid envelope parses to `OK`; a lower version with a test migration returns `MIGRATED`; an unknown version returns `INCOMPATIBLE`; garbage returns `CORRUPT`; no function throws.
@@ -447,7 +447,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Acceptance: both properties pass with generated reachable states and mutated texts.
     - Depends on: 20.2.
     - **Validates: Requirements 18.5, 18.7**
-  - [ ] 20.4 Integrate persistence into the UI
+  - [x] 20.4 Integrate persistence into the UI
     - Controller saves after every accepted Action; on start shows "continue" or "discard" for a resumable save; shows notices for discarded saves and unavailable storage; removes the save at `ENDED`; stores language and setup prefs.
     - Acceptance: reload in the browser during a game and continue; corrupt the stored text in developer tools and see the notice and the setup screen.
     - Tests: controller tests with `memoryStore` (resume, discard, corrupt, throwing store, end removes save); the DOM variants join task 21.3.
