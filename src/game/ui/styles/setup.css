@@ -1,7 +1,6 @@
 /*
  * Setup screen styles (task 19.1). Uses the tokens of tokens.css; load tokens.css first.
- * Not linked into the production page yet (the screens are wired and the CSS is linked in task 19.4).
- *
+ * Linked by index.html since task 19.4 (layout.css comes last).
  * Rules of this file:
  *   - Mobile first: one column; every control (inputs, selects, radio rows, buttons) is at least --touch-min (44 px).
  *   - The keyboard focus is always visible.

@@ -746,10 +746,13 @@ export function createController(deps: AppDeps): Controller {
     if (disposed || g === null || model.viewer === null) return { draft: model.draft, notice: null };
     const view = viewFor(g.state, model.viewer); // the latest view, recomputed for every event
     const result = reduceDraft(model.draft, event, draftContextFor(view, rotationInfoFor(view)));
+    // A new draft event or drop outcome replaces an older error line (task 19.4, known defect: an old error stayed after
+    // a later outside drop). A refused cell is explained again by `explainTarget`, which sets the new error afterwards.
+    const clearError = model.lastError === null ? {} : { lastError: null };
     if (event.type === 'invalidate') {
-      setModel({ draft: result.draft, gestureEpoch: model.gestureEpoch + 1 });
-    } else if (result.draft !== model.draft) {
-      setModel({ draft: result.draft });
+      setModel({ draft: result.draft, gestureEpoch: model.gestureEpoch + 1, ...clearError });
+    } else if (result.draft !== model.draft || model.lastError !== null) {
+      setModel({ draft: result.draft, ...clearError });
     }
     return result;
   }
@@ -904,9 +907,9 @@ export interface AppHandle {
 }
 
 /**
- * Mounts the app into `root`: the existing shell (title, language selector, provisional-scoring banner and the
- * honest "not connected yet" notice) on top of a controller. No game screen, no Play button and no game starts
- * automatically: `controller.startGame` is an API for the composition root and for later screens.
+ * Mounts the app into `root`: the shell header (title and language selector) on top of a controller. The game screens
+ * come from `deps.renderer`, the composition host of task 19.4 (`screens/game.ts`, passed by `main.ts`). No game starts
+ * automatically: the setup screen starts one through `startFromSetup`.
  *
  * Integration with the shell: `mountShell` is unchanged. It applies the start language and handles the selector;
  * a `change` listener forwards the chosen language to the controller so that the model follows, and every render

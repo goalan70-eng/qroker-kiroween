@@ -1,7 +1,6 @@
 /*
  * Reveal screen and scoreboard styles (task 18.2). Uses the tokens of tokens.css; load tokens.css and card.css first.
- * Not linked into the production page yet (the screens are wired in task 19.4).
- *
+ * Linked by index.html since task 19.4 (layout.css comes last).
  * Rules of this file:
  *   - The continue button is at least --touch-min (44 px) in both directions.
  *   - The active scoreboard row is not told by colour alone: it has the text marker "current turn" (with a glyph) in

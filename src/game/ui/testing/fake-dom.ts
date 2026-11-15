@@ -120,6 +120,9 @@ export class FakeEl {
   getAttribute(name: string): string | null {
     return this.attributes.get(name) ?? null;
   }
+  removeAttribute(name: string): void {
+    this.attributes.delete(name);
+  }
   hasAttribute(name: string): boolean {
     return this.attributes.has(name);
   }

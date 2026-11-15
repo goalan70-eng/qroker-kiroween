@@ -271,6 +271,16 @@ export function defaultOwnerLabel(t: Translate): (owner: Owner) => string {
 }
 
 /**
+ * Owner labels for a viewer's own Board: the viewer's cards say 'You' (`common.seat.human`, the wording of the Hand and
+ * the drag ghost), every other owner uses `defaultOwnerLabel`. Keeps the preview of the draft, the Hand and the placed
+ * cards of the viewer consistent (task 19.4, known defect "Player 1" versus "You"). Public names only.
+ */
+export function viewerOwnerLabel(viewer: PlayerId, t: Translate): (owner: Owner) => string {
+  const other = defaultOwnerLabel(t);
+  return (owner) => (owner === viewer ? t('common.seat.human') : other(owner));
+}
+
+/**
  * The localized accessible name of a cell: its notation and state, the card face name for an occupied cell (owner
  * and orientation, and rank and suit only when the view shows the card) or for the preview (the viewer's own
  * card), and the code-region phrase.

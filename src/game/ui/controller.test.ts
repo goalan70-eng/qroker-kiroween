@@ -445,6 +445,19 @@ describe('invalid human actions', () => {
     expect(s.stub.last.displayError).toBeNull();
   });
 
+  it('clears an older error when a later draft event or drop outcome arrives (task 19.4 known defect)', () => {
+    const s = setup();
+    expect(s.ctl.explainTarget({ row: 9, col: 9 })).not.toBeNull();
+    expect(s.ctl.getModel().lastError).not.toBeNull();
+    s.ctl.draftEvent({ type: 'dropOutside' }); // the draft does not change, the old message must still go
+    expect(s.ctl.getModel().lastError).toBeNull();
+    expect(s.stub.last.displayError).toBeNull();
+    // a refused drop shows the NEW reason afterwards (explainTarget runs after draftEvent), never the old one
+    s.ctl.explainTarget({ row: 9, col: 9 });
+    s.ctl.draftEvent({ type: 'dragStart', card: s.ctl.getView('P0')?.myHand[0] as CardId });
+    expect(s.ctl.getModel().lastError).toBeNull();
+    expect(s.ctl.getModel().actionCount).toBe(0); // still no Action
+  });
   it('reports NO_GAME before a game starts and rejects an invalid start without touching the running game', () => {
     const { ctl } = make(immediate);
     expect(ctl.dispatchHuman({ type: 'ACK_REVEAL' })).toEqual({ ok: false, reason: 'NO_GAME' });
@@ -975,22 +988,18 @@ function mount(languages: readonly string[] | string, extra: Partial<Parameters<
   });
   const find = (tag: string, cls?: string) =>
     doc.created.find((e) => e.tagName === tag && (cls === undefined || e.attributes.get('class') === cls)) as FakeElement;
-  return { doc, root, handle, select: find('select'), title: find('h1'), banner: find('p', 'shell__banner'), notice: find('p', 'shell__notice'), label: find('label') };
+  return { doc, root, handle, select: find('select'), title: find('h1'), label: find('label') };
 }
 
 describe('mountApp composes the existing shell with the controller (fake Document, not a browser test)', () => {
-  it('renders the shell in Korean and in English, with banner, notice and selector, and no button', () => {
+  it('renders the shell in Korean and in English, with title and selector, and no button', () => {
     const ko = mount(['ko-KR']);
     expect(ko.title.textContent).toBe('QRoker');
-    expect(ko.banner.textContent).toBe('임시 점수 규칙');
     expect(ko.label.textContent).toBe('언어');
-    expect(ko.notice.textContent).toContain('아직 연결되지 않았습니다');
     expect(ko.doc.documentElement.lang).toBe('ko');
     expect(ko.handle.controller.getModel()).toMatchObject({ language: 'ko', screen: 'SETUP' });
     resetLanguage();
     const en = mount(['en-US']);
-    expect(en.banner.textContent).toBe('provisional scoring');
-    expect(en.notice.textContent).toContain('not connected yet');
     expect(en.root.children).toHaveLength(1);
     expect(en.doc.created.filter((e) => ['button', 'a', 'input', 'canvas'].includes(e.tagName))).toEqual([]);
   });
@@ -1000,24 +1009,23 @@ describe('mountApp composes the existing shell with the controller (fake Documen
     const created = m.doc.created.length;
     m.select.value = 'ko';
     m.select.dispatch('change');
-    expect(m.banner.textContent).toBe('임시 점수 규칙');
+    expect(m.label.textContent).toBe('언어');
     expect(m.doc.documentElement.lang).toBe('ko');
     expect(m.handle.controller.getModel().language).toBe('ko');
     m.handle.controller.setLanguage('en');
-    expect(m.banner.textContent).toBe('provisional scoring');
+    expect(m.label.textContent).toBe('Language');
     expect(m.doc.documentElement.lang).toBe('en');
     expect(m.select.value).toBe('en');
     expect(m.doc.created.length).toBe(created); // the selector and every other element survive a switch
   });
 
-  it('keeps the banner and the notice while a game runs (every rendered state)', () => {
+  it('keeps the shell header (no banner, no notice) while a game runs', () => {
     const m = mount(['en-US']);
     expect(m.handle.controller.startGame({ config: config(ALL_AI), seed: 3 })).toEqual({ ok: true });
     expect(m.handle.controller.getModel().screen).toBe('END');
-    expect(m.banner.textContent).toBe('provisional scoring');
-    expect(m.notice.textContent).toContain('not connected yet');
+    expect(m.label.textContent).toBe('Language');
     m.handle.controller.abandon();
-    expect(m.banner.textContent).toBe('provisional scoring');
+    expect(m.label.textContent).toBe('Language');
   });
 
   it('adds nothing to globalThis and stops rendering after dispose', () => {

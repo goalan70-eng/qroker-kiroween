@@ -123,8 +123,6 @@ function mount(languages: readonly string[] | string) {
     handle,
     title: find('h1'),
     label: find('label'),
-    banner: find('p', 'shell__banner'),
-    notice: find('p', 'shell__notice'),
     options: doc.created.filter((e) => e.tagName === 'option'),
   };
 }
@@ -134,12 +132,10 @@ describe('mountShell against a fake Document (not a browser test)', () => {
     const m = mount(['ko-KR', 'en-US']);
     expect(getLanguage()).toBe('ko');
     expect(m.title.textContent).toBe('QRoker');
-    expect(m.banner.textContent).toBe('임시 점수 규칙');
     expect(m.label.textContent).toBe('언어');
     expect(m.label.attributes.get('for')).toBe(m.select.attributes.get('id'));
     expect(m.options.map((o) => o.textContent)).toEqual(['English', '한국어']);
     expect(m.select.value).toBe('ko');
-    expect(m.notice.textContent).toContain('아직 연결되지 않았습니다');
     expect(m.doc.documentElement.lang).toBe('ko');
     expect(m.doc.title).toBe('QRoker');
     expect(m.root.children).toHaveLength(1);
@@ -149,9 +145,7 @@ describe('mountShell against a fake Document (not a browser test)', () => {
     for (const languages of [['en-US'], ['fr-FR'], []]) {
       const m = mount(languages);
       expect(getLanguage()).toBe('en');
-      expect(m.banner.textContent).toBe('provisional scoring');
       expect(m.label.textContent).toBe('Language');
-      expect(m.notice.textContent).toContain('not connected yet');
       expect(m.select.value).toBe('en');
       expect(m.doc.documentElement.lang).toBe('en');
       resetLanguage();
@@ -166,7 +160,6 @@ describe('mountShell against a fake Document (not a browser test)', () => {
 
     m.select.value = 'ko';
     m.select.dispatch('change');
-    expect(m.banner.textContent).toBe('임시 점수 규칙');
     expect(m.label.textContent).toBe('언어');
     expect(m.doc.documentElement.lang).toBe('ko');
     expect(m.doc.title).toBe('QRoker');
@@ -174,7 +167,6 @@ describe('mountShell against a fake Document (not a browser test)', () => {
 
     m.select.value = 'en';
     m.select.dispatch('change');
-    expect(m.banner.textContent).toBe('provisional scoring');
     expect(m.doc.documentElement.lang).toBe('en');
 
     // No element was created or replaced after mounting: the selector (and its focus) survives a switch.
@@ -189,7 +181,6 @@ describe('mountShell against a fake Document (not a browser test)', () => {
     m.select.value = 'fr'; // the fake maps an unknown option value to ''
     m.select.dispatch('change');
     expect(getLanguage()).toBe('en');
-    expect(m.banner.textContent).toBe('provisional scoring');
   });
 
   it('never assigns innerHTML (the fake throws if it is touched)', () => {
@@ -198,6 +189,13 @@ describe('mountShell against a fake Document (not a browser test)', () => {
       m.select.value = 'en';
       m.select.dispatch('change');
     }).not.toThrow();
+  });
+
+  it('has no static provisional banner and no "not connected yet" notice (the host shows the one banner)', () => {
+    const m = mount(['en']);
+    expect(m.doc.created.some((e) => e.tagName === 'p')).toBe(false);
+    expect(m.root.children[0]?.tagName).toBe('header');
+    expect(m.root.children[0]?.children).toHaveLength(2);
   });
 
   it('offers no Play button or other control than the language selector', () => {

@@ -1136,14 +1136,14 @@ describe('source and style rules', () => {
     for (const m of SOURCE.matchAll(/^import .* from '([^']+)'/gm)) expect(m[1], m[0]).not.toMatch(/core\/(engine|state|deck|replay|rules|ranking|score)|controller|ai\//);
   });
 
-  it('the styles are not linked into the production page and keep the touch target and the focus ring', () => {
+  it('the styles are linked into the production page (task 19.4) and keep the touch target and the focus ring', () => {
     const css = readFileSync(join(HERE, '..', 'styles', 'end.css'), 'utf8');
     expect(css).toMatch(/\.end-button\s*\{[^}]*min-block-size:\s*var\(--touch-min\)/);
     expect(css).toMatch(/\.end-button\s*\{[^}]*min-inline-size:\s*var\(--touch-min\)/);
     expect(css).toMatch(/\.end-button:focus-visible/);
     expect(css).not.toMatch(/url\(|@import|https?:/);
     const html = readFileSync(join(HERE, '..', 'index.html'), 'utf8');
-    expect(html).not.toMatch(/end\.css/);
+    expect(html).toMatch(/styles\/end\.css/);
   });
 
   it('ALL_CARDS is the catalogue the privacy scan relies on', () => {

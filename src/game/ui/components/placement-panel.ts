@@ -54,7 +54,7 @@ import type { CreateDoc, FocusDoc } from '../dom';
 import type { DraftEvent, DraftResult, PlacementDraft, RotationInfoMap } from '../placement-draft';
 import { attachHandGestures } from '../pointer-gesture';
 import type { CancelReason, GestureDocument } from '../pointer-gesture';
-import { boardModel, renderBoard } from './board';
+import { boardModel, renderBoard, viewerOwnerLabel } from './board';
 import type { Translate } from './card-face';
 import { controlsModel, controlsStatusText, renderPlacementControls } from './placement-controls';
 import type { DisplayErrorLike } from './placement-controls';
@@ -135,7 +135,10 @@ export function renderPlacementPanel(
       draftEvent: (e: DraftEvent) => current.handlers.draftEvent(e),
       explainTarget: (c: GridPosition) => current.handlers.explainTarget(c),
     };
-    return renderBoard(h, boardModel(view, current.model.draft, { dragActive: dragging }), t, handlers, { dragActive: dragging });
+    return renderBoard(h, boardModel(view, current.model.draft, { dragActive: dragging }), t, handlers, {
+      dragActive: dragging,
+      ownerLabel: viewerOwnerLabel(view.viewer, t), // the preview and own cards say "You", like the Hand
+    });
   }
 
   /** Re-renders only the Board (drag start and end change its drop-target classes). */

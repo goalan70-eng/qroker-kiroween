@@ -1,8 +1,7 @@
 /*
  * Overlay and banner styles (task 19.3): the modal shell shared by the help dialog and the abandon confirmation, and the
  * provisional-scoring banner. Uses the tokens of tokens.css; load tokens.css first.
- * Not linked into the production page yet (the host and the linking are task 19.4).
- *
+ * Linked by index.html since task 19.4 (layout.css comes last).
  * Rules of this file:
  *   - Every control is at least --touch-min (44 px) in both directions.
  *   - The focus ring is a 3 px outline of --color-focus (6.28:1 on paper), never removed.

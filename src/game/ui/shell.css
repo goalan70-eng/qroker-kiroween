@@ -1,18 +1,13 @@
-/* App shell styles (task 16.1). System fonts only; no external fonts, no network. */
+/* App shell styles (task 16.1, reduced in 19.4): the page header. System fonts only; no external fonts, no network. */
 :root {
   color-scheme: light;
   --shell-fg: #1a1a1a;
   --shell-bg: #f6f6f4;
-  --shell-banner-bg: #fff3c4;
-  --shell-banner-fg: #4a3b00;
-  --shell-banner-border: #8a6d00;
   --shell-focus: #0b57d0;
 }
-
 * {
   box-sizing: border-box;
 }
-
 body {
   margin: 0;
   background: var(--shell-bg);
@@ -21,29 +16,25 @@ body {
   font-size: 1rem;
   line-height: 1.5;
 }
-
 .shell {
-  max-width: 40rem;
-  margin: 0 auto;
-  padding: 1rem;
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.5rem 1rem;
 }
-
 .shell__title {
   margin: 0;
-  font-size: 2rem;
+  font-size: 1.5rem;
   line-height: 1.2;
 }
-
 .shell__language {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
 }
-
 .shell__select {
   min-height: 2.75rem;
   padding: 0.25rem 0.5rem;
@@ -53,22 +44,7 @@ body {
   border: 1px solid #5f5f5f;
   border-radius: 0.25rem;
 }
-
 .shell__select:focus-visible {
   outline: 3px solid var(--shell-focus);
   outline-offset: 2px;
-}
-
-.shell__banner {
-  margin: 0;
-  padding: 0.5rem 0.75rem;
-  background: var(--shell-banner-bg);
-  color: var(--shell-banner-fg);
-  border: 2px solid var(--shell-banner-border);
-  border-radius: 0.25rem;
-  font-weight: 600;
-}
-
-.shell__notice {
-  margin: 0;
 }

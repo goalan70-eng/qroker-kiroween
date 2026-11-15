@@ -960,3 +960,14 @@ describe('integration with the real controller [model + fake-DOM]', () => {
     expect(classesOf(same)).toContain('board-cell--occupied');
   });
 });
+
+describe('owner label of the preview and the Hand (task 19.4 known defect)', () => {
+  it('names the previewed card and the Hand cards "You", not "Player 1"', () => {
+    const f = setup();
+    f.render(BASE, { target: LEGAL, card: hand0, orientation: 0 });
+    const preview = cellAt(f, 3, 2).getAttribute('aria-label') ?? '';
+    expect(preview).toContain(t('common.seat.human'));
+    expect(preview).not.toContain('Player 1');
+    for (const button of handButtons(f)) expect(button.getAttribute('aria-label') ?? '').toContain(t('common.seat.human'));
+  });
+});

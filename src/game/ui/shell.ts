@@ -1,11 +1,9 @@
-// App shell (task 16.1): title, language selector, provisional-scoring banner and an honest notice that the
-// playable game screens are not connected yet. There is no Play button, no game and no camera here.
+// App shell (task 16.1, reduced in 19.4): the page header with the title and the language selector. The provisional-scoring
+// banner and the "screens are not connected yet" notice of task 16.1 are gone: the composition host (screens/game.ts) shows
+// the one banner and the game screens. There is no Play button, no game and no camera here.
 //
 // PROVISIONAL implementation choice: Vite + plain DOM/CSS + no UI framework is the choice of this batch (design
 // decisions D2/D3 as written in the design; open question OQ-7 is not closed by this file).
-//
-// Task 16.2 replaces this module's role: `mountApp(root, deps)` with the store and controller will render the
-// screens, and `mountShell` can then be deleted or reduced to the language-selector part of the top bar.
 //
 // Rules kept here (checked by shell.test.ts):
 //   * text is assigned with `textContent` and attributes with `setAttribute` only; no HTML string is ever parsed;
@@ -34,7 +32,7 @@ const SELECT_ID = 'shell-language';
 export function mountShell(root: HTMLElement, deps: ShellDeps): ShellHandle {
   const { doc } = deps;
 
-  const main = doc.createElement('main');
+  const main = doc.createElement('header'); // the page's <main> is the host's game region
   main.setAttribute('class', 'shell');
 
   const title = doc.createElement('h1');
@@ -60,17 +58,8 @@ export function mountShell(root: HTMLElement, deps: ShellDeps): ShellHandle {
 
   languageRow.appendChild(label);
   languageRow.appendChild(select);
-
-  const banner = doc.createElement('p');
-  banner.setAttribute('class', 'shell__banner');
-
-  const notice = doc.createElement('p');
-  notice.setAttribute('class', 'shell__notice');
-
   main.appendChild(title);
   main.appendChild(languageRow);
-  main.appendChild(banner);
-  main.appendChild(notice);
   root.appendChild(main);
 
   /** Writes all texts for the current language in place. Elements are never replaced. */
@@ -84,8 +73,6 @@ export function mountShell(root: HTMLElement, deps: ShellDeps): ShellHandle {
       option.textContent = t(`common.languageName.${code}`);
     }
     select.value = lang;
-    banner.textContent = t('common.provisionalScoring');
-    notice.textContent = t('common.shellNotice');
   };
 
   const applyLanguage = (lang: Lang): void => {

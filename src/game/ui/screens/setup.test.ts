@@ -776,8 +776,8 @@ describe('privacy and sources', () => {
     for (const spec of imports) expect(spec, spec).toMatch(/^(?:\.\.\/\.\.\/core\/types|\.\.\/\.\.\/core\/view|\.\.\/\.\.\/i18n|\.\.\/components\/card-face|\.\.\/dom|\.\.\/setup-model)$/);
   });
 
-  it('setup.css is not linked into the production page', () => {
+  it('setup.css is linked into the production page (task 19.4)', () => {
     const html = readFileSync(join(DIR, '..', 'index.html'), 'utf8');
-    expect(html).not.toMatch(/setup\.css/);
+    expect(html).toMatch(/styles\/setup\.css/);
   });
 });
