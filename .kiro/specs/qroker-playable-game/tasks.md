@@ -327,7 +327,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Depends on: 16.1, 12.2, 10.1, 15.1.
     - _Requirements: 10.1, 11.6, 12.1_
 
-- [ ] 17. Board, card faces and placement interaction
+- [x] 17. Board, card faces and placement interaction
   - Owner-directed update (IC-11, not claimed as approved earlier): the human placement interaction is a `PlacementDraft` filled by drag and drop of an own-Hand card or by position first then card, with a `Rotation_Control` only for clubs and spades, edge-adjacent grid snapping, and confirm as the only path that sends `PLACE`. It supersedes the card-first flow and the orientation toggle for every card in the earlier text of 17.2 and 17.3. Task 17.4 is appended without renumbering; implement it before or together with 17.3. See design.md "Placement interaction".
   - [x] 17.1 Card face component (`ui/components/card-face.ts`, `ui/styles/tokens.css`, `ui/styles/card.css`)
     - Render face-up cards as rank plus suit glyph with a shape cue per suit and a 180° indicator, and face-down cards with owner and orientation only. Define the color tokens used everywhere. Mobile-first sizing with a `--cell` custom property.
@@ -342,7 +342,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Tests: board model unit tests (pure functions for names, highlights and the legal/target/drop classes, including adjacency cases on fixed boards, and a serialized-model scan for hidden identities); a CSS scan test that `board.css` sets `gap: 0` and has no margin on cell or card classes; DOM tests join in task 21.3 (fake-DOM evidence).
     - Depends on: 17.1.
     - _Requirements: 13.1, 13.3, 13.9, 13.10, 13.13, 13.16, 16.6, 16.7, 17.2_
-  - [-] 17.3 Hand and placement controls (`ui/components/hand.ts`, `ui/components/placement-controls.ts`, `i18n/strings/hand.ts`)
+  - [x] 17.3 Hand and placement controls (`ui/components/hand.ts`, `ui/components/placement-controls.ts`, `i18n/strings/hand.ts`)
     - Hand of the active human Seat only, as the drag source (`.hand-card--draggable`, `touch-action: none` on these cards only) and as keyboard-selectable buttons; the draft preview with "Confirm placement" ("배치 확정") and "Cancel" ("취소"); the "180° rotation" ("180° 회전") control shown only while the drafted card has `rotationChangesCorners` (from `RenderInput.rotationInfo`); error message display for illegal cells and illegal drops through `explainTarget`; disabled state with AI status text while an AI Seat acts. The components use the model, gesture module and controller functions of task 17.4 and call only `draftEvent`, `confirmPlacement` and `explainTarget`.
     - Acceptance: the confirm control is the only path that sends `PLACE` (it calls `confirmPlacement()`); a drop, a tap, a rotation, a cancel and Escape send no Action; the rotation control is absent for hearts, diamonds, other Seats' cards and committed cards; Cancel and Escape clear the draft without a state change; the position-first path works with keyboard only; all placement controls and Hand cards are at least 44×44 px in CSS; no Hand card of another Seat is rendered.
     - Tests: component model tests for control visibility and disabled states (which controls exist for a club, a spade, a heart, a diamond, no card, an AI turn); the draft reducer tests of task 17.4 replace the earlier placement-state reducer tests; DOM and drag tests are the fake-DOM tests of task 21.3.

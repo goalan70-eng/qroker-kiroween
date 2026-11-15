@@ -1,0 +1,99 @@
+/*
+ * Hand styles (task 17.3). Uses the tokens of tokens.css; load tokens.css and card.css first.
+ *
+ * Rules of this file (checked by hand.test.ts):
+ *   - Every Hand card is a real button of at least --touch-min (44 px) in both directions.
+ *   - touch-action: none is set on `.hand-card--draggable` ONLY: the card that can be dragged owns its touches, so a
+ *     drag does not scroll the page. The class is absent while the card cannot be dragged (an AI Seat acts). The
+ *     page, the Board and every other element keep scrolling and pinch zoom. user-select is off on the same class.
+ *   - A selected card is not told by colour alone: a thick solid ring inside the box plus a bar along the bottom edge.
+ *   - Rings are drawn inside the box (outline with a negative offset, inset shadow), so no size changes.
+ *   - No font, image or network reference.
+ */
+
+.hand {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-2) 0;
+  font-family: var(--font-ui);
+}
+
+.hand-empty {
+  min-block-size: var(--touch-min);
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-disabled-fg);
+}
+
+.hand-card {
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+  min-inline-size: var(--touch-min);
+  min-block-size: var(--touch-min);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  appearance: none;
+  font: inherit;
+  color: inherit;
+  background-color: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hand-card__face {
+  display: block;
+  pointer-events: none;
+}
+
+/* The drag source: only this class takes the touches of its own area. */
+.hand-card--draggable {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+
+/* Selected: a solid ring inside the box and a bar at the bottom edge (shape cues, not colour alone). */
+.hand-card.is-selected {
+  outline: var(--stroke-strong) solid var(--color-focus);
+  outline-offset: calc(-1 * var(--stroke-strong));
+}
+
+.hand-card.is-selected::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  block-size: calc(var(--stroke-strong) * 2);
+  background-color: var(--color-focus);
+  pointer-events: none;
+}
+
+/* Off turn: dimmed and not a drag source. */
+.hand-card.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.hand-card:focus-visible {
+  z-index: 1;
+  outline: var(--stroke-strong) solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+@media (forced-colors: active) {
+  .hand-card.is-selected,
+  .hand-card:focus-visible {
+    outline-color: Highlight;
+  }
+
+  .hand-card.is-selected::after {
+    background-color: Highlight;
+  }
+}

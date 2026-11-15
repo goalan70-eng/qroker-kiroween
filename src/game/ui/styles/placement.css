@@ -1,0 +1,143 @@
+/*
+ * Placement panel styles (task 17.3). Uses the tokens of tokens.css; load tokens.css, card.css, board.css and
+ * hand.css first.
+ *
+ * Rules of this file (checked by placement-controls.test.ts):
+ *   - Every placement control is a real button of at least --touch-min (44 px) in both directions.
+ *   - Nothing here changes how touches are handled: the draggable Hand card class in hand.css is the only place
+ *     that takes a touch gesture over.
+ *   - The drag ghost is fixed to the viewport, takes no pointer events (so hit testing sees the Board cell below it)
+ *     and is positioned by the transform that the panel writes from the pointer coordinates.
+ *   - The error line is not told by colour alone: a left bar and a leading mark.
+ *   - No font, image or network reference.
+ */
+
+.placement-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  box-sizing: border-box;
+  margin: 0;
+  padding: var(--space-2);
+  color: var(--color-ink);
+  font-family: var(--font-ui);
+}
+
+.placement-board,
+.placement-hand,
+.placement-controls-slot {
+  margin: 0;
+}
+
+.placement-status {
+  min-block-size: 1.5em;
+  line-height: 1.4;
+}
+
+.placement-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.placement-button {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-inline-size: var(--touch-min);
+  min-block-size: var(--touch-min);
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  border: 2px solid var(--color-ink);
+  border-radius: 0.25rem;
+  appearance: none;
+  font: inherit;
+  font-weight: 700;
+  color: var(--color-ink);
+  background-color: var(--color-paper);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.placement-button--confirm {
+  color: var(--color-inverse);
+  background-color: var(--color-ink);
+}
+
+.placement-button[aria-pressed="true"] {
+  box-shadow: inset 0 0 0 var(--stroke-strong) var(--color-focus);
+}
+
+.placement-button__state {
+  font-weight: 400;
+}
+
+.placement-button:disabled {
+  cursor: not-allowed;
+  color: var(--color-disabled-fg);
+  background-color: var(--color-disabled-bg);
+  border-style: dashed;
+  border-color: var(--color-disabled-fg);
+}
+
+.placement-button:focus-visible {
+  outline: var(--stroke-strong) solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Error line: a bar and a mark, so the colour is not the only cue. Empty means nothing is shown. */
+.placement-error {
+  border-inline-start: 0.25rem solid var(--color-red);
+  padding-inline-start: var(--space-2);
+  color: var(--color-red);
+  font-weight: 700;
+}
+
+.placement-error::before {
+  content: "! ";
+}
+
+.placement-error:empty {
+  display: none;
+}
+
+/* The live region is read by screen readers and not shown. */
+.placement-live {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The container of the drag ghost takes no events either. */
+.placement-overlay {
+  pointer-events: none;
+}
+
+.drag-overlay {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  z-index: 1000;
+  margin: 0;
+  padding: 0;
+  opacity: 0.85;
+  pointer-events: none;
+  will-change: transform;
+}
+
+@media (forced-colors: active) {
+  .placement-button {
+    border-color: ButtonText;
+  }
+
+  .placement-button:disabled {
+    border-color: GrayText;
+  }
+}
