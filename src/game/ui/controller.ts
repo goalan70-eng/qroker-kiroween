@@ -45,24 +45,46 @@
 // re-derived here from `core/prng`; controller.test.ts proves the equivalence by comparing whole games with
 // `playGame`.
 //
+// Placement draft (task 17.4; design.md "Placement interaction"; supersedes the 16.2 `UiSelection`/`select`)
+//   * `AppModel.draft` is the viewer's `PlacementDraft`. `draftEvent(e)` runs the pure `reduceDraft` against a context
+//     built from the LATEST `PlayerView` (legal cells from `legalCellsFor`, Hand, rotation capability). A draft
+//     never touches the game: no Action is dispatched, no log entry, no AI step.
+//   * `confirmPlacement()` is the ONLY controller path that builds a `PLACE` for a draft. It takes no argument (a
+//     stale screen closure cannot carry an old draft), refuses with `DISPOSED`/`BUSY`/`NO_GAME` like `dispatchHuman`,
+//     re-validates the draft with `validateDraft` against the latest view, and on success sends exactly ONE `PLACE`
+//     through `dispatchHuman` (engine `reduce`, double-submission guard, AI scheduling). The accepted Action changes
+//     `actionCount`, which clears the draft, so a second confirmation finds an empty draft and sends nothing.
+//   * `explainTarget(cell)` asks the engine WHY a cell is refused: `reduce` on the current state with a throwaway
+//     probe `PLACE` (the viewer's first Hand card, orientation 0); the result state is discarded. It never decides
+//     legality (that is `legalCellsFor`), and the codes it can give for a cell are geometry only.
+//   * Rotation capability (`rotationInfo`) is computed from the viewer's OWN Hand only, here, because this is the
+//     only ui/ module allowed to import `core/fragment-layout`.
+//   * Invalidation. The draft is cleared, and `gestureEpoch` is incremented so that renderers cancel an active drag
+//     gesture, whenever one of these changes: viewer, screen, game epoch (new game, restart, abandon, dispose),
+//     `actionCount`, phase, turn; or when the drafted card is no longer in the viewer's Hand; and on an
+//     `invalidate` draft event or a failed confirmation.
+//
 // No clock, no randomness and no global is used here: the scheduler, the seed provider, the language provider and
 // the strategy lookup are injected (`AppDeps`).
 
 import { getStrategy } from '../ai/registry';
 import type { AIStrategy, AiContext } from '../ai/strategy';
 import { actingSeats, reduce } from '../core/engine';
+import { rotationChangesCorners } from '../core/fragment-layout';
 import { mix32 } from '../core/prng';
 import { defaultConfig, newGame } from '../core/state';
 import type { GameState } from '../core/state';
-import type { Action, Difficulty, ErrorCode, GameConfig, PlayerId } from '../core/types';
+import type { Action, CardId, Difficulty, ErrorCode, GameConfig, GridPosition, PlayerId } from '../core/types';
 import { viewFor } from '../core/view';
 import type { PlayerView } from '../core/view';
 import { DEFAULT_LANGUAGE, errorMessageKey, getLanguage, isLang, setLanguage, t } from '../i18n';
 import type { Lang } from '../i18n';
 import { renderWithFocus } from './dom';
+import { draftContextFor, EMPTY_DRAFT, errorCodeForIssue, reduceDraft, validateDraft } from './placement-draft';
+import type { DraftEvent, DraftIssue, DraftResult, RotationInfoMap } from './placement-draft';
 import { mountShell } from './shell';
-import { createStore, EMPTY_SELECTION, initialModel } from './store';
-import type { AppModel, DisplayErrorRecord, UiSelection } from './store';
+import { createStore, initialModel } from './store';
+import type { AppModel, DisplayErrorRecord } from './store';
 
 /** Presentation delay between two AI steps (design: `AI_DELAY_MS = 600`, at most 1000). */
 export const AI_DELAY_MS = 600;
@@ -100,11 +122,13 @@ export interface StartOptions {
  * - `BUSY`: re-entrant call while another operation is being applied or rendered; nothing was done.
  * - `NO_GAME`: no game is running.
  * - `DISPOSED`: the controller was disposed; nothing was done.
+ * - `DRAFT_INVALID`: `confirmPlacement` found the draft incomplete (`NO_CARD`, `NO_TARGET`) or stale; no Action was sent.
  */
 export type OpResult =
   | { readonly ok: true }
   | { readonly ok: false; readonly reason: 'ENGINE'; readonly code: ErrorCode }
-  | { readonly ok: false; readonly reason: 'BUSY' | 'NO_GAME' | 'DISPOSED' };
+  | { readonly ok: false; readonly reason: 'BUSY' | 'NO_GAME' | 'DISPOSED' }
+  | { readonly ok: false; readonly reason: 'DRAFT_INVALID'; readonly issue: DraftIssue };
 
 /** The functions a screen may call. Created once; they stay valid after dispose and then do nothing. */
 export interface RenderHandlers {
@@ -113,7 +137,12 @@ export interface RenderHandlers {
   readonly restart: () => OpResult;
   readonly abandon: () => OpResult;
   readonly setLanguage: (lang: Lang) => void;
-  readonly select: (patch: Partial<UiSelection>) => void;
+  /** Applies a draft event to `model.draft` (pure reducer, latest view). Never sends an Action. */
+  readonly draftEvent: (event: DraftEvent) => DraftResult;
+  /** Validates the draft against the latest view and sends exactly one `PLACE`. The only path that does. */
+  readonly confirmPlacement: () => OpResult;
+  /** The engine's `ErrorCode` for a cell that cannot take a card (`null` when it can); shows its message. */
+  readonly explainTarget: (cell: GridPosition) => ErrorCode | null;
 }
 
 /** Everything a renderer or screen receives. No `GameState`, no controller. */
@@ -122,6 +151,8 @@ export interface RenderInput {
   readonly view: PlayerView | null;
   readonly model: AppModel;
   readonly displayError: DisplayError | null;
+  /** Rotation capability of the cards of the viewer's OWN Hand (no key for any other card); `{}` without a view. */
+  readonly rotationInfo: RotationInfoMap;
   readonly handlers: RenderHandlers;
 }
 
@@ -154,7 +185,11 @@ export interface Controller {
   /** Drops the game and returns the model to the idle screen. */
   abandon(): OpResult;
   setLanguage(lang: Lang): void;
-  select(patch: Partial<UiSelection>): void;
+  draftEvent(event: DraftEvent): DraftResult;
+  confirmPlacement(): OpResult;
+  explainTarget(cell: GridPosition): ErrorCode | null;
+  /** Rotation capability of the Hand cards of `viewer` (keys: that seat's own Hand only); `{}` without a game. */
+  rotationInfo(viewer: PlayerId): RotationInfoMap;
   subscribe(listener: (model: AppModel) => void): () => void;
   /** Stops everything. Later calls are no-ops (operations return `DISPOSED`). */
   dispose(): void;
@@ -171,6 +206,17 @@ interface Game {
 
 const NOOP_UNSUBSCRIBE = (): void => undefined;
 const MAX_RENDER_PASSES = 5;
+const NO_ROTATION_INFO: RotationInfoMap = Object.freeze({});
+
+/**
+ * Rotation capability for each card of `view.myHand` and for no other card. The identity of these cards is already
+ * visible to the viewer; screens get booleans, never the fragment table, a corner set or a suit.
+ */
+function rotationInfoFor(view: PlayerView): RotationInfoMap {
+  const info: Partial<Record<CardId, { readonly rotationChangesCorners: boolean }>> = {};
+  for (const card of view.myHand) info[card] = Object.freeze({ rotationChangesCorners: rotationChangesCorners(card) });
+  return Object.freeze(info);
+}
 
 export function createController(deps: AppDeps): Controller {
   const strategyFor = deps.strategyFor ?? getStrategy;
@@ -201,16 +247,35 @@ export function createController(deps: AppDeps): Controller {
     config.seats.find((s) => s.id === seat)?.kind;
   const hasHuman = (config: GameConfig): boolean => config.seats.some((s) => s.kind === 'HUMAN');
 
-  /** Applies `patch` to the model together with the values derived from the game, and notifies. */
+  /**
+   * What a draft depends on: the game epoch, the viewer, the screen, the accepted-Action count, the phase and the
+   * turn. When it changes the draft is stale (and an active gesture must be cancelled).
+   */
+  const draftFingerprint = (m: AppModel): string =>
+    `${epoch}|${m.viewer ?? '-'}|${m.screen}|${m.actionCount}|${game === null ? '-' : game.state.phase}|${game === null ? '-' : game.state.turn}`;
+  let lastFingerprint = draftFingerprint(store.get());
+
+  /** True when the drafted card is no longer in the Hand of `viewer` (a Hand change that removes it). */
+  const cardLeftHand = (m: AppModel): boolean =>
+    m.draft.card !== null && (game === null || m.viewer === null || !game.state.hands[m.viewer].includes(m.draft.card));
+
+  /**
+   * Applies `patch` to the model together with the values derived from the game, and notifies. It also applies
+   * the invalidation rules of the placement draft (see the module comment).
+   */
   function setModel(patch: Partial<AppModel>): void {
-    store.update((m) =>
-      Object.freeze({
+    store.update((m) => {
+      const next: AppModel = {
         ...m,
         screen: game === null ? 'SETUP' : game.state.phase === 'ENDED' ? 'END' : 'GAME',
         actionCount: game === null ? 0 : game.state.log.length,
         ...patch,
-      }),
-    );
+      };
+      const fingerprint = draftFingerprint(next);
+      const stale = fingerprint !== lastFingerprint || cardLeftHand(next);
+      lastFingerprint = fingerprint;
+      return Object.freeze(stale ? { ...next, draft: EMPTY_DRAFT, gestureEpoch: next.gestureEpoch + 1 } : next);
+    });
   }
 
   const errorRecord = (code: ErrorCode): DisplayErrorRecord => Object.freeze({ code, messageKey: errorMessageKey(code) });
@@ -237,7 +302,8 @@ export function createController(deps: AppDeps): Controller {
         renderAgain = false;
         const model = store.get();
         const view = game !== null && model.viewer !== null ? viewFor(game.state, model.viewer) : null;
-        deps.renderer({ view, model, displayError: displayErrorOf(model), handlers });
+        const rotationInfo = view === null ? NO_ROTATION_INFO : rotationInfoFor(view);
+        deps.renderer({ view, model, displayError: displayErrorOf(model), rotationInfo, handlers });
         if (!renderAgain || disposed) break;
       }
     } finally {
@@ -404,7 +470,7 @@ export function createController(deps: AppDeps): Controller {
       if (!result.ok) return rejectWith(result.error.code);
       g.state = result.value;
       lastAccepted = { action, logLength: result.value.log.length };
-      setModel({ lastError: null, selection: EMPTY_SELECTION });
+      setModel({ lastError: null }); // `actionCount` changed, so `setModel` also clears the draft
     } finally {
       inFlight = false;
     }
@@ -422,7 +488,7 @@ export function createController(deps: AppDeps): Controller {
       game = { state: created.value, config };
       lastAccepted = null;
       const human = config.seats.find((s) => s.kind === 'HUMAN');
-      setModel({ viewer: human === undefined ? null : human.id, selection: EMPTY_SELECTION, lastError: null, aiStalled: false });
+      setModel({ viewer: human === undefined ? null : human.id, lastError: null, aiStalled: false }); // new epoch: draft cleared
     } finally {
       inFlight = false;
     }
@@ -451,7 +517,7 @@ export function createController(deps: AppDeps): Controller {
       invalidate();
       game = null;
       lastAccepted = null;
-      setModel({ viewer: null, selection: EMPTY_SELECTION, lastError: null, aiStalled: false });
+      setModel({ viewer: null, lastError: null, aiStalled: false }); // new epoch: draft cleared
     } finally {
       inFlight = false;
     }
@@ -464,9 +530,77 @@ export function createController(deps: AppDeps): Controller {
     setModel({ language: lang });
   }
 
-  function select(patch: Partial<UiSelection>): void {
-    if (disposed) return;
-    setModel({ selection: Object.freeze({ ...store.get().selection, ...patch }) });
+  // ---- placement draft ------------------------------------------------------------------------------------
+
+  function rotationInfo(viewer: PlayerView['viewer']): RotationInfoMap {
+    if (disposed || game === null) return NO_ROTATION_INFO;
+    return rotationInfoFor(viewFor(game.state, viewer));
+  }
+
+  function draftEvent(event: DraftEvent): DraftResult {
+    const model = store.get();
+    const g = game;
+    if (disposed || g === null || model.viewer === null) return { draft: model.draft, notice: null };
+    const view = viewFor(g.state, model.viewer); // the latest view, recomputed for every event
+    const result = reduceDraft(model.draft, event, draftContextFor(view, rotationInfoFor(view)));
+    if (event.type === 'invalidate') {
+      setModel({ draft: result.draft, gestureEpoch: model.gestureEpoch + 1 });
+    } else if (result.draft !== model.draft) {
+      setModel({ draft: result.draft });
+    }
+    return result;
+  }
+
+  /**
+   * The engine's reason for refusing a card on `cell`, from a throwaway probe `PLACE` (the viewer's first Hand card,
+   * orientation 0). `reduce` returns a new state or an error and never mutates its input; the result is dropped.
+   */
+  function probeCode(cell: GridPosition): ErrorCode | null {
+    const g = game;
+    const viewer = store.get().viewer;
+    if (g === null || viewer === null) return null;
+    const card = g.state.hands[viewer][0];
+    if (card === undefined) return null;
+    const raw: unknown = cell;
+    const pos: GridPosition =
+      typeof raw === 'object' && raw !== null
+        ? { row: (raw as GridPosition).row, col: (raw as GridPosition).col }
+        : { row: Number.NaN, col: Number.NaN };
+    const result = reduce(g.state, { type: 'PLACE', player: viewer, card, pos, orientation: 0 });
+    return result.ok ? null : result.error.code;
+  }
+
+  function explainTarget(cell: GridPosition): ErrorCode | null {
+    if (disposed || inFlight) return null;
+    const code = probeCode(cell);
+    if (code !== null) setModel({ lastError: errorRecord(code) }); // the game state is untouched
+    return code;
+  }
+
+  function confirmPlacement(): OpResult {
+    if (disposed) return { ok: false, reason: 'DISPOSED' };
+    if (inFlight) return { ok: false, reason: 'BUSY' };
+    const g = game;
+    const model = store.get();
+    if (g === null || model.viewer === null) return { ok: false, reason: 'NO_GAME' };
+    const viewer = model.viewer;
+    const view = viewFor(g.state, viewer);
+    const check = validateDraft(model.draft, view, rotationInfoFor(view));
+    if (!check.ok) {
+      const { issue } = check;
+      if (issue === 'NO_CARD' || issue === 'NO_TARGET') return { ok: false, reason: 'DRAFT_INVALID', issue }; // nothing to confirm
+      const target = model.draft.target;
+      const code = issue === 'TARGET_NOT_LEGAL' && target !== null ? probeCode(target) : errorCodeForIssue(issue);
+      // a stale or invalid draft is dropped, nothing is sent, and the reason is shown in the current language
+      setModel({
+        draft: EMPTY_DRAFT,
+        gestureEpoch: model.gestureEpoch + 1,
+        ...(code === null ? {} : { lastError: errorRecord(code) }),
+      });
+      return { ok: false, reason: 'DRAFT_INVALID', issue };
+    }
+    const action: Action = { type: 'PLACE', player: viewer, card: check.place.card, pos: check.place.pos, orientation: check.place.orientation };
+    return dispatchHuman(action); // accepted: actionCount changes and the draft is cleared; rejected: state and draft stay
   }
 
   function dispose(): void {
@@ -484,7 +618,9 @@ export function createController(deps: AppDeps): Controller {
     restart,
     abandon,
     setLanguage: setUiLanguage,
-    select,
+    draftEvent,
+    confirmPlacement,
+    explainTarget,
   });
 
   const controller: Controller = Object.freeze({
@@ -496,7 +632,10 @@ export function createController(deps: AppDeps): Controller {
     restart,
     abandon,
     setLanguage: setUiLanguage,
-    select,
+    draftEvent,
+    confirmPlacement,
+    explainTarget,
+    rotationInfo,
     subscribe: (listener: (model: AppModel) => void) => (disposed ? NOOP_UNSUBSCRIBE : store.subscribe(listener)),
     dispose,
   });

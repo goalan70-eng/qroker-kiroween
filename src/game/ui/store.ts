@@ -2,10 +2,13 @@
 //
 // `AppModel` holds what the screens need to draw and nothing of the game itself: the sealed `GameState` lives
 // inside `controller.ts` and never appears here (design: "sealed state stays inside the controller; screens
-// receive views"). This file imports only types of `core/types` and `i18n`, so a screen module may import it.
+// receive views"). This file imports only types of `core/types`, `i18n` and the pure `./placement-draft`, so a
+// screen module may import it.
 
 import type { ErrorStringKey, Lang } from '../i18n';
-import type { CardId, ErrorCode, GridPosition, Orientation, PlayerId } from '../core/types';
+import type { ErrorCode, PlayerId } from '../core/types';
+import { EMPTY_DRAFT } from './placement-draft';
+import type { PlacementDraft } from './placement-draft';
 
 /**
  * The last error shown to the player. It stores the code and the string KEY, never the text: the text is looked
@@ -15,13 +18,6 @@ import type { CardId, ErrorCode, GridPosition, Orientation, PlayerId } from '../
 export interface DisplayErrorRecord {
   readonly code: ErrorCode;
   readonly messageKey: ErrorStringKey;
-}
-
-/** What the player has selected in the UI (placement flow). Plain values, no engine data. */
-export interface UiSelection {
-  readonly card: CardId | null;
-  readonly orientation: Orientation;
-  readonly cell: GridPosition | null;
 }
 
 /**
@@ -36,7 +32,18 @@ export interface AppModel {
   readonly screen: ScreenName;
   /** The seat whose view the screens render (the first human seat), or `null` when no private view is shown. */
   readonly viewer: PlayerId | null;
-  readonly selection: UiSelection;
+  /**
+   * The placement draft of the viewer (task 17.4; supersedes the 16.2 `UiSelection`). UI state only: it never
+   * changes the game and holds a CardId of the viewer's OWN Hand, which must not be rendered into attributes.
+   * The controller clears it when the viewer, screen, game epoch, `actionCount`, phase or turn changes, or when
+   * the drafted card leaves the Hand.
+   */
+  readonly draft: PlacementDraft;
+  /**
+   * Incremented whenever the controller invalidates the draft (and so must also cancel an active drag gesture).
+   * A render host cancels its gesture when the value it last saw has changed.
+   */
+  readonly gestureEpoch: number;
   readonly lastError: DisplayErrorRecord | null;
   /**
    * Number of accepted Actions of the running game (0 when idle). It changes on every accepted Action, which is
@@ -47,14 +54,13 @@ export interface AppModel {
   readonly aiStalled: boolean;
 }
 
-export const EMPTY_SELECTION: UiSelection = Object.freeze({ card: null, orientation: 0, cell: null });
-
 export function initialModel(language: Lang): AppModel {
   return Object.freeze({
     language,
     screen: 'SETUP',
     viewer: null,
-    selection: EMPTY_SELECTION,
+    draft: EMPTY_DRAFT,
+    gestureEpoch: 0,
     lastError: null,
     actionCount: 0,
     aiStalled: false,

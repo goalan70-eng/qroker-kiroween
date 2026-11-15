@@ -4,6 +4,11 @@
 //    test scheduler (a queue drained by hand) and an immediate scheduler;
 //  * the mountApp tests use a minimal hand-written fake Document. They test the wiring against a stand-in, NOT a
 //    browser: real focus, layout and event dispatch are not exercised.
+//
+// Task 17.4 (placement draft through the controller): EVIDENCE CLASS model. These tests drive `draftEvent`,
+// `confirmPlacement`, `explainTarget` and `rotationInfo` of the DOM-free controller with a stub renderer in Node.
+// They say nothing about pointer capture, hit testing against a real layout, touch behaviour or real devices
+// (fake-DOM variants come in task 21.3; emulated-touch and real-device evidence come later).
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,16 +16,20 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { getStrategy } from '../ai/registry';
 import type { AIStrategy } from '../ai/strategy';
 import { ALL_CARDS } from '../core/cards';
-import { defaultConfig } from '../core/state';
+import { defaultConfig, newGame } from '../core/state';
 import { SEATS } from '../core/turn';
-import type { Action, CardId, Difficulty, GameConfig, IdentityVisibility, PlayerId } from '../core/types';
-import { legalCellsFor } from '../core/view';
+import type { Action, CardId, Difficulty, GameConfig, GridPosition, IdentityVisibility, PlayerId } from '../core/types';
+import { legalCellsFor, unseenCards, viewFor } from '../core/view';
 import type { PlayerView } from '../core/view';
 import { getLanguage, resetLanguage, t } from '../i18n';
 import { playGame, strategiesFor } from '../sim/play-game';
 import * as controllerModule from './controller';
 import { AI_DELAY_MS, createController, mountApp } from './controller';
 import type { AppDeps, Controller, OpResult, RenderInput, Renderer, Schedule, ScheduleHandle } from './controller';
+import { EMPTY_DRAFT } from './placement-draft';
+import type { DraftEvent } from './placement-draft';
+import { INITIAL_GESTURE, stepGesture } from './pointer-gesture';
+import type { GestureInput, GestureState } from './pointer-gesture';
 
 afterEach(() => resetLanguage());
 
@@ -460,11 +469,14 @@ describe('what a renderer receives', () => {
     expect(phases).toEqual(new Set(['PLACEMENT', 'GUESS_COLLECT', 'REVEAL', 'ENDED']));
     expect(stub.calls.length).toBeGreaterThan(30);
     for (const call of stub.calls) {
-      expect(Object.keys(call).sort()).toEqual(['displayError', 'handlers', 'model', 'view']);
+      expect(Object.keys(call).sort()).toEqual(['displayError', 'handlers', 'model', 'rotationInfo', 'view']);
       expect(bannedKeyPaths(call)).toEqual([]);
       expect(Object.isFrozen(call.model)).toBe(true);
       if (call.view !== null) expect(Object.isFrozen(call.view)).toBe(true);
-      expect(Object.keys(call.handlers).sort()).toEqual(['abandon', 'dispatch', 'restart', 'select', 'setLanguage', 'startGame']);
+      // task 17.4: `select` (16.2) is replaced by the draft API
+      expect(Object.keys(call.handlers).sort()).toEqual([
+        'abandon', 'confirmPlacement', 'dispatch', 'draftEvent', 'explainTarget', 'restart', 'setLanguage', 'startGame',
+      ]);
       expect(Object.values(call.handlers).every((f) => typeof f === 'function')).toBe(true);
     }
     // the same handlers object every time, and a view is a copy: two renders never share a view
@@ -475,7 +487,8 @@ describe('what a renderer receives', () => {
     const { ctl } = make(immediate);
     ctl.startGame({ seed: 9 });
     expect(Object.keys(ctl).sort()).toEqual([
-      'abandon', 'dispatchHuman', 'dispose', 'getDisplayError', 'getModel', 'getView', 'restart', 'select', 'setLanguage', 'startGame', 'subscribe',
+      'abandon', 'confirmPlacement', 'dispatchHuman', 'dispose', 'draftEvent', 'explainTarget', 'getDisplayError', 'getModel',
+      'getView', 'restart', 'rotationInfo', 'setLanguage', 'startGame', 'subscribe',
     ]);
     expect(Object.values(ctl).every((v) => typeof v === 'function')).toBe(true);
     expect(Object.getOwnPropertyNames(ctl).some((k) => /^(?:state|game|deck|hands|log|seed)$/i.test(k))).toBe(false);
@@ -848,11 +861,13 @@ describe('model and language', () => {
     ctl.startGame({ seed: 5 });
     expect(seen).toEqual(['GAME']);
     off();
-    ctl.select({ card: 'H-7' as never, orientation: 180 });
-    expect(seen).toEqual(['GAME']);
-    expect(ctl.getModel().selection).toEqual({ card: 'H-7', orientation: 180, cell: null });
+    // task 17.4: the 16.2 `select(patch)` / `model.selection` are replaced by `draftEvent` / `model.draft`
+    const card = (ctl.getView('P0') as PlayerView).myHand[0] as CardId;
+    ctl.draftEvent({ type: 'selectCard', card });
+    expect(seen).toEqual(['GAME']); // unsubscribed
+    expect(ctl.getModel().draft).toEqual({ target: null, card, orientation: 0 });
     ctl.abandon();
-    expect(ctl.getModel().selection).toEqual({ card: null, orientation: 0, cell: null });
+    expect(ctl.getModel().draft).toEqual({ target: null, card: null, orientation: 0 });
   });
 
   it('takes the start language from deps and ignores an unsupported language', () => {
@@ -1032,7 +1047,7 @@ describe('mountApp composes the existing shell with the controller (fake Documen
     old.focus();
     m.doc.registry.set('data-focus-key=play', old);
     const lookups = m.doc.lookups;
-    m.handle.controller.select({ orientation: 180 }); // any model change renders
+    m.handle.controller.setLanguage('ko'); // any model change renders
     expect(m.doc.lookups).toBeGreaterThan(lookups);
     expect(replaced.current).not.toBeNull();
     expect(replaced.current).not.toBe(old);
@@ -1066,5 +1081,498 @@ describe('source scan: no timers, clock or randomness outside main.ts; no global
     for (const file of ['dom.ts', 'store.ts', 'shell.ts', 'main.ts']) {
       expect(/core\/(?:state|engine)/.test(code(file)), file).toBe(false);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------
+// Task 17.4: placement draft, rotation capability and confirmation (EVIDENCE CLASS: model, DOM-free controller)
+// ---------------------------------------------------------------------------------------------------------
+
+const TURNS = (card: string): boolean => card.startsWith('C-') || card.startsWith('S-'); // independent literal
+const cellOf = (row: number, col: number): GridPosition => ({ row, col });
+const D4 = cellOf(3, 3); // occupied by a Neutral_Card
+const A1 = cellOf(0, 0); // empty, touches nothing
+const OFF = cellOf(9, 9); // outside the grid
+
+/** A seed whose P0 Hand holds at least one club or spade and at least one heart or diamond. */
+function seedWithMixedHand(): number {
+  for (let seed = 1; seed < 200; seed++) {
+    const created = newGame({ seed, config: defaultConfig() });
+    if (!created.ok) continue;
+    const hand = viewFor(created.value, 'P0').myHand;
+    if (hand.some((c) => TURNS(c)) && hand.some((c) => !TURNS(c))) return seed;
+  }
+  throw new Error('no seed with a mixed hand');
+}
+
+function drafting(kinds: readonly ('HUMAN' | Difficulty)[] = ['HUMAN', 'BEGINNER', 'BEGINNER', 'BEGINNER'], seed = seedWithMixedHand()) {
+  const sched = new QueueScheduler();
+  const made = make(sched.schedule);
+  expect(made.ctl.startGame({ config: config(kinds), seed })).toEqual({ ok: true });
+  const view = (): PlayerView => made.ctl.getView('P0') as PlayerView;
+  const hand = view().myHand;
+  const turning = hand.find((c) => TURNS(c)) as CardId;
+  const plain = hand.find((c) => !TURNS(c)) as CardId;
+  const legal = legalCellsFor(view());
+  /** Everything a draft event must leave alone. */
+  const snapshot = () => ({
+    view: JSON.stringify(view()),
+    actionCount: made.ctl.getModel().actionCount,
+    scheduled: sched.scheduled,
+    pending: sched.pending,
+  });
+  return { ...made, sched, view, hand, turning, plain, legal, snapshot };
+}
+
+describe('task 17.4: draft events through the controller', () => {
+  it('acceptance 1: drop, target-then-card and card-then-target give equal drafts in the model', () => {
+    const t = drafting();
+    const x = t.legal[0] as GridPosition;
+    const c = t.turning;
+    const drafts = [
+      [{ type: 'dropOnCell', cell: x, card: c }],
+      [{ type: 'selectTarget', cell: x }, { type: 'selectCard', card: c }],
+      [{ type: 'selectCard', card: c }, { type: 'selectTarget', cell: x }],
+    ] as const;
+    const results = drafts.map((events) => {
+      t.ctl.draftEvent({ type: 'cancel' });
+      for (const e of events) t.ctl.draftEvent(e);
+      return t.ctl.getModel().draft;
+    });
+    for (const draft of results) expect(draft).toEqual({ target: x, card: c, orientation: 0 });
+    expect(Object.isFrozen(results[0])).toBe(true);
+  });
+
+  it('acceptance 2: no draft event or explainTarget changes the game, the AI queue or the action count', () => {
+    const t = drafting();
+    const before = t.snapshot();
+    const x = t.legal[1] as GridPosition;
+    const events: DraftEvent[] = [
+      { type: 'selectTarget', cell: x },
+      { type: 'selectCard', card: t.turning },
+      { type: 'toggleRotation' },
+      { type: 'dragStart', card: t.plain },
+      { type: 'dropOnCell', cell: t.legal[2] as GridPosition, card: t.plain },
+      { type: 'toggleRotation' },
+      { type: 'dropOnCell', cell: A1, card: t.turning },
+      { type: 'dropOutside' },
+      { type: 'dragCancel' },
+      { type: 'selectTarget', cell: D4 },
+      { type: 'cancel' },
+      { type: 'invalidate', reason: 'PHASE' },
+    ];
+    for (const e of events) {
+      t.ctl.draftEvent(e);
+      expect(t.snapshot(), e.type).toEqual(before);
+    }
+    for (const cell of [D4, A1, OFF, x]) {
+      t.ctl.explainTarget(cell);
+      expect(t.snapshot()).toEqual(before);
+    }
+    expect(t.ctl.confirmPlacement()).toEqual({ ok: false, reason: 'DRAFT_INVALID', issue: 'NO_CARD' }); // nothing drafted
+    expect(t.snapshot()).toEqual(before);
+    expect(t.sched.scheduled).toBe(0);
+  });
+
+  it('acceptance 3: the controller offers rotation only for clubs and spades; the toggle never moves the target', () => {
+    const t = drafting();
+    const x = t.legal[0] as GridPosition;
+    t.ctl.draftEvent({ type: 'dropOnCell', cell: x, card: t.turning });
+    expect(t.ctl.draftEvent({ type: 'toggleRotation' }).draft).toEqual({ target: x, card: t.turning, orientation: 180 });
+    expect(t.ctl.draftEvent({ type: 'toggleRotation' }).draft).toEqual({ target: x, card: t.turning, orientation: 0 });
+    t.ctl.draftEvent({ type: 'selectCard', card: t.plain });
+    const refused = t.ctl.draftEvent({ type: 'toggleRotation' });
+    expect(refused.notice).toBe('ROTATION_NOT_MEANINGFUL');
+    expect(t.ctl.getModel().draft).toEqual({ target: x, card: t.plain, orientation: 0 });
+  });
+
+  it('acceptance 4: switching a rotated club or spade to a heart, a diamond or another card resets the orientation', () => {
+    const t = drafting();
+    const x = t.legal[0] as GridPosition;
+    t.ctl.draftEvent({ type: 'dropOnCell', cell: x, card: t.turning });
+    t.ctl.draftEvent({ type: 'toggleRotation' });
+    expect(t.ctl.getModel().draft.orientation).toBe(180);
+    for (const other of t.hand.filter((c) => c !== t.turning)) {
+      t.ctl.draftEvent({ type: 'dropOnCell', cell: x, card: t.turning });
+      if (t.ctl.getModel().draft.orientation !== 180) t.ctl.draftEvent({ type: 'toggleRotation' });
+      t.ctl.draftEvent({ type: 'selectCard', card: other });
+      expect(t.ctl.getModel().draft, other).toEqual({ target: x, card: other, orientation: 0 });
+    }
+  });
+
+  it('refuses a card that is not in the viewer\'s Hand and a cell that is not legal, with a notice and an unchanged draft', () => {
+    const t = drafting();
+    const foreign = ALL_CARDS.find((c) => !t.hand.includes(c)) as CardId;
+    expect(t.ctl.draftEvent({ type: 'selectCard', card: foreign })).toEqual({ draft: EMPTY_DRAFT, notice: 'CARD_NOT_IN_HAND' });
+    expect(t.ctl.draftEvent({ type: 'selectTarget', cell: A1 })).toEqual({ draft: EMPTY_DRAFT, notice: 'TARGET_NOT_LEGAL' });
+    expect(t.ctl.getModel().draft).toBe(EMPTY_DRAFT);
+  });
+
+  it('does nothing without a game and after dispose', () => {
+    const { ctl } = make(immediate);
+    expect(ctl.draftEvent({ type: 'selectCard', card: 'H-7' })).toEqual({ draft: EMPTY_DRAFT, notice: null });
+    const t = drafting();
+    t.ctl.dispose();
+    expect(t.ctl.draftEvent({ type: 'selectCard', card: t.plain }).draft).toBe(EMPTY_DRAFT);
+    expect(t.ctl.explainTarget(D4)).toBeNull();
+  });
+
+  it('a draft event is refused while an AI seat is the active seat', () => {
+    const t = drafting();
+    t.ctl.dispatchHuman({ type: 'PLACE', player: 'P0', card: t.plain, pos: t.legal[0] as GridPosition, orientation: 0 });
+    const view = t.view();
+    expect(view.turn).toBe('P1');
+    const r = t.ctl.draftEvent({ type: 'selectCard', card: view.myHand[0] as CardId });
+    expect(r.draft).toBe(EMPTY_DRAFT);
+    expect(r.notice).toBe('CARD_NOT_IN_HAND');
+    expect(t.ctl.draftEvent({ type: 'selectTarget', cell: t.legal[1] as GridPosition }).notice).toBe('TARGET_NOT_LEGAL');
+  });
+});
+
+describe('task 17.4: rotationInfo', () => {
+  it('has a boolean for each card of the viewer\'s own Hand and a key for no other card (RenderInput and Controller)', () => {
+    const t = drafting();
+    const own = t.ctl.rotationInfo('P0');
+    expect(Object.keys(own).sort()).toEqual([...t.hand].sort());
+    for (const card of t.hand) expect(own[card], card).toEqual({ rotationChangesCorners: TURNS(card) });
+    expect(t.stub.last.rotationInfo).toEqual(own);
+    expect(Object.isFrozen(own)).toBe(true);
+    // another seat's call is that seat's own Hand, and shares no key with P0's (hands are disjoint)
+    const other = t.ctl.rotationInfo('P1');
+    const p1 = (t.ctl.getView('P1') as PlayerView).myHand;
+    expect(Object.keys(other).sort()).toEqual([...p1].sort());
+    expect(Object.keys(other).filter((k) => k in own)).toEqual([]);
+    // no game: nothing
+    expect(make(immediate).ctl.rotationInfo('P0')).toEqual({});
+  });
+
+  it('is empty in a render without a view (idle screen, four AI seats)', () => {
+    const { ctl, stub } = make(immediate);
+    expect(stub.last.rotationInfo).toEqual({});
+    ctl.startGame({ config: config(ALL_AI), seed: 3 });
+    expect(stub.last.view).toBeNull();
+    expect(stub.last.rotationInfo).toEqual({});
+  });
+
+  it('reports C and S true and H and D false for the Hand cards of all four seats (the 52-card table is in fragment-layout.rotation.test.ts)', () => {
+    const t = drafting();
+    const seen = new Map<string, boolean>();
+    for (const seat of SEATS) for (const [card, info] of Object.entries(t.ctl.rotationInfo(seat))) seen.set(card, info!.rotationChangesCorners);
+    expect(seen.size).toBeGreaterThanOrEqual(4);
+    for (const [card, flag] of seen) expect(flag, card).toBe(TURNS(card));
+  });
+});
+
+describe('task 17.4: explainTarget', () => {
+  it('returns the engine code for an illegal cell, shows its localized message, and changes no state', () => {
+    const t = drafting();
+    const before = t.snapshot();
+    expect(t.ctl.explainTarget(D4)).toBe('OCCUPIED');
+    expect(t.stub.last.displayError).toEqual({ code: 'OCCUPIED', message: 'Position already has a card' });
+    expect(t.ctl.explainTarget(A1)).toBe('NOT_ADJACENT');
+    expect(t.stub.last.displayError?.message).toBe('Must be adjacent to an existing card');
+    expect(t.ctl.explainTarget(OFF)).toBe('OUT_OF_BOUNDS');
+    t.ctl.setLanguage('ko');
+    expect(t.ctl.getDisplayError()).toEqual({ code: 'OUT_OF_BOUNDS', message: '유효하지 않은 위치' });
+    t.ctl.explainTarget(D4);
+    expect(t.ctl.getDisplayError()?.message).toBe('이미 카드가 있는 위치');
+    t.ctl.explainTarget(A1);
+    expect(t.ctl.getDisplayError()?.message).toBe('기존 카드와 인접해야 합니다');
+    expect(t.snapshot()).toEqual(before);
+  });
+
+  it('agrees with legalCellsFor: null exactly for the legal cells, a code for all others (all 64 cells)', () => {
+    const t = drafting();
+    const legal = new Set(t.legal.map((c) => `${c.row},${c.col}`));
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        const code = t.ctl.explainTarget({ row, col });
+        if (legal.has(`${row},${col}`)) expect(code, `${row},${col}`).toBeNull();
+        else expect(['OCCUPIED', 'NOT_ADJACENT'], `${row},${col}`).toContain(code);
+      }
+    }
+  });
+
+  it('leaves the draft alone and does not clear an earlier error for a legal cell', () => {
+    const t = drafting();
+    t.ctl.draftEvent({ type: 'selectCard', card: t.plain });
+    const draft = t.ctl.getModel().draft;
+    t.ctl.explainTarget(D4);
+    t.ctl.explainTarget(t.legal[0] as GridPosition);
+    expect(t.ctl.getModel().draft).toBe(draft);
+    expect(t.ctl.getModel().lastError?.code).toBe('OCCUPIED');
+  });
+});
+
+describe('task 17.4: confirmPlacement', () => {
+  it('acceptance 7: one valid draft dispatches exactly one PLACE with the draft card, target and orientation', () => {
+    const t = drafting();
+    const x = t.legal[0] as GridPosition;
+    t.ctl.draftEvent({ type: 'dropOnCell', cell: x, card: t.turning });
+    t.ctl.draftEvent({ type: 'toggleRotation' });
+    expect(t.ctl.getModel().actionCount).toBe(0);
+    expect(t.ctl.confirmPlacement()).toEqual({ ok: true });
+    expect(t.ctl.getModel().actionCount).toBe(1); // the log grew by exactly one entry
+    const after = t.view();
+    expect(after.board[x.row * 8 + x.col]).toMatchObject({ owner: 'P0', orientation: 180, card: t.turning });
+    expect(after.myHand.includes(t.turning)).toBe(false);
+    expect(t.ctl.getModel().draft).toBe(EMPTY_DRAFT);
+    expect(t.sched.pending).toBe(1); // the AI continues: one step planned
+  });
+
+  it('acceptance 7: a second confirmation, a double activation and a call during the application send nothing', () => {
+    const t = drafting();
+    const x = t.legal[0] as GridPosition;
+    t.ctl.draftEvent({ type: 'dropOnCell', cell: x, card: t.plain });
+    const results: OpResult[] = [];
+    t.stub.hook = (input) => {
+      if (input.model.actionCount === 1 && results.length === 0) results.push(input.handlers.confirmPlacement());
+    };
+    expect(t.ctl.confirmPlacement()).toEqual({ ok: true });
+    expect(results).toEqual([{ ok: false, reason: 'BUSY' }]);
+    expect(t.ctl.confirmPlacement()).toEqual({ ok: false, reason: 'DRAFT_INVALID', issue: 'NO_CARD' });
+    expect(t.ctl.confirmPlacement()).toEqual({ ok: false, reason: 'DRAFT_INVALID', issue: 'NO_CARD' });
+    expect(t.ctl.getModel().actionCount).toBe(1);
+    // the confirmation handler captured by an older render does the same
+    const stale = t.stub.calls[0]!.handlers.confirmPlacement;
+    expect(stale()).toEqual({ ok: false, reason: 'DRAFT_INVALID', issue: 'NO_CARD' });
+    expect(t.ctl.getModel().actionCount).toBe(1);
+  });
+
+  it('an incomplete draft (card only, target only) sends nothing and keeps the draft', () => {
+    const t = drafting();
+    t.ctl.draftEvent({ type: 'selectCard', card: t.plain });
+    expect(t.ctl.confirmPlacement()).toEqual({ ok: false, reason: 'DRAFT_INVALID', issue: 'NO_TARGET' });
+    expect(t.ctl.getModel().draft).toEqual({ target: null, card: t.plain, orientation: 0 });
+    t.ctl.draftEvent({ type: 'cancel' });
+    t.ctl.draftEvent({ type: 'selectTarget', cell: t.legal[0] as GridPosition });
+    expect(t.ctl.confirmPlacement()).toEqual({ ok: false, reason: 'DRAFT_INVALID', issue: 'NO_CARD' });
+    expect(t.ctl.getModel().actionCount).toBe(0);
+  });
+
+  it('is DISPOSED after dispose and NO_GAME after abandon, sending nothing', () => {
+    const a = drafting();
+    a.ctl.draftEvent({ type: 'dropOnCell', cell: a.legal[0] as GridPosition, card: a.plain });
+    a.ctl.abandon();
+    expect(a.ctl.confirmPlacement()).toEqual({ ok: false, reason: 'NO_GAME' });
+    const d = drafting();
+    d.ctl.draftEvent({ type: 'dropOnCell', cell: d.legal[0] as GridPosition, card: d.plain });
+    const held = d.stub.last.handlers.confirmPlacement;
+    d.ctl.dispose();
+    expect(d.ctl.confirmPlacement()).toEqual({ ok: false, reason: 'DISPOSED' });
+    expect(held()).toEqual({ ok: false, reason: 'DISPOSED' });
+    expect(d.sched.scheduled).toBe(0);
+  });
+
+  it('keeps every 16.2 protection: the same Action object twice is still DUPLICATE_SUBMISSION through dispatchHuman', () => {
+    const t = drafting();
+    const place: Action = { type: 'PLACE', player: 'P0', card: t.plain, pos: t.legal[0] as GridPosition, orientation: 0 };
+    expect(t.ctl.dispatchHuman(place)).toEqual({ ok: true });
+    expect(t.ctl.dispatchHuman(place)).toEqual({ ok: false, reason: 'ENGINE', code: 'DUPLICATE_SUBMISSION' });
+  });
+});
+
+describe('task 17.4: acceptance 8, stale drafts cannot place', () => {
+  it('an accepted Action (actionCount, phase and turn change) clears the draft and raises gestureEpoch; confirm sends nothing', () => {
+    const t = drafting(['HUMAN', 'HUMAN', 'BEGINNER', 'BEGINNER']);
+    const x = t.legal[0] as GridPosition;
+    t.ctl.draftEvent({ type: 'dropOnCell', cell: x, card: t.plain });
+    const epoch = t.ctl.getModel().gestureEpoch;
+    // somebody places another card elsewhere (the turn moves to P1; the viewer is still P0)
+    const other = t.hand.find((c) => c !== t.plain) as CardId;
+    expect(t.ctl.dispatchHuman({ type: 'PLACE', player: 'P0', card: other, pos: t.legal[1] as GridPosition, orientation: 0 })).toEqual({ ok: true });
+    expect(t.ctl.getModel().draft).toBe(EMPTY_DRAFT);
+    expect(t.ctl.getModel().gestureEpoch).toBeGreaterThan(epoch);
+    expect(t.view().turn).toBe('P1');
+    expect(t.ctl.confirmPlacement()).toEqual({ ok: false, reason: 'DRAFT_INVALID', issue: 'NO_CARD' });
+    expect(t.ctl.getModel().actionCount).toBe(1);
+  });
+
+  it('restart, startGame (also with another viewer) and abandon clear the draft and cancel gestures', () => {
+    const t = drafting();
+    const held = t.stub.last.handlers;
+    t.ctl.draftEvent({ type: 'dropOnCell', cell: t.legal[0] as GridPosition, card: t.plain });
+    let epoch = t.ctl.getModel().gestureEpoch;
+    expect(t.ctl.restart()).toEqual({ ok: true });
+    expect(t.ctl.getModel().draft).toBe(EMPTY_DRAFT);
+    expect(t.ctl.getModel().gestureEpoch).toBeGreaterThan(epoch);
+    expect(held.confirmPlacement()).toEqual({ ok: false, reason: 'DRAFT_INVALID', issue: 'NO_CARD' });
+    expect(t.ctl.getModel().actionCount).toBe(0);
+
+    // a draft of the new game, then a new game whose first human seat is another seat (viewer change)
+    const hand = (t.ctl.getView('P0') as PlayerView).myHand;
+    t.ctl.draftEvent({ type: 'selectCard', card: hand[0] as CardId });
+    epoch = t.ctl.getModel().gestureEpoch;
+    expect(t.ctl.startGame({ config: config(['BEGINNER', 'HUMAN', 'BEGINNER', 'BEGINNER']), seed: 3 })).toEqual({ ok: true });
+    expect(t.ctl.getModel()).toMatchObject({ viewer: 'P1', draft: EMPTY_DRAFT });
+    expect(t.ctl.getModel().gestureEpoch).toBeGreaterThan(epoch);
+
+    t.ctl.abandon();
+    expect(t.ctl.getModel()).toMatchObject({ viewer: null, draft: EMPTY_DRAFT, screen: 'SETUP' });
+  });
+
+  it('a draft never survives an accepted Action, in a whole game played through confirmPlacement (all phases)', () => {
+    const sched = new QueueScheduler();
+    const { ctl, stub } = make(sched.schedule);
+    ctl.startGame({ seed: 9 });
+    let placements = 0;
+    let lastEpoch = ctl.getModel().gestureEpoch;
+    for (let i = 0; i < 800; i++) {
+      sched.drain();
+      const view = ctl.getView('P0') as PlayerView;
+      if (view.phase === 'ENDED') break;
+      if (view.phase === 'PLACEMENT') {
+        const card = view.myHand[0] as CardId;
+        const cell = legalCellsFor(view)[0] as GridPosition;
+        ctl.draftEvent({ type: 'selectTarget', cell });
+        ctl.draftEvent({ type: 'selectCard', card });
+        expect(ctl.getModel().draft).toEqual({ target: cell, card, orientation: 0 });
+        expect(ctl.confirmPlacement()).toEqual({ ok: true });
+        placements++;
+      } else {
+        // a draft that would be stale (phase is not PLACEMENT): events are refused and confirm sends nothing
+        expect(ctl.draftEvent({ type: 'selectCard', card: view.myHand[0] as CardId }).draft).toBe(EMPTY_DRAFT);
+        expect(ctl.dispatchHuman(humanAction(view) as Action)).toEqual({ ok: true });
+      }
+      expect(ctl.getModel().draft).toBe(EMPTY_DRAFT);
+      expect(ctl.getModel().gestureEpoch).toBeGreaterThan(lastEpoch);
+      lastEpoch = ctl.getModel().gestureEpoch;
+    }
+    expect(ctl.getModel().screen).toBe('END');
+    expect(placements).toBeGreaterThan(5);
+    expect(stub.calls.length).toBeGreaterThan(30);
+  });
+
+  it('a language switch and a displayed error do not clear the draft', () => {
+    const t = drafting();
+    t.ctl.draftEvent({ type: 'dropOnCell', cell: t.legal[0] as GridPosition, card: t.plain });
+    const draft = t.ctl.getModel().draft;
+    t.ctl.setLanguage('ko');
+    t.ctl.explainTarget(D4);
+    expect(t.ctl.getModel().draft).toBe(draft);
+  });
+
+  it('draftEvent invalidate clears the draft and raises gestureEpoch', () => {
+    const t = drafting();
+    t.ctl.draftEvent({ type: 'selectCard', card: t.plain });
+    const epoch = t.ctl.getModel().gestureEpoch;
+    t.ctl.draftEvent({ type: 'invalidate', reason: 'HAND' });
+    expect(t.ctl.getModel().draft).toBe(EMPTY_DRAFT);
+    expect(t.ctl.getModel().gestureEpoch).toBe(epoch + 1);
+  });
+});
+
+describe('task 17.4: acceptance 6, invalid drops, pointer cancellation and Escape never dispatch PLACE', () => {
+  /** Plays a pointer script through `stepGesture` and maps its outputs to draft events, as a game screen would. */
+  function playScript(t: ReturnType<typeof drafting>, script: readonly GestureInput[], over: GridPosition | null): string[] {
+    let state: GestureState = INITIAL_GESTURE;
+    const seen: string[] = [];
+    for (const input of script) {
+      const step = stepGesture(state, input, 0);
+      state = step.state;
+      for (const out of step.out) {
+        seen.push(out.type);
+        if (out.type === 'dragStart') t.ctl.draftEvent({ type: 'dragStart', card: t.plain });
+        if (out.type === 'drop') {
+          t.ctl.draftEvent(over === null ? { type: 'dropOutside' } : { type: 'dropOnCell', cell: over, card: t.plain });
+        }
+        if (out.type === 'cancelled') t.ctl.draftEvent({ type: 'dragCancel' });
+      }
+    }
+    return seen;
+  }
+
+  const press: GestureInput = { type: 'down', pointerId: 1, x: 0, y: 0, isPrimary: true, button: 0 };
+  const far: GestureInput = { type: 'move', pointerId: 1, x: 50, y: 0 };
+
+  it('dropOutside, a drop on an illegal cell and every cancellation leave the draft and the game untouched', () => {
+    const t = drafting();
+    const before = t.snapshot();
+    const scripts: [string, GestureInput[], GridPosition | null][] = [
+      ['drop outside the board', [press, far, { type: 'up', pointerId: 1, x: 50, y: 0 }], null],
+      ['drop on an illegal cell', [press, far, { type: 'up', pointerId: 1, x: 50, y: 0 }], D4],
+      ['drop on a cell that touches nothing', [press, far, { type: 'up', pointerId: 1, x: 50, y: 0 }], A1],
+      ['pointercancel', [press, far, { type: 'cancel', pointerId: 1 }, { type: 'up', pointerId: 1, x: 50, y: 0 }], t.legal[0] as GridPosition],
+      ['lost capture', [press, far, { type: 'lostcapture', pointerId: 1 }, { type: 'up', pointerId: 1, x: 50, y: 0 }], t.legal[0] as GridPosition],
+      ['Escape', [press, far, { type: 'escape' }, { type: 'up', pointerId: 1, x: 50, y: 0 }], t.legal[0] as GridPosition],
+      ['invalidated', [press, far, { type: 'invalidate' }, { type: 'up', pointerId: 1, x: 50, y: 0 }], t.legal[0] as GridPosition],
+    ];
+    for (const [label, script, over] of scripts) {
+      const seen = playScript(t, script, over);
+      expect(t.ctl.getModel().draft, label).toBe(EMPTY_DRAFT);
+      expect(t.snapshot(), label).toEqual(before);
+      if (label === 'pointercancel' || label === 'lost capture' || label === 'Escape' || label === 'invalidated') {
+        expect(seen, label).not.toContain('drop');
+      }
+    }
+  });
+
+  it('an illegal drop keeps an earlier draft, and a cancel event clears it without a state change', () => {
+    const t = drafting();
+    t.ctl.draftEvent({ type: 'dropOnCell', cell: t.legal[0] as GridPosition, card: t.plain });
+    const draft = t.ctl.getModel().draft;
+    expect(t.ctl.draftEvent({ type: 'dropOnCell', cell: D4, card: t.turning })).toEqual({ draft, notice: 'TARGET_NOT_LEGAL' });
+    expect(t.ctl.draftEvent({ type: 'dropOutside' }).draft).toBe(draft);
+    expect(t.ctl.draftEvent({ type: 'dragCancel' }).draft).toBe(draft);
+    const before = t.snapshot();
+    t.ctl.draftEvent({ type: 'cancel' });
+    expect(t.ctl.getModel().draft).toBe(EMPTY_DRAFT);
+    expect(t.snapshot()).toEqual(before);
+  });
+});
+
+describe('task 17.4: acceptance 9, hidden information is absent from the draft, the controller outputs and the render inputs', () => {
+  it('no sealed key, no hidden CardId and no fragment layout in any render of a whole game with drafts', () => {
+    const sched = new QueueScheduler();
+    const { ctl, stub } = make(sched.schedule);
+    ctl.startGame({ seed: 9 });
+    for (let i = 0; i < 800; i++) {
+      sched.drain();
+      const view = ctl.getView('P0') as PlayerView;
+      if (view.phase === 'ENDED') break;
+      if (view.phase === 'PLACEMENT') {
+        const cell = legalCellsFor(view)[0] as GridPosition;
+        ctl.draftEvent({ type: 'selectCard', card: view.myHand[0] as CardId });
+        ctl.draftEvent({ type: 'selectTarget', cell });
+        ctl.draftEvent({ type: 'toggleRotation' });
+        ctl.explainTarget(D4);
+        expect(ctl.confirmPlacement()).toEqual({ ok: true });
+      } else {
+        expect(ctl.dispatchHuman(humanAction(view) as Action)).toEqual({ ok: true });
+      }
+    }
+    expect(stub.calls.length).toBeGreaterThan(30);
+    const FRAGMENT_WORDS = /"(?:TL|TR|BL|BR)"|FRAGMENT|corner set|layout/i;
+    for (const call of stub.calls) {
+      expect(bannedKeyPaths(call)).toEqual([]);
+      if (call.view === null) {
+        expect(call.rotationInfo).toEqual({});
+        continue;
+      }
+      // keys are the viewer's own Hand only
+      expect(Object.keys(call.rotationInfo).sort()).toEqual([...call.view.myHand].sort());
+      // nothing the viewer may not see: every card of the unseen pool is absent from the model, the error and the metadata
+      const hidden = unseenCards(call.view);
+      const text = JSON.stringify({ model: call.model, error: call.displayError, rotationInfo: call.rotationInfo });
+      for (const card of hidden) expect(text.includes(`"${card}"`), `hidden ${card}`).toBe(false);
+      // the draft card, when present, is a card of the viewer's own Hand
+      if (call.model.draft.card !== null) expect(call.view.myHand).toContain(call.model.draft.card);
+      expect(FRAGMENT_WORDS.test(text.replace(/rotationChangesCorners/g, ''))).toBe(false);
+    }
+  });
+
+  it('the controller outputs (draft results, error codes, rotationInfo) carry no identity of a hidden card', () => {
+    const t = drafting();
+    const hidden = unseenCards(t.view());
+    const outputs = [
+      t.ctl.draftEvent({ type: 'selectCard', card: t.plain }),
+      t.ctl.draftEvent({ type: 'dropOnCell', cell: A1, card: t.turning }),
+      t.ctl.explainTarget(D4),
+      t.ctl.explainTarget(A1),
+      t.ctl.rotationInfo('P0'),
+      t.ctl.confirmPlacement(),
+    ];
+    const text = JSON.stringify(outputs);
+    for (const card of hidden) expect(text.includes(`"${card}"`), card).toBe(false);
   });
 });

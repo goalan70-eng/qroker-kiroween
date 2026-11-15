@@ -1,6 +1,7 @@
 // Tests of the observable store and the initial model (task 16.2).
 import { describe, expect, it } from 'vitest';
-import { createStore, EMPTY_SELECTION, initialModel } from './store';
+import { EMPTY_DRAFT } from './placement-draft';
+import { createStore, initialModel } from './store';
 
 describe('createStore', () => {
   it('gets, sets, updates and notifies in subscription order', () => {
@@ -35,8 +36,20 @@ describe('createStore', () => {
 describe('initialModel', () => {
   it('is idle, frozen, and holds no game data', () => {
     const model = initialModel('ko');
-    expect(model).toEqual({ language: 'ko', screen: 'SETUP', viewer: null, selection: EMPTY_SELECTION, lastError: null, actionCount: 0, aiStalled: false });
+    // Task 17.4: the 16.2 `selection` (UiSelection) is replaced by `draft` (PlacementDraft) and `gestureEpoch`.
+    expect(model).toEqual({
+      language: 'ko',
+      screen: 'SETUP',
+      viewer: null,
+      draft: EMPTY_DRAFT,
+      gestureEpoch: 0,
+      lastError: null,
+      actionCount: 0,
+      aiStalled: false,
+    });
+    expect(model).not.toHaveProperty('selection');
     expect(Object.isFrozen(model)).toBe(true);
-    expect(Object.isFrozen(EMPTY_SELECTION)).toBe(true);
+    expect(Object.isFrozen(model.draft)).toBe(true);
+    expect(model.draft).toEqual({ target: null, card: null, orientation: 0 });
   });
 });

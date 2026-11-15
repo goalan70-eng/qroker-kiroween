@@ -571,6 +571,30 @@
         "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
         "timestamp": 1794719463390
       }
+    ],
+    "17.1 Card face component (`ui/components/card-face.ts`, `ui/styles/tokens.css`, `ui/styles/card.css`)": [
+      {
+        "executionId": "cef27f14-e4d7-40fc-8395-49c4a36c6b3d",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794721932800
+      },
+      {
+        "executionId": "cef27f14-e4d7-40fc-8395-49c4a36c6b3d",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794723382102
+      }
+    ],
+    "17.4 Placement draft model, rotation capability and pointer gestures (`ui/placement-draft.ts`, `ui/pointer-gesture.ts`, `ui/controller.ts`, `core/fragment-layout.ts`, `src/game/boundaries.test.ts`)": [
+      {
+        "executionId": "cef27f14-e4d7-40fc-8395-49c4a36c6b3d",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794721954640
+      },
+      {
+        "executionId": "cef27f14-e4d7-40fc-8395-49c4a36c6b3d",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794723382217
+      }
     ]
   }
 }

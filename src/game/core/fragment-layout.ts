@@ -53,3 +53,18 @@ export function isValidMember(card: CardId, orientation: Orientation, slot: Slot
 export function validOrientations(card: CardId, slot: Slot): readonly Orientation[] {
   return validSuitOrientations(suitOf(card), slot);
 }
+
+/**
+ * Whether turning the card by 180 degrees changes WHICH corners carry a printed fragment ("Meaningful_Rotation",
+ * placement interaction, task 17.4). Derived from `FRAGMENT_LAYOUT`: true iff the corner sets at 0 and at 180
+ * differ. With the current table that is true for clubs and spades and false for hearts and diamonds.
+ *
+ * Pure and additive: the table and every other export are unchanged. The UI controller is the only `ui/` module
+ * allowed to call it; it hands screens a boolean per card of the viewer's own Hand and never the table.
+ */
+export function rotationChangesCorners(card: CardId): boolean {
+  const layout = FRAGMENT_LAYOUT[suitOf(card)];
+  const upright = layout[0];
+  const turned = layout[180];
+  return upright.length !== turned.length || upright.some((corner) => !turned.includes(corner));
+}

@@ -79,9 +79,19 @@ export const UI_SCREEN_ALLOWED_CORE_MODULES: readonly string[] = ["types", "view
  * `engine` (reduce, actingSeats) come from the design table and the task text; `replay` is in the design diagram
  * (CTRL --> REP). `prng` is NOT in the design table: ui/ may not import sim/ (so `decisionSeed` of sim/play-game.ts
  * is unreachable) and the controller re-derives the same decision seed with `mix32`; controller.test.ts proves the
- * equivalence against `playGame`. `deck` and `rules` stay forbidden.
+ * equivalence against `playGame`. `fragment-layout` is allowed for the controller ONLY (task 17.4, design
+ * "Rotation capability metadata"): it calls `rotationChangesCorners(card)` for the viewer's own Hand and hands
+ * screens booleans. `deck` and `rules` stay forbidden.
  */
-export const UI_CONTROLLER_ALLOWED_CORE_MODULES: readonly string[] = ["types", "view", "state", "engine", "replay", "prng"];
+export const UI_CONTROLLER_ALLOWED_CORE_MODULES: readonly string[] = [
+  "types",
+  "view",
+  "state",
+  "engine",
+  "replay",
+  "prng",
+  "fragment-layout",
+];
 
 /** The ai/ modules the controller may import: the registry (design table) and the `AIStrategy` types. */
 export const UI_CONTROLLER_ALLOWED_AI_MODULES: readonly string[] = ["registry", "strategy"];
@@ -804,7 +814,15 @@ describe("rule: ui/ screens must not import core/state, engine, deck, replay, ru
 
   it("lists the allow-lists of the design table and the documented additions", () => {
     expect([...UI_SCREEN_ALLOWED_CORE_MODULES].sort()).toEqual(["types", "view"]);
-    expect([...UI_CONTROLLER_ALLOWED_CORE_MODULES].sort()).toEqual(["engine", "prng", "replay", "state", "types", "view"]);
+    expect([...UI_CONTROLLER_ALLOWED_CORE_MODULES].sort()).toEqual([
+      "engine",
+      "fragment-layout",
+      "prng",
+      "replay",
+      "state",
+      "types",
+      "view",
+    ]);
     expect([...UI_CONTROLLER_ALLOWED_AI_MODULES].sort()).toEqual(["registry", "strategy"]);
     expect(UI_CONTROLLER_FILE).toBe("src/game/ui/controller.ts");
   });
@@ -926,5 +944,51 @@ describe("rule: ui/ screens must not import core/state, engine, deck, replay, ru
     expect(rules(controller, `import { a } from "node:fs";`)).toEqual(["node-import"]);
     expect(rules(controller, `const r = fetch("/x");`)).toEqual(["network-api"]);
     expect(rules(screen, `const v = window.localStorage; const t = Date.now();`)).toEqual([]); // DOM globals are allowed in ui/
+  });
+});
+
+describe("rule: only ui/controller.ts may import core/fragment-layout (task 17.4)", () => {
+  const controller = UI_CONTROLLER_FILE;
+  const fragment = (depth: string): string => `import { rotationChangesCorners } from "${depth}core/fragment-layout";`;
+
+  it("lets the controller import core/fragment-layout, with or without extension", () => {
+    expect(rules(controller, fragment("../"))).toEqual([]);
+    expect(rules(controller, `import { rotationChangesCorners } from "../core/fragment-layout.ts";`)).toEqual([]);
+    expect(rules(controller, `import type { Corner } from "../core/types";`)).toEqual([]);
+  });
+  it("fails a screen, a component, the draft module and the gesture module that import core/fragment-layout", () => {
+    expect(rules("src/game/ui/screens/game.ts", fragment("../../"))).toEqual(["ui-allow-list"]);
+    expect(rules("src/game/ui/components/hand.ts", fragment("../../"))).toEqual(["ui-allow-list"]);
+    expect(rules("src/game/ui/placement-draft.ts", fragment("../"))).toEqual(["ui-allow-list"]);
+    expect(rules("src/game/ui/pointer-gesture.ts", fragment("../"))).toEqual(["ui-allow-list"]);
+    expect(rules("src/game/ui/store.ts", fragment("../"))).toEqual(["ui-allow-list"]);
+  });
+  it("keeps the other ui/ files limited to core/view and core/types", () => {
+    for (const file of ["src/game/ui/placement-draft.ts", "src/game/ui/pointer-gesture.ts", "src/game/ui/components/hand.ts"]) {
+      const up = file.split("/").length - 3; // folders between the file and src/game
+      const prefix = "../".repeat(up);
+      expect(rules(file, `import { legalCellsFor } from "${prefix}core/view";`), file).toEqual([]);
+      expect(rules(file, `import type { CardId } from "${prefix}core/types";`), file).toEqual([]);
+      expect(rules(file, `import { a } from "${prefix}core/cards";`), file).toEqual(["ui-allow-list"]);
+      expect(rules(file, `import { reduce } from "${prefix}core/engine";`), file).toEqual(["ui-internal-import", "ui-allow-list"]);
+    }
+  });
+  it("the real pointer-gesture.ts imports core/types only", () => {
+    const text = readFileSync(join(REPO_ROOT, "src/game/ui/pointer-gesture.ts"), "utf8");
+    const specifiers = importSpecifiers(strip(text)).map((s) => s.value);
+    expect(specifiers).toEqual(["../core/types"]);
+  });
+  it("the real placement-draft.ts imports core/types and core/view only", () => {
+    const text = readFileSync(join(REPO_ROOT, "src/game/ui/placement-draft.ts"), "utf8");
+    const specifiers = importSpecifiers(strip(text)).map((s) => s.value);
+    expect([...new Set(specifiers)].sort()).toEqual(["../core/types", "../core/view"]); // a value and a type import of core/view
+  });
+  it("the real ui/ files other than controller.ts do not import core/fragment-layout", () => {
+    const files = listScannedFiles(REPO_ROOT).filter((f) => f.startsWith("src/game/ui/") && f !== UI_CONTROLLER_FILE);
+    expect(files.length).toBeGreaterThan(3);
+    for (const file of files) {
+      const specifiers = importSpecifiers(strip(readFileSync(join(REPO_ROOT, file), "utf8"))).map((s) => s.value);
+      expect(specifiers.filter((s) => s.includes("fragment-layout")), file).toEqual([]);
+    }
   });
 });
