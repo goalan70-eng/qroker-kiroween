@@ -5,11 +5,13 @@
  * IMPORTANT: PreToolUse guard is disabled in JSON until locally tested.
  * It is defense in depth, not a full security policy.
  */
-import { readFileSync, statSync } from 'node:fs';
+import { statSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  PROJECT_ROOT, currentRevision, notifyMobile, readHookEvent, recordEvidence
+  PROJECT_ROOT, claimSaveCheckInterval, currentRevision, notifyMobile,
+  readHookEvent, recordEvidence
 } from './hook-support.mjs';
 
 export function toolCommands(event) {
@@ -69,13 +71,6 @@ export function gameFileRelativePath(file) {
   return /^src\/game\/[^.].*\.tsx?$/.test(rel) ? rel : null;
 }
 
-export async function syntaxDiagnosticCount(source, filename) {
-  const module = await import('typescript');
-  const ts = module.default ?? module;
-  const kind = filename.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
-  const parsed = ts.createSourceFile(filename, source, ts.ScriptTarget.Latest, true, kind);
-  return parsed.parseDiagnostics.length;
-}
 
 async function main() {
   const mode = process.argv[2];
@@ -111,10 +106,23 @@ async function main() {
     try {
       const abs = resolve(PROJECT_ROOT, rel);
       if (statSync(abs).size > 2_000_000) return;
-      const errors = await syntaxDiagnosticCount(readFileSync(abs, 'utf8'), rel);
-      if (errors) {
-        recordEvidence('syntax-fail', { revision: currentRevision(), errorCount: errors });
-        console.error('QRoker: saved TypeScript file has ' + errors + ' syntax diagnostics.');
+      if (!claimSaveCheckInterval()) return;
+      const started = Date.now();
+      const result = spawnSync('npm', ['run', 'typecheck:game'], {
+        cwd: PROJECT_ROOT,
+        shell: process.platform === 'win32',
+        windowsHide: true,
+        stdio: 'ignore',
+        timeout: 20000
+      });
+      const passed = result.status === 0 && !result.error;
+      recordEvidence('save-typecheck', {
+        revision: currentRevision(),
+        passed,
+        durationMs: Date.now() - started
+      });
+      if (!passed) {
+        console.error('QRoker: a saved game file triggered a TypeScript check failure. Run npm run typecheck:game for details.');
         process.exitCode = 1;
       }
     } catch {
