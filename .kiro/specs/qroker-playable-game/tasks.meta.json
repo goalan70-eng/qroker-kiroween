@@ -471,6 +471,25 @@
         "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
         "timestamp": 1794707475967
       }
+    ],
+    "13.1 Implement the headless driver and the simulator types (`sim/play-game.ts`, `sim/types.ts`)": [
+      {
+        "executionId": "f25e2421-9727-4394-b774-dc62098b0b65",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794710178565
+      },
+      {
+        "executionId": "f25e2421-9727-4394-b774-dc62098b0b65",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794710750841
+      }
+    ],
+    "13.2 End-to-end headless test (`sim/e2e.test.ts`)": [
+      {
+        "executionId": "f25e2421-9727-4394-b774-dc62098b0b65",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794710785014
+      }
     ]
   }
 }
