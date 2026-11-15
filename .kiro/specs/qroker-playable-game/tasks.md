@@ -440,7 +440,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Tests: unit tests with `memoryStore` and a throwing store.
     - Depends on: 20.1.
     - _Requirements: 18.1, 18.3, 18.5, 18.6, 18.8_
-  - [ ] 20.3 Property tests for persistence
+  - [x] 20.3 Property tests for persistence
     - Create `src/game/persistence/save.properties.test.ts`.
     - **Property 27: Save round trip**
     - **Property 28: Save parser robustness**
