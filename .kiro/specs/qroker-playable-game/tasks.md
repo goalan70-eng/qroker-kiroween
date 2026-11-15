@@ -313,14 +313,14 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Depends on: 15.1.
     - _Requirements: 12.7, 16.3_
 
-- [ ] 16. UI shell
+- [x] 16. UI shell
   - [x] 16.1 Add Vite and the app shell
     - Install Vite as a devDependency with a version range that satisfies the Vitest peer range (the workspace currently has Vite 8.3.8 transitively; verify with `npm ls vite`). Create `vite.config.ts` (`root: 'src/game/ui'`, `base: './'`, `build.outDir: '../../../dist'`, `build.target: 'es2022'`), `src/game/ui/index.html` (viewport meta, `lang`, title, root element), `src/game/ui/main.ts` (placeholder mount). Add scripts `dev`, `build` (`tsc -p tsconfig.game.json --noEmit && vite build`), `preview`. Add `dist/` to `.gitignore`.
     - Acceptance: `npm run dev` serves a page; `npm run build` produces `dist/index.html` with hashed assets; `npm test` is unaffected (vitest still uses `vitest.config.ts`).
     - Tests: run `npm run build` and record the output size and exit code in the task notes (no size claim in documents).
     - Depends on: 1.2.
     - _Requirements: 17.5, 21.6_
-  - [ ] 16.2 Implement the UI core (`ui/dom.ts`, `ui/store.ts`, `ui/controller.ts`)
+  - [x] 16.2 Implement the UI core (`ui/dom.ts`, `ui/store.ts`, `ui/controller.ts`)
     - `h()` DOM helper, `AppModel`, `AppDeps`, `mountApp`, the controller that owns the sealed `GameState`, applies Actions, drains AI turns through `deps.schedule` (`AI_DELAY_MS = 600`), exposes only `PlayerView` to screens, and re-renders with focus restoration.
     - Acceptance: with an immediate scheduler, a game of 4 AI-controlled Seats plays to `ENDED` through the controller (headless DOM-free unit test of the controller with a stub renderer); no screen module imports `core/state` or `core/engine`.
     - Tests: controller unit tests with a stub renderer; boundary test extended with the `ui/` import rule.

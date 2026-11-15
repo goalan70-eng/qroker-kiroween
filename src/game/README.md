@@ -61,6 +61,7 @@ Other rules the boundary test checks (task 1.3):
 - `node:` imports are banned in `core/`, `ai/`, `persistence/` and `ui/`.
 - DOM globals (`window`, `document`, `localStorage`, `navigator`) are banned in `core/` and `ai/`.
 - Score tables (array literals assigned to `rewardByError`) exist only in `core/score.ts`.
+- `ui/` files other than `ui/controller.ts` import only `ui/`, `i18n/`, `persistence/`, `core/view` and `core/types`; the controller may also import `core/state`, `core/engine`, `core/replay`, `core/prng`, `ai/registry` and `ai/strategy` (rules `ui-internal-import`, `ui-allow-list`, task 16.2).
 
 ## `src/optical` is not a dependency
 

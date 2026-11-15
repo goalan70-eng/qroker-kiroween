@@ -552,6 +552,25 @@
         "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
         "timestamp": 1794716651723
       }
+    ],
+    "16.2 Implement the UI core (`ui/dom.ts`, `ui/store.ts`, `ui/controller.ts`)": [
+      {
+        "executionId": "ccdbe374-c116-4684-9f78-986902fdf830",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794718324288
+      },
+      {
+        "executionId": "ccdbe374-c116-4684-9f78-986902fdf830",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794719463221
+      }
+    ],
+    "16. UI shell": [
+      {
+        "executionId": "ccdbe374-c116-4684-9f78-986902fdf830",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794719463390
+      }
     ]
   }
 }

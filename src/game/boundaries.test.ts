@@ -26,6 +26,8 @@ export type RuleId =
   | "nondeterminism"
   | "ai-internal-import"
   | "ai-allow-list"
+  | "ui-internal-import"
+  | "ui-allow-list"
   | "network-api"
   | "score-table";
 
@@ -61,6 +63,28 @@ export const AI_ALLOWED_CORE_MODULES: readonly string[] = [
   "prng",
   "view",
 ];
+
+/** The single trusted ui/ module that owns the sealed GameState (design: "core/engine through controller"). */
+export const UI_CONTROLLER_FILE = "src/game/ui/controller.ts";
+
+/**
+ * The core modules a ui/ file other than the controller ("screen" modules, helpers, main) may import: the design
+ * table row `ui/` lists `core/view` and `core/types` (the engine only "through controller"). A screen must not even
+ * name `GameState`, so `core/state` is not here.
+ */
+export const UI_SCREEN_ALLOWED_CORE_MODULES: readonly string[] = ["types", "view"];
+
+/**
+ * The core modules the controller may import. `types`, `view`, `state` (GameState, newGame, defaultConfig) and
+ * `engine` (reduce, actingSeats) come from the design table and the task text; `replay` is in the design diagram
+ * (CTRL --> REP). `prng` is NOT in the design table: ui/ may not import sim/ (so `decisionSeed` of sim/play-game.ts
+ * is unreachable) and the controller re-derives the same decision seed with `mix32`; controller.test.ts proves the
+ * equivalence against `playGame`. `deck` and `rules` stay forbidden.
+ */
+export const UI_CONTROLLER_ALLOWED_CORE_MODULES: readonly string[] = ["types", "view", "state", "engine", "replay", "prng"];
+
+/** The ai/ modules the controller may import: the registry (design table) and the `AIStrategy` types. */
+export const UI_CONTROLLER_ALLOWED_AI_MODULES: readonly string[] = ["registry", "strategy"];
 
 const NODE_IMPORT_AREAS = new Set(["core", "ai", "persistence", "ui"]);
 const PURE_AREAS = new Set(["core", "ai"]);
@@ -251,6 +275,8 @@ const NETWORK: readonly RegExp[] = [
 const SCORE_TABLE = /\brewardByError\s*[:=]\s*\[/g;
 const SCORE_TABLE_QUOTED_KEY = /["']rewardByError["']\s*:\s*\[/g;
 const AI_INTERNAL_IMPORT = /(?:^|\/)core\/(?:state|engine|deck|replay|rules)(?:\.[cm]?[jt]sx?)?$/;
+const UI_SCREEN_INTERNAL_IMPORT = AI_INTERNAL_IMPORT;
+const UI_CONTROLLER_INTERNAL_IMPORT = /(?:^|\/)core\/(?:deck|rules)(?:\.[cm]?[jt]sx?)?$/;
 const MODULE_EXTENSION = /\.[cm]?[jt]sx?$/;
 /** `import(` or `require(` whose argument does not start with a string literal (the target cannot be checked). */
 const NON_LITERAL_IMPORT = /(?<![\w$.])(?:import|require)\s*\(\s*(?!["'\s)])/g;
@@ -269,6 +295,31 @@ function aiAllowListProblem(file: string, specifier: string): string | undefined
   if (resolved === "src/game/ai" || resolved.startsWith("src/game/ai/")) return undefined;
   const core = /^src\/game\/core\/([^/]+)$/.exec(resolved);
   if (core !== null && AI_ALLOWED_CORE_MODULES.includes(core[1] as string)) return undefined;
+  return `not an allowed module (${resolved})`;
+}
+
+/**
+ * Why `specifier`, imported by the ui/ file `file`, is outside the allow-list, or `undefined` when it is allowed.
+ * ui/ files may import ui/, i18n/ and persistence/ (design table), plus core and ai modules by file kind: the
+ * controller (`UI_CONTROLLER_FILE`) has `UI_CONTROLLER_ALLOWED_CORE_MODULES` and `UI_CONTROLLER_ALLOWED_AI_MODULES`;
+ * every other ui/ file has `UI_SCREEN_ALLOWED_CORE_MODULES` and no ai/ module. Relative specifiers are resolved
+ * against the importing file; `node:` specifiers are left to the `node-import` rule.
+ */
+function uiAllowListProblem(file: string, specifier: string): string | undefined {
+  if (specifier.startsWith("node:")) return undefined;
+  if (!specifier.startsWith("./") && !specifier.startsWith("../") && specifier !== "." && specifier !== "..") {
+    return "bare or absolute module";
+  }
+  const resolved = posix.normalize(posix.join(posix.dirname(file), specifier)).replace(MODULE_EXTENSION, "");
+  for (const folder of ["src/game/ui", "src/game/i18n", "src/game/persistence"]) {
+    if (resolved === folder || resolved.startsWith(`${folder}/`)) return undefined;
+  }
+  const controller = file === UI_CONTROLLER_FILE;
+  const core = /^src\/game\/core\/([^/]+)$/.exec(resolved);
+  const coreList = controller ? UI_CONTROLLER_ALLOWED_CORE_MODULES : UI_SCREEN_ALLOWED_CORE_MODULES;
+  if (core !== null && coreList.includes(core[1] as string)) return undefined;
+  const ai = /^src\/game\/ai\/([^/]+)$/.exec(resolved);
+  if (controller && ai !== null && UI_CONTROLLER_ALLOWED_AI_MODULES.includes(ai[1] as string)) return undefined;
   return `not an allowed module (${resolved})`;
 }
 
@@ -320,8 +371,13 @@ export function scanSource(path: string, source: string): Violation[] {
     if (area === "ai" && aiAllowListProblem(file, spec.value) !== undefined) {
       add("ai-allow-list", spec.index, spec.value);
     }
+    if (area === "ui") {
+      const internal = file === UI_CONTROLLER_FILE ? UI_CONTROLLER_INTERNAL_IMPORT : UI_SCREEN_INTERNAL_IMPORT;
+      if (internal.test(spec.value)) add("ui-internal-import", spec.index, spec.value);
+      if (uiAllowListProblem(file, spec.value) !== undefined) add("ui-allow-list", spec.index, spec.value);
+    }
   }
-  if (area === "ai") scan("ai-allow-list", [NON_LITERAL_IMPORT]);
+  if (area === "ai" || area === "ui") scan(area === "ai" ? "ai-allow-list" : "ui-allow-list", [NON_LITERAL_IMPORT]);
 
   // Determinism and DOM isolation in core/ and ai/.
   if (area !== undefined && PURE_AREAS.has(area)) {
@@ -739,5 +795,136 @@ describe("planted violations (evidence that the scan can fail)", () => {
   });
   it("reports the five bans together with the allow-list rule", () => {
     expect(rules("src/game/ai/x.ts", `import { reduce } from "../core/engine";`)).toEqual(["ai-internal-import", "ai-allow-list"]);
+  });
+});
+
+describe("rule: ui/ screens must not import core/state, engine, deck, replay, rules; only the controller may (task 16.2)", () => {
+  const screen = "src/game/ui/screens/x.ts";
+  const controller = UI_CONTROLLER_FILE;
+
+  it("lists the allow-lists of the design table and the documented additions", () => {
+    expect([...UI_SCREEN_ALLOWED_CORE_MODULES].sort()).toEqual(["types", "view"]);
+    expect([...UI_CONTROLLER_ALLOWED_CORE_MODULES].sort()).toEqual(["engine", "prng", "replay", "state", "types", "view"]);
+    expect([...UI_CONTROLLER_ALLOWED_AI_MODULES].sort()).toEqual(["registry", "strategy"]);
+    expect(UI_CONTROLLER_FILE).toBe("src/game/ui/controller.ts");
+  });
+  it("flags a screen importing core/engine or core/state, under both ui rules", () => {
+    const both: RuleId[] = ["ui-internal-import", "ui-allow-list"];
+    expect(rules(screen, `import { reduce } from "../../core/engine";`)).toEqual(both);
+    expect(rules(screen, `import { newGame } from "../../core/state";`)).toEqual(both);
+    for (const m of ["deck", "replay", "rules"]) {
+      expect(rules(screen, `import { a } from "../../core/${m}";`), m).toEqual(both);
+    }
+  });
+  it("treats type-only imports and re-exports as imports: a screen may not even name GameState", () => {
+    const both: RuleId[] = ["ui-internal-import", "ui-allow-list"];
+    expect(rules(screen, `import type { GameState } from "../../core/state";`)).toEqual(both);
+    expect(rules(screen, `import { type GameState } from "../../core/state";`)).toEqual(both);
+    expect(rules(screen, `export type { GameState } from "../../core/state";`)).toEqual(both);
+    expect(rules(screen, `type S = import("../../core/state").GameState;`)).toEqual(both);
+  });
+  it("normalizes relative paths, extensions and backslashes", () => {
+    const both: RuleId[] = ["ui-internal-import", "ui-allow-list"];
+    for (const spec of ["../../core/engine", "../../core/engine.ts", "../../core/engine.js", "./../../core/engine"]) {
+      expect(rules(screen, `import { a } from "${spec}";`), spec).toEqual(both);
+    }
+    // a roundabout path to an allowed module is allowed; to a forbidden module is still caught by the allow-list
+    expect(rules(screen, `import { a } from "../../ui/../core/view";`)).toEqual([]);
+    expect(rules(screen, `import { a } from "../../ui/../core/turn";`)).toEqual(["ui-allow-list"]);
+    expect(rules(screen, `import { a } from "..\\..\\core\\engine";`)).toEqual(["ui-allow-list"]); // backslashes: not a relative specifier
+    // from ui/x.ts one level up is src/game: the same text names a different folder
+    expect(rules("src/game/ui/x.ts", `import { a } from "../core/engine";`)).toEqual(["ui-internal-import", "ui-allow-list"]);
+    // src/core/engine is outside src/game, and the specifier text still names core/engine
+    expect(rules("src/game/ui/x.ts", `import { a } from "../../core/turn";`)).toEqual(["ui-allow-list"]);
+  });
+  it("lets the controller import core/state and core/engine, but not core/deck or core/rules", () => {
+    expect(rules(controller, `import { reduce, actingSeats } from "../core/engine";`)).toEqual([]);
+    expect(rules(controller, `import { newGame } from "../core/state";`)).toEqual([]);
+    expect(rules(controller, `import type { GameState } from "../core/state";`)).toEqual([]);
+    expect(rules(controller, `import { viewFor } from "../core/view";`)).toEqual([]);
+    expect(rules(controller, `import type { Action } from "../core/types";`)).toEqual([]);
+    expect(rules(controller, `import { mix32 } from "../core/prng";`)).toEqual([]);
+    expect(rules(controller, `import { getStrategy } from "../ai/registry";`)).toEqual([]);
+    expect(rules(controller, `import type { AIStrategy } from "../ai/strategy";`)).toEqual([]);
+    expect(rules(controller, `import { a } from "../core/deck";`)).toEqual(["ui-internal-import", "ui-allow-list"]);
+    expect(rules(controller, `import { a } from "../core/rules";`)).toEqual(["ui-internal-import", "ui-allow-list"]);
+  });
+  it("keeps sim/ and the other ai/ modules out of the controller (the decision seed is re-derived)", () => {
+    expect(rules(controller, `import { decisionSeed } from "../sim/play-game";`)).toEqual(["ui-allow-list"]);
+    expect(rules(controller, `import { a } from "../ai/heuristic";`)).toEqual(["ui-allow-list"]);
+    expect(rules(controller, `import { a } from "../core/turn";`)).toEqual(["ui-allow-list"]);
+  });
+  it("is the only exemption: another file named controller.ts is a screen", () => {
+    expect(rules("src/game/ui/screens/controller.ts", `import { reduce } from "../../core/engine";`)).toEqual([
+      "ui-internal-import",
+      "ui-allow-list",
+    ]);
+    expect(rules("src/game/ui/components/controller.ts", `import { reduce } from "../../core/engine";`)).toEqual([
+      "ui-internal-import",
+      "ui-allow-list",
+    ]);
+  });
+  it("passes what a screen may import: core/view, core/types, i18n, ui/ siblings, persistence/", () => {
+    expect(rules(screen, `import { legalCellsFor } from "../../core/view";`)).toEqual([]);
+    expect(rules(screen, `import type { PlayerView } from "../../core/view";`)).toEqual([]);
+    expect(rules(screen, `import type { CardId } from "../../core/types";`)).toEqual([]);
+    expect(rules(screen, `import { t } from "../../i18n";`)).toEqual([]);
+    expect(rules(screen, `import { h } from "../dom";`)).toEqual([]);
+    expect(rules(screen, `import type { AppModel } from "../store";`)).toEqual([]);
+    expect(rules(screen, `import { a } from "../../persistence/storage";`)).toEqual([]);
+    expect(rules(screen, `import "./board.css";`)).toEqual([]);
+    expect(rules("src/game/ui/main.ts", `import { mountApp } from "./controller";`)).toEqual([]);
+  });
+  it("flags other modules from a screen: core/turn, ai/, sim/, bare and absolute modules", () => {
+    for (const spec of ["../../core/turn", "../../core/composite-code", "../../ai/registry", "../../sim/play-game"]) {
+      expect(rules(screen, `import { a } from "${spec}";`), spec).toEqual(["ui-allow-list"]);
+    }
+    expect(rules(screen, `import { a } from "lodash";`)).toEqual(["ui-allow-list"]);
+    expect(rules(screen, `import { a } from "/abs/module";`)).toEqual(["ui-allow-list"]);
+    expect(rules(screen, `import { a } from "../../../optical/codec";`)).toEqual(["optical-import", "ui-allow-list"]);
+    expect(rules(screen, `import { readFileSync } from "node:fs";`)).toEqual(["node-import"]); // reported once
+  });
+  it("flags dynamic import and require forms, including a target that cannot be read", () => {
+    expect(rules(screen, `const m = await import("../../core/engine");`)).toEqual(["ui-internal-import", "ui-allow-list"]);
+    expect(rules(screen, `const m = require("../../core/state");`)).toEqual(["ui-internal-import", "ui-allow-list"]);
+    expect(rules(screen, `const m = await import(target);`)).toEqual(["ui-allow-list"]);
+    expect(rules(screen, `const m = await import("../../core/view");`)).toEqual([]);
+  });
+  it("ignores comments and strings that mention the modules", () => {
+    expect(rules(screen, `// import { reduce } from "../../core/engine";\n/* core/state */ const s = "../../core/engine"; const o = { from: "../../core/state" };`)).toEqual([]);
+    expect(rules(screen, "const text = `see core/engine and core/state`;")).toEqual([]);
+  });
+  it("does not apply outside ui/", () => {
+    expect(rules("src/game/sim/x.ts", `import { reduce } from "../core/engine";`)).toEqual([]);
+    expect(rules("src/game/i18n/x.ts", `import { reduce } from "../core/engine";`)).toEqual([]);
+  });
+  it("reports the file, line and specifier", () => {
+    const found = scanSource("src\\game\\ui\\screens\\x.ts", `const a = 1;\nimport { n } from "../../core/state";`);
+    expect(found).toEqual([
+      { rule: "ui-internal-import", file: "src/game/ui/screens/x.ts", line: 2, match: "../../core/state" },
+      { rule: "ui-allow-list", file: "src/game/ui/screens/x.ts", line: 2, match: "../../core/state" },
+    ]);
+  });
+  it("scans the production files of a real ui/ folder and skips its test files", () => {
+    const root = mkdtempSync(join(tmpdir(), "boundary-ui-"));
+    try {
+      mkdirSync(join(root, "src/game/ui/screens"), { recursive: true });
+      writeFileSync(join(root, "src/game/ui/controller.ts"), `import { reduce } from "../core/engine";\n`);
+      writeFileSync(join(root, "src/game/ui/screens/ok.ts"), `import { a } from "../../core/view";\n`);
+      writeFileSync(join(root, "src/game/ui/screens/bad.ts"), `import { reduce } from "../../core/engine";\n`);
+      writeFileSync(join(root, "src/game/ui/screens/bad.test.ts"), `import { reduce } from "../../core/engine";\n`);
+      const found = scanTree(root);
+      expect(found.map((v) => `${v.file} ${v.rule}`)).toEqual([
+        "src/game/ui/screens/bad.ts ui-internal-import",
+        "src/game/ui/screens/bad.ts ui-allow-list",
+      ]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+  it("keeps the existing ui/ rules: node: and network APIs are still flagged", () => {
+    expect(rules(controller, `import { a } from "node:fs";`)).toEqual(["node-import"]);
+    expect(rules(controller, `const r = fetch("/x");`)).toEqual(["network-api"]);
+    expect(rules(screen, `const v = window.localStorage; const t = Date.now();`)).toEqual([]); // DOM globals are allowed in ui/
   });
 });
