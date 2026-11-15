@@ -405,6 +405,30 @@
         "executionId": "f6190ee8-9f2e-4ac3-b3ed-78ff13411b04",
         "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
         "timestamp": 1794701210090
+      },
+      {
+        "executionId": "67450492-927c-4d3d-967f-790907f0f668",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794702646317
+      }
+    ],
+    "12.1 Define the AI framework (`ai/strategy.ts`)": [
+      {
+        "executionId": "67450492-927c-4d3d-967f-790907f0f668",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794702646493
+      },
+      {
+        "executionId": "67450492-927c-4d3d-967f-790907f0f668",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794703050507
+      }
+    ],
+    "12.2 Implement the BEGINNER strategy and the registry (`ai/random.ts`, `ai/registry.ts`)": [
+      {
+        "executionId": "67450492-927c-4d3d-967f-790907f0f668",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794703054984
       }
     ]
   }

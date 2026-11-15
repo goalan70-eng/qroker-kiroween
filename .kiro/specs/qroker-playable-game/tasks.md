@@ -250,17 +250,17 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Depends on: 10.1.
     - **Validates: Requirements 12.1, 12.4, 12.5, 20.3**
 
-- [-] 11. Checkpoint: engine complete
+- [ ] 11. Checkpoint: engine complete
   - Ensure all tests pass (`npm test`), the boundary test passes, and `npm run typecheck` and `npm run typecheck:game` pass. Ask the user if questions arise, in particular about OQ-1 to OQ-6.
 
 - [ ] 12. AI opponents, tiers BEGINNER and ADVANCED
-  - [ ] 12.1 Define the AI framework (`ai/strategy.ts`)
+  - [x] 12.1 Define the AI framework (`ai/strategy.ts`)
     - `AiContext`, `AIStrategy`, `DIFFICULTY_LABELS` (Korean and English), work-budget helper `takeBudget` that counts evaluated candidates and truncates enumeration deterministically, and shared candidate enumeration over `PlayerView` (hand cards × legal cells × orientations in fixed order).
     - Acceptance: the framework imports only the modules allowed for `ai/` (boundary test passes); enumeration order is stable.
     - Tests: unit tests for enumeration order and budget truncation.
     - Depends on: 9.1.
     - _Requirements: 11.3, 11.4, 11.7, 11.8_
-  - [ ] 12.2 Implement the BEGINNER strategy and the registry (`ai/random.ts`, `ai/registry.ts`)
+  - [-] 12.2 Implement the BEGINNER strategy and the registry (`ai/random.ts`, `ai/registry.ts`)
     - Uniform legal placement and uniform Guess in 4..52 per code, tie-breaking through `mulberry32(decisionSeed)`. `getStrategy('BEGINNER')`.
     - Acceptance: returned actions are accepted by `reduce` in 100 hand-seeded states; same view and seed give the same action.
     - Tests: unit tests of determinism and validity on 3 fixed seeds.
