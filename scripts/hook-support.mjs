@@ -47,6 +47,23 @@ export function recordEvidence(kind, fields = {}) {
   }
 }
 
+export function saveCheckDue(nowMs, previousMs, intervalMs = 60000) {
+  return !Number.isFinite(previousMs) || nowMs < previousMs || nowMs - previousMs >= intervalMs;
+}
+
+export function claimSaveCheckInterval() {
+  const now = Date.now();
+  try {
+    const file = join(ensureLocalDir(), 'last-save-check.txt');
+    let previous = NaN;
+    try { previous = Number(readFileSync(file, 'utf8')); } catch {}
+    if (!saveCheckDue(now, previous)) return false;
+    writeFileSync(file, String(now), { mode: 0o600 });
+  } catch {
+    // Throttling is best-effort. Verification must not depend on local storage.
+  }
+  return true;
+}
 export async function readHookEvent() {
   if (process.stdin.isTTY) return null;
   try {
