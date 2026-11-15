@@ -314,7 +314,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - _Requirements: 12.7, 16.3_
 
 - [ ] 16. UI shell
-  - [ ] 16.1 Add Vite and the app shell
+  - [x] 16.1 Add Vite and the app shell
     - Install Vite as a devDependency with a version range that satisfies the Vitest peer range (the workspace currently has Vite 8.3.8 transitively; verify with `npm ls vite`). Create `vite.config.ts` (`root: 'src/game/ui'`, `base: './'`, `build.outDir: '../../../dist'`, `build.target: 'es2022'`), `src/game/ui/index.html` (viewport meta, `lang`, title, root element), `src/game/ui/main.ts` (placeholder mount). Add scripts `dev`, `build` (`tsc -p tsconfig.game.json --noEmit && vite build`), `preview`. Add `dist/` to `.gitignore`.
     - Acceptance: `npm run dev` serves a page; `npm run build` produces `dist/index.html` with hashed assets; `npm test` is unaffected (vitest still uses `vitest.config.ts`).
     - Tests: run `npm run build` and record the output size and exit code in the task notes (no size claim in documents).

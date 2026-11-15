@@ -23,13 +23,17 @@
     "check:codebook": "tsx scripts/generate-codebook.ts --check",
     "typecheck": "tsc -p tsconfig.json",
     "typecheck:game": "tsc -p tsconfig.game.json",
-    "test:game": "vitest --run src/game"
+    "test:game": "vitest --run src/game",
+    "dev": "vite",
+    "build": "tsc -p tsconfig.game.json --noEmit && vite build",
+    "preview": "vite preview"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
     "fast-check": "^4.10.2",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
+    "vite": "^8.3.8",
     "vitest": "^5.1.0"
   }
 }

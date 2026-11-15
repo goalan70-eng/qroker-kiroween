@@ -88,7 +88,7 @@ Score values exist only as `DEV_PLACEHOLDER_SCORE_CONFIG` in `core/score.ts`. Th
 
 ## Commands
 
-Commands marked "added by task 1.2" or "added by task 16.1" do not exist in `package.json` yet. They are listed here so that the README is complete once those tasks are done.
+Commands marked "added by task 1.2" or "added by task 16.1" were added to `package.json` by those tasks.
 
 | Command | Purpose | Status |
 |---------|---------|--------|
@@ -97,8 +97,8 @@ Commands marked "added by task 1.2" or "added by task 16.1" do not exist in `pac
 | `npm run typecheck` | Type-check the project (`tsc -p tsconfig.json`; excludes `src/game/ui/**`) | added by task 1.2 |
 | `npm run typecheck:game` | Type-check the game including DOM code (`tsc -p tsconfig.game.json`) | added by task 1.2 |
 | `npm run test:game` | Run only the game tests (`vitest --run src/game`) | added by task 1.2 |
-| `npm run dev` | Serve the app with Vite | added by task 16.1 |
-| `npm run build` | Type-check the game and build to `dist/` | added by task 16.1 |
-| `npm run preview` | Serve the built app | added by task 16.1 |
+| `npm run dev` | Serve the app with Vite | exists (added by task 16.1) |
+| `npm run build` | Type-check the game and build to `dist/` | exists (added by task 16.1) |
+| `npm run preview` | Serve the built app | exists (added by task 16.1) |
 
 The full install, run, build, serve, test and type-check instructions will be in `docs/practice-mode.md` (requirement 21.6).
