@@ -34,7 +34,7 @@ failures instead of hiding failures or weakening assertions.
 ## Local Kiro task verification
 
 `.kiro/hooks/verify-after-task.json` uses the official standalone v1 Kiro Hook
-format with `PostTaskExecution` and a **command** action, not an AI prompt.
+format with `PostTaskExec` and a **command** action, not an AI prompt.
 It invokes `node scripts/verify-task.mjs` in the repository root.
 
 Run the same checker manually:
@@ -92,7 +92,7 @@ panel. GitHub CI is unaffected by local notification settings.
 ## User approval / choice-required alerts
 
 Kiro's `Action Required` Windows notification is **not** the same as a
-`PostTaskExecution` Hook event. This change does not implement Windows
+`PostTaskExec` Hook event. This change does not implement Windows
 notification mirroring or automatic approval. A separate, permissions-scoped
 Windows notification relay needs on-device testing if mobile approval alerts
 are required. Never automatically grant Kiro permissions via a notification.
