@@ -250,7 +250,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Depends on: 10.1.
     - **Validates: Requirements 12.1, 12.4, 12.5, 20.3**
 
-- [ ] 11. Checkpoint: engine complete
+- [-] 11. Checkpoint: engine complete
   - Ensure all tests pass (`npm test`), the boundary test passes, and `npm run typecheck` and `npm run typecheck:game` pass. Ask the user if questions arise, in particular about OQ-1 to OQ-6.
 
 - [ ] 12. AI opponents, tiers BEGINNER and ADVANCED
