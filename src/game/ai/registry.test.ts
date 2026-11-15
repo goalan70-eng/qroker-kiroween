@@ -1,11 +1,12 @@
 // Tests of the strategy registry (task 12.2): the BEGINNER entry, the documented failure for tiers that are declared
-// but not registered yet (ADVANCED: task 12.3, EXPERT: task 23.1), the rejection of invalid input, and the labels.
+// but not registered yet (EXPERT: task 23.1; ADVANCED is registered by task 12.3), the rejection of invalid input, and the labels.
 
 import { describe, expect, expectTypeOf, it } from "vitest";
 import { reduce } from "../core/engine";
 import { defaultConfig, newGame } from "../core/state";
 import type { Difficulty } from "../core/types";
 import { viewFor } from "../core/view";
+import { ADVANCED_STRATEGY } from "./heuristic";
 import { BEGINNER_STRATEGY } from "./random";
 import { getStrategy, registeredDifficulties } from "./registry";
 import { DIFFICULTY_LABELS } from "./strategy";
@@ -32,8 +33,16 @@ describe("getStrategy", () => {
     expectTypeOf(getStrategy).returns.toEqualTypeOf<AIStrategy>();
   });
 
-  it("throws a RangeError that names the tier for ADVANCED and EXPERT, which are not registered yet", () => {
-    for (const tier of ["ADVANCED", "EXPERT"] as const) {
+  it("returns the ADVANCED strategy (task 12.3) as one shared instance with its own id", () => {
+    const strategy = getStrategy("ADVANCED");
+    expect(strategy.id).toBe("ADVANCED");
+    expect(strategy).toBe(ADVANCED_STRATEGY);
+    expect(getStrategy("ADVANCED")).toBe(strategy);
+    expect(strategy).not.toBe(BEGINNER_STRATEGY);
+  });
+
+  it("throws a RangeError that names the tier for EXPERT, which is not registered yet", () => {
+    for (const tier of ["EXPERT"] as const) {
       expect(() => getStrategy(tier), tier).toThrow(RangeError);
       expect(() => getStrategy(tier), tier).toThrow(new RegExp(`${tier}.*not registered`));
     }
@@ -71,14 +80,14 @@ describe("getStrategy", () => {
   it("does not depend on prior calls (a failed look-up changes nothing)", () => {
     expect(() => getStrategy("EXPERT")).toThrow(RangeError);
     expect(getStrategy("BEGINNER")).toBe(BEGINNER_STRATEGY);
-    expect(() => getStrategy("ADVANCED")).toThrow(RangeError);
+    expect(getStrategy("ADVANCED")).toBe(ADVANCED_STRATEGY);
     expect(getStrategy("BEGINNER")).toBe(BEGINNER_STRATEGY);
   });
 });
 
 describe("registeredDifficulties", () => {
-  it("lists exactly the registered tiers in the order of Difficulty (BEGINNER only until tasks 12.3 and 23.1)", () => {
-    expect(registeredDifficulties()).toEqual(["BEGINNER"]);
+  it("lists exactly the registered tiers in the order of Difficulty (BEGINNER and ADVANCED until task 23.1)", () => {
+    expect(registeredDifficulties()).toEqual(["BEGINNER", "ADVANCED"]);
   });
 
   it("lists only tiers that getStrategy returns, each with its own id and a Korean and English label", () => {
@@ -102,7 +111,7 @@ describe("registeredDifficulties", () => {
     expect(a).not.toBe(b);
     expect(Object.isFrozen(a)).toBe(true);
     expect(() => (a as Difficulty[]).push("EXPERT")).toThrow(TypeError);
-    expect(registeredDifficulties()).toEqual(["BEGINNER"]);
+    expect(registeredDifficulties()).toEqual(["BEGINNER", "ADVANCED"]);
   });
 });
 

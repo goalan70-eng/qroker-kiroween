@@ -266,13 +266,13 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Tests: unit tests of determinism and validity on 3 fixed seeds.
     - Depends on: 12.1.
     - _Requirements: 11.1, 11.2, 11.3, 11.7_
-  - [ ] 12.3 Implement the ADVANCED strategy (`ai/heuristic.ts`)
+  - [x] 12.3 Implement the ADVANCED strategy (`ai/heuristic.ts`)
     - Placement scoring by quads (`W_COMPLETE`, `W_PARTIAL[k]`, probability product for hidden members from `unseenCards` and `validOrientations`), Guess from known cards plus the mean of valid unseen cards. Named constants for all weights and `WORK_BUDGET`. Register it in `ai/registry.ts`.
     - Acceptance: with all members visible, a placement that completes a valid quad is chosen over one that does not (fixture); the Guess equals the exact sum when all 4 cards are known; Guess always in 4..52.
     - Tests: fixtures for completing placement and exact-sum guess; hidden-member fixture with a hand-computed expected guess.
     - Depends on: 12.2.
     - _Requirements: 11.1, 11.2, 11.3, 11.4_
-  - [ ] 12.4 Property tests for the AI
+  - [-] 12.4 Property tests for the AI
     - Create `src/game/ai/ai.properties.test.ts`.
     - **Property 24: AI action validity and determinism**
     - **Property 25: AI non-interference**

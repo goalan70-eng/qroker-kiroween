@@ -440,6 +440,25 @@
         "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
         "timestamp": 1794703574583
       }
+    ],
+    "12.3 Implement the ADVANCED strategy (`ai/heuristic.ts`)": [
+      {
+        "executionId": "9d1d5e9b-f4cd-4a2a-b266-fb2d1a68e988",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794705897869
+      },
+      {
+        "executionId": "9d1d5e9b-f4cd-4a2a-b266-fb2d1a68e988",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794706609476
+      }
+    ],
+    "12.4 Property tests for the AI": [
+      {
+        "executionId": "9d1d5e9b-f4cd-4a2a-b266-fb2d1a68e988",
+        "chatSessionId": "sess_d73323fe-dd82-4421-9bf3-e3ba4325c485",
+        "timestamp": 1794706635620
+      }
     ]
   }
 }
