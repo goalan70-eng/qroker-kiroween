@@ -475,7 +475,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Tests: the trivial mount test.
     - Depends on: 19.4.
     - _Requirements: 21.4_
-  - [ ] 21.2 Full-game UI smoke test (`ui/smoke.test.ts`)
+  - [x] 21.2 Full-game UI smoke test (`ui/smoke.test.ts`)
     - Start from setup with a fixed seed, 1 human and 3 AI Seats, play to the final ranking using `playHumanTurnAuto` and automatic Guess entry, and assert the final screen shows a ranking with 4 entries, Hidden_Sum details, the provisional banner at every step, and the seed. Run with both Identity_Visibility values and 3 seeds.
     - Acceptance: no exception, no rejected Action, the game reaches the end screen; rematch starts a game with a different seed; replay-same-seed gives the same initial Hand.
     - Tests: this file.
