@@ -184,3 +184,10 @@ indirectly enter the Kiro agent context, so all output is deliberately short.
 
 The separate Windows Action Required notification relay remains unimplemented
 and requires local notification permissions and real-device testing.
+
+## Optional OpenAI API code reviewer
+
+A new PostTaskExec Hook is included but **disabled by default**. This is a paid
+external API call, unlike the command-only local verifiers. Its CI tests do not
+call OpenAI. For Windows key, billing, manual preview and opt-in instructions see
+[OpenAI reviewer setup](openai-review-setup.md). Never commit an API key.
