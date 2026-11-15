@@ -11,7 +11,7 @@
 
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, posix } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
@@ -25,6 +25,7 @@ export type RuleId =
   | "dom-global"
   | "nondeterminism"
   | "ai-internal-import"
+  | "ai-allow-list"
   | "network-api"
   | "score-table";
 
@@ -43,6 +44,23 @@ const NETWORK_ALLOWED_FILE = "src/game/ui/public/sw.js";
 const SCORE_TABLE_OWNER = "src/game/core/score.ts";
 /** Game scripts named in design.md (Folder Layout). Other scripts under scripts/ belong to src/optical. */
 const GAME_SCRIPTS: readonly string[] = ["scripts/build-sw.ts", "scripts/simulate.ts"];
+
+/**
+ * The core modules a production file under src/game/ai/ may import (design.md, "Rules enforced by the boundary
+ * test", row `ai/`; the same list is in src/game/README.md). Type-only and value imports alike. Names are core
+ * module file names without extension. `core/composite-code` is NOT listed: it appears in the design's dependency
+ * diagram and in the README module graph, but not in the table that defines the rule.
+ */
+export const AI_ALLOWED_CORE_MODULES: readonly string[] = [
+  "types",
+  "cards",
+  "geometry",
+  "fragment-layout",
+  "board",
+  "score",
+  "prng",
+  "view",
+];
 
 const NODE_IMPORT_AREAS = new Set(["core", "ai", "persistence", "ui"]);
 const PURE_AREAS = new Set(["core", "ai"]);
@@ -233,6 +251,26 @@ const NETWORK: readonly RegExp[] = [
 const SCORE_TABLE = /\brewardByError\s*[:=]\s*\[/g;
 const SCORE_TABLE_QUOTED_KEY = /["']rewardByError["']\s*:\s*\[/g;
 const AI_INTERNAL_IMPORT = /(?:^|\/)core\/(?:state|engine|deck|replay|rules)(?:\.[cm]?[jt]sx?)?$/;
+const MODULE_EXTENSION = /\.[cm]?[jt]sx?$/;
+/** `import(` or `require(` whose argument does not start with a string literal (the target cannot be checked). */
+const NON_LITERAL_IMPORT = /(?<![\w$.])(?:import|require)\s*\(\s*(?!["'\s)])/g;
+
+/**
+ * Why `specifier`, imported by the ai/ file `file`, is outside the allow-list, or `undefined` when it is allowed.
+ * Relative specifiers are resolved against the importing file, so `../core/turn`, `../core/turn.ts` and
+ * `./../core/turn` all name `src/game/core/turn`. `node:` specifiers are left to the `node-import` rule.
+ */
+function aiAllowListProblem(file: string, specifier: string): string | undefined {
+  if (specifier.startsWith("node:")) return undefined;
+  if (!specifier.startsWith("./") && !specifier.startsWith("../") && specifier !== "." && specifier !== "..") {
+    return "bare or absolute module";
+  }
+  const resolved = posix.normalize(posix.join(posix.dirname(file), specifier)).replace(MODULE_EXTENSION, "");
+  if (resolved === "src/game/ai" || resolved.startsWith("src/game/ai/")) return undefined;
+  const core = /^src\/game\/core\/([^/]+)$/.exec(resolved);
+  if (core !== null && AI_ALLOWED_CORE_MODULES.includes(core[1] as string)) return undefined;
+  return `not an allowed module (${resolved})`;
+}
 
 /** Scans one file. `path` is relative to the repository root, e.g. `src/game/core/engine.ts`. */
 export function scanSource(path: string, source: string): Violation[] {
@@ -279,7 +317,11 @@ export function scanSource(path: string, source: string): Violation[] {
     if (area === "ai" && AI_INTERNAL_IMPORT.test(spec.value)) {
       add("ai-internal-import", spec.index, spec.value);
     }
+    if (area === "ai" && aiAllowListProblem(file, spec.value) !== undefined) {
+      add("ai-allow-list", spec.index, spec.value);
+    }
   }
+  if (area === "ai") scan("ai-allow-list", [NON_LITERAL_IMPORT]);
 
   // Determinism and DOM isolation in core/ and ai/.
   if (area !== undefined && PURE_AREAS.has(area)) {
@@ -483,9 +525,11 @@ describe("rule: no Math.random, Date, performance.now, crypto in core/ and ai/",
 describe("rule: ai/ must not import core/state, engine, deck, replay, rules", () => {
   it("flags each internal module, with or without extension and for type imports", () => {
     for (const m of ["state", "engine", "deck", "replay", "rules"]) {
-      expect(rules("src/game/ai/x.ts", `import { a } from "../core/${m}";`), m).toEqual(["ai-internal-import"]);
-      expect(rules("src/game/ai/x.ts", `import type { A } from "../core/${m}.js";`), m).toEqual(["ai-internal-import"]);
-      expect(rules("src/game/ai/x.ts", `import { a } from "../core/${m}.ts";`), m).toEqual(["ai-internal-import"]);
+      // The modules are also outside the allow-list, so the additive rule `ai-allow-list` reports them too.
+      const both: RuleId[] = ["ai-internal-import", "ai-allow-list"];
+      expect(rules("src/game/ai/x.ts", `import { a } from "../core/${m}";`), m).toEqual(both);
+      expect(rules("src/game/ai/x.ts", `import type { A } from "../core/${m}.js";`), m).toEqual(both);
+      expect(rules("src/game/ai/x.ts", `import { a } from "../core/${m}.ts";`), m).toEqual(both);
     }
   });
   it("does not apply outside ai/", () => {
@@ -494,10 +538,107 @@ describe("rule: ai/ must not import core/state, engine, deck, replay, rules", ()
   });
   it("passes the allowed core modules, comments and string mentions", () => {
     const path = "src/game/ai/x.ts";
-    for (const m of ["types", "cards", "geometry", "fragment-layout", "board", "score", "prng", "view", "statehelper"]) {
+    for (const m of AI_ALLOWED_CORE_MODULES) {
       expect(rules(path, `import { a } from "../core/${m}";`), m).toEqual([]);
     }
+    // `statehelper` is not matched by the five bans (prefix collision with `state`); only the allow-list rejects it.
+    expect(rules(path, `import { a } from "../core/statehelper";`)).toEqual(["ai-allow-list"]);
     expect(rules(path, `// import { a } from "../core/engine";\nconst s = "../core/state";`)).toEqual([]);
+  });
+});
+
+describe("rule: ai/ may import only ai/ and the allowed core modules (ai-allow-list)", () => {
+  const path = "src/game/ai/x.ts";
+
+  it("lists exactly the modules of the design table", () => {
+    expect([...AI_ALLOWED_CORE_MODULES].sort()).toEqual(
+      ["board", "cards", "fragment-layout", "geometry", "prng", "score", "types", "view"],
+    );
+  });
+  it("flags a core module outside the list, such as core/turn", () => {
+    expect(rules(path, `import { nextSeat } from "../core/turn";`)).toEqual(["ai-allow-list"]);
+    for (const m of ["turn", "composite-code", "seed", "draw", "ranking", "schematic"]) {
+      expect(rules(path, `import { a } from "../core/${m}";`), m).toEqual(["ai-allow-list"]);
+    }
+  });
+  it("resolves paths: extensions, ./ segments, backslashes, deeper folders and parent folders", () => {
+    for (const spec of ["../core/turn.ts", "./../core/turn", "../core/turn.js", "../ai/../core/turn", "../core/./turn"]) {
+      expect(rules(path, `import { a } from "${spec}";`), spec).toEqual(["ai-allow-list"]);
+    }
+    expect(rules(path, `import { a } from "..\\core\\turn";`)).toEqual(["ai-allow-list"]);
+    expect(rules(path, `import { a } from "../core/view/extra";`)).toEqual(["ai-allow-list"]);
+    expect(rules(path, `import { a } from "../core";`)).toEqual(["ai-allow-list"]);
+    expect(rules(path, `import { a } from "..";`)).toEqual(["ai-allow-list"]);
+    // an allowed module reached through a roundabout path or with an extension is still allowed
+    expect(rules(path, `import { a } from "../ai/../core/view.ts";`)).toEqual([]);
+    expect(rules(path, `import { a } from "./../core/types";`)).toEqual([]);
+  });
+  it("resolves relative to the importing file in a nested ai/ folder", () => {
+    const nested = "src/game/ai/sub/y.ts";
+    expect(rules(nested, `import { a } from "../../core/view";`)).toEqual([]);
+    expect(rules(nested, `import { a } from "../../core/turn";`)).toEqual(["ai-allow-list"]);
+    expect(rules(nested, `import { a } from "../core/turn";`)).toEqual([]); // src/game/ai/core/turn: inside ai/
+    expect(rules(nested, `import { a } from "../strategy";`)).toEqual([]);
+  });
+  it("flags other game folders, optical, node: and bare or absolute modules", () => {
+    for (const spec of ["../ui/store", "../persistence/storage", "../i18n/index", "../sim/play-game", "../../../scripts/simulate"]) {
+      expect(rules(path, `import { a } from "${spec}";`), spec).toEqual(["ai-allow-list"]);
+    }
+    expect(rules(path, `import { a } from "fast-check";`)).toEqual(["ai-allow-list"]);
+    expect(rules(path, `import { a } from "/abs/module";`)).toEqual(["ai-allow-list"]);
+    expect(rules(path, `import { a } from "https://x.example/m.js";`)).toEqual(["ai-allow-list"]);
+    expect(rules(path, `import { a } from "../../optical/codec";`)).toEqual(["optical-import", "ai-allow-list"]);
+    expect(rules(path, `import { readFileSync } from "node:fs";`)).toEqual(["node-import"]); // reported once
+  });
+  it("keeps the five bans: core/engine fails under both rules", () => {
+    expect(rules(path, `import { reduce } from "../core/engine";`)).toEqual(["ai-internal-import", "ai-allow-list"]);
+  });
+  it("passes allowed core modules and ai/ siblings, type-only and value imports alike", () => {
+    expect(rules(path, `import { legalCellsFor } from "../core/view";`)).toEqual([]);
+    expect(rules(path, `import type { PlayerView } from "../core/view";`)).toEqual([]);
+    expect(rules(path, `import { type CardId, mulberry32 } from "../core/prng";`)).toEqual([]);
+    expect(rules(path, `import { enumeratePlacements } from "./strategy";`)).toEqual([]);
+    expect(rules(path, `import "./side-effect";`)).toEqual([]);
+    expect(rules(path, `export { a } from "./strategy";`)).toEqual([]);
+    expect(rules(path, `export * from "../core/types";`)).toEqual([]);
+  });
+  it("treats type-only imports and re-exports like value imports", () => {
+    expect(rules(path, `import type { A } from "../core/turn";`)).toEqual(["ai-allow-list"]);
+    expect(rules(path, `export type { A } from "../core/turn";`)).toEqual(["ai-allow-list"]);
+    expect(rules(path, `export * from "../core/turn";`)).toEqual(["ai-allow-list"]);
+    expect(rules(path, `type T = typeof import("../core/turn");`)).toEqual(["ai-allow-list"]);
+  });
+  it("flags dynamic import and require forms, including a target that cannot be read", () => {
+    expect(rules(path, `const m = await import("../core/turn");`)).toEqual(["ai-allow-list"]);
+    expect(rules(path, `const m = require("../core/turn");`)).toEqual(["ai-allow-list"]);
+    expect(rules(path, `const m = await import(target);`)).toEqual(["ai-allow-list"]);
+    expect(rules(path, "const m = await import(`../core/${name}`);")).toEqual(["ai-allow-list"]);
+    expect(rules(path, `const m = await import("../core/view");`)).toEqual([]);
+    expect(rules(path, `const m = obj.require(x); const important = 1;`)).toEqual([]);
+  });
+  it("does not apply outside ai/", () => {
+    expect(rules("src/game/sim/x.ts", `import { a } from "../core/turn";`)).toEqual([]);
+    expect(rules("src/game/core/x.ts", `import { a } from "fast-check";`)).toEqual([]);
+  });
+  it("ignores comments and strings that mention forbidden modules", () => {
+    expect(rules(path, `// import { a } from "../core/turn";\n/* ../ui/store */ const s = "../core/turn"; const o = { from: "../sim/x" };`)).toEqual([]);
+  });
+  it("reports the file, line and specifier", () => {
+    const found = scanSource("src\\game\\ai\\x.ts", `const a = 1;\nimport { n } from "../core/turn";`);
+    expect(found).toEqual([{ rule: "ai-allow-list", file: "src/game/ai/x.ts", line: 2, match: "../core/turn" }]);
+  });
+  it("scans the production files of a real ai/ folder and skips its test files", () => {
+    const root = mkdtempSync(join(tmpdir(), "boundary-ai-"));
+    try {
+      mkdirSync(join(root, "src/game/ai"), { recursive: true });
+      writeFileSync(join(root, "src/game/ai/ok.ts"), `import { a } from "../core/view";\nimport { b } from "./other";\n`);
+      writeFileSync(join(root, "src/game/ai/bad.ts"), `import { c } from "../core/turn";\n`);
+      writeFileSync(join(root, "src/game/ai/bad.test.ts"), `import { c } from "../core/turn";\n`);
+      const found = scanTree(root);
+      expect(found).toEqual([{ rule: "ai-allow-list", file: "src/game/ai/bad.ts", line: 1, match: "../core/turn" }]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });
 
@@ -588,12 +729,15 @@ describe("planted violations (evidence that the scan can fail)", () => {
       ["src/game/ui/x.ts", `import { a } from "node:path";`, "node-import"],
       ["src/game/ai/x.ts", `const w = window.innerWidth;`, "dom-global"],
       ["src/game/core/x.ts", `const r = Math.random();`, "nondeterminism"],
-      ["src/game/ai/x.ts", `import { reduce } from "../core/engine";`, "ai-internal-import"],
+      ["src/game/ai/x.ts", `import { nextSeat } from "../core/turn";`, "ai-allow-list"],
       ["src/game/sim/x.ts", `fetch("/leak");`, "network-api"],
       ["src/game/core/rules.ts", `const t = { rewardByError: [9, 9] };`, "score-table"],
     ];
     for (const [path, src, rule] of planted) {
       expect(rules(path, src), `${path}: ${src}`).toEqual([rule]);
     }
+  });
+  it("reports the five bans together with the allow-list rule", () => {
+    expect(rules("src/game/ai/x.ts", `import { reduce } from "../core/engine";`)).toEqual(["ai-internal-import", "ai-allow-list"]);
   });
 });
