@@ -398,7 +398,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Tests: setup model unit tests (options to `GameConfig`).
     - Depends on: 16.2.
     - _Requirements: 2.5, 2.7, 15.1, 15.2_
-  - [ ] 19.2 Final screen (`ui/screens/end.ts`, `i18n/strings/end.ts`)
+  - [x] 19.2 Final screen (`ui/screens/end.ts`, `i18n/strings/end.ts`)
     - Final ranking with shared ranks, final scores, all reveal records with Hidden_Sum details, buttons rematch (new seed), replay same seed, new setup.
     - Acceptance: tied scores display equal ranks; rematch uses the same seats and options with a new seed.
     - Tests: view-model unit tests including a tie.

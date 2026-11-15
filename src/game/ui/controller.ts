@@ -155,6 +155,8 @@ export interface RenderHandlers {
    */
   readonly startFromSetup: (options: SetupOptions) => OpResult;
   readonly restart: () => OpResult;
+  /** New game with the same configuration and the SAME seed (identical initial deal); works while running and after ENDED (task 19.2). */
+  readonly replaySameSeed: () => OpResult;
   readonly abandon: () => OpResult;
   readonly setLanguage: (lang: Lang) => void;
   /** Applies a draft event to `model.draft` (pure reducer, latest view). Never sends an Action. */
@@ -209,6 +211,8 @@ export interface Controller {
   startPracticeGame(options: PracticeOptions): OpResult;
   /** New game with the same configuration and a new seed from `deps.randomSeed()`. */
   restart(): OpResult;
+  /** New game with the same configuration and the same seed; same guards as `restart`. `deps.randomSeed` is not called. */
+  replaySameSeed(): OpResult;
   /** Drops the game and returns the model to the idle screen. */
   abandon(): OpResult;
   setLanguage(lang: Lang): void;
@@ -579,6 +583,13 @@ export function createController(deps: AppDeps): Controller {
     return begin(game.config, deps.randomSeed());
   }
 
+  function replaySameSeed(): OpResult {
+    if (disposed) return { ok: false, reason: 'DISPOSED' };
+    if (inFlight) return { ok: false, reason: 'BUSY' };
+    if (game === null) return { ok: false, reason: 'NO_GAME' };
+    return begin(game.config, game.state.seed); // deps.randomSeed is not called: the same seed gives the same deal
+  }
+
   function abandon(): OpResult {
     if (disposed) return { ok: false, reason: 'DISPOSED' };
     if (inFlight) return { ok: false, reason: 'BUSY' };
@@ -687,6 +698,7 @@ export function createController(deps: AppDeps): Controller {
     startGame,
     startFromSetup,
     restart,
+    replaySameSeed,
     abandon,
     setLanguage: setUiLanguage,
     draftEvent,
@@ -703,6 +715,7 @@ export function createController(deps: AppDeps): Controller {
     startFromSetup,
     startPracticeGame,
     restart,
+    replaySameSeed,
     abandon,
     setLanguage: setUiLanguage,
     draftEvent,

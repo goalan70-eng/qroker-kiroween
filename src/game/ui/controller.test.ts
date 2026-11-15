@@ -477,7 +477,7 @@ describe('what a renderer receives', () => {
       if (call.view !== null) expect(Object.isFrozen(call.view)).toBe(true);
       // task 17.4: `select` (16.2) is replaced by the draft API
       expect(Object.keys(call.handlers).sort()).toEqual([
-        'abandon', 'confirmPlacement', 'dispatch', 'draftEvent', 'explainTarget', 'restart', 'setLanguage', 'startFromSetup', 'startGame',
+        'abandon', 'confirmPlacement', 'dispatch', 'draftEvent', 'explainTarget', 'replaySameSeed', 'restart', 'setLanguage', 'startFromSetup', 'startGame',
       ]);
       expect(Object.values(call.handlers).every((f) => typeof f === 'function')).toBe(true);
     }
@@ -490,7 +490,7 @@ describe('what a renderer receives', () => {
     ctl.startGame({ seed: 9 });
     expect(Object.keys(ctl).sort()).toEqual([
       'abandon', 'confirmPlacement', 'dispatchHuman', 'dispose', 'draftEvent', 'explainTarget', 'getDisplayError', 'getModel',
-      'getView', 'restart', 'rotationInfo', 'setLanguage', 'startFromSetup', 'startGame', 'startPracticeGame', 'subscribe',
+      'getView', 'replaySameSeed', 'restart', 'rotationInfo', 'setLanguage', 'startFromSetup', 'startGame', 'startPracticeGame', 'subscribe',
     ]);
     expect(Object.values(ctl).every((v) => typeof v === 'function')).toBe(true);
     expect(Object.getOwnPropertyNames(ctl).some((k) => /^(?:state|game|deck|hands|log|seed)$/i.test(k))).toBe(false);
@@ -1894,5 +1894,127 @@ describe('task 19.1: startFromSetup', () => {
     expect(ctl.startGame({ seed: 5 })).toEqual({ ok: true });
     expect(ctl.startPracticeGame({ seed: 6 })).toEqual({ ok: true });
     expect(ctl.getView('P0')).toEqual(directView(6, defaultConfig(), 'P0'));
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------
+// Task 19.2: restart (new seed) and replaySameSeed (same seed) (EVIDENCE CLASS: model, DOM-free controller)
+// ---------------------------------------------------------------------------------------------------------
+
+describe('task 19.2: restart and replaySameSeed', () => {
+  const allViews = (ctl: Controller): string => JSON.stringify(SEATS.map((seat) => ctl.getView(seat)));
+  const MIXED = config(['HUMAN', 'HUMAN', 'BEGINNER', 'BEGINNER'], 'FACE_UP');
+
+  /** A controller whose `randomSeed` pops `seeds` in order and counts its calls. */
+  function seeded(seeds: readonly number[], sched: QueueScheduler) {
+    const calls: number[] = [];
+    let next = 0;
+    const made = make(sched.schedule, {
+      randomSeed: () => {
+        calls.push(next);
+        return seeds[next++] as number;
+      },
+    });
+    return { ...made, calls };
+  }
+
+  it('restart keeps the configuration, draws a NEW seed from deps.randomSeed and deals differently', () => {
+    const sched = new QueueScheduler();
+    const { ctl, calls } = seeded([11, 22], sched);
+    ctl.startGame({ config: MIXED }); // seed 11
+    expect(calls).toEqual([0]);
+    const first = allViews(ctl);
+    expect(ctl.restart()).toEqual({ ok: true });
+    expect(calls).toEqual([0, 1]); // exactly one more draw
+    expect(allViews(ctl)).not.toBe(first); // another seed, another deal
+    const expected = JSON.stringify(SEATS.map((seat) => viewFor((newGame({ seed: 22, config: MIXED }) as { ok: true; value: Parameters<typeof viewFor>[0] }).value, seat)));
+    expect(allViews(ctl)).toBe(expected); // seed 22 with the same seats and options
+  });
+
+  it('replaySameSeed keeps configuration AND seed: the initial deal is identical for every seat, randomSeed is not called', () => {
+    const sched = new QueueScheduler();
+    const { ctl, calls } = seeded([11, 22, 33], sched);
+    ctl.startGame({ config: MIXED }); // seed 11
+    const first = allViews(ctl);
+    ctl.restart(); // seed 22
+    ctl.restart(); // seed 33
+    expect(calls).toEqual([0, 1, 2]);
+    expect(allViews(ctl)).not.toBe(first);
+    const third = allViews(ctl);
+    expect(ctl.replaySameSeed()).toEqual({ ok: true });
+    expect(allViews(ctl)).toBe(third); // the seed of the CURRENT game (33), not the first one
+    expect(calls).toEqual([0, 1, 2]);
+    expect(ctl.getModel().actionCount).toBe(0);
+    expect(ctl.getModel().screen).toBe('GAME');
+    expect(ctl.getModel().viewer).toBe('P0');
+  });
+
+  it('replaySameSeed works mid-game: the moves made so far are dropped and the deal is the original one', () => {
+    const sched = new QueueScheduler();
+    const { ctl } = make(sched.schedule);
+    ctl.startGame({ config: MIXED, seed: 9 });
+    const initial = allViews(ctl);
+    const action = humanAction(ctl.getView('P0') as PlayerView) as Action;
+    expect(ctl.dispatchHuman(action)).toEqual({ ok: true });
+    sched.drain();
+    expect(ctl.getModel().actionCount).toBeGreaterThan(0);
+    expect(ctl.replaySameSeed()).toEqual({ ok: true });
+    expect(ctl.getModel().actionCount).toBe(0);
+    expect(allViews(ctl)).toBe(initial);
+    // the stale AI steps of the old game were cancelled and the new game schedules its own
+    expect(sched.pending).toBeLessThanOrEqual(1);
+  });
+
+  it('after ENDED: replaySameSeed replays a fully AI game to the identical result; restart gives another one', () => {
+    const sched = new QueueScheduler();
+    const { ctl } = seeded([6], sched); // startGame gets an explicit seed, so the first draw is for restart
+    ctl.startGame({ config: config(ALL_AI), seed: 5 });
+    const initial = allViews(ctl);
+    sched.drain();
+    expect(ctl.getModel().screen).toBe('END');
+    const finished = allViews(ctl);
+    expect(ctl.replaySameSeed()).toEqual({ ok: true });
+    expect(ctl.getModel().screen).toBe('GAME');
+    expect(allViews(ctl)).toBe(initial);
+    sched.drain();
+    expect(ctl.getModel().screen).toBe('END');
+    expect(allViews(ctl)).toBe(finished); // same seed, same AI decisions: the same whole game
+    expect(ctl.restart()).toEqual({ ok: true }); // drew 6
+    sched.drain();
+    expect(allViews(ctl)).not.toBe(finished);
+  });
+
+  it('the screen handlers are the controller functions and a replay from inside a render is BUSY', () => {
+    const { ctl, stub } = make(new QueueScheduler().schedule);
+    ctl.startGame({ seed: 4 });
+    expect(stub.last.handlers.replaySameSeed).toBe(ctl.replaySameSeed);
+    const inner: OpResult[] = [];
+    stub.hook = (input) => {
+      if (inner.length === 0) inner.push(input.handlers.replaySameSeed());
+    };
+    expect(ctl.replaySameSeed()).toEqual({ ok: true });
+    expect(inner).toEqual([{ ok: false, reason: 'BUSY' }]);
+  });
+
+  it('guards: NO_GAME before a game and after abandon, DISPOSED after dispose; nothing changes', () => {
+    const { ctl } = make(immediate);
+    expect(ctl.replaySameSeed()).toEqual({ ok: false, reason: 'NO_GAME' });
+    ctl.startGame({ config: config(ALL_AI), seed: 3 });
+    expect(ctl.abandon()).toEqual({ ok: true });
+    expect(ctl.replaySameSeed()).toEqual({ ok: false, reason: 'NO_GAME' });
+    expect(ctl.getModel().screen).toBe('SETUP');
+    ctl.dispose();
+    expect(ctl.replaySameSeed()).toEqual({ ok: false, reason: 'DISPOSED' });
+  });
+
+  it('abandon after ENDED returns the model to the SETUP screen', () => {
+    const sched = new QueueScheduler();
+    const { ctl } = make(sched.schedule);
+    ctl.startGame({ config: config(ALL_AI), seed: 5 });
+    sched.drain();
+    expect(ctl.getModel().screen).toBe('END');
+    expect(ctl.abandon()).toEqual({ ok: true });
+    expect(ctl.getModel()).toMatchObject({ screen: 'SETUP', viewer: null, actionCount: 0 });
+    expect(ctl.getView('P0')).toBeNull();
   });
 });

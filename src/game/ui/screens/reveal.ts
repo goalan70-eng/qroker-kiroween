@@ -214,7 +214,7 @@ function clear(el: HTMLElement): void {
 }
 
 /** A face for a publicly revealed card: rank and suit only. See the module comment for why not `renderCardFace`. */
-function revealCardFace(h: HFunction, card: CardId, t: Translate): HTMLElement {
+export function revealCardFace(h: HFunction, card: CardId, t: Translate): HTMLElement {
   // The owner and the orientation are required by the model but never written: the record does not supply them.
   const face = cardFaceModel({ card, owner: 'NEUTRAL', orientation: 0, size: 'hand', ownerLabel: '' });
   const rankKey = face.nameKeyParams.rank as StringKey | undefined;

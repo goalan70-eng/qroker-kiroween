@@ -1,0 +1,94 @@
+/*
+ * Final screen styles (task 19.2). Uses the tokens of tokens.css; load tokens.css and card.css first.
+ * Not linked into the production page yet (the screens are wired in task 19.4).
+ *
+ * Rules of this file:
+ *   - The three controls are at least --touch-min (44 px) in both directions and stack on a narrow screen.
+ *   - A tied rank is told by the text cue "tied" in the rank cell; the row style here only adds a bold type.
+ *   - Tables scroll inside their own box on a narrow screen, never the page.
+ *   - Revealed card faces have no owner (the record does not supply one) and keep the neutral frame of card.css.
+ *   - No font, image or network reference.
+ */
+.end {
+  font-family: var(--font-ui);
+  color: var(--color-ink);
+}
+.end-title:focus-visible,
+.end-status:focus-visible {
+  outline: var(--stroke-strong) solid var(--color-focus);
+  outline-offset: var(--stroke);
+}
+.end-banner {
+  margin: 0 0 var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-banner-fg);
+  background: var(--color-banner-bg);
+  border: var(--stroke) solid var(--color-banner-border);
+}
+.end-ranking,
+.end-batch-points {
+  display: block;
+  max-inline-size: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+.end-ranking th,
+.end-ranking td,
+.end-batch-points th,
+.end-batch-points td {
+  padding: var(--space-1) var(--space-3);
+  text-align: start;
+}
+.end-ranking td,
+.end-batch-points td {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+.end-row.is-tied .end-rank {
+  font-weight: 700;
+}
+.end-batch,
+.end-code {
+  margin: var(--space-3) 0;
+}
+.end-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.end-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-block-start: var(--space-4);
+}
+.end-control {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1 1 12rem;
+}
+.end-button {
+  box-sizing: border-box;
+  min-inline-size: var(--touch-min);
+  min-block-size: var(--touch-min);
+  padding: var(--space-2) var(--space-4);
+  font: inherit;
+  color: var(--color-inverse);
+  background: var(--color-ink);
+  border: var(--stroke) solid var(--color-ink);
+  cursor: pointer;
+}
+.end-button:focus-visible {
+  outline: var(--stroke-strong) solid var(--color-focus);
+  outline-offset: var(--stroke);
+}
+.end-hint {
+  margin: 0;
+}
+.end-engine-error:empty {
+  display: none;
+}
