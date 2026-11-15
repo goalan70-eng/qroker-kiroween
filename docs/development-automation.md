@@ -114,7 +114,7 @@ Shared file: .kiro/hooks/development-automation.json
 | --- | --- | --- |
 | PreTaskExec | enabled | Record a minimal local timestamp and Git revision before Spec execution |
 | PostTaskExec | enabled (existing) | Game typecheck, test:game, local verification record, optional ntfy |
-| PostFileSave | enabled | Fast TypeScript/TSX syntax parsing for saved src/game files |
+| PostFileSave | enabled | Run typecheck:game at most every 60 seconds after game file saves |
 | AgentStop | enabled | Optional generic mobile message when an agent response ends |
 | PreToolUse | **disabled until tested** | Detect a limited set of destructive shell commands |
 
@@ -134,13 +134,15 @@ IDs, and ntfy topics. This journal is never uploaded or committed. A user must
 review evidence before quoting results in a Kiroween submission. The journal
 can be removed locally at any time.
 
-### Lightweight PostFileSave syntax check
+### Throttled PostFileSave typecheck
 
-Only TypeScript files under src/game/ are matched. The saved file is parsed
-with TypeScript; syntax errors produce a brief local warning. It does not
-format code, run AI, or substitute for typechecks, DOM privacy assertions,
-or full tests. Missing/unrecognized file paths cause a silent skip instead
-of a false success claim.
+Only TypeScript files under src/game/ are matched. The existing native
+TypeScript 7 command npm run typecheck:game runs at most once per 60 seconds,
+with a 20-second process timeout. This avoids depending on the removed
+TypeScript 6 JavaScript compiler API. It does not modify code, run AI,
+validate actual DOM privacy, or replace Spec-level/full tests.
+Missing/unrecognized event paths cause a silent skip, not a false success
+claim. Temporary typecheck errors while code is half-written are possible.
 
 ### Rate-limited AgentStop notifications
 
