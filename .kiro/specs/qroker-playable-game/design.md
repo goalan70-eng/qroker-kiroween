@@ -575,7 +575,7 @@ export function memoryStore(): KeyValueStore;                          // fallba
 export function browserStore(): KeyValueStore;                         // wraps window.localStorage, throws never (returns a memory store on failure)
 ```
 
-Validation of parsed JSON uses hand-written type guards (no schema dependency). The envelope never contains the full state (D5). Prefs (`language`, last setup options) are stored as separate JSON under `PREFS_KEY`.
+Validation of parsed JSON uses hand-written type guards (no schema dependency). The envelope never contains the full state (D5). Prefs (`language`, last setup options) are stored as separate JSON under `PREFS_KEY`. How the UI uses this module (save points, resume, notices, prefs) is fixed in "Task 20.4 persistence integration contracts".
 
 ### Localization (`i18n/`)
 
@@ -955,6 +955,69 @@ The tests run against the production page `/` (`ui/index.html` through `main.ts`
 | 7 | Mobile | At 390×844 and at 320 px width: no horizontal overflow, Board and Hand visible, placement controls reachable |
 
 Evidence classes (the four classes of the Testing Strategy): Playwright with desktop Chromium is reported as class 2/3: a real browser engine with real layout, an emulated viewport and emulated touch. It is never class 4 and supports no statement about physical touch, other browsers or real devices. The run records the browser name and version (`browser.browserType().name()` and `browser.version()`, attached to the test report and copied into `docs/game/ui-progress.md`). The e2e run does not cover `vite preview` of `dist/`, Firefox, Safari or the offline behaviour.
+
+### Task 20.4 persistence integration contracts (save points, resume, notices, prefs, browser verification)
+
+Contracts for task 20.4, which connects the finished `persistence/` module (tasks 20.1 to 20.3: `saveGame`, `loadGame`, `clearSave`, `readPrefs`, `writePrefs`, `browserStore`, `memoryStore`, the optional `durable` member of `KeyValueStore`) to the controller and the host. They change no engine semantics, score value, reveal policy, Identity_Visibility mode, OQ decision or optical code, and add no requirement. They refine the two rows "Save incompatible or corrupt" and "`localStorage` unavailable or full" of "UI-Level Errors and Notices". Names follow the code (`AppDeps`/`MountDeps` of `ui/controller.ts`, `AppModel` of `ui/store.ts`), not the earlier sketch in "Practice UI".
+
+#### a. Dependencies
+
+- `AppDeps` gets optional `store?: KeyValueStore` and `nowIso?: () => string`; `MountDeps` gets the same two and passes them on. Persistence is active only when both are given. Without them the controller behaves exactly as today (no read, no write, no notice, no resume offer).
+- The controller imports only `persistence/` (already allowed by the dependency table) and the pure helpers of `ui/setup-model`. It never touches `localStorage`, `Date` or `window`. `ui/main.ts` builds `browserStore()` and `() => new Date().toISOString()`. Screen-class modules do not import `persistence/`: `ui/store.ts` declares its own closed `NoticeReason` union, equal to `DiscardReason` (a compile-time equality check in the controller).
+- `AppModel` gets four fields with fixed defaults when persistence is inactive: `storage: 'DURABLE' | 'MEMORY_ONLY' | 'FAILED' | 'UNKNOWN'` (default `'UNKNOWN'`), `resume: { savedAtIso: string; humanSeats: number } | null` (default `null`), `notices: readonly Notice[]` (default `[]`) and `setupPrefs: SetupPrefs` (default `DEFAULT_SETUP_PREFS`). `Notice` is `{ kind: 'SAVE_DISCARDED'; reason: NoticeReason } | { kind: 'STORAGE_READ_FAILED' } | { kind: 'STORAGE_NOT_DURABLE' } | { kind: 'STORAGE_WRITE_FAILED' }`, public data only, at most one per kind. Existing tests assert fields individually and stay unchanged; the one whole-model literal (`initialModel` in `ui/store.test.ts`) gets the four defaults added.
+
+#### b. Save points
+
+- The controller calls `saveGame(store, state, nowIso())` synchronously right after each ACCEPTED engine transition: a human `PLACE` (through `confirmPlacement`), `SUBMIT_GUESSES` and `ACK_REVEAL` (all through `dispatchHuman`), every AI Action (each accepted Action of an AI batch, so an AI Guess batch saves once per Seat), and a new game created by `begin` (it overwrites any earlier save, so a new game never resumes an unrelated old one). The save happens BEFORE the render and BEFORE the next AI step is scheduled (requirement 18.1).
+- A rejected Action saves nothing. A failed save never rolls back the accepted Action. `saveGame` removes the save itself for an `ENDED` state (requirement 18.8). `abandon` calls `clearSave`. `restart` and `replaySameSeed` go through `begin` and overwrite.
+- Result mapping to `model.storage`: `ok` and `durable` gives `'DURABLE'`; `ok` and not durable gives `'MEMORY_ONLY'` (not a recovery guarantee); not `ok` gives `'FAILED'`; no store, or nothing saved yet, gives `'UNKNOWN'`. A failed `clearSave` (`abandon`, `discardSaved`) also maps to `'FAILED'`, because a stale save could resume an abandoned game.
+- The controller never logs and never puts saved text or errors into the model. `lastAccepted` and the double-click guard are unchanged.
+
+#### c. Startup, resume and discard
+
+- Before the first render the controller reads the save ONCE with `loadGame(store)`. `NONE` opens the normal setup (with `readFailed`, plus notice `STORAGE_READ_FAILED`). `DISCARDED` adds notice `SAVE_DISCARDED` with the closed reason code only (never replay details) and opens the normal setup. `RESUMABLE` keeps the sealed `{ state, envelope }` in the controller closure (NOT in the model, never given to a screen) and sets `AppModel.resume` (saved time and the number of human Seats; no hand, Guess, card or sum), so the host shows a Continue/Discard prompt INSTEAD of the setup screen. Nothing starts automatically.
+- When the store is not durable (`store.durable !== true`) the persistent notice `STORAGE_NOT_DURABLE` is shown from startup. After a failed write `STORAGE_WRITE_FAILED` is shown. Both clear when a later save is `'DURABLE'`.
+- New handlers `continueSaved()` and `discardSaved()` (on `Controller` and `RenderHandlers`), both single use. The offer is bound to the epoch in which it was created; every `begin`, `abandon` and `dispose` drops it. Guards: `DISPOSED`, `BUSY`, the new `OpResult` reason `NO_RESUME` (no offer, already used, or the epoch changed). Nothing else changes on a refused call.
+- `discardSaved` calls `clearSave`, drops the offer and shows the setup screen with the preferences preserved.
+- `continueSaved` installs the replayed state as the running game with the saved configuration: new epoch (pending AI step cancelled), draft, `gestureEpoch`, `lastAccepted`, gate markers and `lastError` reset, `aiStalled` false, then `scheduleNext` so AI steps resume if an AI must act. No game is created, `newGame` and `deps.randomSeed` are not called, and no write happens until the next accepted Action. The seat-to-show rules of "Task 19.4 composition contracts" apply unchanged.
+- Any other call that starts a game (`startFromSetup`, `startGame`, `startPracticeGame`, `restart`) drops a pending offer when the new game is created (the offer is never kept for a different game) and overwrites the save through `begin`. A start that the engine rejects leaves the offer and the save untouched.
+
+#### d. Resume privacy with several human Seats
+
+- After `continueSaved` in a game with 2 to 4 human Seats, `lastPrivateSeat` and `acknowledgedSeat` stay `null` (a freshly started game pre-sets `lastPrivateSeat`). `nextGate` therefore returns the gate for the first private Seat before any private view: `model.viewer` is `null`, `RenderInput.view` is `null` and `publicView` is used until `acknowledgeGate` succeeds. With one human Seat there is no gate (unchanged).
+- No typed Guess, draft or gate acknowledgement survives a resume: they are UI-local and the new epoch resets them. An acknowledgement made for an earlier render or game fails with `STALE_GATE`.
+- The prompt renders no card, Guess, sum or board of the saved game: only the saved time and the number of human Seats.
+
+#### e. Preferences (separate key)
+
+- At startup the controller reads `readPrefs(store)` once. `language` is valid when `isLang` accepts it; otherwise the language stays the one detected from the browser languages (`detectLanguage(languages, null)` in `mountApp`, which equals `detectLanguage(languages, stored)` for a stored valid value). The first render applies `model.language` through the existing `shell.applyLanguage`, so `mountShell` is unchanged. `setup` goes through `sanitizeSetupPrefs` into `model.setupPrefs` (no second validator in `persistence/`). The Seed is not part of the prefs.
+- `writePrefs(store, { language, setup })` runs when the language changes, when the setup prefs change (new handler `setSetupPrefs(prefs)`, passed by the host as the setup screen's `onPrefsChange`, which sanitizes again), and when a game starts from setup (the `SetupPrefs` part of the options; `seedText` is dropped). A failed prefs write is silent. Prefs survive `clearSave`, a discard, a corrupted save and a finished game. The host passes `model.setupPrefs` as the setup screen's `initialPrefs`.
+
+#### f. Notices
+
+- The host renders `model.notices` in one `aria-live="polite"` region (`ui/components/notices.ts`) with localized text from a new i18n area `persistence` (`i18n/strings/persistence.ts`, ko and en, REVIEW marks on the Korean text like the other new areas; also the prompt strings). Only `SAVE_DISCARDED` and `STORAGE_READ_FAILED` are dismissible, through the new handler `dismissNotice(kind)`, which ignores the other kinds.
+- The `STORAGE_NOT_DURABLE` and `STORAGE_WRITE_FAILED` texts state plainly that the game continues but will not survive a reload. No string says "saved" unless `model.storage === 'DURABLE'`.
+- No notice contains saved text, a card, a Guess, the Seed or an engine detail; the model and the DOM carry only the closed kinds and reason codes.
+
+#### g. Privacy limits (documented, not mitigated)
+
+The save holds the Seed and every accepted Action, including unrevealed Guesses. `localStorage` is readable by same-origin scripts and by anyone with DevTools. No encryption is claimed or added. The owner decision about storing during a pending Guess batch and IC-13 stay open; the provisional behaviour saves after every accepted Action including during `GUESS_COLLECT`, as requirement 18.1 states. `docs/game/save-format.md` and `docs/game/ui-progress.md` record this.
+
+#### h. Real-browser verification (Playwright, Chromium, `e2e/persistence.spec.ts`)
+
+Same setup as `e2e/game.spec.ts`: production page `/`, Seed controlled through the `page.addInitScript` stub of `crypto.getRandomValues`, no test hook in production code, no new dependency, no change to `playwright.config.ts`.
+
+| # | Scenario | What it checks |
+|---|----------|----------------|
+| A | Reload during placement (one human) | After Continue, the Board occupancy, Hand and turn equal those before the reload; no new game started (same Seed text) |
+| B | Reload during Guess collection, two humans, partial submission | The submitted status is correct after the reload; the earlier Seat's typed value is not in the DOM; the remaining Seats submit; the reveal is correct |
+| C | Two-human resume | The gate comes first; the DOM holds no Hand card, Guess input, sum or Board before acknowledgement; the prompt shows no card or Board |
+| D | Corrupted stored JSON (set with `page.evaluate` on `localStorage`, then reload) | A localized notice and the setup screen; no crash; no Continue; the stored save is removed |
+| E | Storage unavailable or write failing (init script that overrides `Storage.prototype.setItem`, and a second variant with a throwing `localStorage` getter) | The game stays playable; the not-durable or write-failed notice shows; no text claims "saved" |
+| F | Finished game | After the end, a reload offers no Continue; the stored language and setup prefs remain |
+| G | Existing flows | `e2e/game.spec.ts` and the playground spec still pass |
+
+Evidence class: real Chromium with an emulated viewport (class 2/3), recorded with browser name and version; not a real device, not another browser, not `vite preview`.
 
 ### PWA (`ui/public/`, `scripts/build-sw.ts`, `ui/pwa-register.ts`)
 
