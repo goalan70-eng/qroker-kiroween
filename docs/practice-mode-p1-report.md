@@ -6,6 +6,9 @@ Base: `3ca08b98ce15a876cf4c7480f465e8892ce1a136`; branch:
 Scope: [Issue #8](https://github.com/goalan70-eng/qroker-kiroween/issues/8),
 playable-game Task 21.3 and Task 22. No rule, engine, AI strategy, optical,
 codebook or historical Kiro record was changed.
+Review: [draft PR #12](https://github.com/goalan70-eng/qroker-kiroween/pull/12).
+Its CI result is separate from the verified baseline CI and local results;
+PR-head CI was not complete when this report was finalized.
 
 ## Audit findings
 

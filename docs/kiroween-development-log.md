@@ -24,7 +24,10 @@ rewrite history or relabel Codex work as Kiro work.
 ## 2026-11-16 — Issue #8: Task 21.3 audit and P1 evidence
 
 - Issue: [#8](https://github.com/goalan70-eng/qroker-kiroween/issues/8).
-- PR: pending creation after verification; to be recorded before final delivery.
+- PR: [#12](https://github.com/goalan70-eng/qroker-kiroween/pull/12) (draft;
+  no merge). PR-head GitHub Actions are separate from the successful main run
+  and local checks above; their result was not yet available when this entry
+  was finalized.
 - Actual implementation and documentation tool: **Codex**. No Kiro execution
   occurred during this task; no existing work is newly attributed to Kiro.
 - Supporting tools: Git, GitHub connector (Issue/CI inspection and PR),
@@ -58,7 +61,8 @@ rewrite history or relabel Codex work as Kiro work.
   offline and phone cameras remain unverified. Task 22 is not signed off.
 - Preserved: all `.kiro/`, `src/optical/`, frozen codebook, game rules, engine,
   production UI, AI strategies, dependency lockfile and unrelated history.
-- Commit references: test/config work `42a68aa`; documentation commit is the
-  commit introducing this entry (`git log -- docs/kiroween-development-log.md`).
+- Commit references: test/config work `42a68aa`; acceptance guide/report and
+  provenance `eaa0a46`; PR cross-reference is the subsequent documentation
+  commit (`git log -- docs/kiroween-development-log.md`).
   No amend/rebase/history rewriting is used. Branch remains for review;
   no merge, application deployment or application publication is authorized by this entry.
