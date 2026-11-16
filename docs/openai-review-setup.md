@@ -49,6 +49,8 @@ File: .kiro/hooks/optional-openai-review.json
 
 The disabled PostTaskExec Hook can call the reviewer after a Kiro Spec task. It only sends when BOTH conditions are met:
 
+The repository's `enabled: false` value is intentional. Do not commit a local enabled override; it would cause the repository Hook safety validator to fail. Neither a configured key nor the environment variable alone activates this Hook.
+
 1. The Hook is explicitly enabled in the Kiro Agent Hooks UI.
 2. Windows user environment variable QROKER_OPENAI_REVIEW_AUTOMATION equals 1 (and OPENAI_API_KEY is configured).
 
