@@ -3,6 +3,36 @@
 These tools automate verification, not game decisions. They are optional development
 helpers and do not modify the game engine, source of truth, or frozen optical codebook.
 
+## Workspace Steering (minimal token use)
+
+- `.kiro/steering/project.md` is a short **always-included** context for QRoker's actual rules, source-of-truth Specs, frozen V1 optics, privacy and verification boundaries. Keep it concise to avoid unnecessary Kiro context/credit use.
+- `.kiro/steering/optical-v2.md` is **manual**: include it only when intentionally working on the proposed square V2 code, using `#optical-v2`. The proposal is not an approved Kiro Spec and is tracked in Issue #16.
+- Use local Kiro **Steering** UI to verify the files are detected after checkout. An independent GitHub CI run cannot establish that the local Kiro session loaded them. Custom agents may require an explicit steering resource declaration.
+- Steering contains **instructions, not executable automation**. Do not store API keys or local secrets there.
+
+## Safe default Hook policy
+
+| Hook | Repository default | Why |
+| --- | --- | --- |
+| PreTaskExec evidence | enabled | Small local verification breadcrumb, no AI prompt |
+| PostTaskExec verification | enabled | Local typecheck + game tests, no AI model |
+| PostFileSave TypeScript check | enabled, 60-second throttle | Runs only for `src/game/**/*.ts[x]` on save; new matcher handles relative/absolute Windows paths |
+| AgentStop notification | enabled but inert without valid `QROKER_NTFY_TOPIC` | Optional local generic ntfy message; no automatic permission-approval notification |
+| PreToolUse shell guard | **disabled** | Tool context and false-positive behavior require a local trial before enablement |
+| PostTaskExec external OpenAI review | **disabled** | Paid API; requires both explicit Hook activation and `QROKER_OPENAI_REVIEW_AUTOMATION=1`, a valid key and tracked diff |
+
+The two disabled Hooks are intentionally **not** activated merely because a helper script or environment variable exists. Do not commit a local opt-in as a shared default. The Hook configuration validator deliberately fails CI if either is enabled in a committed copy.
+
+**Local verification from the repository root:**
+
+```powershell
+node scripts/validate-hook-config.mjs
+node --test scripts/automation-hooks.test.mjs
+node --test scripts/openai-review.test.mjs
+```
+
+These checks validate syntax, matches and isolated behavior but **not** actual Kiro event delivery, Windows notifications, or external API operation. On the user's PC, open Kiro Agent Hooks, check the active states, test an ordinary Spec task and inspect the locally stored verification record. To test the shell guard, enable it only in the local workspace, try a benign tool call and a non-destructive simulated input, then disable it if any unexpected block occurs.
+
 ## Cloud CI (GitHub Actions)
 
 The workflow `.github/workflows/verify.yml` runs on:
@@ -116,7 +146,7 @@ Shared file: .kiro/hooks/development-automation.json
 | PostTaskExec | enabled (existing) | Game typecheck, test:game, local verification record, optional ntfy |
 | PostFileSave | enabled | Run typecheck:game at most every 60 seconds after game file saves |
 | AgentStop | enabled | Optional generic mobile message when an agent response ends |
-| PreToolUse | **disabled until tested** | Detect a limited set of destructive shell commands |
+| PreToolUse | **disabled in shared config until locally verified** | Detect a limited set of destructive shell commands |
 
 These are local IDE / supported CLI Hooks, not cloud validation. The independent
 GitHub Actions workflow still runs the full suite after push/PR.
