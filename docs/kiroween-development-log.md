@@ -98,4 +98,6 @@ rewrite history or relabel Codex work as Kiro work.
   experiments remain outstanding. No new human/device or Firefox/Safari
   testing, merge or deployment. Branch `codex/issue-9-score-table` is based on
   the unmerged Issue #8 branch so that the existing audit PR remains separate.
-- Commit/PR: recorded in the follow-up cross-reference after PR creation.
+- Commit: `5d75eee`. PR: [#13](https://github.com/goalan70-eng/qroker-kiroween/pull/13)
+  (draft, stacked on PR #12; no merge). The successful local checks above are
+  distinct from the new PR-head GitHub Actions result, which is not yet verified.
