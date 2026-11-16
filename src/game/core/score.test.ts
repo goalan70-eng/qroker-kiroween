@@ -1,7 +1,7 @@
 // Unit tests for core/score.ts (task 6.1). Requirements 7.2, 8.1, 8.3, 8.4, 8.5.
 //
 // Expectations are derived from the configuration passed in, never from the provisional placeholder
-// values. Only the two placeholder tests below read DEV_PLACEHOLDER_SCORE_CONFIG.
+// values, except the explicit owner-approved default-score contract below.
 import { describe, expect, it } from "vitest";
 import {
   DEV_PLACEHOLDER_SCORE_CONFIG,
@@ -45,6 +45,17 @@ describe("RULES_VERSION", () => {
 });
 
 describe("DEV_PLACEHOLDER_SCORE_CONFIG", () => {
+  it.each([
+    [0, 10], [1, 5], [2, 4], [3, 3], [4, 2], [5, 1], [6, 0], [20, 0],
+  ])("uses the owner-approved score for absolute error %i", (error, expected) => {
+    expect(score(26 + error, 26, DEV_PLACEHOLDER_SCORE_CONFIG.config)).toBe(expected);
+    expect(score(26 - error, 26, DEV_PLACEHOLDER_SCORE_CONFIG.config)).toBe(expected);
+  });
+
+  it("uses the owner-approved hand-empty bonus", () => {
+    expect(DEV_PLACEHOLDER_SCORE_CONFIG.config.handEmptyBonus).toBe(5);
+  });
+
   it("passes validateScoreConfig", () => {
     const result = validateScoreConfig(DEV_PLACEHOLDER_SCORE_CONFIG.config);
     expect(result.ok).toBe(true);

@@ -347,10 +347,10 @@ export const DEV_PLACEHOLDER_SCORE_CONFIG: NamedScoreConfig = {
   id: 'DEV_PLACEHOLDER',
   provisional: true,
   config: {
-    // DEVELOPMENT PLACEHOLDER. Not a balance decision. Chosen only so that scores are visible and
-    // differ by accuracy during development. Final values are decided by simulation (open-decisions #7, milestone P3).
-    rewardByError: [6, 4, 3, 2, 1],
-    handEmptyBonus: 3,
+    // Owner-directed provisional revision, 2026-11-16, applied by Codex (not a Kiro execution).
+    // No balance claim; final balance remains subject to simulation (open-decisions #7, milestone P3).
+    rewardByError: [10, 5, 4, 3, 2, 1],
+    handEmptyBonus: 5,
   },
 };
 export function validateScoreConfig(c: ScoreConfig): Result<true>;      // INVALID_SCORE_CONFIG; rules in requirement 8.3
@@ -361,7 +361,7 @@ export interface RankEntry { readonly player: PlayerId; readonly score: number; 
 export function rankPlayers(scores: Readonly<Record<PlayerId, number>>): RankEntry[]; // competition ranking, order by rank then seat
 ```
 
-The numbers in `DEV_PLACEHOLDER_SCORE_CONFIG` are illustrative and live in exactly one place. No other module may contain a score value (checked by a scan test in task 6.1). The UI displays a "provisional scoring" banner whenever `scoreConfig.provisional` is true.
+The numbers in `DEV_PLACEHOLDER_SCORE_CONFIG` are owner-selected provisional defaults and live in exactly one place. No other module may contain a score value (checked by a scan test in task 6.1). The UI displays a "provisional scoring" banner whenever `scoreConfig.provisional` is true. Existing saves retain their serialized ScoreConfig; changing defaults does not change replay semantics or require a RULES_VERSION increment.
 
 ### GameState and Rules (`core/state.ts`, `core/rules.ts`)
 
@@ -1047,7 +1047,7 @@ Evidence class: real Chromium with an emulated viewport (class 2/3), recorded wi
   "seed": 123456789,
   "config": { "rulesVersion": 1, "identityVisibility": "OWNER_ONLY",
               "scoreConfig": { "id": "DEV_PLACEHOLDER", "provisional": true,
-                               "config": { "rewardByError": [6, 4, 3, 2, 1], "handEmptyBonus": 3 } },
+                               "config": { "rewardByError": [10, 5, 4, 3, 2, 1], "handEmptyBonus": 5 } },
               "seats": [ { "id": "P0", "kind": "HUMAN", "name": "You" }, { "id": "P1", "kind": "AI", "difficulty": "BEGINNER", "name": "AI 1" } ] },
   "actions": [ { "type": "PLACE", "player": "P0", "card": "H-7", "pos": { "row": 2, "col": 3 }, "orientation": 0 } ]
 }

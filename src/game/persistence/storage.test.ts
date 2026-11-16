@@ -145,6 +145,24 @@ describe('memoryStore', () => {
 });
 
 describe('saveGame and loadGame round trip', () => {
+  it('preserves the original score config and scored state when resuming a pre-revision save', () => {
+    const current = defaultConfig();
+    const legacy: GameConfig = { ...current, scoreConfig: {
+      ...current.scoreConfig, config: { rewardByError: [6, 4, 3, 2, 1], handEmptyBonus: 3 },
+    } };
+    expect(FIRST_ACK).toBeGreaterThan(0);
+    const before = prefixStates(SEED, legacy, LOG)[FIRST_ACK] as GameState;
+    expect(before.history.length).toBeGreaterThan(0); // exercise already scored Actions, not only an empty log
+    const store = memoryStore();
+    expect(saveGame(store, before, NOW).ok).toBe(true);
+    const restored = loadGame(store);
+    expect(restored.kind).toBe('RESUMABLE');
+    if (restored.kind !== 'RESUMABLE') throw new Error('legacy score configuration was not resumable');
+    expect(restored.state.config.scoreConfig.config).toEqual({ rewardByError: [6, 4, 3, 2, 1], handEmptyBonus: 3 });
+    expect(stateEquals(restored.state, before)).toBe(true);
+    expect(current.scoreConfig.config).toEqual({ rewardByError: [10, 5, 4, 3, 2, 1], handEmptyBonus: 5 });
+  });
+
   it('returns NONE for an empty store', () => {
     expect(loadGame(memoryStore())).toEqual({ kind: 'NONE' });
   });

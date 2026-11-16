@@ -422,7 +422,7 @@ describe('content', () => {
   it('contains no digit except the rule numbers 8×8, 2×2, 180°, 4 to 52 and "4 neutral cards"', () => {
     // Allowed numbers are rule constants of the spec: the 8×8 board (3.1), the 2×2 region (5.2), the 180° orientation
     // (4.1), the Guess range 4 to 52 (7.2) and the 4 neutral cards (2.2). Everything else, such as the placeholder
-    // reward table (6, 4, 3, 2, 1) and the end bonus (3), would show up as a stray digit.
+    // reward table and the end bonus would show up as a stray digit.
     const ALLOWED: Record<Lang, readonly RegExp[]> = {
       en: [/8×8/g, /2×2/g, /180°/g, /4 to 52/g, /4 neutral cards/g],
       ko: [/8×8/g, /2×2/g, /180°/g, /4에서 52/g, /중립 카드 4장/g],
@@ -435,10 +435,10 @@ describe('content', () => {
       for (const phrase of ALLOWED[lang]) text = text.replace(phrase, '');
       expect(text, lang).not.toMatch(/\d/);
     }
-    // The placeholder numbers are 6, 4, 3, 2, 1 and the bonus 3: the digits that are not rule numbers never occur as tokens.
+    // Derive prohibited score tokens from the configured defaults; the rule numbers 2 and 4 are permitted.
     const { config } = DEV_PLACEHOLDER_SCORE_CONFIG;
     const stray = new Set([...config.rewardByError, config.handEmptyBonus].filter((n) => ![2, 4].includes(n)));
-    expect([...stray].sort()).toEqual([1, 3, 6]);
+    expect(stray.size).toBeGreaterThan(0); // the no-score-text scan below must not be vacuous
     for (const lang of ['en', 'ko'] as const) {
       setLanguage(lang);
       const { handle } = setup(input(lang, true));
