@@ -174,3 +174,74 @@ rewrite history or relabel Codex work as Kiro work.
   [draft PR #14](https://github.com/goalan70-eng/qroker-kiroween/pull/14),
   stacked on PR #13. PR-head GitHub Actions are separate from the successful
   local checks and were not yet complete when this entry was finalized.
+
+## 2026-11-16 — Issues #5/#6: submission documentation and local release preparation
+
+- Issues: [#5](https://github.com/goalan70-eng/qroker-kiroween/issues/5),
+  [#6](https://github.com/goalan70-eng/qroker-kiroween/issues/6). The owner requested
+  correction of submission contradictions and missing submission materials.
+  Worktree `D:/Project/QRoker/qroker-submission`, branch
+  `codex/issue-5-submission-materials`, stacked on optical PR #14 (`a2d3bf3`).
+  Public `main` was independently rechecked at `3ca08b9`; PRs #12–#14 remain
+  unmerged. These changes do not repair public `main` until reviewed and merged.
+- Actual implementation, documentation, testing and recording: **Codex**, with
+  separate Codex agents for current README/brief, submission drafts, dependency
+  notices, local recording and read-only review. Supporting tools: Git/GitHub,
+  Node.js 24.20.0, npm, Vite, Playwright Chromium and its cached FFmpeg utility.
+  No Kiro execution or paid model API call occurred. No game source, approved
+  Kiro specification, hook, historical task checkbox or frozen codebook changed.
+- Files: root README/current brief, full initial brief under `docs/history/`,
+  `THIRD_PARTY_NOTICES.md`, English `docs/submission/` drafts, dependency inventory,
+  screenshot/recording evidence, local recording and static-packaging scripts,
+  manual-only Pages workflow, npm packaging alias and local-artifact exclusion.
+  Current rules are 52/no Joker/no Swap, with owner-selected provisional
+  exact=10, errors 1–5=5/4/3/2/1, empty-Hand=+5. The old brief is explicitly
+  superseded; its original complete text is preserved (normal Windows checkout
+  newline conversion does not change the archived Git text).
+- License: **not granted; owner decision pending**. Issue #5 explicitly forbids
+  arbitrary selection. A complete MIT proposal and proposed attribution are
+  reviewable in `docs/submission/license-choice.md`; they are not root `LICENSE`.
+  No response to the license/copyright selection question has been assumed.
+  The static-packaging command deliberately refuses an absent SPDX/license.
+  Project ownership/contributor rights are for the owner to confirm.
+- Dependency inspection: 130 locked packages, 54 installed on Windows, eight
+  direct development dependencies, 58 supplied license/notice file SHA-256 hashes
+  verified. The browser bundle includes Vite/Rolldown generated helpers; their
+  supplied notices are retained. Uninstalled optional packages have metadata-only
+  evidence. Development tools/browsers are not part of the intended web release.
+- Executed checks: fresh `npm ci --no-audit --no-fund`, both type checks,
+  byte-identical `check:codebook`, production build, and four fresh built-preview
+  Chromium tests covering complete game/ranking, reveal/scoring, reload/Continue
+  and calibrated Guess scoring after reload: **4/4 passed (1.4 min)**. The
+  unchanged full Vitest suite was not repeated for this documentation/tooling task;
+  earlier 3,081-test results retain their original revision/scope above.
+- Packaging verification used an isolated, ignored **fixture**, not a licensed
+  project release: missing SPDX, missing LICENSE, empty LICENSE, missing notices
+  correctly failed; the complete fixture copied notices and produced a matching
+  SHA-256 inventory (**5 cases passed**). The actual project packaging remains
+  blocked by owner license choice. No root license was invented to bypass it.
+- Read-only review identified an unsupported claim that the browser displays
+  schematic code overlays. Corrected it: the core enforces fragment validity,
+  but visual overlays remain deferred. Other inspected current rules, attribution,
+  old-brief preservation and manual-only deployment behavior had no further
+  actionable findings. Review was static, not a deployment test.
+- Public app/YouTube URLs and final category are unavailable/unselected. Kiro
+  artifacts were inspected; original sessions/platforms were not independently
+  audited. English materials separate owner-reported Kiro history from actual
+  later Codex work. Physical print/phone trials remain NOT RUN. No automatic
+  merge, repository Pages setting change, deployment, upload or Devpost submission.
+- Local final video: `.submission/recording/qroker-browser-demo-en.webm`,
+  **153.84 s (2:33.84)**, VP9/1280x960/25 fps, English captions, no audio.
+  SHA256 `ae5f86acde5fe38b9750fe4ae69b500abbd2fbf9fbee96a310b79548c196aa56`.
+  Recorder exited 0: real DOM drag/rotation/confirmation, Guess/reveal,
+  reload/Continue equal Board/Hand/scores, four ranking rows visible above
+  captions; no page/console errors or external requests. Actual AI pacing,
+  no game-state/RNG/clock stubs or cuts. Nine extracted final-export frames
+  and the clean screenshot were visually inspected. This was sampled frame
+  inspection, not human playback of every frame or a device/user study.
+  The Kiro segment shows exact repository file text, explicitly labelled as
+  artifacts rather than a Kiro session. Failed recorder-only helper/visibility
+  attempts and their corrections are disclosed in the recording evidence.
+  Source HEAD was `a2d3bf3` with dirty submission-preparation files; served
+  asset hashes in the evidence identify the demonstrated runtime. The local
+  video, JSON/FFmpeg logs and failed attempts stay ignored; nothing uploaded.
