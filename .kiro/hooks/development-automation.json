@@ -14,7 +14,7 @@
     },
     {
       "name": "QRoker destructive shell guard",
-      "description": "Optional extra protection for recognized destructive shell operations. Disabled until locally tested; Kiro permissions remain the primary security boundary.",
+      "description": "Optional guard for recognized destructive shell operations. Disabled by default; enable only after confirming tool event delivery in the installed Kiro IDE/CLI.",
       "trigger": "PreToolUse",
       "matcher": "shell",
       "action": {
@@ -22,13 +22,13 @@
         "command": "node scripts/automation-hooks.mjs guard-shell"
       },
       "timeout": 10,
-      "enabled": true
+      "enabled": false
     },
     {
       "name": "QRoker fast TypeScript syntax check",
       "description": "Run the established game typecheck at most once every 60 seconds after saved src/game TypeScript files; do not modify code.",
       "trigger": "PostFileSave",
-      "matcher": "src[/\\\\]game[/\\\\].*\\.tsx?$",
+      "matcher": "(?:^|[/\\\\])src[/\\\\]game[/\\\\].*\\.tsx?$",
       "action": {
         "type": "command",
         "command": "node scripts/automation-hooks.mjs check-file"
