@@ -6,11 +6,13 @@ to cover pure logic, unit tests, headless simulations and synthetic optics.
 
 ## Current scope and limitations
 
-The public game entry page currently contains only the basic shell; Task 18/19
-has not yet connected the actual player screens. Do **not** claim the full game
-is Playwright-tested.
+The production entry page `/` now connects the actual player screens. Existing
+`game.spec.ts` and `persistence.spec.ts` cover full games, private hand-over,
+Guess/reveal, scoring, replay/rematch, overlays, small viewports and saving.
+`keyboard.spec.ts` adds keyboard placement/focus coverage (Codex, Issue #8).
+See [the P1 audit report](practice-mode-p1-report.md) for actual run results.
 
-The first regression suite targets the existing **developer-only** playground:
+The original regression suite also targets the **developer-only** playground:
 `src/game/ui/dev/placement-playground.html`. Vite serves it in development;
 the production Vite build does not include it.
 
@@ -21,11 +23,10 @@ The suite verifies:
 - 180-degree orientation control on a rotation-relevant suit only
 - 390px Korean UI viewport with no horizontal document overflow
 
-It does NOT validate a real Android handset, complete Guess/reveal/scoring
-screens, physical card-camera reading, or final production UX. Add stable
-browser tests for those features when they are implemented, rather than
-marking them complete prematurely. Previous manual browser evidence appears
-in `docs/game/placement-verification.md`.
+These suites do not validate a real Android handset, physical card-camera
+reading, Firefox/Safari or complete release readiness. Touch emulation is not
+physical touch evidence. Previous manual browser evidence appears in
+`docs/game/placement-verification.md`.
 
 ## Local Windows usage
 
@@ -46,6 +47,12 @@ npm run test:e2e -- --headed
 Playwright starts and stops a temporary Vite development server using
 `playwright.config.ts` (unless an existing local server is available).
 No external API credentials are required.
+
+For a fresh production build, run `npm run build`, set `PLAYWRIGHT_PREVIEW=1`
+and run `npx playwright test game.spec.ts persistence.spec.ts keyboard.spec.ts`.
+This starts `npm run preview` on port 4173 and disables server reuse. Do not
+include the playground in a preview run: it intentionally is not built.
+PowerShell and POSIX commands are in [Practice Mode](practice-mode.md).
 
 ## GitHub Actions
 
