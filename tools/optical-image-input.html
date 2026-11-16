@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>QRoker 촬영 이미지 준비</title>
+<link rel="icon" href="data:,">
+<style>
+  :root { color-scheme: light; font: 16px/1.6 system-ui,sans-serif; color: #172230; background: #f2f5f8; }
+  body { max-width: 940px; margin: auto; padding: 24px; }
+  h1 { font-size: 1.6rem; line-height: 1.3; }
+  main { padding: 24px; background: white; border-radius: 12px; }
+  label { display: block; margin: 16px 0 6px; font-weight: 600; }
+  input, select, button, textarea { font: inherit; max-width: 100%; }
+  button, select { min-height: 44px; padding: 8px 12px; }
+  button { margin-top: 12px; }
+  textarea { display: block; width: 100%; box-sizing: border-box; min-height: 90px; }
+  .preview { position: relative; margin-top: 16px; }
+  canvas { display: block; max-width: 100%; height: auto; touch-action: none; }
+  #selection { position: absolute; inset: 0; pointer-events: none; }
+  #error { color: #9a2020; }
+  :focus-visible { outline: 3px solid #2563eb; outline-offset: 3px; }
+</style>
+<main>
+  <h1>QRoker 촬영 이미지 준비</h1>
+  <p>JPEG·PNG 등 촬영 파일을 로컬 검증 도구용 PGM으로 변환합니다.
+    파일은 이 브라우저 안에서만 처리하며 서버로 전송하지 않습니다. 이 화면은 카드 인식기나 게임 앱이 아닙니다.</p>
+  <p>추측이 모두 확정된 뒤 공개된 카드로 시험하세요. 양면 마커는 가림막 없이 손패나 뒷면을 촬영하면 신원을 드러낼 수 있습니다.</p>
+  <label for="image">촬영 이미지</label>
+  <input id="image" type="file" accept="image/*">
+  <label for="max-edge">출력 크기</label>
+  <select id="max-edge">
+    <option value="0">원본 해상도 (최대 1,600만 화소)</option>
+    <option value="4096">긴 변 최대 4096px</option>
+    <option value="2048">긴 변 최대 2048px</option>
+  </select>
+  <p>축소하면 마커의 픽셀 수가 줄어듭니다. 동일 조건의 시험에서는 같은 출력 크기를 사용하고 원본도 따로 보관하세요.</p>
+  <p id="info" role="status" aria-live="polite">이미지를 선택하세요.</p>
+  <p id="error" role="alert"></p>
+  <button id="download" disabled>PGM 저장</button>
+  <p>이미지에서 판독할 <strong>카드 네 장의 교차점 주변</strong>을 드래그해 선택하세요.
+    다른 교차점을 잘못 받아들이지 않도록, 의도한 교차점만 포함하는 영역을 지정합니다.
+    아래 좌표는 표시 크기가 아닌 저장할 PGM의 픽셀 좌표입니다.</p>
+  <div class="preview"><canvas id="preview" width="1" height="1" aria-label="촬영 이미지 미리보기"></canvas><canvas id="selection" width="1" height="1" aria-hidden="true"></canvas></div>
+  <label for="region">시험 manifest의 targetRegion</label>
+  <textarea id="region" readonly placeholder="미리보기에서 교차점 주변을 선택하세요."></textarea>
+  <p id="roi-stats" role="status" aria-live="polite"></p>
+  <p>종이 비침 측정에는 희미한 마커의 테두리 영역과 바로 옆 흰 여백을 각각 선택해 평균 회색값을 기록하세요.
+    두 값의 차이는 측정 보조값이며, 비침이 검출되지 않는다는 증명은 아닙니다.</p>
+  <p>좌표를 manifest에 복사하고, 정답 카드·기기·프린터·종이 정보를 별도로 기록하세요.
+    변환에 성공했다는 사실은 인식 성공이나 실물 검증 완료를 뜻하지 않습니다.</p>
+</main>
+<script>
+  const fileInput = document.querySelector('#image');
+  const sizeInput = document.querySelector('#max-edge');
+  const preview = document.querySelector('#preview');
+  const selection = document.querySelector('#selection');
+  const region = document.querySelector('#region');
+  const download = document.querySelector('#download');
+  const info = document.querySelector('#info');
+  const error = document.querySelector('#error');
+  const stats = document.querySelector('#roi-stats');
+  let bytes = null;
+  let rasterOffset = 0;
+  let fileName = 'capture.pgm';
+  let version = 0;
+  let pressed = null;
+
+  async function loadImage() {
+    const current = ++version;
+    bytes = null; pressed = null; download.disabled = true; region.value = ''; error.textContent = ''; stats.textContent = '';
+    preview.width = selection.width = 1; preview.height = selection.height = 1;
+    const file = fileInput.files[0];
+    if (!file) { info.textContent = '이미지를 선택하세요.'; return; }
+    info.textContent = '이미지를 읽는 중입니다.';
+    let bitmap;
+    try {
+      bitmap = await createImageBitmap(file);
+      if (current !== version) return;
+      const maxEdge = Number(sizeInput.value);
+      const factor = maxEdge > 0 ? Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height)) : 1;
+      const width = Math.max(1, Math.round(bitmap.width * factor));
+      const height = Math.max(1, Math.round(bitmap.height * factor));
+      if (width * height > 16000000) throw new Error('1,600만 화소를 초과합니다. 출력 크기를 줄여 다시 선택하세요.');
+      preview.width = selection.width = width; preview.height = selection.height = height;
+      const context = preview.getContext('2d', { willReadFrequently: true });
+      context.fillStyle = '#fff'; context.fillRect(0, 0, width, height);
+      context.drawImage(bitmap, 0, 0, width, height);
+      const rgba = context.getImageData(0, 0, width, height).data;
+      const header = new TextEncoder().encode(`P5\n${width} ${height}\n255\n`);
+      rasterOffset = header.length;
+      bytes = new Uint8Array(header.length + width * height);
+      bytes.set(header);
+      for (let p = 0; p < width * height; p++) {
+        bytes[header.length + p] = (77 * rgba[4 * p] + 150 * rgba[4 * p + 1] + 29 * rgba[4 * p + 2] + 128) >> 8;
+      }
+      fileName = file.name.replace(/\.[^.]+$/, '') + '.pgm';
+      download.disabled = false;
+      info.textContent = `${file.name} → ${width} × ${height}px${factor < 1 ? ' (축소됨)' : ' (원본 크기)'}`;
+    } catch (cause) {
+      if (current !== version) return;
+      info.textContent = '변환하지 못했습니다.';
+      error.textContent = cause instanceof Error ? cause.message : '이미지 형식을 확인하세요.';
+    } finally { bitmap?.close(); }
+  }
+  fileInput.addEventListener('change', loadImage);
+  sizeInput.addEventListener('change', loadImage);
+  download.addEventListener('click', () => {
+    if (bytes === null) return;
+    const url = URL.createObjectURL(new Blob([bytes], { type: 'image/x-portable-graymap' }));
+    const link = document.createElement('a'); link.href = url; link.download = fileName;
+    document.body.append(link); link.click(); link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+  function point(event) {
+    const bounds = preview.getBoundingClientRect();
+    return { x: Math.max(0, Math.min(preview.width, (event.clientX - bounds.left) * preview.width / bounds.width)),
+      y: Math.max(0, Math.min(preview.height, (event.clientY - bounds.top) * preview.height / bounds.height)) };
+  }
+  function drawSelection(end) {
+    const xMin = Math.floor(Math.min(pressed.x, end.x)), yMin = Math.floor(Math.min(pressed.y, end.y));
+    const xMax = Math.ceil(Math.max(pressed.x, end.x)), yMax = Math.ceil(Math.max(pressed.y, end.y));
+    const context = selection.getContext('2d'); context.clearRect(0, 0, selection.width, selection.height);
+    if (xMax <= xMin || yMax <= yMin) { region.value = ''; return; }
+    context.strokeStyle = '#16a34a'; context.lineWidth = Math.max(2, preview.width / 400);
+    context.strokeRect(xMin, yMin, xMax - xMin, yMax - yMin);
+    region.value = JSON.stringify({ xMin, yMin, xMax, yMax });
+  }
+  function measureSelection() {
+    if (!bytes || !region.value) { stats.textContent = ''; return; }
+    const { xMin, yMin, xMax, yMax } = JSON.parse(region.value);
+    let sum = 0, minimum = 255, maximum = 0, count = 0;
+    for (let y = yMin; y < yMax; y++) for (let x = xMin; x < xMax; x++) {
+      const value = bytes[rasterOffset + y * preview.width + x];
+      sum += value; minimum = Math.min(minimum, value); maximum = Math.max(maximum, value); count++;
+    }
+    stats.textContent = `선택 영역 ${count}px: 평균 ${(sum / count).toFixed(2)}, 최소 ${minimum}, 최대 ${maximum} (0=검정, 255=흰색)`;
+  }
+  preview.addEventListener('pointerdown', (event) => {
+    if (!bytes || event.button !== 0) return;
+    pressed = point(event); preview.setPointerCapture(event.pointerId);
+  });
+  preview.addEventListener('pointermove', (event) => { if (pressed) drawSelection(point(event)); });
+  preview.addEventListener('pointerup', (event) => { if (pressed) { drawSelection(point(event)); measureSelection(); } pressed = null; });
+  preview.addEventListener('pointercancel', () => { pressed = null; region.value = ''; stats.textContent = ''; selection.getContext('2d').clearRect(0, 0, selection.width, selection.height); });
+</script>
+</html>
