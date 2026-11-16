@@ -170,4 +170,7 @@ rewrite history or relabel Codex work as Kiro work.
   `codex/issue-10-optical-validation`, based on the existing score PR branch.
   The original `qroker-kiroween` checkout stays on the score branch unchanged.
   Print inputs/outputs stay local under ignored `.optical-physical/`.
-- Preparation commit/PR cross-reference is recorded after PR creation.
+- Preparation commit: `460a40d`. Review:
+  [draft PR #14](https://github.com/goalan70-eng/qroker-kiroween/pull/14),
+  stacked on PR #13. PR-head GitHub Actions are separate from the successful
+  local checks and were not yet complete when this entry was finalized.
