@@ -1,0 +1,2697 @@
+{
+  "schemaVersion": 1,
+  "auditedOn": "2026-11-16",
+  "scope": "Local package-lock.json, installed package metadata and supplied top-level license/notice files; current src/game and synthetic optical samples; Vite production build inspected in memory without writing output. No network requests or dependency installation were performed for this audit.",
+  "limitations": [
+    "This is a technical inventory, not legal advice or a determination of all copyright ownership.",
+    "SPDX values are declarations in the lockfile and package metadata, not an independent legal classification of every bundled source file.",
+    "No node_modules directory, development-tool package tarball, or downloaded test browser is intended to be redistributed in the game web release. Their supplied license and notice files remain in the installed packages.",
+    "Not-installed optional/platform packages were not downloaded or content-inspected. Upstream tarball-internal bundled component inventories are not exhaustively expanded here.",
+    "Inspect the final release again after changing dependencies, runtime imports, Vite configuration, assets, or packaging scope.",
+    "The project owner must confirm ownership/contributor rights and choose the project license; dependency licenses remain independent."
+  ],
+  "lockfileVersion": 3,
+  "counts": {
+    "lockedDependencyPackages": 130,
+    "installedPackages": 54,
+    "directDevelopmentDependencies": 8,
+    "lockedLicenseDeclarations": {
+      "MIT": 88,
+      "Apache-2.0": 26,
+      "BSD-2-Clause": 1,
+      "MPL-2.0": 12,
+      "ISC": 1,
+      "BSD-3-Clause": 1,
+      "0BSD": 1
+    }
+  },
+  "directDevelopmentDependencies": [
+    {
+      "name": "@types/node",
+      "requestedVersion": "^26.6.6",
+      "version": "26.6.6",
+      "spdx": "MIT",
+      "packagePath": "node_modules/@types/node",
+      "licenseAndNoticeFiles": [
+        "node_modules/@types/node/LICENSE"
+      ]
+    },
+    {
+      "name": "fast-check",
+      "requestedVersion": "^4.10.2",
+      "version": "4.10.2",
+      "spdx": "MIT",
+      "packagePath": "node_modules/fast-check",
+      "licenseAndNoticeFiles": [
+        "node_modules/fast-check/LICENSE"
+      ]
+    },
+    {
+      "name": "happy-dom",
+      "requestedVersion": "^21.0.4",
+      "version": "21.0.4",
+      "spdx": "MIT",
+      "packagePath": "node_modules/happy-dom",
+      "licenseAndNoticeFiles": [
+        "node_modules/happy-dom/LICENSE"
+      ]
+    },
+    {
+      "name": "tsx",
+      "requestedVersion": "^4.23.15",
+      "version": "4.23.15",
+      "spdx": "MIT",
+      "packagePath": "node_modules/tsx",
+      "licenseAndNoticeFiles": [
+        "node_modules/tsx/LICENSE"
+      ]
+    },
+    {
+      "name": "typescript",
+      "requestedVersion": "^7.0.2",
+      "version": "7.0.2",
+      "spdx": "Apache-2.0",
+      "packagePath": "node_modules/typescript",
+      "licenseAndNoticeFiles": [
+        "node_modules/typescript/LICENSE",
+        "node_modules/typescript/NOTICE.txt"
+      ]
+    },
+    {
+      "name": "vite",
+      "requestedVersion": "^8.3.8",
+      "version": "8.3.8",
+      "spdx": "MIT",
+      "packagePath": "node_modules/vite",
+      "licenseAndNoticeFiles": [
+        "node_modules/vite/LICENSE.md"
+      ]
+    },
+    {
+      "name": "vitest",
+      "requestedVersion": "^5.1.0",
+      "version": "5.1.0",
+      "spdx": "MIT",
+      "packagePath": "node_modules/vitest",
+      "licenseAndNoticeFiles": [
+        "node_modules/vitest/LICENSE.md"
+      ]
+    },
+    {
+      "name": "@playwright/test",
+      "requestedVersion": "1.65.1",
+      "version": "1.65.1",
+      "spdx": "Apache-2.0",
+      "packagePath": "node_modules/@playwright/test",
+      "licenseAndNoticeFiles": [
+        "node_modules/@playwright/test/LICENSE",
+        "node_modules/@playwright/test/NOTICE"
+      ]
+    }
+  ],
+  "productionBundle": {
+    "verification": "Vite build({build:{write:false},logLevel:\"silent\"}) succeeded using the installed locked Vite and Rolldown. Generated output was inspected in memory; typechecking and browser functional validation are outside this inventory.",
+    "generatedThirdPartyModules": [
+      "\u0000rolldown/runtime.js",
+      "\u0000vite/modulepreload-polyfill.js"
+    ],
+    "noticeSources": [
+      "node_modules/vite/LICENSE.md (Vite core section)",
+      "node_modules/rolldown/LICENSE",
+      "node_modules/rolldown/THIRD-PARTY-LICENSE"
+    ],
+    "applicationModuleScope": "All non-virtual JavaScript source modules in the output were under src/game; CSS modules were under src/game/ui.",
+    "externalHttpUrlsFound": [],
+    "notes": "The Vite modulepreload polyfill can fetch linked module URLs. No external runtime asset URLs were found in the current application or emitted JavaScript/CSS/HTML. Tool-generated preload behavior does not establish that the bundle contains no networking code.",
+    "releaseNoticeFile": "THIRD_PARTY_NOTICES.md"
+  },
+  "assets": {
+    "inspectedPaths": [
+      "src/game",
+      "src/game/ui/index.html",
+      "src/game/ui/styles/tokens.css",
+      "src/game/ui/components/card-face.ts",
+      "scripts/render-samples.ts",
+      "src/optical/render.ts",
+      "src/optical/codebook.v1.json",
+      "docs/optical/samples/manifest.json"
+    ],
+    "bundledThirdPartyImages": [],
+    "bundledFontFiles": [],
+    "bundledMusicOrSound": [],
+    "externalRuntimeAssetUrls": [],
+    "uiGraphics": "DOM/CSS shapes and text. Card suits are Unicode text characters (hearts, diamonds, clubs, spades), rendered by the user device fonts; no suit image or font file is bundled.",
+    "fonts": "CSS system/local fallback stack includes system-ui, -apple-system, Segoe UI, Malgun Gothic, Apple SD Gothic Neo, Noto Sans KR, Roboto and sans-serif. Naming these installed fonts does not redistribute them.",
+    "opticalSamples": "Nine deterministic synthetic PNG renders generated by repository scripts from frozen optical code patterns; not photographs or externally sourced stock artwork. They are documentation/research fixtures, not current game runtime assets.",
+    "verifiedOpticalSamples": [
+      {
+        "path": "docs/optical/samples/H-A-0.png",
+        "sha256": "664eecb01f0ce3ced9a88726d0642aeacd7375beec9970e441b944fc071f5e28"
+      },
+      {
+        "path": "docs/optical/samples/H-A-180.png",
+        "sha256": "664eecb01f0ce3ced9a88726d0642aeacd7375beec9970e441b944fc071f5e28"
+      },
+      {
+        "path": "docs/optical/samples/D-K-0.png",
+        "sha256": "6f7b53721321f5a0f9add45342398256f0aed79ab01d8b8fa7f56b6f6e2bb007"
+      },
+      {
+        "path": "docs/optical/samples/D-K-180.png",
+        "sha256": "6f7b53721321f5a0f9add45342398256f0aed79ab01d8b8fa7f56b6f6e2bb007"
+      },
+      {
+        "path": "docs/optical/samples/C-7-0.png",
+        "sha256": "3a84d54e051023264f4f767c6dbd4fb7426d5afe402de7ebad139ad7f9a7bf7a"
+      },
+      {
+        "path": "docs/optical/samples/C-7-180.png",
+        "sha256": "7efdf8f1d69c02e5977d61675a18cc683a649e114de1a4f3d45d1c2cd019e4a8"
+      },
+      {
+        "path": "docs/optical/samples/S-Q-0.png",
+        "sha256": "b54b1261f51ffad2898a74179c112de01096dcceb72adbd9a53686c9056f33dd"
+      },
+      {
+        "path": "docs/optical/samples/S-Q-180.png",
+        "sha256": "28593f31cae8254aa6af4c91d96444eddd477f5f165de579c234f2610908c3d5"
+      },
+      {
+        "path": "docs/optical/samples/contact-sheet-0deg.png",
+        "sha256": "e7ea1468bba4b9b08b2b99a2b4ec6f8c6eea31ba680f3c1a636caaee734d5399"
+      }
+    ],
+    "ownershipLimit": "Repository generation paths and manifest hashes were inspected; original authorship, contributor rights, and publication authority require owner confirmation."
+  },
+  "packages": [
+    {
+      "name": "@emnapi/core",
+      "version": "2.0.0-beta.2",
+      "packagePath": "node_modules/@emnapi/core",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@emnapi/runtime",
+      "version": "2.0.0-beta.2",
+      "packagePath": "node_modules/@emnapi/runtime",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@emnapi/wasi-threads",
+      "version": "2.2.0",
+      "packagePath": "node_modules/@emnapi/wasi-threads",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@esbuild/aix-ppc64",
+      "version": "0.28.2",
+      "packagePath": "node_modules/@esbuild/aix-ppc64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@esbuild/android-arm",
+      "version": "0.28.2",
+      "packagePath": "node_modules/@esbuild/android-arm",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@esbuild/android-arm64",
+      "version": "0.28.2",
+      "packagePath": "node_modules/@esbuild/android-arm64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@esbuild/android-x64",
+      "version": "0.28.2",
+      "packagePath": "node_modules/@esbuild/android-x64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@esbuild/darwin-arm64",
+      "version": "0.28.2",
+      "packagePath": "node_modules/@esbuild/darwin-arm64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@esbuild/darwin-x64",
+      "version": "0.28.2",
+      "packagePath": "node_modules/@esbuild/darwin-x64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@esbuild/freebsd-arm64",
+      "version": "0.28.2",
+      "packagePath": "node_modules/@esbuild/freebsd-arm64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@esbuild/freebsd-x64",
+      "version": "0.28.2",
+      "packagePath": "node_modules/@esbuild/freebsd-x64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@esbuild/linux-arm",
+      "version": "0.28.2",
+      "packagePath": "node_modules/@esbuild/linux-arm",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@esbuild/linux-arm64",
+      "version": "0.28.2",
+      "packagePath": "node_modules/@esbuild/linux-arm64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@esbuild/linux-ia32",
+      "version": "0.28.2",
+      "packagePath": "node_modules/@esbuild/linux-ia32",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@esbuild/linux-loong64",
+      "version": "0.28.2",
+      "packagePath": "node_modules/@esbuild/linux-loong64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@esbuild/linux-mips64el",
+      "version": "0.28.2",
+      "packagePath": "node_modules/@esbuild/linux-mips64el",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@esbuild/linux-ppc64",
+      "version": "0.28.2",
+      "packagePath": "node_modules/@esbuild/linux-ppc64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@esbuild/linux-riscv64",
+      "version": "0.28.2",
+      "packagePath": "node_modules/@esbuild/linux-riscv64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@esbuild/linux-s390x",
+      "version": "0.28.2",
+      "packagePath": "node_modules/@esbuild/linux-s390x",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@esbuild/linux-x64",
+      "version": "0.28.2",
+      "packagePath": "node_modules/@esbuild/linux-x64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@esbuild/netbsd-arm64",
+      "version": "0.28.2",
+      "packagePath": "node_modules/@esbuild/netbsd-arm64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@esbuild/netbsd-x64",
+      "version": "0.28.2",
+      "packagePath": "node_modules/@esbuild/netbsd-x64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@esbuild/openbsd-arm64",
+      "version": "0.28.2",
+      "packagePath": "node_modules/@esbuild/openbsd-arm64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@esbuild/openbsd-x64",
+      "version": "0.28.2",
+      "packagePath": "node_modules/@esbuild/openbsd-x64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@esbuild/openharmony-arm64",
+      "version": "0.28.2",
+      "packagePath": "node_modules/@esbuild/openharmony-arm64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@esbuild/sunos-x64",
+      "version": "0.28.2",
+      "packagePath": "node_modules/@esbuild/sunos-x64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@esbuild/win32-arm64",
+      "version": "0.28.2",
+      "packagePath": "node_modules/@esbuild/win32-arm64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@esbuild/win32-ia32",
+      "version": "0.28.2",
+      "packagePath": "node_modules/@esbuild/win32-ia32",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@esbuild/win32-x64",
+      "version": "0.28.2",
+      "packagePath": "node_modules/@esbuild/win32-x64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": true,
+      "installedVersion": "0.28.2",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [],
+      "inspection": "Installed metadata inspected; no top-level license/notice file supplied in this package.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@jridgewell/resolve-uri",
+      "version": "3.1.2",
+      "packagePath": "node_modules/@jridgewell/resolve-uri",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "3.1.2",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/@jridgewell/resolve-uri/LICENSE",
+          "sha256": "b8778b155bfde5a28b023a558753c0fa058a52bb9de35c343c250be1bbcdedab"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@jridgewell/sourcemap-codec",
+      "version": "1.6.0",
+      "packagePath": "node_modules/@jridgewell/sourcemap-codec",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "1.6.0",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/@jridgewell/sourcemap-codec/LICENSE",
+          "sha256": "769d154fbde32a915af110b1123650bc79f4cbe675acc66e005265bf069c6c6c"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@jridgewell/trace-mapping",
+      "version": "0.3.31",
+      "packagePath": "node_modules/@jridgewell/trace-mapping",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "0.3.31",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/@jridgewell/trace-mapping/LICENSE",
+          "sha256": "769d154fbde32a915af110b1123650bc79f4cbe675acc66e005265bf069c6c6c"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@napi-rs/wasm-runtime",
+      "version": "1.2.6",
+      "packagePath": "node_modules/@napi-rs/wasm-runtime",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@oxc-project/types",
+      "version": "0.156.0",
+      "packagePath": "node_modules/@oxc-project/types",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "0.156.0",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/@oxc-project/types/LICENSE",
+          "sha256": "95ced5ecf1133fbf41d409b5555c86c344f83f3b019926057ddbc07cfdcc27b3"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@playwright/test",
+      "version": "1.65.1",
+      "packagePath": "node_modules/@playwright/test",
+      "direct": true,
+      "declaredScope": "devDependencies",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "1.65.1",
+      "lockedSpdx": "Apache-2.0",
+      "installedDeclaredSpdx": "Apache-2.0",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/@playwright/test/LICENSE",
+          "sha256": "45873d00a0dd243596deb4aa23b2493b3d1f0671921bf2538ea431d7380220eb"
+        },
+        {
+          "path": "node_modules/@playwright/test/NOTICE",
+          "sha256": "6d602191187b35b9b01d2cffa01c8469c2c8d9de8a96f1bf868e0f264f51c81d"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@rolldown/binding-android-arm-eabi",
+      "version": "1.2.19",
+      "packagePath": "node_modules/@rolldown/binding-android-arm-eabi",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@rolldown/binding-android-arm64",
+      "version": "1.2.19",
+      "packagePath": "node_modules/@rolldown/binding-android-arm64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@rolldown/binding-darwin-arm64",
+      "version": "1.2.19",
+      "packagePath": "node_modules/@rolldown/binding-darwin-arm64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@rolldown/binding-darwin-x64",
+      "version": "1.2.19",
+      "packagePath": "node_modules/@rolldown/binding-darwin-x64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@rolldown/binding-freebsd-x64",
+      "version": "1.2.19",
+      "packagePath": "node_modules/@rolldown/binding-freebsd-x64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@rolldown/binding-linux-arm-gnueabihf",
+      "version": "1.2.19",
+      "packagePath": "node_modules/@rolldown/binding-linux-arm-gnueabihf",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@rolldown/binding-linux-arm64-gnu",
+      "version": "1.2.19",
+      "packagePath": "node_modules/@rolldown/binding-linux-arm64-gnu",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@rolldown/binding-linux-arm64-musl",
+      "version": "1.2.19",
+      "packagePath": "node_modules/@rolldown/binding-linux-arm64-musl",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@rolldown/binding-linux-ppc64-gnu",
+      "version": "1.2.19",
+      "packagePath": "node_modules/@rolldown/binding-linux-ppc64-gnu",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@rolldown/binding-linux-s390x-gnu",
+      "version": "1.2.19",
+      "packagePath": "node_modules/@rolldown/binding-linux-s390x-gnu",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@rolldown/binding-linux-x64-gnu",
+      "version": "1.2.19",
+      "packagePath": "node_modules/@rolldown/binding-linux-x64-gnu",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@rolldown/binding-linux-x64-musl",
+      "version": "1.2.19",
+      "packagePath": "node_modules/@rolldown/binding-linux-x64-musl",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@rolldown/binding-openharmony-arm64",
+      "version": "1.2.19",
+      "packagePath": "node_modules/@rolldown/binding-openharmony-arm64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@rolldown/binding-wasm32-wasi",
+      "version": "1.2.19",
+      "packagePath": "node_modules/@rolldown/binding-wasm32-wasi",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@rolldown/binding-win32-arm64-msvc",
+      "version": "1.2.19",
+      "packagePath": "node_modules/@rolldown/binding-win32-arm64-msvc",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@rolldown/binding-win32-x64-msvc",
+      "version": "1.2.19",
+      "packagePath": "node_modules/@rolldown/binding-win32-x64-msvc",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": true,
+      "installedVersion": "1.2.19",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [],
+      "inspection": "Installed metadata inspected; no top-level license/notice file supplied in this package.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@rolldown/pluginutils",
+      "version": "1.1.0",
+      "packagePath": "node_modules/@rolldown/pluginutils",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "1.1.0",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/@rolldown/pluginutils/LICENSE",
+          "sha256": "e1919b3b98b8bf6c1b99fcc60a0ed46027c97ac947432e1278446c9606f50161"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@tybys/wasm-util",
+      "version": "0.10.4",
+      "packagePath": "node_modules/@tybys/wasm-util",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@types/chai",
+      "version": "5.2.3",
+      "packagePath": "node_modules/@types/chai",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "5.2.3",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/@types/chai/LICENSE",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@types/deep-eql",
+      "version": "4.0.2",
+      "packagePath": "node_modules/@types/deep-eql",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "4.0.2",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/@types/deep-eql/LICENSE",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@types/estree",
+      "version": "1.0.10",
+      "packagePath": "node_modules/@types/estree",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "1.0.10",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/@types/estree/LICENSE",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@types/node",
+      "version": "26.6.6",
+      "packagePath": "node_modules/@types/node",
+      "direct": true,
+      "declaredScope": "devDependencies",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "26.6.6",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/@types/node/LICENSE",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@types/whatwg-mimetype",
+      "version": "3.0.2",
+      "packagePath": "node_modules/@types/whatwg-mimetype",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "3.0.2",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/@types/whatwg-mimetype/LICENSE",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@types/ws",
+      "version": "8.18.2",
+      "packagePath": "node_modules/@types/ws",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "8.18.2",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/@types/ws/LICENSE",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@typescript/typescript-aix-ppc64",
+      "version": "7.0.2",
+      "packagePath": "node_modules/@typescript/typescript-aix-ppc64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "Apache-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@typescript/typescript-darwin-arm64",
+      "version": "7.0.2",
+      "packagePath": "node_modules/@typescript/typescript-darwin-arm64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "Apache-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@typescript/typescript-darwin-x64",
+      "version": "7.0.2",
+      "packagePath": "node_modules/@typescript/typescript-darwin-x64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "Apache-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@typescript/typescript-freebsd-arm64",
+      "version": "7.0.2",
+      "packagePath": "node_modules/@typescript/typescript-freebsd-arm64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "Apache-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@typescript/typescript-freebsd-x64",
+      "version": "7.0.2",
+      "packagePath": "node_modules/@typescript/typescript-freebsd-x64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "Apache-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@typescript/typescript-linux-arm",
+      "version": "7.0.2",
+      "packagePath": "node_modules/@typescript/typescript-linux-arm",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "Apache-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@typescript/typescript-linux-arm64",
+      "version": "7.0.2",
+      "packagePath": "node_modules/@typescript/typescript-linux-arm64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "Apache-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@typescript/typescript-linux-loong64",
+      "version": "7.0.2",
+      "packagePath": "node_modules/@typescript/typescript-linux-loong64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "Apache-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@typescript/typescript-linux-mips64el",
+      "version": "7.0.2",
+      "packagePath": "node_modules/@typescript/typescript-linux-mips64el",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "Apache-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@typescript/typescript-linux-ppc64",
+      "version": "7.0.2",
+      "packagePath": "node_modules/@typescript/typescript-linux-ppc64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "Apache-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@typescript/typescript-linux-riscv64",
+      "version": "7.0.2",
+      "packagePath": "node_modules/@typescript/typescript-linux-riscv64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "Apache-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@typescript/typescript-linux-s390x",
+      "version": "7.0.2",
+      "packagePath": "node_modules/@typescript/typescript-linux-s390x",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "Apache-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@typescript/typescript-linux-x64",
+      "version": "7.0.2",
+      "packagePath": "node_modules/@typescript/typescript-linux-x64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "Apache-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@typescript/typescript-netbsd-arm64",
+      "version": "7.0.2",
+      "packagePath": "node_modules/@typescript/typescript-netbsd-arm64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "Apache-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@typescript/typescript-netbsd-x64",
+      "version": "7.0.2",
+      "packagePath": "node_modules/@typescript/typescript-netbsd-x64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "Apache-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@typescript/typescript-openbsd-arm64",
+      "version": "7.0.2",
+      "packagePath": "node_modules/@typescript/typescript-openbsd-arm64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "Apache-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@typescript/typescript-openbsd-x64",
+      "version": "7.0.2",
+      "packagePath": "node_modules/@typescript/typescript-openbsd-x64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "Apache-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@typescript/typescript-sunos-x64",
+      "version": "7.0.2",
+      "packagePath": "node_modules/@typescript/typescript-sunos-x64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "Apache-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@typescript/typescript-win32-arm64",
+      "version": "7.0.2",
+      "packagePath": "node_modules/@typescript/typescript-win32-arm64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "Apache-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@typescript/typescript-win32-x64",
+      "version": "7.0.2",
+      "packagePath": "node_modules/@typescript/typescript-win32-x64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": true,
+      "installedVersion": "7.0.2",
+      "lockedSpdx": "Apache-2.0",
+      "installedDeclaredSpdx": "Apache-2.0",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/@typescript/typescript-win32-x64/LICENSE",
+          "sha256": "a7d00bfd54525bc694b6e32f64c7ebcf5e6b7ae3657be5cc12767bce74654a47"
+        },
+        {
+          "path": "node_modules/@typescript/typescript-win32-x64/NOTICE.txt",
+          "sha256": "f5c708b59114507b8b27b48181b6883d106bbca0c1634bbee45b5e344237b66b"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@vitest/mocker",
+      "version": "5.1.0",
+      "packagePath": "node_modules/@vitest/mocker",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "5.1.0",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/@vitest/mocker/LICENSE",
+          "sha256": "04575fc5bfae19a9b63100f8691f901a2e15a399011ac02db435a9ef27295551"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "@vitest/spy",
+      "version": "5.1.0",
+      "packagePath": "node_modules/@vitest/spy",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "5.1.0",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/@vitest/spy/LICENSE",
+          "sha256": "04575fc5bfae19a9b63100f8691f901a2e15a399011ac02db435a9ef27295551"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "assertion-error",
+      "version": "2.0.1",
+      "packagePath": "node_modules/assertion-error",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "2.0.1",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/assertion-error/LICENSE",
+          "sha256": "2130216d5ab4c02134f8247f32999feda0abe1eaf028218baeac445c19ce4cea"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "buffer-image-size",
+      "version": "0.6.4",
+      "packagePath": "node_modules/buffer-image-size",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "0.6.4",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/buffer-image-size/LICENSE",
+          "sha256": "54d0b82d1e7d0bc60a4b48b6172f1a9fa7385cfa8a448d14ad3a638930ef417c"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "chai",
+      "version": "6.3.0",
+      "packagePath": "node_modules/chai",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "6.3.0",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/chai/LICENSE",
+          "sha256": "b181da80336ff9dd1043fc8be1a764d7382363433319aa872e4d2cb5ce2a3066"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "detect-libc",
+      "version": "2.1.2",
+      "packagePath": "node_modules/detect-libc",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "2.1.2",
+      "lockedSpdx": "Apache-2.0",
+      "installedDeclaredSpdx": "Apache-2.0",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/detect-libc/LICENSE",
+          "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "entities",
+      "version": "7.0.1",
+      "packagePath": "node_modules/entities",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "7.0.1",
+      "lockedSpdx": "BSD-2-Clause",
+      "installedDeclaredSpdx": "BSD-2-Clause",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/entities/LICENSE",
+          "sha256": "cb992345949ccd6e8394b2cd6c465f7b897c864f845937dbf64e8997f389e164"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "es-module-lexer",
+      "version": "2.3.2",
+      "packagePath": "node_modules/es-module-lexer",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "2.3.2",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/es-module-lexer/LICENSE",
+          "sha256": "8a4b6c44eebfb026d23719a348145a661a555568dbfdc11618ff2d0dd9306b00"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "esbuild",
+      "version": "0.28.2",
+      "packagePath": "node_modules/esbuild",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "0.28.2",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/esbuild/LICENSE.md",
+          "sha256": "b40ec5baec7bb34fa5b1c09521fa3cd52d5fad7adafed74932a2010d3612a681"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "estree-walker",
+      "version": "3.0.3",
+      "packagePath": "node_modules/estree-walker",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "3.0.3",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/estree-walker/LICENSE",
+          "sha256": "8a6dcbabe7179f9c8489c08a7d874d0f1e093ae7449e03756ccf87cb9d0e296e"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "expect-type",
+      "version": "1.4.0",
+      "packagePath": "node_modules/expect-type",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "1.4.0",
+      "lockedSpdx": "Apache-2.0",
+      "installedDeclaredSpdx": "Apache-2.0",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/expect-type/LICENSE",
+          "sha256": "7c6cc83c84eaa249a85bf12fe3eedd831bb50c696e8890b5248223ae68c7b408"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "fast-check",
+      "version": "4.10.2",
+      "packagePath": "node_modules/fast-check",
+      "direct": true,
+      "declaredScope": "devDependencies",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "4.10.2",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/fast-check/LICENSE",
+          "sha256": "b2bd24f5c975f659433271170b17e0a769b12ef8065bbca6dcd5511d57e94ce0"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "fdir",
+      "version": "6.5.0",
+      "packagePath": "node_modules/fdir",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "6.5.0",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/fdir/LICENSE",
+          "sha256": "9a39f2aadab11a3697edd668ff2d8ad885b649737b7ab4d3bf12b34e5ada0c86"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "fsevents",
+      "version": "2.3.3",
+      "packagePath": "node_modules/fsevents",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "happy-dom",
+      "version": "21.0.4",
+      "packagePath": "node_modules/happy-dom",
+      "direct": true,
+      "declaredScope": "devDependencies",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "21.0.4",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/happy-dom/LICENSE",
+          "sha256": "46a5fbffa79b8dc33e512852b5ac5da71317eee5ce122ddb601cf1add07848cf"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "lightningcss",
+      "version": "1.33.0",
+      "packagePath": "node_modules/lightningcss",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "1.33.0",
+      "lockedSpdx": "MPL-2.0",
+      "installedDeclaredSpdx": "MPL-2.0",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/lightningcss/LICENSE",
+          "sha256": "5eba353fe5076ac3432177f8ab1cf75e3afcd0584251e37c3bfead5f447d040e"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "lightningcss-android-arm64",
+      "version": "1.33.0",
+      "packagePath": "node_modules/lightningcss-android-arm64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MPL-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "lightningcss-darwin-arm64",
+      "version": "1.33.0",
+      "packagePath": "node_modules/lightningcss-darwin-arm64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MPL-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "lightningcss-darwin-x64",
+      "version": "1.33.0",
+      "packagePath": "node_modules/lightningcss-darwin-x64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MPL-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "lightningcss-freebsd-x64",
+      "version": "1.33.0",
+      "packagePath": "node_modules/lightningcss-freebsd-x64",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MPL-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "lightningcss-linux-arm-gnueabihf",
+      "version": "1.33.0",
+      "packagePath": "node_modules/lightningcss-linux-arm-gnueabihf",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MPL-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "lightningcss-linux-arm64-gnu",
+      "version": "1.33.0",
+      "packagePath": "node_modules/lightningcss-linux-arm64-gnu",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MPL-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "lightningcss-linux-arm64-musl",
+      "version": "1.33.0",
+      "packagePath": "node_modules/lightningcss-linux-arm64-musl",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MPL-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "lightningcss-linux-x64-gnu",
+      "version": "1.33.0",
+      "packagePath": "node_modules/lightningcss-linux-x64-gnu",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MPL-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "lightningcss-linux-x64-musl",
+      "version": "1.33.0",
+      "packagePath": "node_modules/lightningcss-linux-x64-musl",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MPL-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "lightningcss-win32-arm64-msvc",
+      "version": "1.33.0",
+      "packagePath": "node_modules/lightningcss-win32-arm64-msvc",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "MPL-2.0",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "lightningcss-win32-x64-msvc",
+      "version": "1.33.0",
+      "packagePath": "node_modules/lightningcss-win32-x64-msvc",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": true,
+      "installedVersion": "1.33.0",
+      "lockedSpdx": "MPL-2.0",
+      "installedDeclaredSpdx": "MPL-2.0",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/lightningcss-win32-x64-msvc/LICENSE",
+          "sha256": "5eba353fe5076ac3432177f8ab1cf75e3afcd0584251e37c3bfead5f447d040e"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "magic-string",
+      "version": "1.4.5",
+      "packagePath": "node_modules/magic-string",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "1.4.5",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/magic-string/LICENSE",
+          "sha256": "1cbe51b907662f6cb1492b16c359384a595180bf0e4d101603ed525e75c4e484"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "nanoid",
+      "version": "3.3.20",
+      "packagePath": "node_modules/nanoid",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "3.3.20",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/nanoid/LICENSE",
+          "sha256": "da4db1480d9beea3483a2eda5c53b22238d0827d57da162b48f122e04d2d9987"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "obug",
+      "version": "3.0.0",
+      "packagePath": "node_modules/obug",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "3.0.0",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/obug/LICENSE",
+          "sha256": "ee48679d379ca6b4493d5e231094d85f818dd9be40b1a4f234fb7ff657ee35d9"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "picocolors",
+      "version": "1.1.1",
+      "packagePath": "node_modules/picocolors",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "1.1.1",
+      "lockedSpdx": "ISC",
+      "installedDeclaredSpdx": "ISC",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/picocolors/LICENSE",
+          "sha256": "6582629e2979466878f6014313dcc2f3756c9616148682227ce3063dde310750"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "picomatch",
+      "version": "4.0.7",
+      "packagePath": "node_modules/picomatch",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "4.0.7",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/picomatch/LICENSE",
+          "sha256": "d0cd141b0c322fded5dfad1d4645bb2fedfc05b7321fe1009469638190d59ef9"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "playwright",
+      "version": "1.65.1",
+      "packagePath": "node_modules/playwright",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "1.65.1",
+      "lockedSpdx": "Apache-2.0",
+      "installedDeclaredSpdx": "Apache-2.0",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/playwright/LICENSE",
+          "sha256": "45873d00a0dd243596deb4aa23b2493b3d1f0671921bf2538ea431d7380220eb"
+        },
+        {
+          "path": "node_modules/playwright/NOTICE",
+          "sha256": "6d602191187b35b9b01d2cffa01c8469c2c8d9de8a96f1bf868e0f264f51c81d"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "playwright-core",
+      "version": "1.65.1",
+      "packagePath": "node_modules/playwright-core",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "1.65.1",
+      "lockedSpdx": "Apache-2.0",
+      "installedDeclaredSpdx": "Apache-2.0",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/playwright-core/LICENSE",
+          "sha256": "45873d00a0dd243596deb4aa23b2493b3d1f0671921bf2538ea431d7380220eb"
+        },
+        {
+          "path": "node_modules/playwright-core/NOTICE",
+          "sha256": "6d602191187b35b9b01d2cffa01c8469c2c8d9de8a96f1bf868e0f264f51c81d"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "postcss",
+      "version": "8.5.32",
+      "packagePath": "node_modules/postcss",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "8.5.32",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/postcss/LICENSE",
+          "sha256": "5be1f3465bba68a626777f984878814aaf35e7ef8e9fd314d469bcf887050fb8"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "pure-rand",
+      "version": "8.4.2",
+      "packagePath": "node_modules/pure-rand",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "8.4.2",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/pure-rand/LICENSE",
+          "sha256": "e9d6a94ab01c6c9ab68c099d3ba8dd9f8aca60f2e2250c2302275405fca9e806"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "rolldown",
+      "version": "1.2.19",
+      "packagePath": "node_modules/rolldown",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "1.2.19",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/rolldown/LICENSE",
+          "sha256": "23ecfff35a5a2e80d92142f75228912c3b1abc4b5a8337a821ff4397e2f9f734"
+        },
+        {
+          "path": "node_modules/rolldown/THIRD-PARTY-LICENSE",
+          "sha256": "a877291d800ed43692f3f9ae09d8e01cc6f7293ad39d43896059c188ffbb8b7c"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "Build tool; generated runtime and Vite modulepreload plugin implementation contribute to browser JavaScript.",
+      "observedBrowserRuntimeRole": "Generated runtime module and built-in Vite modulepreload polyfill implementation."
+    },
+    {
+      "name": "source-map-js",
+      "version": "1.2.2",
+      "packagePath": "node_modules/source-map-js",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "1.2.2",
+      "lockedSpdx": "BSD-3-Clause",
+      "installedDeclaredSpdx": "BSD-3-Clause",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/source-map-js/LICENSE",
+          "sha256": "6cb0631f71c7749763fd3dd1d5bee52dd1070ec17f2edc1710079ad070bd2fbd"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "std-env",
+      "version": "4.3.0",
+      "packagePath": "node_modules/std-env",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "4.3.0",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/std-env/LICENCE",
+          "sha256": "a6f36438e46fb911859f3b9c4cad045ba64e1af3d8f4512c60258fa2d7552d28"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "tinybench",
+      "version": "6.2.3",
+      "packagePath": "node_modules/tinybench",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "6.2.3",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/tinybench/LICENSE",
+          "sha256": "cebc084d54e6dd99e53292ddb4bc1cdb63d9bfcd9ce438fe3aa6eb106d79e2ea"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "tinyexec",
+      "version": "1.3.1",
+      "packagePath": "node_modules/tinyexec",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "1.3.1",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/tinyexec/LICENSE",
+          "sha256": "f95f668fe64081ddb4153b322e34fdd719b991285ed08177d5ad7133b7988d92"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "tinyglobby",
+      "version": "0.2.17",
+      "packagePath": "node_modules/tinyglobby",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "0.2.17",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/tinyglobby/LICENSE",
+          "sha256": "22c68811e174cbbfb3813d4135918df4f540959c14d872e601d9abe83d3cde8f"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "tslib",
+      "version": "2.9.1",
+      "packagePath": "node_modules/tslib",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": true,
+      "installed": false,
+      "installedVersion": null,
+      "lockedSpdx": "0BSD",
+      "installedDeclaredSpdx": null,
+      "licenseAndNoticeFiles": [],
+      "inspection": "Lockfile metadata only; platform/optional package not installed on this machine.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "tsx",
+      "version": "4.23.15",
+      "packagePath": "node_modules/tsx",
+      "direct": true,
+      "declaredScope": "devDependencies",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "4.23.15",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/tsx/LICENSE",
+          "sha256": "8dded67841a9261a622c739fb61c81785e93765de852828ceeb9403d20a74581"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "typescript",
+      "version": "7.0.2",
+      "packagePath": "node_modules/typescript",
+      "direct": true,
+      "declaredScope": "devDependencies",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "7.0.2",
+      "lockedSpdx": "Apache-2.0",
+      "installedDeclaredSpdx": "Apache-2.0",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/typescript/LICENSE",
+          "sha256": "a7d00bfd54525bc694b6e32f64c7ebcf5e6b7ae3657be5cc12767bce74654a47"
+        },
+        {
+          "path": "node_modules/typescript/NOTICE.txt",
+          "sha256": "f5c708b59114507b8b27b48181b6883d106bbca0c1634bbee45b5e344237b66b"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "undici-types",
+      "version": "8.9.0",
+      "packagePath": "node_modules/undici-types",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "8.9.0",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/undici-types/LICENSE",
+          "sha256": "a6db8096b2707bc0102d256917d4d33f298ba36d8c3f25de067a2b5bb379db27"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "vite",
+      "version": "8.3.8",
+      "packagePath": "node_modules/vite",
+      "direct": true,
+      "declaredScope": "devDependencies",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "8.3.8",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/vite/LICENSE.md",
+          "sha256": "a22152baa1aef74402443008e767e7c689a524c0909d19b0431d97f5ab066a13"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "Build tool; generated modulepreload polyfill is included in browser JavaScript.",
+      "observedBrowserRuntimeRole": "Generated modulepreload polyfill (implementation delegated to Rolldown)."
+    },
+    {
+      "name": "vitest",
+      "version": "5.1.0",
+      "packagePath": "node_modules/vitest",
+      "direct": true,
+      "declaredScope": "devDependencies",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "5.1.0",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/vitest/LICENSE.md",
+          "sha256": "7f3ddf93a2280ef07bddd352939f5a09d345e1ffe619c518c010021344f22312"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "whatwg-mimetype",
+      "version": "3.0.0",
+      "packagePath": "node_modules/whatwg-mimetype",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "3.0.0",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/whatwg-mimetype/LICENSE.txt",
+          "sha256": "528eec83cb836a0adda9f8fc3d6a2a70a710d6cc0be9a155f92212c8df28acfa"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "why-is-node-running",
+      "version": "3.2.1",
+      "packagePath": "node_modules/why-is-node-running",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "3.2.1",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/why-is-node-running/LICENSE",
+          "sha256": "6a134e51aa31496c15a741592fc5d782b2dbf8d8b6b8524e15c8520ae0cd6374"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    },
+    {
+      "name": "ws",
+      "version": "8.23.0",
+      "packagePath": "node_modules/ws",
+      "direct": false,
+      "declaredScope": "transitive development/build/test dependency",
+      "lockfileDev": true,
+      "optional": false,
+      "installed": true,
+      "installedVersion": "8.23.0",
+      "lockedSpdx": "MIT",
+      "installedDeclaredSpdx": "MIT",
+      "licenseAndNoticeFiles": [
+        {
+          "path": "node_modules/ws/LICENSE",
+          "sha256": "2b29dcfe0d6471f7e8c92c5fb38c9f93edee10330937055440192f1832b1ecef"
+        }
+      ],
+      "inspection": "Installed metadata and listed license/notice file contents inspected.",
+      "productionUse": "No package module from this dependency was present in the inspected browser bundle.",
+      "observedBrowserRuntimeRole": "No package code identified in the inspected production browser module list; development/build/test dependency."
+    }
+  ],
+  "productionBundleInspection": {
+    "method": "Vite build API with build.write=false; output inspected in memory without writing dist files.",
+    "generatedModules": [
+      "\u0000rolldown/runtime.js",
+      "\u0000vite/modulepreload-polyfill.js"
+    ],
+    "applicationModuleScope": "All non-virtual source modules in the inspected JavaScript chunk were under src/game.",
+    "observedFiles": [
+      "assets/index-WvsJNiFS.js",
+      "assets/index-DaUytxuD.css",
+      "index.html"
+    ],
+    "externalHttpUrls": [],
+    "distributionCaveat": "Observed names describe this audit build only; rebuilds may change content hashes. This check does not replace inspection of the final packaged release."
+  }
+}
