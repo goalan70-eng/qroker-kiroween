@@ -2,6 +2,8 @@
 
 English draft package for Issues [#5](https://github.com/goalan70-eng/qroker-kiroween/issues/5) and [#6](https://github.com/goalan70-eng/qroker-kiroween/issues/6), prepared on 2026-11-16. **Not submitted or publication-ready.** No merge, deployment, YouTube upload or Devpost publication is authorized by these documents.
 
+Review: [draft PR #15](https://github.com/goalan70-eng/qroker-kiroween/pull/15), stacked on the unmerged PRs below. Root license approval and public links are still outstanding.
+
 - [Devpost draft](devpost-draft.md): project story and submission fields.
 - [Kiro usage](kiro-usage.md): inspected artifacts, owner-reported history and attribution boundaries.
 - [Video script](video-script.md): English narration and actual-app recording plan, target 2:45.

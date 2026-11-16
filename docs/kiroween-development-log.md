@@ -245,3 +245,8 @@ rewrite history or relabel Codex work as Kiro work.
   Source HEAD was `a2d3bf3` with dirty submission-preparation files; served
   asset hashes in the evidence identify the demonstrated runtime. The local
   video, JSON/FFmpeg logs and failed attempts stay ignored; nothing uploaded.
+- Preparation commit: `6328a3e`. Review:
+  [draft PR #15](https://github.com/goalan70-eng/qroker-kiroween/pull/15),
+  stacked on PR #14. All original/optical checkouts were rechecked clean;
+  unrelated work was preserved. PR-head GitHub Actions are separate from the
+  successful local checks; their final result was not yet verified here.

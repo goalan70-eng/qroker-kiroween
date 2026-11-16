@@ -15,7 +15,9 @@ local AI opponents and shared-device human play.
 ## Release candidate status
 
 This documentation describes the `codex/issue-5-submission-materials` release
-candidate as of 2026-11-16. It includes the work proposed in draft PRs
+candidate as of 2026-11-16, proposed in
+[draft PR #15](https://github.com/goalan70-eng/qroker-kiroween/pull/15).
+It includes the work proposed in draft PRs
 [#12](https://github.com/goalan70-eng/qroker-kiroween/pull/12),
 [#13](https://github.com/goalan70-eng/qroker-kiroween/pull/13) and
 [#14](https://github.com/goalan70-eng/qroker-kiroween/pull/14).
