@@ -8,7 +8,6 @@ Review: [draft PR #15](https://github.com/goalan70-eng/qroker-kiroween/pull/15),
 - [Kiro usage](kiro-usage.md): inspected artifacts, owner-reported history and attribution boundaries.
 - [Video script](video-script.md): English narration and actual-app recording plan, target 2:45.
 - [Local recording evidence](recording-evidence.md): actual English-captioned export, **2:33.84**, unpublished.
-- [Local recording evidence](recording-evidence.md): actual English-captioned browser export, measured 2:33.84; not uploaded.
 - [License proposal](license-choice.md): complete reviewable text; owner approval pending.
 - [Deployment handoff](deployment.md): local packaging and manual publication procedure.
 - [Third-party notices](../../THIRD_PARTY_NOTICES.md) and [dependency inventory](dependency-license-inventory.json).

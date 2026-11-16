@@ -250,3 +250,43 @@ rewrite history or relabel Codex work as Kiro work.
   stacked on PR #14. All original/optical checkouts were rechecked clean;
   unrelated work was preserved. PR-head GitHub Actions are separate from the
   successful local checks; their final result was not yet verified here.
+
+## 2026-11-16 — Codex scope adoption and PR-readiness audit
+
+- The owner adopted the Kiro/Codex responsibility split for this chat. Kiro
+  retains specification-driven core game/UI implementation, including proposed
+  Task 24.1 and later approved optical integration. Codex handles independent
+  verification, defects, automation, submission preparation and separate V2
+  research/prototypes. This audit does not implement Task 24.1 or start V2.
+  Rule/license decisions and merge/deploy/publication remain owner decisions.
+- Actual audit and documentation edit: **Codex**, using Git, the GitHub connector
+  and local Node documentation checks. No Kiro execution, paid model call,
+  game/UI/Spec/codebook change, merge, deployment or public upload occurred.
+  Files changed: `docs/submission/README.md` (remove a duplicated recording link)
+  and this provenance log. Review remains [PR #15](https://github.com/goalan70-eng/qroker-kiroween/pull/15).
+- Direct GitHub API observations: all five PRs below were open, draft and
+  mergeable against their own current base. Chain: main -> #12 -> #13 -> #14
+  -> #15. PR #17 is based on main and has no changed-file intersection with
+  #12–#15; that is not an executed combined-branch integration test.
+- Latest verified heads and successful **GitHub Actions** runs at audit time:
+  [#12 `a1507bd`](https://github.com/goalan70-eng/qroker-kiroween/actions/runs/43791653333),
+  [#13 `b34415a`](https://github.com/goalan70-eng/qroker-kiroween/actions/runs/43794452448),
+  [#14 `a2d3bf3`](https://github.com/goalan70-eng/qroker-kiroween/actions/runs/43797131091),
+  [#15 `14cecab`](https://github.com/goalan70-eng/qroker-kiroween/actions/runs/43800072502),
+  [#17 `7fc9e45`](https://github.com/goalan70-eng/qroker-kiroween/actions/runs/43816425396).
+  These are revision-specific observations, not results for subsequent commits
+  or proof of real Kiro Hook delivery. Fresh CI for this documentation commit
+  must be assessed separately; no unchanged runtime test suite was rerun locally.
+- PR #17's own provenance attributes its implementation to **ChatGPT through
+  the authorized GitHub connection**, not Kiro or Codex. Codex's current status
+  review is separate work and does not relabel that implementation. Actual Kiro
+  IDE/CLI Hook event delivery remains a manual follow-up.
+- Submission blockers remain: owner-approved root LICENSE/SPDX, final integrated
+  revision, verified public app URL and public YouTube URL. Local 2:33.84 footage
+  is prepared but unpublished. The role allocation is not license approval or
+  permission to merge/deploy/publish. Issue #16 was read for scope only; V1 is
+  preserved and no V2 implementation/acceptance milestone was marked complete.
+- Local verification of the two-file documentation edit: all **64 local links
+  across 11 submission/root documents resolved**, and `git diff --check` passed.
+  Audit baseline: `14cecab`; the resulting focused documentation commit is
+  recorded in PR #15's commit history.
