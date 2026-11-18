@@ -312,7 +312,7 @@ describe("Property 12: draw rule", () => {
     // Validates: Requirements 6.3, 6.4, 6.5, 6.6, 7.9
     const cov: DrawCoverage = {
       runs: 0, skipped: 0, first: 0, firstWithCode: 0, firstNoCodeDraw: 0, code: 0, nonFirstCode: 0, noCodeDraw: 0,
-      emptyDeckNoCode: 0, emptyDeckAny: 0, twoCodes: 0, endedByPlacement: 0, codeEndsGame: 0,
+      emptyDeckNoCode: 0, emptyDeckAny: 0, twoCodes: 0, codeEndsGame: 0,
       advanced: 0, fellBack: 0,
     };
 
