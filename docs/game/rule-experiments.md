@@ -1,6 +1,6 @@
 # Experimental rules: initial hand size and completed-code ending
 
-This is a **simulation-only** feature. It does **not** change the published QRoker rules, normal browser Practice Mode, Scoring Companion, save format, replay format, optical system or approved Kiro specifications.
+The configurable hand-size and completed-code limit are **simulation-only** controls; they do not change the default 4-card start or add a code-count ending to the published game. The shared draw rule was revised on 2026-11-18: every code-free placement now draws, including each player's first placement. The production rules version is 2.
 
 The original driver in src/game/sim/play-game.ts remains unchanged. The experimental driver reuses the **same** production reducer, scoring, card layout, turn order, AI strategies and PlayerView privacy boundary.
 
@@ -30,6 +30,14 @@ npm run sim:rules -- --hand 3 --codes 5 --games 200 --mix mixed --json > experim
 # Flags and usage
 npm run sim:rules -- --help
 ~~~
+
+## Draw rule used by the simulator
+
+- Every successful placement that completes **zero** new Composite Codes draws one card from the top of the deck, even if it is that Seat's first placement.
+- A placement that completes one or more new codes does not draw.
+- If a draw is required but the deck is empty, the draw is skipped.
+- There is no first-placement or first-round exemption, and no first-placement tracking state.
+- The simulation reuses the production reducer, so this rule applies identically to the baseline and every experimental hand/code configuration.
 
 ## Parameters
 
