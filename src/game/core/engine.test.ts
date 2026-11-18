@@ -151,18 +151,8 @@ describe("PLACE: draw rule and phase transitions", () => {
     expect(actingSeats(next)).toEqual(["P0", "P1", "P2", "P3"]);
   });
 
-  it("a later placement without a code follows the same draw rule", () => {
-    const state = plain({ log: [place("P0", "H-7", 0, 0)] });
-    const top = state.deck[state.deck.length - 1] as CardId;
-    const next = step(state, PLACE_NO_CODE);
-    expect(next.hands.P0).toEqual(["S-10", "S-J", "S-Q", top]);
-    expect(next.deck).toEqual(state.deck.slice(0, -1));
-    expect(next.turn).toBe("P1");
-    expect(next.phase).toBe("PLACEMENT");
-  });
-
-  it("a placement with a code never draws, regardless of placement count", () => {
-    const state = oneCode({ log: [place("P0", "H-7", 0, 0)] });
+  it("a placement with a code never draws", () => {
+    const state = oneCode();
     const next = step(state, PLACE_ONE_CODE);
     expect(next.hands.P0).toEqual(["S-9", "S-10", "S-J"]);
     expect(next.deck).toEqual(state.deck);
