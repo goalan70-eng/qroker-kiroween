@@ -263,6 +263,7 @@ interface DrawCoverage {
   skipped: number;
   first: number;
   firstWithCode: number;
+  firstNoCodeDraw: number;
   code: number;
   nonFirstCode: number;
   noCodeDraw: number;
@@ -280,14 +281,16 @@ type Prefer = "ANY" | "FIRST" | "EMPTY_DECK" | "CODE" | "CODE_NOT_FIRST" | "LAST
 /** How many new codes the best legal placement of the turn seat forms (the engine's own detector steers the choice). */
 const bestCodes = (state: GameState): number => legalPlacements(state).reduce((best, p) => Math.max(best, p.newCodes), 0);
 const inPlacement = (s: GameState): boolean => s.phase === "PLACEMENT";
+const hasPlacedBefore = (s: GameState, seat: PlayerId): boolean =>
+  s.log.some((action) => action.type === "PLACE" && action.player === seat);
 
 /** The kind of state each preference asks for. A kind that no prefix state has is reached by further legal play. */
 const WANTED: Record<Prefer, (s: GameState) => boolean> = {
   ANY: inPlacement,
-  FIRST: (s) => inPlacement(s) && !s.firstPlacementDone.includes(s.turn),
+  FIRST: (s) => inPlacement(s) && !hasPlacedBefore(s, s.turn),
   EMPTY_DECK: (s) => inPlacement(s) && s.deck.length === 0,
   CODE: (s) => inPlacement(s) && bestCodes(s) >= 1,
-  CODE_NOT_FIRST: (s) => inPlacement(s) && s.firstPlacementDone.includes(s.turn) && bestCodes(s) >= 1,
+  CODE_NOT_FIRST: (s) => inPlacement(s) && hasPlacedBefore(s, s.turn) && bestCodes(s) >= 1,
   LAST_CARD: (s) => inPlacement(s) && s.hands[s.turn].length === 1 && bestCodes(s) >= 1,
   TWO_CODES: (s) => inPlacement(s) && bestCodes(s) >= 2,
 };
@@ -309,7 +312,7 @@ describe("Property 12: draw rule", () => {
     // Feature: qroker-playable-game, Property 12: Draw rule
     // Validates: Requirements 6.3, 6.4, 6.5, 6.6, 7.9
     const cov: DrawCoverage = {
-      runs: 0, skipped: 0, first: 0, firstWithCode: 0, code: 0, nonFirstCode: 0, noCodeDraw: 0,
+      runs: 0, skipped: 0, first: 0, firstWithCode: 0, firstNoCodeDraw: 0, code: 0, nonFirstCode: 0, noCodeDraw: 0,
       emptyDeckNoCode: 0, emptyDeckAny: 0, twoCodes: 0, endedByPlacement: 0, codeEndsGame: 0,
       advanced: 0, fellBack: 0,
     };
@@ -353,7 +356,7 @@ describe("Property 12: draw rule", () => {
 
         const seat = action.player;
         const handBefore = from.hands[seat];
-        const first = !from.firstPlacementDone.includes(seat);
+        const first = !hasPlacedBefore(from, seat);
         const deckBefore = from.deck;
 
         // Independent count of the new codes, from the new board and the scored groups before the placement.
@@ -364,7 +367,7 @@ describe("Property 12: draw rule", () => {
         expect(batch.map((code) => [...code.cards]), `cards: ${ctx}`).toEqual(codes.map((code) => [...code.cards]));
 
         // The draw rule.
-        const draws = !first && codes.length === 0 && deckBefore.length > 0;
+        const draws = codes.length === 0 && deckBefore.length > 0;
         const handAfter = after.hands[seat];
         const expectedSize = draws ? handBefore.length : handBefore.length - 1;
         expect(handAfter.length, `hand size after: ${ctx}`).toBe(expectedSize);
@@ -392,8 +395,7 @@ describe("Property 12: draw rule", () => {
           expect(after.phase, ctx).toBe("PLACEMENT");
           expect(after.turn, ctx).toBe(successor(seat));
         }
-        // First placement is recorded; the placement is counted.
-        expect(after.firstPlacementDone.includes(seat)).toBe(true);
+        // The placement is counted; no first-placement marker is needed by the draw rule.
         expect(after.placements).toBe(from.placements + 1);
         // The placed card sits on the chosen cell with the chosen orientation and the seat as owner.
         expect(after.board[action.pos.row * 8 + action.pos.col]).toEqual({ card: action.card, orientation: action.orientation, owner: seat });
@@ -401,12 +403,13 @@ describe("Property 12: draw rule", () => {
         // Coverage.
         if (first) cov.first++;
         if (first && codes.length > 0) cov.firstWithCode++;
+        if (first && codes.length === 0 && draws) cov.firstNoCodeDraw++;
         if (codes.length > 0) cov.code++;
         if (codes.length > 1) cov.twoCodes++;
         if (!first && codes.length > 0) cov.nonFirstCode++;
         if (draws) cov.noCodeDraw++;
         if (deckBefore.length === 0) cov.emptyDeckAny++;
-        if (!first && codes.length === 0 && deckBefore.length === 0) cov.emptyDeckNoCode++;
+        if (codes.length === 0 && deckBefore.length === 0) cov.emptyDeckNoCode++;
         if (after.phase === "ENDED") cov.endedByPlacement++;
         if (after.pending?.endsGame === true) cov.codeEndsGame++;
       }),
@@ -419,10 +422,11 @@ describe("Property 12: draw rule", () => {
     expect(cov.skipped).toBe(0);
     expect(cov.first, "first placements").toBeGreaterThanOrEqual(30);
     expect(cov.firstWithCode, "first placements that form a code").toBeGreaterThanOrEqual(3);
+    expect(cov.firstNoCodeDraw, "first placements without a code draw when the deck is non-empty").toBeGreaterThanOrEqual(20);
     expect(cov.code, "placements that form a code").toBeGreaterThanOrEqual(50);
     expect(cov.nonFirstCode, "non-first placements that form a code").toBeGreaterThanOrEqual(40);
-    expect(cov.noCodeDraw, "non-first placements without a code and with a non-empty deck").toBeGreaterThanOrEqual(30);
-    expect(cov.emptyDeckNoCode, "non-first placements without a code and with an EMPTY deck").toBeGreaterThanOrEqual(20);
+    expect(cov.noCodeDraw, "placements without a code and with a non-empty deck").toBeGreaterThanOrEqual(50);
+    expect(cov.emptyDeckNoCode, "placements without a code and with an EMPTY deck").toBeGreaterThanOrEqual(20);
     expect(cov.endedByPlacement, "placements that end the game at once").toBeGreaterThanOrEqual(4);
     expect(cov.codeEndsGame, "code placements that empty the hand").toBeGreaterThanOrEqual(8);
   });
@@ -817,14 +821,10 @@ describe("Property 14: action authorization", () => {
 // Runs: Property 4: 300 (about 0.4 s). Property 12: 300 (about 4 s). Property 13: 200 games, 7829 accepted actions
 // in total (about 9 s). Property 14: 200 states x about 25 probes = 5016 verdicts (about 6 s).
 //
-// Property 12 (300 placements; set QROKER_COVERAGE_LOG=1 to print the counters): 80 first placements (9 of them
-// form a code), 122 code placements (113 by a seat that had already placed), 60 draws from a non-empty deck, 74
-// placements with an empty deck (47 of them non-first without a code, so a card is NOT drawn), 6 placements that end
-// the game at once, 23 code placements that empty the hand (endsGame), 41 states reached by further legal play, 65
-// cases that fell back to any PLACEMENT prefix state. Placements that form TWO codes at once were seen 0 times in
-// 300 (random legal play rarely offers one; an exploration of 600 games with codeBias 90 found 5), so no guard
-// requires them: the oracle counts any number of codes, and the two-code scenario is covered by the example test of
-// task 8.2 (engine.test.ts).
+// Property 12 was revised on 2026-11-18: every code-free placement draws when the deck is non-empty,
+// including the placing seat's first placement. Set QROKER_COVERAGE_LOG=1 to print the current fixed-seed counters.
+// The coverage guards explicitly require first placements with and without codes, first-placement draws,
+// later code placements, empty-deck skips, and immediate hand-empty endings.
 //
 // Property 13: 92 of the 200 games reached ENDED.
 //
