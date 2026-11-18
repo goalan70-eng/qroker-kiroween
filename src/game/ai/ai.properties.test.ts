@@ -906,7 +906,7 @@ describe("AI decision time", () => {
     const placementPool: Sample[] = [];
     const guessPool: Sample[] = [];
     const BIASES = [30, 60, 90, 50] as const;
-    for (let g = 0; g < 16; g++) {
+    for (let g = 0; g < 20; g++) {
       const visibility: IdentityVisibility = g % 2 === 0 ? "OWNER_ONLY" : "FACE_UP";
       const config: GameConfig = { ...defaultConfig(), identityVisibility: visibility };
       const rng = mulberry32(mix32(0x7131, g));
