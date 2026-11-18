@@ -294,7 +294,20 @@ const rankingRows = (doc: FakeDocument): { seat: string; name: string; rankText:
     }));
 
 // Real games used by several tests (built once; every ENDED view is immutable data).
-const GAME_1H = endedGame(ONE_PLUS_THREE, 20240601);
+function endedGameWithGuesses(
+  kinds: readonly SeatKind[],
+  seedStart: number,
+  minBatches = 1,
+): Game {
+  for (let offset = 0; offset < 24; offset++) {
+    const game = endedGame(kinds, seedStart + offset);
+    const view = viewOf(game);
+    if (game.guessValues.length > 0 && (view?.history.length ?? 0) >= minBatches) return game;
+  }
+  throw new Error(`no deterministic seed in [${seedStart}, ${seedStart + 23}] formed ${minBatches} scored batch(es)`);
+}
+
+const GAME_1H = endedGameWithGuesses(ONE_PLUS_THREE, 20240601, 2);
 const VIEW_1H = viewOf(GAME_1H);
 
 // ---------------------------------------------------------------------------------------------------------
@@ -363,7 +376,7 @@ describe('buildEndModel [pure, real views]', () => {
 
   it('has no Guess key at any depth and no key from a hand, the deck or the rules configuration', () => {
     for (const kinds of [ONE_PLUS_THREE, TWO_HUMANS, FOUR_HUMANS]) {
-      const g = endedGame(kinds, 20240601);
+      const g = endedGameWithGuesses(kinds, 20240601);
       const model = buildEndModel(viewOf(g, g.humans[0] as PlayerId));
       const keys = keysDeep(model);
       expect(keys.filter((k) => GUESS_WORDS.test(k))).toEqual([]);
