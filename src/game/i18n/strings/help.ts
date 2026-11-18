@@ -47,7 +47,7 @@ export const en = Object.freeze({
 
   'help.s8.title': 'Drawing cards',
   'help.s8.body':
-    'After you place a card that does not complete a new code, you draw one card from the deck. There are two exceptions: your first placement never draws, and a placement that completes a code draws nothing. When the deck is empty nothing is drawn and the game goes on.',
+    'After every placement that does not complete a new code, including your first placement, you draw one card from the deck. A placement that completes one or more new codes draws nothing. When the deck is empty, a required draw is skipped and the game goes on.',
 
   'help.s9.title': 'Reveal and points',
   'help.s9.body':
@@ -118,7 +118,7 @@ export const ko: Record<keyof typeof en, string> = Object.freeze({
   'help.s8.title': '카드 뽑기',
   // REVIEW: new text, needs native-speaker check
   'help.s8.body':
-    '새 조합을 완성하지 않는 카드를 놓으면 덱에서 카드 한 장을 뽑습니다. 예외가 두 가지 있습니다. 각 플레이어의 첫 번째 배치에서는 뽑지 않고, 조합을 완성하는 배치에서도 뽑지 않습니다. 덱이 비어 있으면 아무것도 뽑지 않고 게임은 계속됩니다.',
+    '새 조합을 완성하지 않는 카드를 놓으면 덱에서 카드 한 장을 뽑습니다. 첫 번째 배치도 예외가 없습니다. 조합을 하나 이상 완성한 배치에서는 카드를 뽑지 않습니다. 덱이 비어 있으면 필요한 드로우를 건너뛰고 게임은 계속됩니다.',
 
   // REVIEW: new text, needs native-speaker check
   'help.s9.title': '공개와 점수',
