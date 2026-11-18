@@ -1,15 +1,6 @@
 name: Run experimental rule matrix (rules v2)
 
 on:
-  push:
-    branches:
-      - feat/sim-parameterized-hand-and-code-limit-20261118
-    paths:
-      - .github/workflows/run-rule-matrix.yml
-      - src/game/core/**
-      - src/game/sim/**
-      - scripts/compare-rules.ts
-      - docs/game/rule-experiments.md
   workflow_dispatch:
 
 permissions:
