@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/sim-parameterized-hand-and-code-limit-20261118
+      - fix/draw-on-every-no-code-placement-20261118
     paths:
       - .github/workflows/run-rule-matrix.yml
   workflow_dispatch:
