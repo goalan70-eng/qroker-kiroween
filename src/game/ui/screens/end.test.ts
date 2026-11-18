@@ -295,10 +295,10 @@ const rankingRows = (doc: FakeDocument): { seat: string; name: string; rankText:
 
 // Real games used by several tests (built once; every ENDED view is immutable data).
 function endedGameWithGuesses(
-  kinds: readonly SeatKind[],
+  kinds: typeof ONE_PLUS_THREE,
   seedStart: number,
   minBatches = 1,
-): Game {
+): ReturnType<typeof startGame> {
   for (let offset = 0; offset < 24; offset++) {
     const game = endedGame(kinds, seedStart + offset);
     const view = viewOf(game);
