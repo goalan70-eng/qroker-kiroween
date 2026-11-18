@@ -153,14 +153,14 @@ Terms defined in qroker-game (Board, Card, Card_Value, Quad_Group, Composite_Cod
 
 ### Requirement 6: Turn Management and Drawing
 
-**User Story:** As a player, I want turn order and drawing to follow one consistent rule, so that hand sizes and the game length are predictable.
+**User Story:** As a player, I want turns, drawing and the first-round exemption to follow the approved rules, so that hand sizes and the game length are predictable.
 
 #### Acceptance Criteria
 
 1. THE Turn_Manager SHALL give the turn to Seat `P0` first and then to the Seats in increasing order `P0`, `P1`, `P2`, `P3`, `P0`, and so on (Open Question OQ-5).
 2. WHILE the phase is `PLACEMENT`, THE Game_Engine SHALL accept a `PLACE` Action only from the Seat whose turn it is, and SHALL reject any other Action or Seat with the Error_Code `NOT_YOUR_TURN` or `WRONG_PHASE`.
-3. WHEN any placement does not complete a new Composite_Code, THE Draw_Manager SHALL draw 1 card from the top of the deck into the Seat's Hand, including on that Seat's first placement (qroker-game Requirement 3.5).
-4. THE Draw_Manager SHALL NOT exempt a Seat's first placement from the draw rule; the draw decision SHALL depend only on whether that placement completes one or more new Composite_Codes.
+3. WHEN a placement does not complete a new Composite_Code and the Seat has already completed its first placement, THE Draw_Manager SHALL draw 1 card from the top of the deck into the Seat's Hand (qroker-game Requirement 3.5).
+4. WHEN a placement is the first placement of that Seat, THE Draw_Manager SHALL NOT draw, whether or not the placement completes a Composite_Code (qroker-game Requirement 3.5 and Open Question OQ-4).
 5. WHEN a placement completes one or more new Composite_Codes, THE Draw_Manager SHALL NOT draw (qroker-game Requirement 3.6).
 6. WHEN a draw is required while the deck is empty, THE Draw_Manager SHALL skip the draw and keep the Hand size unchanged (qroker-game Requirement 3.8).
 7. FOR ALL reachable Game_States, the number of deck cards plus Board cards plus the sum of all Hand sizes SHALL equal 52, all those cards SHALL be pairwise distinct, and the number of Board cards SHALL equal the number of accepted `PLACE` Actions plus 4 (qroker-game Requirements 3.2 and 3.10; design GameStateManager invariants).
@@ -480,7 +480,7 @@ Each item has a provisional default that the design and tasks use. Changing a de
 | OQ-1 | Hidden-identity handling (docs/open-decisions.md #2). With every placed card visible, any Seat can add 4 visible values, the Guess is trivial, and ties dominate. qroker-game 6.1 and 7.4 imply visible Board cards, while 6.4 implies face-down cards flipped at reveal. | open-decisions #2; qroker-game 6.1, 6.4, 7.4 | (a) `FACE_UP`: all placed cards public. (b) `OWNER_ONLY`: only the placer sees a placed card until its code is revealed. (c) Both as an option. | (c) Implement both as the option Identity_Visibility, default `OWNER_ONLY` so that the Guess is a real inference. The setup screen shows the option. No rule is changed. |
 | OQ-2 | Orientation of the 4 Neutral_Cards (not stated in qroker-game 3.1). It matters for ♣ and ♠ in later groups. | qroker-game 3.1, 3.11 | (a) all 0°. (b) seeded random per card. | (a) all 0°. |
 | OQ-3 | Valid starting four cards (open-decisions #3). | open-decisions #3; qroker-game 4.4b | (a) starting group never scored. (b) adjust orientation or arrangement until valid. (c) redeal until valid. | (a), which follows qroker-game 4.4b because the starting group is not formed by a placement. No redeal. |
-| OQ-4 | First-placement draw exemption | Owner decision 2026-11-18 | Keep per-Seat exemption or remove it | **Resolved: remove the exemption. Every placement with no new code draws, including the first placement.** |
+| OQ-4 | First-round exemption scope (open-decisions #6). qroker-game 3.5 and the Glossary (Draw_Rule) already say "each player's first placement". | qroker-game 3.5; open-decisions #6 | (a) per-Seat first placement. (b) first N placements of the game. | (a), the approved text. The open-decisions row appears outdated. |
 | OQ-5 | Unspecified turn rules: first Seat, direction, and whether the placing Seat also guesses. | qroker-game 3.x, 6.1 ("all participating players") | various | `P0` first, increasing order, all 4 Seats guess including the placer. |
 | OQ-6 | Numbering of tied ranks ("same rank", no tiebreak). | qroker-game 3.9 | (a) competition ranking 1,1,3,4. (b) dense ranking 1,1,2,3. | (a) competition ranking. |
 | OQ-7 | UI framework and bundler. | qroker-game design Overview ("bundler-agnostic") | (a) no bundler (tsc + static files). (b) Vite. (c) a UI framework. | (b) Vite as an explicit devDependency, no UI framework. Vite 8.3.8 is already installed as a transitive dependency of Vitest 5.1.0. Flagged decision D3. |
@@ -501,7 +501,7 @@ None of these changes an approved rule. Each is resolved here by a provisional d
 - **IC-2**: qroker-game design defines `CardId` as an object `{ suit, rank }` in Core Types but uses a `"suit-rank"` string in `DeckState`, `groupId` and the optical keys (`H-7`). This spec uses the string form.
 - **IC-3**: qroker-game design `GridPosition` is described both as "row 1–8" and "row 0–7". This spec uses zero-based coordinates with notation conversion.
 - **IC-4**: `PredictionBatch.groupIds` in qroker-game design are sorted card ids, so a public batch would reveal the 4 card identities and therefore the Hidden_Sum before collection is complete. This spec uses the Quad_Key in public structures.
-- **IC-5 (resolved 2026-11-18)**: the owner removed the first-placement draw exemption. qroker-game Requirement 3.5, this spec and docs/open-decisions.md #6 now agree that every code-free placement draws.
+- **IC-5**: docs/open-decisions.md #6 lists the first-round exemption scope as undecided, while qroker-game Requirement 3.5 states it. This spec follows Requirement 3.5.
 - **IC-6**: qroker-game Requirements 6.1 and 7.4 (visible Board cards) and 6.4 (cards flipped at reveal) do not agree on whether Board cards are hidden (see OQ-1).
 - **IC-7**: qroker-game Requirement 8.3 asks Practice Mode to render the Composite_Code for optical verification, but the optical module is a separate library that is not browser-loadable (see OQ-12).
 - **IC-8**: qroker-game Requirement 11.4 says to "document the tiebreaking rule" while Requirement 3.9 says no separate tiebreak applies. This spec treats equal Guesses as equal scores and equal final Scores as shared ranks, and documents that no tiebreak exists.
