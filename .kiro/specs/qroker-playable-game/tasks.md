@@ -184,8 +184,8 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
 
 - [x] 7. Draw and turn management
   - [x] 7.1 Implement `shouldDraw` and `nextSeat` (`core/draw.ts`, `core/turn.ts`)
-    - As in design.md. `shouldDraw(player, firstPlacementDone, newCodes)` and the cyclic `nextSeat`.
-    - Acceptance: full truth table (first placement yes/no × codes 0/1/2) gives the values of requirements 6.3 to 6.5; `nextSeat` cycles `P0` to `P3` and back.
+    - As in design.md. `shouldDraw(newCodes)` and the cyclic `nextSeat`; no first-placement history is tracked.
+    - Acceptance: `newCodes = 0` requires a draw for every placement, including the first; `newCodes >= 1` cancels the draw; `nextSeat` cycles `P0` to `P3` and back.
     - Tests: exhaustive truth-table unit tests. The reducer-level draw property is Property 12 in task 8.3.
     - Depends on: 3.1.
     - _Requirements: 6.1, 6.3, 6.4, 6.5_
@@ -199,7 +199,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - _Requirements: 2.2, 3.1, 5.7, 6.1, 8.3, 8.4, 12.1, 12.6_
   - [x] 8.2 Implement the reducer (`core/engine.ts`)
     - `reduce` for `PLACE`, `SUBMIT_GUESSES`, `ACK_REVEAL` exactly as in design.md "Reducer", plus `actingSeats`. Append every accepted action to `log`.
-    - Acceptance: scenarios of the design's Testing Strategy pass: first placement with a code (no draw, guess phase), non-first placement without a code (draw), a placement with two codes (one batch), a Hand-emptying placement with a code (reveal then `ENDED` with bonus), a Hand-emptying placement without a code (`ENDED` immediately), deck exhaustion, all error codes of the Error Handling table.
+    - Acceptance: scenarios of the design's Testing Strategy pass: first placement without a code (draw when the deck is non-empty), first placement with a code (no draw, guess phase), later placement without a code (same draw rule), a placement with two codes (one batch), a Hand-emptying placement with a code (reveal then `ENDED` with bonus), a Hand-emptying placement without a code when the deck is empty (`ENDED` immediately), deck exhaustion, all error codes of the Error Handling table.
     - Tests: example scenarios built from hand-picked states (construct a `GameState` through a test helper that overrides hands, deck and board).
     - Depends on: 8.1, 5.1, 7.1, 6.2, 4.1.
     - _Requirements: 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 6.2, 6.3, 6.4, 6.5, 6.6, 7.1, 7.2, 7.3, 7.4, 7.6, 7.9, 8.1, 8.6, 8.7, 8.8, 9.1, 9.2, 9.3, 9.7_
@@ -626,7 +626,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
 - Scoring Companion integration with `src/optical`: qroker-game Requirements 9.6 to 9.11, the browser-safe codebook loader that the optical module needs, and pixel-level Composite_Code rendering. Status pointer: `docs/optical/OPTICAL-STATUS.md` (being written by another agent; not read or relied on by this spec). The CardId convention of requirement 1 is the integration key.
 - Playwright real-browser tests, if the user approves the dependency (OQ-11).
 - Final score table and hand-empty bonus (docs/open-decisions.md #7): decided by a human after P3 experiments.
-- Fixing docs/open-decisions.md #6 (outdated against qroker-game Requirement 3.5): a documentation change for the owner of that file; this spec does not edit it.
+- docs/open-decisions.md #6 is resolved on 2026-11-18: no first-placement draw exemption; the same rule applies to every placement.
 
 ## Open Questions and Decisions for the User
 
@@ -635,7 +635,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
 | OQ-1 | Hidden-identity handling for hot-seat (open-decisions #2) | Option `OWNER_ONLY` (default) and `FACE_UP` both implemented | 8.1, 9.1, 9.2, 13.x, 19.1 |
 | OQ-2 | Orientation of the 4 starting cards | All 0° | 8.1 |
 | OQ-3 | Valid starting four cards (#3) | Starting group never scored (qroker-game 4.4b); no redeal | 5.1, 8.1 |
-| OQ-4 | First-round exemption scope (#6) | Per-Seat first placement, as in the approved qroker-game 3.5 | 7.1, 8.2 |
+| OQ-4 | First-placement draw exemption | Owner decision 2026-11-18: resolved; remove the exemption | Every placement without a new code draws, including each player's first placement | 7.1, 8.2 |
 | OQ-5 | First Seat, direction, who guesses | `P0` first, increasing order, all 4 Seats guess | 7.1, 8.2 |
 | OQ-6 | Tied rank numbering | Competition ranking (1,1,3,4) | 6.2 |
 | OQ-7 | UI framework and bundler | Vite as an explicit devDependency, no UI framework | 16.1 |
