@@ -1,4 +1,4 @@
-name: Run experimental rule matrix (simulation only)
+name: Run experimental rule matrix (rules v2)
 
 on:
   push:
@@ -6,6 +6,10 @@ on:
       - feat/sim-parameterized-hand-and-code-limit-20261118
     paths:
       - .github/workflows/run-rule-matrix.yml
+      - src/game/core/**
+      - src/game/sim/**
+      - scripts/compare-rules.ts
+      - docs/game/rule-experiments.md
   workflow_dispatch:
 
 permissions:
@@ -56,7 +60,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: qroker-rule-matrix-200-seeds
+          name: qroker-rule-matrix-rules-v2-200-seeds
           path: rule-results/
           if-no-files-found: warn
           retention-days: 14
