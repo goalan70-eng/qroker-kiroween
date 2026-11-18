@@ -1,5 +1,7 @@
 # Headless self-play diagnostics (task 13.2)
 
+> **Historical rule note (2026-11-18):** These diagnostics were generated before the first-placement draw exemption was removed and use the older placeholder score table (`[6,4,3,2,1]`, hand-empty bonus `3`). They are historical evidence only and must not be used as measurements of the current rules (RULES_VERSION 2, uniform code-free draw rule, owner-selected provisional score table).
+
 **Diagnostic evidence from placeholder scoring (`DEV_PLACEHOLDER_SCORE_CONFIG`, provisional, no balance claim); synthetic headless self-play; NOT a balance study; no claim that ADVANCED is balanced, optimal or better than BEGINNER.**
 
 This file is written by `src/game/sim/e2e.test.ts` when the test runs with `E2E_WRITE_DIAGNOSTICS=1`, from the games of that run. It is descriptive: counts and means of the games the acceptance run played. It contains no timestamps and no timings, so the same code and the same `E2E_SEEDS` give the same file. No constant of the game was chosen or changed because of these numbers.
