@@ -307,7 +307,7 @@ describe('buildEndModel [pure, real views]', () => {
     expect(viewOf(fresh).phase).not.toBe('ENDED');
     expect(buildEndModel(viewOf(fresh))).toBeNull();
     // a game stopped in the middle (some reveals, not over)
-    const middle = startGame(ALL_AI_KINDS, 20240601);
+    const middle = startGame(ALL_AI_KINDS, 16);
     for (let i = 0; i < 400 && viewOf(middle).history.length < 2; i++) middle.queue.step();
     expect(viewOf(middle).history.length).toBeGreaterThanOrEqual(2);
     expect(viewOf(middle).phase).not.toBe('ENDED');
