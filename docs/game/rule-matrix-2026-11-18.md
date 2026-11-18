@@ -2,7 +2,7 @@
 
 ## Evidence
 
-> **Historical experiment — superseded by the 2026-11-18 draw-rule revision.** All 4,800 games below used the previous first-placement exemption. They are not valid evidence for the current uniform draw rule (RULES_VERSION 2). A new matrix must be run from the revised simulator before using these numbers to select a rule.
+> **Historical experiment — superseded by the 2026-11-18 draw-rule revision.** All 4,800 games below used the previous first-placement exemption. They are not valid evidence for the current uniform draw rule (RULES_VERSION 2). The replacement 4,800-game matrix is recorded in [rule-matrix-2026-11-18-rules-v2.md](./rule-matrix-2026-11-18-rules-v2.md), from run [44324307598](https://github.com/goalan70-eng/qroker-kiroween/actions/runs/44324307598). Do not combine the two data sets.
 
 - **Actual run:** https://github.com/goalan70-eng/qroker-kiroween/actions/runs/44305190930 — **success**; exact GitHub Actions workflow commit `411c82848f6b05517c02d4ba5cbd40d5e6a803cd`.
 - **Raw results:** GitHub Actions artifact `qroker-rule-matrix-200-seeds` (24 machine-readable JSON files, artifact ID `14427931564`, retention 14 days). The table below is transcribed by a script from the emitted `SIM_RESULT|` records in this successful run, not estimated.
