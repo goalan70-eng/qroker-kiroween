@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { ALL_CARDS } from '../core/cards';
 import { HAND_SIZE } from '../core/deck';
+import { reduce } from '../core/engine';
+import { legalPlacements } from '../core/testing/state-generators';
 import { defaultConfig } from '../core/state';
 import { SEATS } from '../core/turn';
 import type { Difficulty, PlayerId } from '../core/types';
@@ -86,14 +88,20 @@ describe('experimental driver preserves published rule behavior', () => {
     }
   });
 
-  it('the first placement with a one-card hand ends by hand depletion and gives its bonus once', () => {
-    const result = runExperimentalGame({ seed: 5, config, strategies: beginner, handSize: 1, codeLimit: 5 });
-    expect(result.stopReason).toBe('HAND_EMPTY');
-    expect(result.snapshot.phase).toBe('ENDED');
-    expect(result.placements).toBe(1);
-    expect(result.snapshot.hands.P0).toHaveLength(0);
-    expect(result.bonusSeat).toBe('P0');
-    assertScoreAccounting(result);
+  it('applies the uniform draw rule to a first code-free placement with a one-card experimental hand', () => {
+    const initial = experimentalInitialState(5, config, 1);
+    const candidate = legalPlacements(initial).find((placement) => placement.newCodes === 0);
+    expect(candidate, 'the starting board has a legal code-free placement').toBeDefined();
+    const top = initial.deck[initial.deck.length - 1];
+    const result = reduce(initial, candidate!.action);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error('the generated legal placement was rejected');
+    const seat = candidate!.action.player;
+    expect(result.value.phase).toBe('PLACEMENT');
+    expect(result.value.hands[seat]).toEqual([top]);
+    expect(result.value.deck).toEqual(initial.deck.slice(0, -1));
+    expect(result.value.bonusAwarded).toBeNull();
+    checkStateInvariants(result.value);
   });
 
   it('stops only AFTER four guesses, records every code in the last batch, and does not invent an end bonus', { timeout: 25000 }, () => {
