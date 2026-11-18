@@ -635,7 +635,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
 | OQ-1 | Hidden-identity handling for hot-seat (open-decisions #2) | Option `OWNER_ONLY` (default) and `FACE_UP` both implemented | 8.1, 9.1, 9.2, 13.x, 19.1 |
 | OQ-2 | Orientation of the 4 starting cards | All 0° | 8.1 |
 | OQ-3 | Valid starting four cards (#3) | Starting group never scored (qroker-game 4.4b); no redeal | 5.1, 8.1 |
-| OQ-4 | First-placement draw exemption | Owner decision 2026-11-18: resolved; remove the exemption | Every placement without a new code draws, including each player's first placement | 7.1, 8.2 |
+| OQ-4 | First-placement draw exemption | Removed 2026-11-18: every placement without a new code draws, including the first | 7.1, 8.2 |
 | OQ-5 | First Seat, direction, who guesses | `P0` first, increasing order, all 4 Seats guess | 7.1, 8.2 |
 | OQ-6 | Tied rank numbering | Competition ranking (1,1,3,4) | 6.2 |
 | OQ-7 | UI framework and bundler | Vite as an explicit devDependency, no UI framework | 16.1 |
