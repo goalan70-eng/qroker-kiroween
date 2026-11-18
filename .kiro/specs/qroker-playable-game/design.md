@@ -1040,10 +1040,10 @@ Evidence class: real Chromium with an emulated viewport (class 2/3), recorded wi
 
 ```json
 {
-  "format": "qroker-save", "saveVersion": 1, "rulesVersion": 1,
+  "format": "qroker-save", "saveVersion": 1, "rulesVersion": 2,
   "savedAtIso": "2026-01-01T00:00:00.000Z",
   "seed": 123456789,
-  "config": { "rulesVersion": 1, "identityVisibility": "OWNER_ONLY",
+  "config": { "rulesVersion": 2, "identityVisibility": "OWNER_ONLY",
               "scoreConfig": { "id": "DEV_PLACEHOLDER", "provisional": true,
                                "config": { "rewardByError": [10, 5, 4, 3, 2, 1], "handEmptyBonus": 5 } },
               "seats": [ { "id": "P0", "kind": "HUMAN", "name": "You" }, { "id": "P1", "kind": "AI", "difficulty": "BEGINNER", "name": "AI 1" } ] },
