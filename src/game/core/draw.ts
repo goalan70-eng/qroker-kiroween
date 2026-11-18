@@ -13,7 +13,7 @@ import type { CardId } from './types';
 /** Zero new codes means draw; one or more new codes means no draw. */
 export function shouldDraw(newCodes: number): boolean {
   if (!Number.isInteger(newCodes) || newCodes < 0) {
-    throw new RangeError(\`shouldDraw: newCodes must be a non-negative integer, got \${String(newCodes)}\`);
+    throw new RangeError(`shouldDraw: newCodes must be a non-negative integer, got ${String(newCodes)}`);
   }
   return newCodes === 0;
 }
