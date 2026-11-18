@@ -139,7 +139,7 @@ These summarize the existing playable-game Spec's OQ table; they are not new dec
 | OQ-1 | Identity visibility | `OWNER_ONLY` default; `FACE_UP` supported |
 | OQ-2 | Starting-card orientation | Four neutral cards at 0° |
 | OQ-3 | Starting group | Not scored; no redeal |
-| OQ-4 | First-placement draw exemption | Per Seat |
+| OQ-4 | First-placement draw exemption | **Removed (2026-11-18): every placement without a new code draws, including the first.** |
 | OQ-5 | Seat order and Guess participants | P0 first, increasing order, all four guess |
 | OQ-6 | Ties | Competition ranks, e.g. 1,1,3,4 |
 | OQ-7 | UI stack | Vite, no UI framework |
