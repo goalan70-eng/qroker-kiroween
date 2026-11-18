@@ -6,6 +6,7 @@
 - **Raw results:** GitHub Actions artifact `qroker-rule-matrix-200-seeds` (24 machine-readable JSON files, artifact ID `14427931564`, retention 14 days). The table below is transcribed by a script from the emitted `SIM_RESULT|` records in this successful run, not estimated.
 - **24 experiment cells × 200 games = 4,800 automated AI games**, deterministic seeds 0..199 for each cell. These are configuration-specific games; repetitions under different configurations are not independent samples.
 - **ScoreConfig:** exact match 10; errors 1..5 score 5,4,3,2,1; error >=6 scores zero; hand-empty bonus 5. The runner uses the Codex #13 scoring branch.
+- **Historical draw rule:** these 4,800 games were run BEFORE the 2026-11-18 removal of the per-Seat first-placement draw exemption. They are evidence for the former rule only, not the current rule. Rerun the matrix after the no-exemption update before using it for current balance decisions.
 - This is **AI-only self-play**. It is NOT a test of actual human strength, perceived pace in minutes, market readiness, or optical recognition.
 
 ## Full aggregated results

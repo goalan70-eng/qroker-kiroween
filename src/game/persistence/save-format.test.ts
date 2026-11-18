@@ -216,6 +216,13 @@ describe('valid envelopes', () => {
   });
 });
 
+describe('rules version compatibility', () => {
+  it('rejects a version-1 save created under the first-placement draw exemption', () => {
+    const oldRules = { ...SMALL, rulesVersion: 1, config: { ...SMALL.config, rulesVersion: 1 } };
+    expect(parseSave(serializeSave(oldRules))).toEqual({ kind: 'INCOMPATIBLE', reason: 'RULES_VERSION' });
+  });
+});
+
 describe('garbage text', () => {
   it('rejects non-strings, empty, whitespace and invalid JSON', () => {
     for (const t of [undefined, null, 5, {}, [], '', ' ', '\n\t ', '\uFEFF', '{', '}', 'nul', 'undefined', '{"a":}', "{'a':1}", '{"a":1,}']) {
