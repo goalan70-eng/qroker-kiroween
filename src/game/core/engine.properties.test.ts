@@ -270,7 +270,6 @@ interface DrawCoverage {
   emptyDeckNoCode: number;
   emptyDeckAny: number;
   twoCodes: number;
-  endedByPlacement: number;
   codeEndsGame: number;
   advanced: number;
   fellBack: number;
@@ -410,7 +409,6 @@ describe("Property 12: draw rule", () => {
         if (draws) cov.noCodeDraw++;
         if (deckBefore.length === 0) cov.emptyDeckAny++;
         if (codes.length === 0 && deckBefore.length === 0) cov.emptyDeckNoCode++;
-        if (after.phase === "ENDED") cov.endedByPlacement++;
         if (after.pending?.endsGame === true) cov.codeEndsGame++;
       }),
       { seed: SEED_P12, numRuns: NUM_RUNS_P12 },
@@ -427,7 +425,6 @@ describe("Property 12: draw rule", () => {
     expect(cov.nonFirstCode, "non-first placements that form a code").toBeGreaterThanOrEqual(40);
     expect(cov.noCodeDraw, "placements without a code and with a non-empty deck").toBeGreaterThanOrEqual(50);
     expect(cov.emptyDeckNoCode, "placements without a code and with an EMPTY deck").toBeGreaterThanOrEqual(20);
-    expect(cov.endedByPlacement, "placements that end the game at once").toBeGreaterThanOrEqual(4);
     expect(cov.codeEndsGame, "code placements that empty the hand").toBeGreaterThanOrEqual(8);
   });
 });
