@@ -341,7 +341,7 @@ If `shouldDraw` is true and the deck is empty, `drawTop` returns `card: null` an
 ### ScoreEngine and Ranking (`core/score.ts`, `core/ranking.ts`)
 
 ```typescript
-export const RULES_VERSION = 1;
+export const RULES_VERSION = 2; // incremented 2026-11-18: remove first-placement draw exemption
 export const DEV_PLACEHOLDER_SCORE_CONFIG: NamedScoreConfig = {
   id: 'DEV_PLACEHOLDER',
   provisional: true,

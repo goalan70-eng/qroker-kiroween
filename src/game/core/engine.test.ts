@@ -444,7 +444,7 @@ describe("rejections leave the state unchanged", () => {
 
 describe("purity", () => {
   it("is deterministic: the same state and action give deep-equal results", () => {
-    const state = twoCodes({ firstPlacementDone: ["P0"] });
+    const state = twoCodes();
     const a = reduce(state, PLACE_TWO_CODES);
     const b = reduce(state, PLACE_TWO_CODES);
     expect(a.ok && b.ok).toBe(true);

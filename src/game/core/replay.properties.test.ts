@@ -897,7 +897,7 @@ describe("Property 26: examples of the edge cases", () => {
 // ---------------------------------------------------------------------------------------------------------
 // Duration about 6 s alone. Games (origin): NONE 39, END 44, GC 22, REVEAL 26, TWO 47 (+1 fallback), EMPTY 21; both
 // visibility modes about 100 each; at most 80 actions per log (the base generator's size limit, the extensions end
-// the game earlier than 300 steps because only the first placement and codes draw cards).
+// the game earlier than 300 steps because only the code-completing placements suppress draws).
 // Final phase of the log: PLACEMENT 33, GUESS_COLLECT with 0/1/2/3 submissions 13/16/22/18, REVEAL 13, ENDED 85, batch
 // of two codes 47, empty log 23. Prefixes replayed: 1054 (PLACEMENT 595, GC0..GC3 90/75/69/77, REVEAL 63, ENDED 85;
 // batch of one code 231, of two codes 80; the empty prefix in every run).
