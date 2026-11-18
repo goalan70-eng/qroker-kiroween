@@ -28,7 +28,8 @@
     "build": "tsc -p tsconfig.game.json --noEmit && vite build",
     "preview": "vite preview",
     "review:openai": "node scripts/openai-review.mjs",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "sim:rules": "tsx scripts/compare-rules.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
