@@ -250,29 +250,19 @@ interface ScoreEngineOperations {
 
 ### DrawManager
 
-**Responsibility:** Enforce the draw rule (excluding the first round; draw 1 card when no Composite Code is completed).
+**Responsibility:** Enforce one uniform draw rule: every placement that completes no new Composite Code draws 1 card, including each player's first placement.
 
-```typescript
-interface DrawManagerState {
-  firstPlacementDone: Set<string>; // set of IDs of players who have completed their first placement
-}
-
+~~~typescript
 interface DrawManagerOperations {
-  shouldDraw(
-    playerId: string,
-    completedCodes: CompositeCodeResult[],
-    state: DrawManagerState
-  ): boolean;
-  // Returns: false if first placement or ≥1 code completed; true otherwise
-  
-  markFirstPlacement(playerId: string, state: DrawManagerState): DrawManagerState;
+  shouldDraw(completedCodes: CompositeCodeResult[]): boolean;
+  // Returns false when one or more codes are completed; true when no code is completed.
 }
-```
+~~~
 
 **Rules:**
-- `playerId ∉ firstPlacementDone` → `shouldDraw = false` (first placement exempt), then add to `firstPlacementDone`
-- `completedCodes.length >= 1` → `shouldDraw = false`
-- Otherwise → `shouldDraw = true`
+- completedCodes.length >= 1 → shouldDraw = false
+- completedCodes.length === 0 → shouldDraw = true
+- There is no first-placement or first-round exemption; the decision does not depend on the player or placement history.
 
 ---
 
@@ -859,9 +849,9 @@ When the print file of a face is produced, the Face_Local_Frame of the FRONT fac
 
 ### Property 10: Draw rule — symmetry according to whether a Composite Code is completed
 
-*For any* non-first placement action:
+*For any* valid placement action, including the placing Seat's first placement:
 - If the action completes one or more new Composite Codes → no draw
-- If the action does not complete a Composite Code → the hand increases by 1 card if the deck is not empty
+- If the action completes no new Composite Code → draw the top card if the deck is not empty; otherwise skip the draw
 
 **Validates: Requirements 3.5, 3.6**
 
@@ -1082,7 +1072,7 @@ Target modules and cases:
 - **`CardValue`**: exact value mapping for each of the 13 Ranks. Verify that jokers are not included.
 - **`CompositeCodeDetector`**: valid/invalid Quad_Group cases (fixtures based on the example table in 14.4).
 - **`ScoreEngine`**: configuration validation (reject negative values, increasing segments, empty tables), table boundaries (e = length − 1, length, length + 1), batch reveal of multiple codes placed together.
-- **`DrawManager`**: first-placement exemption, no draw when a Composite Code is completed, skip when the deck is exhausted.
+- **`DrawManager`**: every code-free placement draws (including a first placement), no draw when one or more Composite Codes are completed, skip when the deck is exhausted.
 - **`Deck`**: initializing twice with the same seed gives the same shuffle result.
 - **`OpticalDecoder`**: a rejection test for each of NOT_DETECTED, INCOMPLETE_GROUP, CORRUPTED_FRAGMENT, DUPLICATE_CARD, INVALID_ARRANGEMENT, REFERENCE_MISMATCH.
 
@@ -1171,10 +1161,9 @@ The following items are currently undecided and will be determined through proto
 7. **Score table and hand-empty bonus**
    - The table length and values and `handEmptyBonus` are **TBD — determined by simulation** (Phase 3).
 
-8. **Definition of the first round**
-   - Requirement 3.5: "each player's first placement"
-   - Current design: `DrawManager.firstPlacementDone` tracks each player's first placement individually.
-   - Clarification needed: whether the first N placements of the whole game are exempt, or each player's first placement is exempt.
+8. **First-placement draw exemption — resolved 2026-11-18**
+   - Owner decision: remove the exemption entirely. Every placement that completes no new Composite Code draws 1 card, including each player's first placement.
+   - The DrawManager no longer tracks first placements; the draw decision depends only on the number of newly completed codes.
 
 9. **Reflection ambiguity (♣·♠-only groups)**
    - About 5.5% of random 4-card sets consist only of ♣ and ♠, so whether the image is reflected cannot be determined. Card identification and the sum are not affected, but when displaying the slot arrangement in the UI, AMBIGUOUS must be shown as is. If needed, requiring the user to re-photograph (with camera orientation guidance) will be decided in the Companion design.
