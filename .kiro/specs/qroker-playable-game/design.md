@@ -331,9 +331,8 @@ export function startingQuadIsExcluded(): true;  // documented: neutral quad is 
 ### DrawManager and TurnManager (`core/draw.ts`, `core/turn.ts`)
 
 ```typescript
-export function shouldDraw(player: PlayerId, firstPlacementDone: readonly PlayerId[], newCodes: number): boolean;
-// false if player not in firstPlacementDone (first placement exempt, qroker-game 3.5),
-// false if newCodes >= 1 (qroker-game 3.6), true otherwise
+export function shouldDraw(newCodes: number): boolean;
+// true exactly when newCodes === 0; player and placement history are irrelevant
 export function nextSeat(current: PlayerId): PlayerId;     // P0 -> P1 -> P2 -> P3 -> P0 (OQ-5)
 ```
 
@@ -390,7 +389,6 @@ export interface GameState {                     // SEALED: never leaves core/en
   readonly deck: readonly CardId[];
   readonly hands: Readonly<Record<PlayerId, readonly CardId[]>>;
   readonly turn: PlayerId;
-  readonly firstPlacementDone: readonly PlayerId[];
   readonly scoredGroups: readonly string[];      // sorted groupIds
   readonly revealedCards: readonly CardId[];     // cards of revealed codes (public)
   readonly pending: PendingBatch | null;
@@ -423,7 +421,7 @@ Processing of `PLACE` (all steps on a copy; the input is never mutated; any fail
 3. `validatePlacement` (orientation, bounds, empty, adjacent).
 4. Place; remove the card from the Hand; `placements += 1`.
 5. `codes = detect(board, pos, scoredGroups)`; add each `groupId` to `scoredGroups`.
-6. `draw = shouldDraw(player, firstPlacementDone, codes.length)`; add `player` to `firstPlacementDone`; if `draw`, `drawTop` and append to the Hand when a card exists.
+6. `draw = shouldDraw(codes.length)`; if `draw`, `drawTop` and append to the Hand when a card exists. This applies equally to the player's first placement.
 7. If `codes.length ≥ 1`: `phase = GUESS_COLLECT`, `pending = { placer, codes, guesses: {}, endsGame: hand.length === 0 }`.
 8. Else if the Hand is empty: add `handEmptyBonus` to the placer, set `bonusAwarded`, `phase = ENDED`.
 9. Else `turn = nextSeat(turn)`.
@@ -1151,7 +1149,7 @@ Testing by properties applies to the engine, the AI strategies, the persistence 
 
 ### Property 12: Draw rule
 
-*For any* reachable state and any accepted `PLACE`: if it is the Seat's first placement, the Hand size afterwards is the Hand size before minus 1; otherwise if the placement forms at least one new code, the Hand size afterwards is the size before minus 1; otherwise the Hand size afterwards equals the size before when the deck was non-empty (one card drawn from the top of the deck) and equals the size before minus 1 when the deck was empty; and the phase is `GUESS_COLLECT` if and only if at least one new code was formed.
+*For any* reachable state and any accepted `PLACE`: if the placement forms at least one new code, the Hand size afterwards is the Hand size before minus 1; otherwise the Hand size afterwards equals the size before when the deck was non-empty (one card drawn from the top of the deck) and equals the Hand size before minus 1 when the deck was empty. This rule applies to the first placement as well. The phase is `GUESS_COLLECT` if and only if at least one new code was formed.
 
 **Validates: Requirements 6.3, 6.4, 6.5, 6.6, 7.9** (qroker-game Property 10)
 
@@ -1343,7 +1341,7 @@ Saves are replay logs (Requirement 18). A replay rejection or a version mismatch
 - Golden deal: seed `1` (and one more fixed seed) with the exact initial neutral cards, Hands and deck top, recorded when the implementation is first written.
 - Fragment table: 4 suits × 2 orientations against the table in this design; Inward_Corner table; parity test with `src/optical/fragments.ts` (test-only).
 - Detection fixtures: the valid and invalid examples of qroker-game Requirement 14.4 (♥ at TL valid, ♣ at TL valid, ♠ at BL at 0° invalid, ♦ at TL invalid).
-- Reducer scenarios: a first placement that completes a code (no draw, guess phase), a non-first placement without a code (draw), a placement with two codes (one batch with two Quad_Keys), a placement that empties the Hand with a code (reveal then `ENDED` with bonus), deck exhaustion.
+- Reducer scenarios: a first placement without a code (draw), a first placement that completes a code (no draw, guess phase), a later no-code placement (draw), a placement with two codes (one batch with two Quad_Keys), a placement that empties the Hand with a code (reveal then `ENDED` with bonus), deck exhaustion.
 - Score fixtures: table boundaries e = length − 1, length, length + 1.
 - AI: registry has 3 ids, each with Korean and English labels; Work_Budget constants exist; recorded decision times per tier (fail above 3000 ms).
 - Boundary and scan tests (task 1.3): imports and banned globals, score-constant scan, network API scan. Extended by task 17.4: `ui/controller.ts` may import `core/fragment-layout`, every other `ui/` file may not; a fixture shows that a screen-class file importing `core/fragment-layout` fails.

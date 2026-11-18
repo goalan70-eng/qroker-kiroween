@@ -250,29 +250,17 @@ interface ScoreEngineOperations {
 
 ### DrawManager
 
-**Responsibility:** Enforce the draw rule (excluding the first round; draw 1 card when no Composite Code is completed).
+**Responsibility:** Enforce the draw rule: draw 1 card after every placement that completes no new Composite Code, including each player's first placement.
 
 ```typescript
-interface DrawManagerState {
-  firstPlacementDone: Set<string>; // set of IDs of players who have completed their first placement
-}
-
 interface DrawManagerOperations {
-  shouldDraw(
-    playerId: string,
-    completedCodes: CompositeCodeResult[],
-    state: DrawManagerState
-  ): boolean;
-  // Returns: false if first placement or ≥1 code completed; true otherwise
-  
-  markFirstPlacement(playerId: string, state: DrawManagerState): DrawManagerState;
+  shouldDraw(completedCodes: CompositeCodeResult[]): boolean;
 }
 ```
 
 **Rules:**
-- `playerId ∉ firstPlacementDone` → `shouldDraw = false` (first placement exempt), then add to `firstPlacementDone`
 - `completedCodes.length >= 1` → `shouldDraw = false`
-- Otherwise → `shouldDraw = true`
+- `completedCodes.length === 0` → `shouldDraw = true`
 
 ---
 
@@ -859,7 +847,7 @@ When the print file of a face is produced, the Face_Local_Frame of the FRONT fac
 
 ### Property 10: Draw rule — symmetry according to whether a Composite Code is completed
 
-*For any* non-first placement action:
+*For any* placement action, including each player's first placement:
 - If the action completes one or more new Composite Codes → no draw
 - If the action does not complete a Composite Code → the hand increases by 1 card if the deck is not empty
 
