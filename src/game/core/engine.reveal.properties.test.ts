@@ -935,7 +935,6 @@ interface Simulation {
 function simulate(r: Reachable, table: readonly number[], bonus: number): Simulation {
   const hand: Record<PlayerId, number> = { P0: 4, P1: 4, P2: 4, P3: 4 };
   let deck = 32;
-  const placed = new Set<PlayerId>();
   const scored: string[] = [];
   const scores: Scores = { P0: 0, P1: 0, P2: 0, P3: 0 };
   const batches: SimBatch[] = [];
@@ -952,10 +951,9 @@ function simulate(r: Reachable, table: readonly number[], bonus: number): Simula
       const seat = action.player;
       const codes = oracleNewCodes(next.board, action.pos.row, action.pos.col, scored);
       for (const code of codes) scored.push(code.groupId);
-      const draws = placed.has(seat) && codes.length === 0 && deck > 0;
+      const draws = codes.length === 0 && deck > 0;
       hand[seat] += draws ? 0 : -1;
       if (draws) deck -= 1;
-      placed.add(seat);
       lastPlacer = seat;
       lastPlaceCodes = codes;
       if (codes.length > 0) {
