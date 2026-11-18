@@ -4,8 +4,13 @@ on:
   push:
     branches:
       - feat/sim-parameterized-hand-and-code-limit-20261118
+      - fix/draw-on-every-no-code-placement-20261118
     paths:
       - .github/workflows/run-rule-matrix.yml
+      - src/game/core/**
+      - src/game/sim/**
+      - scripts/compare-rules.ts
+      - package.json
   workflow_dispatch:
 
 permissions:

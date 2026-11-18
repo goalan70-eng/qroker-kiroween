@@ -53,7 +53,7 @@
 //   VIEWS      `viewFor(final, seat)` for all four seats: phase ENDED, no pending Quad_Keys, nobody has submitted,
 //              `myGuesses` null, `ranking` equal to `rankPlayers`, the last reveal record equal to the last history
 //              record, and none of the sealed keys (seed, deck, hands, log, pending, groupId, scoredGroups, guesses,
-//              firstPlacementDone, revealedCards) anywhere in the serialization.
+//              revealedCards) anywhere in the serialization.
 //   DETERMINISM  every `DETERMINISM_STRIDE`-th Seed (seed % 10 === 0) of every configuration is played a second time:
 //              the final state and the log must be canonically identical. (Every game of Property 21 is played twice.)
 //
@@ -245,7 +245,7 @@ interface GameInspection {
   readonly problems: readonly string[];
 }
 
-const SEALED_KEYS = ["seed", "deck", "hands", "log", "pending", "groupId", "scoredGroups", "guesses", "firstPlacementDone", "revealedCards"];
+const SEALED_KEYS = ["seed", "deck", "hands", "log", "pending", "groupId", "scoredGroups", "guesses", "revealedCards"];
 
 function collectKeys(value: unknown, out: Set<string> = new Set<string>()): Set<string> {
   if (typeof value !== "object" || value === null) return out;

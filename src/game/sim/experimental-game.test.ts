@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { ALL_CARDS } from '../core/cards';
 import { HAND_SIZE } from '../core/deck';
 import { defaultConfig } from '../core/state';
+import { reduce } from '../core/engine';
+import { viewFor } from '../core/view';
 import { SEATS } from '../core/turn';
 import type { Difficulty, PlayerId } from '../core/types';
-import { playGame, strategiesFor, checkStateInvariants, ActionLimitError } from './play-game';
+import { playGame, strategiesFor, checkStateInvariants, ActionLimitError, decisionSeed } from './play-game';
 import {
   experimentalInitialState, runExperimentalGame,
   validateExperimentalCodeLimit, validateExperimentalHandSize,
@@ -86,14 +88,23 @@ describe('experimental driver preserves published rule behavior', () => {
     }
   });
 
-  it('the first placement with a one-card hand ends by hand depletion and gives its bonus once', () => {
-    const result = runExperimentalGame({ seed: 5, config, strategies: beginner, handSize: 1, codeLimit: 5 });
-    expect(result.stopReason).toBe('HAND_EMPTY');
-    expect(result.snapshot.phase).toBe('ENDED');
-    expect(result.placements).toBe(1);
-    expect(result.snapshot.hands.P0).toHaveLength(0);
-    expect(result.bonusSeat).toBe('P0');
-    assertScoreAccounting(result);
+  it('a first no-code placement with one card draws from a non-empty deck instead of ending', () => {
+    let checked = false;
+    for (let seed = 0; seed < 40 && !checked; seed++) {
+      const start = experimentalInitialState(seed, config, 1);
+      const action = beginner.P0.choosePlacement(viewFor(start, 'P0'), {
+        decisionSeed: decisionSeed(start.seed, 'P0', start.log.length),
+      });
+      const next = reduce(start, action);
+      expect(next.ok).toBe(true);
+      if (!next.ok || next.value.phase !== 'PLACEMENT') continue;
+      expect(next.value.hands.P0).toHaveLength(1);
+      expect(next.value.deck).toHaveLength(start.deck.length - 1);
+      expect(next.value.bonusAwarded).toBeNull();
+      checkStateInvariants(next.value);
+      checked = true;
+    }
+    expect(checked, 'a deterministic seed should produce a first no-code placement').toBe(true);
   });
 
   it('stops only AFTER four guesses, records every code in the last batch, and does not invent an end bonus', { timeout: 25000 }, () => {

@@ -1,6 +1,6 @@
 # Experimental rules: initial hand size and completed-code ending
 
-This is a **simulation-only** feature. It does **not** change the published QRoker rules, normal browser Practice Mode, Scoring Companion, save format, replay format, optical system or approved Kiro specifications.
+This is a **simulation-only** feature. It does **not** change the published QRoker rules, normal browser Practice Mode, Scoring Companion, save format, replay format or optical system. The draw rule was subsequently changed on 2026-11-18: every no-code placement draws, including the first. Simulations before that change use the former exemption and must not be compared as if they used the current rule.
 
 The original driver in src/game/sim/play-game.ts remains unchanged. The experimental driver reuses the **same** production reducer, scoring, card layout, turn order, AI strategies and PlayerView privacy boundary.
 
