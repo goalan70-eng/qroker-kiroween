@@ -444,7 +444,7 @@ describe("rejections leave the state unchanged", () => {
   });
 
   it("GAME_ENDED comes before every other check", () => {
-    const ended = step(plain({ hands: { P0: ["S-9"] } }), PLACE_NO_CODE);
+    const ended = step(makeState({ config: TEST_CONFIG, hands: handsWithEmptyDeck(["S-9"]), deck: [] }), PLACE_NO_CODE);
     expect(ended.phase).toBe("ENDED");
     expectRejected(ended, PLACE_NO_CODE, "GAME_ENDED");
     expectRejected(ended, place("P9", "H-2", -1, 0, 90), "GAME_ENDED");
