@@ -265,7 +265,7 @@ describe('garbage text', () => {
     const marker = 'SECRET-MARKER-123';
     const results = [
       parseSave(`{"format":"${marker}"}`),
-      parseSave(`{"format":"qroker-save","saveVersion":1,"rulesVersion":1,"note":"${marker}"}`),
+      parseSave(`{"format":"qroker-save","saveVersion":1,"rulesVersion":${RULES_VERSION},"note":"${marker}"}`),
       parseSave(`{"format":"qroker-save","saveVersion":99,"note":"${marker}"}`),
       parseSave(`{"format":"qroker-save","saveVersion":1,"rulesVersion":77,"note":"${marker}"}`),
       parseSave(marker),
@@ -301,6 +301,10 @@ describe('format and versions', () => {
   });
 
   it('checks the rules version before the structure', () => {
+    const legacy = SMALL_OBJ();
+    legacy.rulesVersion = 1;
+    (legacy.config as Record<string, unknown>).rulesVersion = 1;
+    expect(parseSave(text(legacy))).toEqual({ kind: 'INCOMPATIBLE', reason: 'RULES_VERSION' });
     const other = RULES_VERSION + 1;
     expect(parseSave(withField('rulesVersion', other))).toEqual({ kind: 'INCOMPATIBLE', reason: 'RULES_VERSION' });
     expect(parseSave(withField('rulesVersion', 0))).toEqual({ kind: 'INCOMPATIBLE', reason: 'RULES_VERSION' });
