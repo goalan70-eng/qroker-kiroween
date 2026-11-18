@@ -451,7 +451,6 @@ describe("Property 13: conservation invariants under random legal play", () => {
         let state = reach.states[0] as GameState;
         const handSize: Record<PlayerId, number> = { P0: 4, P1: 4, P2: 4, P3: 4 };
         let deckSize = 32;
-        const placed = new Set<PlayerId>();
         let placements = 0;
         let scoredPrev: readonly string[] = [];
 
@@ -480,10 +479,9 @@ describe("Property 13: conservation invariants under random legal play", () => {
           if (action.type === "PLACE") {
             const seat = action.player;
             const codes = oracleNewCodes(next.board, action.pos.row, action.pos.col, previous.scoredGroups);
-            const draws = placed.has(seat) && codes.length === 0 && deckSize > 0;
+            const draws = codes.length === 0 && deckSize > 0;
             handSize[seat] += draws ? 0 : -1;
             deckSize -= draws ? 1 : 0;
-            placed.add(seat);
             placements++;
             expect(countCards(next.board), `cardCount increases by exactly 1: ${ctx}`).toBe(countCards(previous.board) + 1);
           } else {
