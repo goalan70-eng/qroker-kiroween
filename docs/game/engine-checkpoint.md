@@ -1,6 +1,8 @@
 # Engine Checkpoint (Task 11) - qroker-playable-game
 
-Status: audit and documentation only. No source file, test, spec, configuration, `src/optical` file or the codebook was changed. No checkbox was ticked, nothing was committed, no open question was resolved, and Task 12 was not started.
+> **Historical checkpoint:** This audit describes the pre-2026-11-18 engine. Its OQ-4 row and draw-rule references are superseded by the owner decision to remove the first-placement exemption. Current behavior: every code-free placement draws when the deck is non-empty; RULES_VERSION is now 2.
+
+Status: historical audit and documentation only. No source file, test, spec, configuration, `src/optical` file or the codebook was changed. No checkbox was ticked, nothing was committed, no open question was resolved, and Task 12 was not started.
 
 ## 1. Scope and method
 
@@ -225,7 +227,7 @@ The other 695 tests (25 files) are the existing `src/optical` suite. `types.test
 | OQ-1 | Both `OWNER_ONLY` and `FACE_UP` implemented; default `OWNER_ONLY` | `rules.ts:75` `DEFAULT_IDENTITY_VISIBILITY`; `view.ts` `showCard` in `viewFor`; `state.ts` `defaultConfig` | Only the default and the option set can change. Views, P22 and P23 already run in both modes. | Spec table: 8.1, 9.1, 9.2 (built), 13.x, 19.1. Indirectly 12.3 and 12.4, which read `unseenCards` and must be tested in both modes. | 13.x and 19.1 (setup default). Not a start condition for 12.1 or 12.2. |
 | OQ-2 | Neutral cards at orientation 0, owner `NEUTRAL` | `board.ts:88` `initialBoard` | Rules change. A seeded random orientation would change `newGame`, goldens and replays. | 8.1 (built) | Before P1 acceptance (22.2); cheapest now. |
 | OQ-3 | Starting group never scored, no redeal | `rules.ts:48` `STARTING_GROUP_SCORING`, `startingScoredGroups`; `composite-code.ts` has no special case | Rules change if redeal or adjustment is chosen. | 5.1, 8.1 (built) | Before 22.2. |
-| OQ-4 | Per-Seat first placement exempt from drawing | `draw.ts:37` `shouldDraw`; `engine.ts` `reducePlace` (`firstPlacementDone`) | Rules change. | 7.1, 8.2 (built) | Before 22.2. |
+| OQ-4 | **Resolved 2026-11-18:** no first-placement exemption; every code-free placement draws | `draw.ts` `shouldDraw(newCodes)`; `engine.ts` `reducePlace` | Rules change; `RULES_VERSION` incremented to 2. | 7.1, 8.2 (revised) | Resolved. |
 | OQ-5 | `P0` first, increasing order, all four seats guess, next turn is `nextSeat(placer)` | `turn.ts:22` `SEATS`, `:39` `nextSeat`; `state.ts` `newGame` (`turn: 'P0'`); `engine.ts` `reduceSubmit` (`SEATS.every`), `reduceAck` | Rules change. | 7.1, 8.2 (built) | Before 22.2. |
 | OQ-6 | Competition ranking (1,1,3,4) | `ranking.ts:52` `rankPlayers` | Display and tests of ranking only. | 6.2 (built), 19.2 | Before 19.2. |
 | OQ-7 | Vite as explicit devDependency, no UI framework | not built | none | 16.1 | **16.1 (ready now)**. Adds a dependency (flagged D3). |
@@ -245,7 +247,7 @@ The other 695 tests (25 files) are the existing `src/optical` suite. `types.test
 1. OQ-1: keep `OWNER_ONLY` as the default, with `FACE_UP` as an option?
 2. OQ-2: keep the four starting cards at 0 degrees?
 3. OQ-3: keep "starting group never scored, no redeal"?
-4. OQ-4: keep the per-Seat first-placement draw exemption (the approved qroker-game 3.5)?
+4. OQ-4: resolved 2026-11-18 — remove the per-Seat first-placement draw exemption; every code-free placement draws.
 5. OQ-5: keep `P0` first, increasing order, and all four seats guessing, including the placer?
 6. OQ-6: keep competition ranking (1,1,3,4)?
 
