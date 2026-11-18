@@ -50,7 +50,7 @@
 
 import { placeOnBoard } from './board';
 import { detect } from './composite-code';
-import { applyDraw, markFirstPlacement, shouldDraw } from './draw';
+import { applyDraw, shouldDraw } from './draw';
 import { score, validateGuess } from './score';
 import { deepFreeze } from './state';
 import type { GameState, PendingBatch, RevealRecord } from './state';
@@ -123,9 +123,8 @@ function reducePlace(state: GameState, action: Extract<Action, { type: 'PLACE' }
   const codes = detect(board, pos, new Set(state.scoredGroups));
   const scoredGroups = [...new Set([...state.scoredGroups, ...codes.map((code) => code.groupId)])].sort(compareText);
 
-  // Step 6: the draw verdict uses `firstPlacementDone` BEFORE this placement is recorded.
-  const draw = shouldDraw(player, state.firstPlacementDone, codes.length);
-  const firstPlacementDone = markFirstPlacement(state.firstPlacementDone, player);
+  // Step 6: every placement follows the same rule: draw only when no new code was completed.
+  const draw = shouldDraw(codes.length);
   const drawn = applyDraw(
     state.deck,
     hand.filter((c) => c !== card),
@@ -138,7 +137,6 @@ function reducePlace(state: GameState, action: Extract<Action, { type: 'PLACE' }
     board,
     deck: drawn.deck,
     hands: { ...state.hands, [player]: drawn.hand } as Record<PlayerId, readonly CardId[]>,
-    firstPlacementDone,
     scoredGroups,
     placements: state.placements + 1,
     log: [...state.log, logEntry],

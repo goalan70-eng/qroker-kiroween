@@ -530,7 +530,7 @@ describe("playGame: AI isolation", () => {
     "board", "deckCount", "guessSubmitted", "handCounts", "history", "lastReveal", "myGuesses", "myHand",
     "pendingQuadKeys", "phase", "ranking", "rules", "scores", "turn", "viewer",
   ];
-  const FORBIDDEN_KEYS = ["seed", "deck", "hands", "log", "pending", "groupId", "scoredGroups", "guesses", "firstPlacementDone", "revealedCards"];
+  const FORBIDDEN_KEYS = ["seed", "deck", "hands", "log", "pending", "groupId", "scoredGroups", "guesses", "revealedCards"];
 
   it("every call receives exactly (PlayerView, { decisionSeed }): frozen, for the asked seat, without sealed keys", () => {
     for (const visibility of ["OWNER_ONLY", "FACE_UP"] as const) {
