@@ -272,7 +272,7 @@ describe('garbage text', () => {
     const marker = 'SECRET-MARKER-123';
     const results = [
       parseSave(`{"format":"${marker}"}`),
-      parseSave(`{"format":"qroker-save","saveVersion":1,"rulesVersion":1,"note":"${marker}"}`),
+      parseSave(`{"format":"qroker-save","saveVersion":1,"rulesVersion:${RULES_VERSION},"note":"${marker}"}`),
       parseSave(`{"format":"qroker-save","saveVersion":99,"note":"${marker}"}`),
       parseSave(`{"format":"qroker-save","saveVersion":1,"rulesVersion":77,"note":"${marker}"}`),
       parseSave(marker),
