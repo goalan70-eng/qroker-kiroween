@@ -2,6 +2,8 @@
 
 Code: `src/game/persistence/save-format.ts`. A save is a replay log, not a snapshot. Anyone who can read the text can rebuild the whole game.
 
+**Current rules version: 2.** Version 1 saves are rejected as `INCOMPATIBLE/RULES_VERSION` because their action logs replay with the former first-placement draw exemption. The current rule draws after every code-free placement, including a player's first placement.
+
 ## What the serialized envelope contains
 
 | Field | Content | Privacy effect |
