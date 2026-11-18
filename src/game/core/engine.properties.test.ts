@@ -308,7 +308,7 @@ const arbDrawCase = fc.record({
 });
 
 describe("Property 12: draw rule", () => {
-  it("a PLACE draws exactly when it is not the first placement and forms no code, from the top of the deck", { timeout: TIMEOUT_MS }, () => {
+  it("a PLACE draws exactly when it forms no code and the deck is non-empty, including on the first placement", { timeout: TIMEOUT_MS }, () => {
     // Feature: qroker-playable-game, Property 12: Draw rule
     // Validates: Requirements 6.3, 6.4, 6.5, 6.6, 7.9
     const cov: DrawCoverage = {
