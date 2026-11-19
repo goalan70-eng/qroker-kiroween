@@ -1,0 +1,44 @@
+# M2-PREREG — four-piece feasibility pre-registration
+
+Recorded by Codex on 2026-11-19 KST before the feasibility computations. Evidence class EC 1. The owner separately authorized **V2-M2 only** on 2026-11-19 KST. [Gate 1 R3](m1-gate-r3-2026-11-19.md) records the dated GO and O-1/O-2. Historical V1 pin `ddad4473f2a30d56e033d578c7bff8263ac4a864`. Study parent PR #24 `ab159353c61a4959c75267092585b96ed167e70e`. Read-only Joker trace from PR #18 `7baefca3cf8d69c6bb52f989afaae3892f15063b`, Git blob `5f18c59d02d9cdbf18c6270c91dc4fe22c8fb71b`. The exact artwork bytes will be read from Git. No bitmap or redrawn artwork will be written to disk or committed.
+
+## Methods and experimental values
+
+All numerical study values and tolerances below are **proposed, pending owner approval**. The V1 card dimensions, module and baseline corner radius are historical design inputs. The target is one continuous square at ideal zero gap. The assembled marker is a custom format outside ISO 18004, with no standard QR scanner required. Printed ranks and suits remain visible and the output policy provides no cryptographic secrecy.
+
+```json
+{
+  "moduleMm": 1.5875,
+  "cardModules": [40, 56],
+  "squareModules": [12, 16, 18, 20],
+  "quietModulesPerSide": [1, 2],
+  "radiusMm": [3.175, 3.6, 4.0],
+  "extraVoidKeepOutMm": [0, 0.4],
+  "minimumFeatureModules": [0.5, 1],
+  "printSafetyMm": 0.25,
+  "modelRaster": 768,
+  "artSensitivityRaster": 1536,
+  "symmetryReferenceSquareModules": 16,
+  "symmetryReferenceRadiusMm": 3.175,
+  "maxGlobalMismatchFraction": 0.001,
+  "maxLocalDeviationModules": 0.125,
+  "localWindowModules": 1,
+  "alignmentModels": [
+    {"id":"nominal","gapMm":0,"shiftPerAxisMm":0,"rotationDeg":0},
+    {"id":"illustrative-perturbed","gapMm":0.25,"shiftPerAxisMm":0.2,"rotationDeg":1}
+  ]
+}
+```
+
+1. **Classes / hypothesis, unverified before the run.** Transcribe printed corner and inward corner tables from the immutable V1 requirements, with no V1 source imports or previous spike code. Enumerate the Cartesian product and retain tuples where the oriented corner equals the inward corner. Check per-piece two-use (opposite slots, 0° and 180°) and compare the computed keys to the Kiro hand table after enumeration. HYP-1 is confirmed within the fixed-print shared-layer model if those constraints enforce `Qopposite = R180(Q)`, and if a constructive OFF model renders identically in all classes when each printed corner can carry its own shared-layer crop. Card-specific data content and V1's derivation of its identifying bits are outside this shared-layer proof.
+2. **Geometry / frame OFF first.** A model of the square's ink envelope covers each quadrant to its nominal trim, clipped to its rounded-card domain. The outer symmetric band is the visual frame. Critical frame probes are separate rectangles inside the protected area. Test the shared artwork class mappings with a direct inverse-placement raster comparison, and independently test half-turn, left/right and top/bottom symmetries. The frame model omits ink content for individual card IDs. Use point-sampled masks and integer pixel indexing, with no filter, antialiasing, randomness or image export. Verify the nominal envelope has no empty internal pixels beyond the void. Run symmetric and asymmetric control masks, including half-turn symmetry without either mirror.
+3. **Joker / internal raster only.** Parse the current trace's single polygon path and its SVG `evenodd` fill. Sample pixel centers in the unmodified viewBox using an even-odd scanline, then clip with the same rounded `Central_Void` mask. Run both the 768 and 1536 grids in one declared sensitivity check and repeat with identical settings to compare digests. Record black pixels removed by the mask, mismatch counts and normalized fraction over the full square. For each transform the local metric is the maximum, over every sliding one-module window, of the square root of the mismatched pixel area expressed in square modules. Record window origin and equivalent linear deviation in modules. Compare both metrics inclusively to the limits above. Report per-trace-contour minimum axis-aligned bounding extent, and post-mask shortest axial black run as a conservative raster proxy sensitive to angled edges. Neither proxy establishes the width of a physical stroke. Original-picture check under owner supervision: **no**. A geometric feasibility witness for an optional redesign may be synthetic and abstract, with no derived artwork saved and no O-3 decision assumed.
+4. **Parameter sweep.** Record every Cartesian combination of the arrays above (192 rows). Vary Central_Void via rounded radius and an extra analytical keep-out offset, with the latter separate from the visible void. In a first-quadrant coordinate frame with origin at the meeting vertex, each cut corner is a disk arc centered at `(r,r)`, joining `(r,0)` and `(0,r)`. Compute the exact point-to-void distance by testing the radial projection when it lies on that arc and the endpoints otherwise. The void is coordinatewise downward-closed in that quadrant, so the inward-most rectangle vertex is sufficient for the minimum distance of axis-aligned elements. Full-cell containment also checks straight edges and the far card boundaries. Subtract the proposed 0.25 mm print safety radius independently of board alignment, and reject at zero or negative margin. Use analytic void area `(4−π)r²` and check the 3.175 mm result against the reported 8.65 mm².
+5. **Probe layout / keep-out.** For quadrant extent `h=S/2` modules, test each 1-module square with integer lower corners `x,y` in `[2,h−2)`, reserving `(2,2)` for an abstract centered 0.5-module decoration probe. Check two 1-module-wide outer detection frame probes at `x∈[h−1,h], y∈[1,h]` and `y∈[h−1,h], x∈[1,h−1]`. The other quadrants are the symmetric copies. Calculate nearest-void distance, containment and minimum feature span for every probe in every row; equality with the feature limit passes. Record an analytic keep-out mask defined by the union of data rectangles, critical frame rectangles and the external quiet band. Keep this provisional mask in model units. Clip the whole traced artwork for symmetry evaluation; fit against critical regions and stroke requirements remains separate from this symmetry test. No code bits, actual detector, final protected layout or playing-card artwork are selected.
+6. **Spacing and alignment.** For the conservative reading of 3.2, reserve two square widths and both quiet sides of each square, `2(S+2q)≤D`, with inclusive comparison and independent bounds at `D=40` and `D=56`. Also report the direct adjacent full-square envelope clearance for `S+2q`. Propagate the board gap and a rigid displacement bound around a card center (`2R sin(|θ|/2)` plus Euclidean shift and half-gap); retain the conservative nominal inequality and report alignment sensitivity separately. Nominal continuity is tested at zero gap. A positive physical seam fails continuity in the perturbed model, even if optical decoding might eventually tolerate it. O-8 and C11 remain open. Check front model and mirrored optical-layer transform algebra. A face-local decoration is an alternative for C4, with a separate owner decision before V2-M3.
+
+## Pre-registered decision rule
+
+Evaluate essential outputs, class invariants and negative controls. If evidence is absent, contradictory, or unfit for comparison, record **blocked**. Next evaluate OFF. A demonstrated, admissible model-level square infeasibility yields **NO-GO for square appearance**. A failing sensitivity probe or one invalid parameter row does not establish universal infeasibility. If OFF has a constructive nominal witness, evaluate the original decoration. **GO** requires a compatible supplied trace, accepted feature/void treatment and applicable owner approvals. **GO-WITH-REDESIGN** requires incompatible supplied art, a valid alternative and dated O-3 approval. **NO-GO for decoration** requires evidence that no accepted decoration remains viable or a recorded decision to use OFF alone under the plan. Otherwise **blocked**, without selecting an outcome. C4 and O-8 remain required decisions before moving to V2-M3. O-7 defaults to “inside the assembled marker”. O-5 permission stays pending for derived artwork publication. Numeric tolerances stay proposals.
+
+Reproduction will use Node.js v24 with built-in modules only. Tests cover an invalid inward table, analytic non-diagonal geometry, exact containment/feature boundaries, symmetry controls, class agreement, parameter row counts and repeated raster trace metrics. All samples are enumerated and the seed is N/A. The separate pinned V1 regression command will be run for Gate 2 preservation evidence. V1 Task 7.2 and V1 Milestone 8 remain **unevaluated**, and any V1 comparison carries **unevaluated V1 baseline (synthetic)**.
