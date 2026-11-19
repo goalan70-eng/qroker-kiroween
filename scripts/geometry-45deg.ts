@@ -15,6 +15,7 @@
 // the production modules at the production gate value on every image they are used on. The what-if variants with a
 // different gate value exist only in these temp copies; no production file is touched.
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import os from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -185,6 +186,12 @@ const variantText = (a: Agg): string => VARIANTS.map((v, i) => `${a.variantCorre
 // ---------------------------------------------------------------------------------------------
 
 async function main(): Promise<void> {
+  // This analyzer embeds conclusions about the old detector. Never overwrite that historical
+  // evidence with a different algorithm while retaining the old hardcoded interpretation text.
+  const detector = readFileSync(resolve(SRC, 'detect.ts'), 'utf8').replace(/\r\n/g, '\n');
+  if (createHash('sha256').update(detector).digest('hex') !== '57116fa34afa3228cbc6426cf0738b45586a09314cc560338efecb042f7afaef') {
+    throw new Error('Historical analyzer requires detector 3ca08b9. Run npm run analyze:45deg for the current paired validation; use an isolated checkout of 3ca08b9 to reproduce the old report. No historical evidence was overwritten.');
+  }
   const write = !process.argv.includes("--no-write") && !QUICK;
   const sampleIdx = process.argv.indexOf("--sample");
   const samplePerCell = QUICK ? 0 : sampleIdx >= 0 ? Number(process.argv[sampleIdx + 1]) : 3;

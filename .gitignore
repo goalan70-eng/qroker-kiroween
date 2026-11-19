@@ -14,3 +14,6 @@ dist/
 # Playwright local browser diagnostics
 playwright-report/
 test-results/
+
+# Real capture inputs, generated print sheets and local optical trial reports stay local.
+.optical-physical/

@@ -2,7 +2,17 @@
 
 **All optical results in this repository come from synthetic images, not real cameras.** No real printed card, printer, cutter, paper, flip or camera has been used. Nothing here measures or guarantees real-camera performance.
 
-**Status: paused.** Optical research is paused to prioritize the playable game; resume later for Scoring Companion integration. Milestones 0 to 6 are complete, Task 7.1 is complete, Task 7.2 is in progress (scaffolding only, sweep not run), and Tasks 7.3, 7.4 and Milestone 8 are not started. Task status lives in `.kiro/specs/qroker-game/tasks.md`; this file does not change it.
+**Current status (2026-11-16, Codex / Issue #10): bounded detector repair and physical-test preparation.** The owner confirmed that no printer/phone is ready. Real-camera performance, physical privacy controls and Companion integration remain unverified. Historical Kiro task checkboxes are unchanged; no full Task 7 or 8 completion is claimed.
+
+### Issue #10 update
+
+- A reproduced near-45-degree detector defect now has refinement-supported candidate recovery, without changing the frozen codebook, radius 1 or numeric acceptance/group tolerances. Identical-image comparison against `3ca08b9`: independent positive cases **225/252 → 252/252** correct, pinned cases **4/12 → 12/12**, and **524** selected incomplete/non-marker/two-or-three-bit negative cases remain rejected. This is a bounded synthetic experiment, not a full sweep or a real rate. [Cause and checks](results/issue-10-detector-fix.md), [all 876 paired samples](results/issue-10-detector-validation.md).
+- The selected historical radius-2 counterexamples still yield **40 wrong acceptances at radius 2**. The same selected set at radius 1 yields **10 wrong acceptances** (four-bit damage), unchanged before/after this fix. Default radius 1 reduces acceptance but cannot guarantee rejection of arbitrary corruption. These are selected counterexamples, not operational rates.
+- Deterministic A4 front/back SVG/PNG sheets, physical dimensions/registration/scale checks, a local JPEG/PNG-to-PGM preparation page and a photo-manifest evaluator now exist. Ground truth is used only after raw decoding, and caught mistakes stay counted as raw false accepts. [Physical protocol and commands](physical-test-protocol.md), [empty real-trial template](physical-trial-manifest.template.json).
+- Windows checkout line endings are pinned for the frozen codebook and optical evidence; original historical reports and patterns are preserved. `npm run analyze:45deg` now writes a separate Issue #10 paired report. The old analyzer is retained as `analyze:45deg:historical` and rejects a changed detector instead of overwriting old conclusions.
+- The old **96.7% MODERATE / 81.4% STRESS** values below remain historical synthetic results. No updated full-sweep rate, real print, camera, phone latency or full physical game is claimed.
+
+**Original checkpoint:** Milestones 0 to 6 and Task 7.1 were complete; Task 7.2 had scaffolding but no full sweep; Tasks 7.3/7.4 and Milestone 8 were not started. The preparation tools added above do not satisfy the outstanding full-sweep and real-device evidence requirements. Task status lives in `.kiro/specs/qroker-game/tasks.md`; this file does not change it.
 
 Contents: (a) what exists, (b) verified results, (c) limitations and risks, (d) deferred work and how to resume, (e) browser integration requirements, (f) independence from the game engine.
 
@@ -39,13 +49,15 @@ Contents: (a) what exists, (b) verified results, (c) limitations and risks, (d) 
 | `npm run render:samples` | Sample renders into `docs/optical/samples`. |
 | `npm run measure:detection`, `measure:decode-fragment` | Milestone 4 measurements. |
 | `npm run measure:geometry`, `merge:geometry`, `verify:geometry` | Milestone 5 geometry sweep: measure per shard, merge, verify the stored results. |
-| `npm run analyze:geometry`, `analyze:45deg` | Failure diagnostics and the 45-degree analysis. |
+| `npm run analyze:geometry`, `analyze:45deg` | Geometry diagnostics and the current Issue #10 paired detector experiment. `analyze:45deg:historical` retains the old analyzer with a source-version guard. |
+| `npm run render:print -- --out-dir DIR` | Deterministic annotated A4 front/back SVG/PNG, geometry manifest and physical print instructions. |
+| `npm run validate:photos -- --manifest FILE --out DIR` | Local PGM trial evaluation with independent ground truth, target check and separate raw/postcheck outcomes. |
 | `npm run collect:decode-counterexamples`, `collect:rejection-counterexamples` | Regenerate the stored counterexample files. They write into `docs/optical/results/`. |
 | `npm run robustness -- <flags>` | Task 7.2 runner (`scripts/run-robustness.ts`); see section d. |
 
 ## b. Verified results
 
-Every number below is quoted from the linked file and applies to synthetic images only. This task did not re-run any test or script.
+Every number below is quoted from the historical linked file and applies to synthetic images only. The original checkpoint did not rerun scripts; the Issue #10 reruns are recorded separately above and do not replace these measurements.
 
 | Source | Headline as stated there |
 |---|---|
@@ -59,17 +71,17 @@ Test counts changed after Milestone 6 (Task 7.1 and the Task 7.2 scaffolding add
 
 ## c. Known limitations and unresolved risks
 
-1. **Marker-like gate in `detect.ts` and 45-degree pixel phase.** The gate `quadArea / hullArea < 0.85` drops a component silently. The geometry cell with camera rotation exactly 45 degrees at inset 2 measured 0 of 200 correct. The 100% results at exactly 45 degrees (inset 1 and 1.5) sample a single pixel phase and must not be read as robust: with fractional-pixel shifts at 45 degrees, inset 1 lost 20 of 160 trials and inset 1.5 lost 10 of 160. Lowering the gate recovered the failures in a what-if run but was not applied and its false-positive effect was not measured. Source: `m5-7-milestone5-validation.md` section C.1 and C.2, `m5-6-45deg-analysis.md`.
+1. **Historical 45-degree pixel-phase failure; bounded repair now verified.** The original `quadArea / hullArea < 0.85` gate silently dropped valid staircase outlines (historical inset-2 cell: 0/200 correct; fractional phases also failed at insets 1/1.5). The current detector can recover a full-size candidate only if edge refinement satisfies the existing hull-area, outside-distance and all later validation checks. The gate constant was not lowered. See the Issue #10 paired data above; the full old 824-cell sweep and real cameras have not been rerun.
 2. **Spurious marker `0x5AC54`.** `detect.ts` can report a small black blob in a data area as a marker with bits `0x1FFFFFF`. It is handled at group level only (CORRUPTED_FRAGMENT, or `SPURIOUS_CANDIDATE` in `others`); the detector is unchanged, and it is untested on real images.
 3. **`positionToleranceModules` stays 1.0; registration and cut sensitivity.** In the synthetic sweep, a 1 mm back registration shift, a 1 mm cut offset, a 1 degree registration rotation and a 2 degree per-card placement rotation each take the baseline cell below 95% correct. Re-running only failing seeds at tolerance 1.5 decoded them, but widening was not adopted and would need validation against false grouping. This is the main physical risk for Milestone 8.
-4. **Radius-2 false acceptances; default `r_acc` = 1.** With distance 5, correction is guaranteed only for up to 2 bit errors in the independent bit-flip model. At radius 2, 3 or more flips can be accepted as another card of the same suit, which no group-level check can reject. Only `ReferenceCheck.compare` catches this. Keep the default radius 1.
+4. **False acceptances under large corruption; default `r_acc` = 1.** Distance 5 supports correction of at most 2 independent bit errors; the default radius 1 deliberately accepts fewer matches. Three-or-more flips at radius 2 can still identify another same-suit card. At radius 1, four-bit damage in 10 of the selected 40 historical cases also misidentifies. Group-level rules do not reject these; independent public-card reference checking catches mismatches after decoding and must not inflate reported raw accuracy. Keep radius 1 and record all raw false accepts.
 5. **Reflection is `AMBIGUOUS` for groups containing only clubs and spades** (128 of the 648 images). The decoder never guesses; the UI decision is open.
 6. **Hidden information in double-sided markers.** A readable marker on either face can reveal hidden cards (Requirement 16.9, design.md Physical Card Geometry section 7). Neither the decoder nor the app can remove this. Paper show-through (Requirement 16.10) is not simulated.
 7. **Nearest-complete-group behavior.** If the vertex at the image center has only 3 fragments and a complete group exists elsewhere in the image, `decodeGroup` returns IDENTIFIED for that other group, with that group's own `vertex`. This matches design.md step 2, so the caller must verify the vertex (section e).
 8. **Sensitivities measured, not defects:** blur of 1.5 px or more and perspective tilt of 30 degrees or more lose most trials at 4 px per module in the geometry sweep.
 9. **`design.md` result types differ from the code.** The code adds `INVALID_MARKER`, `AMBIGUOUS_FRAGMENT`, `INVALID_REFERENCE`, `DISTRACTOR_FRAGMENT`, `SPURIOUS_CANDIDATE` and the reference-mismatch reason codes, among others. See `m6-2-no-production-fix.md` and `m5-7-milestone5-validation.md` section D. design.md was not updated.
 10. **Load-sensitive tests.** `detect.test.ts` ("blurred non-integer scales") and `physical-card.test.ts` ("a rotated card is rotated about its centre") use the 5,000 ms default timeout and fail under CPU saturation (for example an Android emulator or a running sweep). Use `npm run test:ci`, and run it only when the machine is quiet. No per-test timeout was added.
-11. **Requirement 15.7 steps 2 and 3** (marker size and margin, detection algorithm) were not evaluated; the 3.175 mm corner radius is an unconfirmed commercial value; the codebook, thresholds and tolerances have been tuned on no real data.
+11. **Requirement 15.7 remains incomplete.** Marker size/margin have not had a real-data comparison. The detection algorithm now has a bounded synthetic repair experiment, not a complete optimization or physical validation. The 3.175 mm radius remains an unconfirmed commercial value; codebook, thresholds and tolerances have been tuned on no real data.
 
 ## d. Deferred work and how to resume
 
@@ -78,7 +90,7 @@ Test counts changed after Milestone 6 (Task 7.1 and the Task 7.2 scaffolding add
 | Task 7.2 | In progress. Exists: `scripts/run-robustness.ts`, `src/optical/testing/robustness-{design,trial,report}.ts` with tests, `docs/optical/results/robustness-plan.md`, `robustness-bench.json` (checkpoint commit `8ee89d5`). **The sweep has not been run:** 263 conditions, 363,000 trials (family A flat: 84 conditions, 179,000 trials; family B physical: 179 conditions, 184,000 trials). `docs/optical/results/robustness.json` and `robustness.md` do not exist. |
 | Task 7.3 | Not started: degradation determinism and misidentification-count tests, including a test that reads `robustness.json`. |
 | Task 7.4 | Not started: run the robustness script and `npm test`, save real output and failing seeds under `docs/optical/results/`. |
-| Milestone 8 | Not started: `scripts/render-print-sheet.ts`, `docs/optical/physical-test-protocol.md`, tests, then real prints and cameras. |
+| Milestone 8 | Print generator, preparation/evaluation tools and physical protocol now exist with automated tests. Real printing, cutting, duplex, show-through and camera trials are NOT RUN; Task 7 prerequisites/full milestone acceptance remain unmet. |
 
 The Task 7 pass criterion ("observed misidentification count 0 in every measured condition") is **unevaluated**. Do not report it as met.
 
@@ -99,9 +111,9 @@ Recommended procedure from the plan: check machine load first; smoke test with `
 
 ## e. Browser integration requirements (future Scoring Companion)
 
-**None of this has been tested in a browser.** All measurements are Node on a desktop CPU, with synthetic images.
+**Optical decoding has not been tested in a browser.** Existing decoder measurements are Node on a desktop CPU with synthetic images. The Issue #10 local image-conversion page has a real Chromium pixel/ROI/download test; it does not run the decoder or establish camera behavior.
 
-1. **Input is grayscale only.** `decodeGroup` takes `GrayImage = { width, height, data: Uint8Array }` (row-major, one byte per pixel, 255 = white, 0 = black). Converting a camera frame (for example `canvas.getImageData()` RGBA, or a video frame) to luminance is the caller's job. No such conversion exists in the repository and it has not been tested against the decoder.
+1. **Input is grayscale only.** `decodeGroup` takes `GrayImage = { width, height, data: Uint8Array }` (row-major, one byte per pixel, 255 = white, 0 = black). The local `tools/optical-image-input.html` now converts saved images through canvas RGBA to 8-bit PGM for the Node evaluator, with a tested synthetic pixel round trip. Live camera/frame conversion, worker transfer and browser decoder integration remain unimplemented and unverified.
 2. **Image scale.** In the synthetic measurements a module (marker cell) was 4 px. `detect.ts` documents exact reads from 2 px per module on crisp markers (outer marker edge 14 px, `DEFAULT_MIN_SIZE_PX`) and from about 2.5 px per module after blur. These are synthetic limits; the required camera resolution on real devices is unknown.
 3. **Run in a Web Worker.** Decoding is synchronous and CPU-bound, so it must not run on the UI thread. Transfer the pixel buffer to the worker. Whether `GroupDecodeResult` objects survive `postMessage` structured cloning was not checked.
 4. **Cost.** Decode-only timings from `robustness-plan.md` section 9 (Node v24.20.0, i5-10400F, one process, ms per `decodeGroup` call on synthetic rasters): flat 128 x 128 px image 1.1 to 1.2 ms; 2x2 physical board (146 modules wide, about 584 px at 4 px per module, derived from the plan) 5.6 to 8.6 ms; 3x3 board raster (about 2.6 MP) 10.5 to 16.2 ms. A 1080p frame has about 2.1 MP, so the 3x3 numbers are the nearest synthetic reference, but this is an analogy. Phone CPU and browser JIT timings are unmeasured. The measurements exclude RGBA to gray conversion and worker transfer.

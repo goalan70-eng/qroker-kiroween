@@ -619,6 +619,15 @@ function outsideDistance(q: Quad, p: Point): number {
   return worst;
 }
 
+/** Existing silhouette checks, also required before a fitted quad may rescue the candidate gate. */
+function quadFitsHull(q: Quad, hull: readonly Point[], hullArea: number, meanSide: number): boolean {
+  const tolE = Math.max(1.5, 0.04 * meanSide);
+  let worst = 0;
+  for (const p of hull) worst = Math.max(worst, outsideDistance(q, p));
+  const refArea = signedArea(q);
+  return worst <= tolE && hullArea / refArea >= 0.92 && hullArea / refArea <= 1.08;
+}
+
 function isConvexClockwise(q: Quad): boolean {
   for (let k = 0; k < 4; k++) {
     const a = q[k]!;
@@ -793,26 +802,32 @@ function analyzeComponent(ctx: Context, id: number): Candidate {
   const quadArea = signedArea(q0);
   if (hullArea <= 0 || quadArea <= 0) return { kind: 'drop' };
   const st0 = sideStats(q0);
-  // Marker-like gate: nearly a quadrilateral and not elongated. Everything else is silently ignored.
-  if (quadArea / hullArea < 0.85 || st0.ratio < 0.45) return { kind: 'drop' };
+  const touches =
+    comps.minX[id] === 0 || comps.minY[id] === 0 || comps.maxX[id] === w - 1 || comps.maxY[id] === h - 1;
+  // A staircase silhouette can have blunt tips: its inscribed quad underestimates a genuine
+  // low-resolution square (Issue #10). In that case use the existing edge-line fit as evidence,
+  // retaining the SAME area-ratio gate. The fit must still pass every geometry and pixel check
+  // below; no codebook/identity information enters candidate selection.
+  const gateRefinement = !touches && quadArea / hullArea < 0.85 && st0.ratio >= 0.45 && st0.mean >= opts.minSizePx
+    ? refineQuad(q0, pts, st0.mean)
+    : null;
+  if (!gateRefinement || signedArea(gateRefinement) / hullArea < 0.85
+    || !quadFitsHull(gateRefinement, hull, hullArea, sideStats(gateRefinement).mean)) {
+    // Marker-like gate: nearly a quadrilateral and not elongated. Everything else is silently ignored.
+    if (quadArea / hullArea < 0.85 || st0.ratio < 0.45) return { kind: 'drop' };
+  }
   if (st0.mean < 0.5 * opts.minSizePx) return { kind: 'drop' };
   if (st0.mean < opts.minSizePx) {
     // Pixel-level geometry is noisy this small, so only report clearly square, reasonably filled blobs.
     const squarish = quadArea / hullArea >= 0.9 && st0.ratio >= 0.7 && comps.area[id]! / hullArea >= 0.4;
     return squarish && st0.mean >= 0.6 * opts.minSizePx ? reject(comps, id, 'TOO_SMALL') : { kind: 'drop' };
   }
-  const touches =
-    comps.minX[id] === 0 || comps.minY[id] === 0 || comps.maxX[id] === w - 1 || comps.maxY[id] === h - 1;
   if (touches) return reject(comps, id, 'TOUCHES_IMAGE_EDGE');
 
-  const q = refineQuad(q0, pts, st0.mean);
+  const q = gateRefinement ?? refineQuad(q0, pts, st0.mean);
   if (!q) return reject(comps, id, 'NOT_QUADRILATERAL');
   const st = sideStats(q);
-  const tolE = Math.max(1.5, 0.04 * st.mean);
-  let worst = 0;
-  for (const p of hull) worst = Math.max(worst, outsideDistance(q, p));
-  const refArea = signedArea(q);
-  if (worst > tolE || hullArea / refArea < 0.92 || hullArea / refArea > 1.08) {
+  if (!quadFitsHull(q, hull, hullArea, st.mean)) {
     return reject(comps, id, 'NOT_QUADRILATERAL');
   }
   for (let k = 0; k < 4; k++) {

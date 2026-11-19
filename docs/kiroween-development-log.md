@@ -101,3 +101,76 @@ rewrite history or relabel Codex work as Kiro work.
 - Commit: `5d75eee`. PR: [#13](https://github.com/goalan70-eng/qroker-kiroween/pull/13)
   (draft, stacked on PR #12; no merge). The successful local checks above are
   distinct from the new PR-head GitHub Actions result, which is not yet verified.
+
+## 2026-11-16 — Issue #10: optical defect repair and physical-test preparation
+
+- Issue: [#10](https://github.com/goalan70-eng/qroker-kiroween/issues/10).
+  The owner requested work on the documented optical risks and confirmed that
+  no printer/phone is ready. No actual physical trial was performed or invented.
+- Actual implementation/testing/docs: **Codex**, with separate Codex agents
+  for detector diagnosis, print generation, photo evaluation and read-only
+  review. Supporting tools: Git/GitHub, TypeScript, Vitest, Vite, Playwright
+  Chromium 159.0.8154.6. No Kiro execution or paid model API call occurred.
+- Detector commit: `17b6926`. Files: `src/optical/detect.ts`,
+  `src/optical/testing/{geometry-45deg,issue-10-detector}.test.ts`,
+  `scripts/issue-10-detector-validation.ts`, the historical analyzer guard in
+  `scripts/geometry-45deg.ts`, `.gitattributes`, and new
+  `docs/optical/results/issue-10-detector-*` JSON/Markdown evidence.
+  Candidate recovery reuses the existing edge fitter and hull agreement
+  checks; it does not lower 0.85 or change radius/group/pixel thresholds.
+- Preparation files: `scripts/render-print-sheet.ts` and its tests,
+  `scripts/validate-optical-photos.ts` and its tests,
+  `tools/optical-image-input.html`, `e2e/optical-image-input.spec.ts`,
+  `docs/optical/physical-test-protocol.md`, the empty physical manifest
+  template, `docs/optical/OPTICAL-STATUS.md`, npm command aliases in
+  `package.json`, and local-capture exclusion in `.gitignore`.
+- Verification: `E2E_SEEDS=200 npm run test:ci` passed **112 files / 3,081
+  tests** (104.05 s, native Windows execution, no final skips), including
+  1,200 existing headless game simulations. Both type checks, production build
+  and byte-identical codebook check passed. Real Chromium converter test:
+  **1/1 passed** (4.7 s runner), exact image pixels, ROI coordinates/mean,
+  downloaded PGM and no upload request verified.
+- The new positive 45-degree regressions first failed on the old code (3 RED,
+  5 existing controls passed). An initial rescue variant changed disk-negative
+  behavior and was rejected. Final paired **876-image** experiment against
+  `3ca08b9`: independent positives 225/252 → 252/252, pinned 4/12 → 12/12,
+  524 selected incomplete/silhouette/two-or-three-bit negatives still rejected,
+  and 16 3×3 controls unchanged. The default-radius-1 check of the deliberately
+  selected old 40 counterexamples still has 10 wrong acceptances (four-bit
+  damage); radius 2 still has 40. These findings are preserved, not operational
+  rates and not a guarantee against arbitrary corruption.
+- `npm run render:print -- --out-dir .optical-physical/print --module-mm 1.5875 --dpi 300`
+  generated 12 A4 SVG/PNG face sheets, all 208 markers checked from the actual
+  annotated output PNGs. Automated print tests additionally cover 1.5/2 mm,
+  physical units/DPI, deterministic output, front/back imposition and existing
+  physical flip semantics. Visual inspection of the generated first page was
+  performed. Local ZIP integrity checked (12 PNG + 12 SVG, 29 entries including
+  protocol/template/converter/instructions/manifest).
+- End-to-end photo CLI smoke used two **synthetic** PGM fixtures only:
+  `npm run validate:photos -- --manifest .optical-physical/synthetic-smoke/manifest.json --out .optical-physical/synthetic-smoke/results`.
+  Result: 2/2 declared samples, DESCRIPTIVE_ONLY. No real-camera label was used.
+  Raw wrong IDs/sums/out-of-target identifications remain false accepts even
+  if the independent target/reference postcheck catches them. Timing is
+  desktop Node decode only; it does not meet a phone end-to-end latency goal.
+- Frozen codebook SHA256 is still
+  `515ECEB318648C14A47574496788236A2B1BBDFC7062387DB09303CB717CC2D4`.
+  A new Windows worktree initially applied CRLF checkout conversion; canonical
+  bytes were restored from the original verified checkout. `.gitattributes`
+  now prevents that conversion for frozen/evidence bytes. No codebook,
+  historical optical report, dependency lockfile or Kiro task/history changed.
+- Limitations: old 96.7%/81.4% and the 168,000-trial sweep remain historical;
+  that full sweep was not repeated. Registration/cut errors, paper opacity,
+  real-phone accuracy/latency and physical concealment remain NOT RUN.
+  Both-face identifiers cannot be hidden by software; opaque holders and
+  public-reveal-only capture are prescribed, unvalidated physical controls.
+  Browser/worker camera decoding and game/Companion integration remain
+  unimplemented; no complete physical game is claimed. Kiro checkboxes and
+  Issue #10 remain open. No merge, deployment or application publication.
+- Workspace: `D:/Project/QRoker/qroker-optical-validation`, branch
+  `codex/issue-10-optical-validation`, based on the existing score PR branch.
+  The original `qroker-kiroween` checkout stays on the score branch unchanged.
+  Print inputs/outputs stay local under ignored `.optical-physical/`.
+- Preparation commit: `460a40d`. Review:
+  [draft PR #14](https://github.com/goalan70-eng/qroker-kiroween/pull/14),
+  stacked on PR #13. PR-head GitHub Actions are separate from the successful
+  local checks and were not yet complete when this entry was finalized.

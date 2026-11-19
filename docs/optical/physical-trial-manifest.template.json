@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "evidence": "real-camera",
+  "session": {
+    "id": "",
+    "capturedAt": "",
+    "device": "",
+    "printer": "",
+    "paper": "",
+    "moduleMm": 1.5875
+  },
+  "plan": {
+    "trialsPerCondition": 100,
+    "conditions": [
+      "front-roll-0",
+      "front-roll-45",
+      "front-roll-90",
+      "front-roll-180",
+      "front-roll-270",
+      "back-vertical-flip",
+      "back-horizontal-flip",
+      "incomplete-three"
+    ]
+  },
+  "trials": []
+}
