@@ -4,8 +4,10 @@ import { readFileSync } from 'node:fs';
 import { compareClasses, measureSymmetry, voidMask } from './m2-raster.mjs';
 import { placementClasses } from './m2-model.mjs';
 
-const sourceHash = process.argv[2];
+const [, , sourceHash, mode] = process.argv;
 assert.match(sourceHash, /^[0-9a-f]{64}$/);
+assert.ok(mode === undefined || mode === '--quarter-area', 'Unrecognized measurement mode');
+const sideFraction = mode === '--quarter-area' ? 0.5 : 1;
 const width = 1280;
 const bgr = Buffer.from(readFileSync(0, 'utf8').trim(), 'base64');
 assert.equal(bgr.length, 3 * width * width);
@@ -24,20 +26,23 @@ const { classes } = placementClasses();
 
 function sourceAt(n) {
   const out = new Uint8Array(n * n);
-  const sample = (pixel) => Math.min(width - 1, Math.max(0, (pixel + 0.5) * width / n - 0.5));
-  for (let y = 0; y < n; y++) {
+  const artSize = n * sideFraction;
+  const offset = (n - artSize) / 2;
+  assert.ok(Number.isInteger(offset));
+  const sample = (pixel) => Math.min(width - 1, Math.max(0, (pixel + 0.5) * width / artSize - 0.5));
+  for (let y = 0; y < artSize; y++) {
     const fy = sample(y);
     const y0 = Math.floor(fy);
     const y1 = Math.min(y0 + 1, width - 1);
     const wy = fy - y0;
-    for (let x = 0; x < n; x++) {
+    for (let x = 0; x < artSize; x++) {
       const fx = sample(x);
       const x0 = Math.floor(fx);
       const x1 = Math.min(x0 + 1, width - 1);
       const wx = fx - x0;
       const top = gray[y0 * width + x0] * (1 - wx) + gray[y0 * width + x1] * wx;
       const bottom = gray[y1 * width + x0] * (1 - wx) + gray[y1 * width + x1] * wx;
-      out[y * n + x] = Number(top * (1 - wy) + bottom * wy < 128);
+      out[(y + offset) * n + x + offset] = Number(top * (1 - wy) + bottom * wy < 128);
     }
   }
   return out;
@@ -71,9 +76,17 @@ for (const n of [cfg.modelRaster, width, cfg.artSensitivityRaster]) {
   const changed = corrected.reduce((total, value, i) => total + Number(value !== original[i]), 0);
   const originalMetrics = artMetrics(original, n);
   const correctedMetrics = artMetrics(corrected, n);
-  assert.ok(!originalMetrics.halfTurn.pass);
+  assert.ok(originalMetrics.halfTurn.mismatches > 0);
+  if (mode === undefined) assert.equal(originalMetrics.halfTurn.pass, false);
   assert.equal(correctedMetrics.halfTurn.mismatches, 0);
   assert.equal(correctedMetrics.mismatchedClasses, 0);
+  const padding = n * (1 - sideFraction) / 2;
+  assert.ok(corrected.every((value, i) => {
+    if (!value) return true;
+    const x = i % n;
+    const y = Math.floor(i / n);
+    return x >= padding && x < n - padding && y >= padding && y < n - padding;
+  }), 'Decoration extends outside its placement square');
   const rows = [];
   for (const radius of cfg.radiusMm) {
     const voidPixels = voidMask(n, square * cfg.moduleMm, radius);
@@ -109,4 +122,9 @@ for (const n of [cfg.modelRaster, width, cfg.artSensitivityRaster]) {
   results.push({ n, changed, changedPercent: 100 * changed / original.length, originalMetrics, correctedMetrics, rows });
 }
 
-console.log(JSON.stringify({ sourceHash, node: process.version, square, quietSide: model.quiet, results }, null, 2));
+const placement = mode === '--quarter-area' ? {
+  sideModules: square * sideFraction,
+  sideMm: square * cfg.moduleMm * sideFraction,
+  areaPercent: 100 * sideFraction ** 2,
+} : undefined;
+console.log(JSON.stringify({ sourceHash, node: process.version, square, quietSide: model.quiet, placement, results }, null, 2));

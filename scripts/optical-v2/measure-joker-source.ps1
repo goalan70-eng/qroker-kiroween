@@ -1,4 +1,7 @@
-param([Parameter(Mandatory)][string]$Image)
+param(
+    [Parameter(Mandatory)][string]$Image,
+    [switch]$QuarterArea
+)
 
 $ErrorActionPreference = 'Stop'
 $resolvedImage = (Resolve-Path -LiteralPath $Image).Path
@@ -23,5 +26,7 @@ try {
 finally { $bitmap.Dispose() }
 
 $sourceHash = (Get-FileHash -LiteralPath $resolvedImage -Algorithm SHA256).Hash.ToLowerInvariant()
-[Convert]::ToBase64String($bytes) | node (Join-Path $PSScriptRoot 'measure-joker-source.mjs') $sourceHash
+$measurementArgs = @($sourceHash)
+if ($QuarterArea) { $measurementArgs += '--quarter-area' }
+[Convert]::ToBase64String($bytes) | node (Join-Path $PSScriptRoot 'measure-joker-source.mjs') @measurementArgs
 exit $LASTEXITCODE

@@ -38,3 +38,22 @@ node --test scripts/optical-v2/m2-feasibility.test.mjs
 The [original PR #25 hosted CI](https://github.com/goalan70-eng/qroker-kiroween/actions/runs/44480018881) remains a separate failed run. Its Vitest step reported 3,016 passed and three 5 s optical timeouts: blurred scale, rotated-card-centre, and the physical-card decodeGroup smoke case. Browser steps were skipped. The supplemental check does not change V1 test code, CI timeouts or historical evidence. V1 Task 7.2 and V1 Milestone 8 remain **unevaluated**, and any V1 comparison uses **unevaluated V1 baseline (synthetic)**.
 
 Unrun: physical prints and real-phone scanning, feature-size qualification of an approved layout and visual acceptance of the corrected ornament. The next milestone still depends on a continuing Gate 2 outcome and a separate owner authorization.
+
+## Owner-requested 25% placement
+
+Codex tested a centered 8 × 8 module placement square (12.7 × 12.7 mm) within the assumed 16 × 16 module composite (25.4 × 25.4 mm). The placement square covers exactly 25% of the composite area with the external quiet zone excluded. The test uses the same source SHA-256, 180° correction and mask geometry as above. Only artwork scale changes. The uncorrected input still has 180° differences at every grid size. The corrected and masked layers each have zero mismatches across all 16 placement classes, three grid sizes and three corner radii. The script checks that every ink pixel stays inside the placement square.
+
+| Corner radius | Removed by central void | Removed by protected data | Removed by critical frame | Ink retained vs. scaled unmasked art | Ink coverage of composite |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 3.175 mm | 10,860 | 10,904 | 0 | 84.65% | 7.33% |
+| 3.6 mm | 14,882 | 10,904 | 0 | 81.82% | 7.08% |
+| 4.0 mm | 19,436 | 10,904 | 0 | 78.61% | 6.80% |
+
+At the 1280² grid the corrected layer starts with 141,818 black pixels, or 8.66% coverage of the composite. At 3.175 mm the scaled image retains 84.65% of that ink compared with 68.18% of the full-size corrected ink in the earlier trial. Percentage retained is relative to each trial's unmasked image. It does not quantify how well specific design details survive. At 768² and 1536², the 3.175 mm result was respectively 84.61% and 84.57% retained. This is an ideal geometric result with an illustrative layout. Print feature size, visual fidelity and camera performance remain unverified. Gate 2 remains blocked.
+
+~~~powershell
+./scripts/optical-v2/measure-joker-source.ps1 -Image <local-original-attachment> -QuarterArea
+node --test scripts/optical-v2/m2-feasibility.test.mjs
+~~~
+
+Two quarter-area runs produced identical aggregate JSON under Windows x64, PowerShell 7.6.9 and Node v24.20.0. The full-size command reproduced the previous counts, and all 11 existing M2 tests passed. The local comparison preview stays outside the repository under the existing O-5 publication restriction.
