@@ -1,5 +1,7 @@
 # Placement UI verification in a real browser (task 17.3)
 
+> **Historical behavior note (2026-11-18):** These browser checks were recorded before the first-placement draw exemption was removed. In particular, Scenario 2's `hand 4 → 3` after the first code-free placement is no longer the expected result. Under the current rule (RULES_VERSION 2), that placement draws one card and the hand remains at 4 while the deck is non-empty. A fresh browser regression run is required after the rule change.
+
 This file records what was run to check the placement UI (drag-and-drop and position-first placement, 180° rotation for clubs and spades, explicit confirmation) in a real browser, what each check shows, and what it does not show. The evidence classes are kept apart on purpose.
 
 Environment: Node v24.20.0, Vite 8.3.8, Windows. Browser: Microsoft Edge 157.0.4341.60, headless (`--headless=new`).

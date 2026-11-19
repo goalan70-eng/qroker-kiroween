@@ -1,0 +1,57 @@
+name: Run experimental rule matrix (rules v2)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  simulate:
+    name: AI rule comparison (24 scenarios)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run reproducible simulation grid
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p rule-results
+          for hand in 4 3; do
+            for codes in none 5; do
+              for mix in beginner advanced mixed; do
+                for visibility in owner-only face-up; do
+                  scenario="hand-${hand}_codes-${codes}_mix-${mix}_visibility-${visibility}"
+                  ./node_modules/.bin/tsx scripts/compare-rules.ts \
+                    --hand "$hand" --codes "$codes" --games 200 --seed 0 \
+                    --mix "$mix" --visibility "$visibility" --json > "rule-results/${scenario}.json"
+                  node -e '
+                    const r = require(process.argv[1]);
+                    console.log("SIM_RESULT|" + JSON.stringify({
+                      hand: r.settings.hand, codes: r.settings.codes, games: r.settings.games,
+                      mix: r.settings.mix, visibility: r.settings.visibility,
+                      scoreTable: r.scoreTable, handEmptyBonus: r.handEmptyBonus,
+                      stops: r.stopCounts, placements: r.averagePlacements,
+                      completedCodes: r.averageCompletedCodes, batches: r.averagePredictionBatches,
+                      actions: r.averageActions, winRates: r.rankOneRates,
+                      averageScores: r.averageScores, sharedFirst: r.sharedFirstGames
+                    }));
+                  ' "./rule-results/${scenario}.json"
+                done
+              done
+            done
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qroker-rule-matrix-rules-v2-200-seeds
+          path: rule-results/
+          if-no-files-found: warn
+          retention-days: 14

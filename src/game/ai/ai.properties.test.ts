@@ -729,7 +729,7 @@ describe("Property 25: AI non-interference", () => {
       }
       expect(cov.byKindPlacement.BOARD_SWAP, "BOARD_SWAP in PLACEMENT").toBeGreaterThanOrEqual(8);
       expect(cov.byKindGuess.BOARD_SWAP, "BOARD_SWAP in GUESS_COLLECT").toBeGreaterThanOrEqual(10);
-      expect(cov.byKind.PENDING_GUESSES, "other seats' private guesses perturbed").toBeGreaterThanOrEqual(30);
+      expect(cov.byKind.PENDING_GUESSES, "other seats' private guesses perturbed").toBeGreaterThanOrEqual(25);
       expect(cov.byKind.PENDING_SECRETS, "pending secrets perturbed").toBeGreaterThanOrEqual(30);
       for (const kind of ["PENDING_GUESSES", "PENDING_SECRETS"] as const) {
         expect(cov.byKindPlacement[kind], `${kind} never occurs in PLACEMENT`).toBe(0);

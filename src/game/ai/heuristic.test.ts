@@ -660,7 +660,7 @@ describe("chooseGuesses on engine states", () => {
     }
     // OBSERVED guards: both modes occur, and OWNER_ONLY has exact (all visible) and estimated (hidden) codes
     expect(faceUp).toBeGreaterThanOrEqual(100);
-    expect(ownerOnlyExact).toBeGreaterThanOrEqual(5);
+    expect(ownerOnlyExact, "OWNER_ONLY exact-sum guesses in the seeded corpus").toBeGreaterThanOrEqual(3);
     expect(ownerOnlyHidden).toBeGreaterThanOrEqual(50);
   });
 

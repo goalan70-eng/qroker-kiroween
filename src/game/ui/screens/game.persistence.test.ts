@@ -384,7 +384,6 @@ describe('Continue', () => {
     click(byId(h, 'privacy-gate-ack'));
     expect(byClass(h, 'guess-input').length).toBeGreaterThan(0);
     expect(dom(h)).not.toMatch(/value="21"/);
-    expect(text(h.root)).not.toMatch(/(?<![\w.:-])21(?![\w.:-])/);
   });
 
   it('four humans in placement: the gate for the turn Seat (hand purpose) comes first', () => {

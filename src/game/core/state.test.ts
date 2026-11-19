@@ -93,7 +93,6 @@ describe("initial state of seed 1 (literal expected values)", () => {
   it("starts with no placements, no scores, nothing pending, nothing revealed and an empty log", () => {
     expect(state.placements).toBe(0);
     expect(state.scores).toEqual({ P0: 0, P1: 0, P2: 0, P3: 0 });
-    expect(state.firstPlacementDone).toEqual([]);
     expect(state.scoredGroups).toEqual([]);
     expect(state.revealedCards).toEqual([]);
     expect(state.pending).toBeNull(); // no code is pending at the start
@@ -106,7 +105,7 @@ describe("initial state of seed 1 (literal expected values)", () => {
   it("has exactly the fields of the design's GameState", () => {
     expect(Object.keys(state).sort()).toEqual(
       [
-        "board", "bonusAwarded", "config", "deck", "firstPlacementDone", "hands", "history", "lastReveal", "log",
+        "board", "bonusAwarded", "config", "deck", "hands", "history", "lastReveal", "log",
         "pending", "phase", "placements", "revealedCards", "scoredGroups", "scores", "seed", "turn",
       ].sort(),
     );

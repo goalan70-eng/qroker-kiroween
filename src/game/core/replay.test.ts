@@ -396,7 +396,6 @@ function findMid(): GameState {
         s.pending !== null &&
         Object.keys(s.pending.guesses).length >= 1 &&
         s.history.length >= 1 &&
-        s.firstPlacementDone.length >= 2 &&
         s.scoredGroups.length >= 1 &&
         SEATS.every((seat) => s.hands[seat].length >= 2) &&
         s.deck.length >= 2 &&
@@ -473,7 +472,6 @@ describe("stateEquals", () => {
     { name: "hand card removed", base: mid, mutate: (s) => void s.hands.P1.pop() },
     { name: "deck order", base: mid, mutate: (s) => void s.deck.reverse() },
     { name: "deck card removed", base: mid, mutate: (s) => void s.deck.pop() },
-    { name: "firstPlacementDone", base: mid, mutate: (s) => void s.firstPlacementDone.pop() },
     { name: "scoredGroups element", base: mid, mutate: (s) => void (s.scoredGroups[0] += "x") },
     { name: "scoredGroups extra", base: mid, mutate: (s) => void s.scoredGroups.push("zzz") },
     { name: "revealedCards", base: ended, mutate: (s) => void s.revealedCards.pop() },

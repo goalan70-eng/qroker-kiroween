@@ -26,7 +26,7 @@ import type { NamedScoreConfig, Result, ScoreConfig } from './types';
  * Integer version of the rules. Incremented whenever a change alters the outcome of replaying an
  * existing Action_Log (requirement 12.6). It is part of every configuration and Save_Envelope.
  */
-export const RULES_VERSION = 1;
+export const RULES_VERSION = 2; // 2026-11-18: every code-free placement now draws, including the first placement.
 
 /** Smallest and largest accepted Guess: the sum of 4 cards of value 1..13 lies in 4..52. */
 export const GUESS_MIN = 4;
