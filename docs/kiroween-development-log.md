@@ -125,3 +125,21 @@ rewrite history or relabel Codex work as Kiro work.
   are held locally. Optical V2 acceptance and scoring decisions remain open
   as recorded in the handoff.
 - Source and evidence commit: `8d91e53`.
+
+## 2026-11-20 — Android confirmation race
+
+- Codex added the device-side cancellation and duplicate-scoring tests in
+  `dcc17f8`. On the original score code, delaying the result of a changed
+  scene reproduced two stale 10-point writes, one for a missing card and
+  one for a different complete group.
+- Codex changed the Android companion to confirm the same group on a new
+  Camera2 capture requested after the tap. The code and tests are under
+  `prototypes/android-offline-companion/`. The report records the capture
+  boundary and the remaining physical-test limits.
+- Supporting tools: JDK, Android SDK, PowerShell, ADB and Android API 36
+  emulator. The APK build and signature verification succeeded. All 33 JVM
+  checks passed. The offline emulator recorded 10 points, blocked repeats
+  and restored the score after restarting the app.
+- Evidence: the delayed-result race was controlled in the JVM. The emulator
+  exercised camera confirmation and score persistence with a synthetic scene.
+  Real phone and printed-card timing remains unmeasured.

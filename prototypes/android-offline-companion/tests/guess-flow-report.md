@@ -45,3 +45,13 @@ Start-Process -FilePath $qrEmu -ArgumentList @('-avd','QRokerGuessIsolated','-no
 스크립트는 장치 이름, 비행기 모드와 Wi-Fi 꺼짐을 확인하고 앱에 ADB로 입력한다. 검증한 화면 구조와 실행 로그는 `build/guess-flow/`에 생성된다. 에뮬레이터와 영상은 로컬 시험 자료다.
 
 이 시험은 판독 결과가 화면에 반영된 뒤의 입력 취소를 확인한다. 실제 휴대전화의 인쇄 카드 판독률이나 장면 전환부터 제거가 표시되기까지의 지연은 대기 중이다.
+
+## 판독 결과가 도착하기 전의 제출
+
+JVM 시험에서 기존 판독을 표시한 상태로 새 장면의 판독 응답을 늦췄다. 카드 한 장이 빠진 경우와 다른 네 장이 들어온 경우 모두, 수정 전에는 이전 합계 27로 10점이 저장됐다.
+
+Codex는 확정 이벤트 이후 Camera2 캡처를 요청하도록 수정했다. 카메라가 알린 새 노출 시작 시각부터의 프레임에만 제출 번호를 부여하고, 그 프레임에서 예측 당시와 같은 네 카드 ID가 확인될 때만 점수를 저장한다. 검증 도중 판독 불가나 다른 조합이 확인되거나 2초 안에 완료되지 않으면 제출을 취소한다. 정상 채점과 로컬 기록 형식은 기존과 동일하다. [Camera2 촬영 시작 콜백](https://developer.android.com/reference/android/hardware/camera2/CameraCaptureSession.CaptureCallback#onCaptureStarted(android.hardware.camera2.CameraCaptureSession,%20android.hardware.camera2.CaptureRequest,%20long,%20long))
+
+수정판의 JVM 검사 33개가 통과했다. 카드 제거·교체 시 이전 기록을 쓰지 않는지, 이전 촬영이나 제출의 콜백이 늦게 도착할 때 새 제출에 쓰이지 않는지, 확인 시간 초과와 연속 확정에서 점수가 중복되지 않는지 검사했다. Android API 36 오프라인 에뮬레이터에서 이 APK로 `./tests/emulator-guess-flow.ps1 -DuplicateOnly`를 실행해, 새 프레임으로 합계 27을 확인한 뒤 1건·10점이 기록되고 같은 조합 재노출과 재시작 후에도 유지됨을 확인했다. 검증 APK SHA-256은 `27b2fc77445d57bdca70cf31bc3f1918da5e3b8fbf4eed27ded51fe940e2ae0f`이다.
+
+경계 재현은 판독 결과 도착 순서를 제어한 JVM 시험이다. 실제 휴대전화에서 카드를 움직이는 순간과 촬영 노출 사이의 간격은 측정하지 않았다.

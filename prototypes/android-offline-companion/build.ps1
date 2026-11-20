@@ -21,7 +21,7 @@ function Run-Tool([string]$Program, [string[]]$Arguments) {
 
 New-Item -ItemType Directory -Path build/generated,build/tests,build/classes,build/dex,dist -Force | Out-Null
 Run-Tool python @('generate-layout.py', $Source, 'build/generated/Layout30.java')
-$qrCore = @('src/OpticalReader.java','src/GameScore.java','build/generated/Layout30.java')
+$qrCore = @('src/OpticalReader.java','src/GameScore.java','src/ConfirmationFrame.java','build/generated/Layout30.java')
 Run-Tool "$qrBin/javac.exe" (@('-encoding','UTF-8','-d','build/tests') + $qrCore + 'tests/OfflineTest.java')
 Run-Tool "$qrBin/java.exe" @('-cp','build/tests','com.qroker.offline.OfflineTest',"$Source/small-marker-audit")
 Run-Tool "$qrBin/javac.exe" (@('-encoding','UTF-8','--release','8','-cp',$qrAndroidJar,'-d','build/classes') +

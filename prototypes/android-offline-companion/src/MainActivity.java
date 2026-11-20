@@ -293,7 +293,7 @@ public final class MainActivity extends Activity {
         if (game != null) showReading(null, SystemClock.elapsedRealtime());
     }
 
-    private void onReading(LiveCamera source, int[] ids, long time) {
+    private void onReading(LiveCamera source, int[] ids, long time, long confirmation) {
         if (source != camera) return;
         long now = SystemClock.elapsedRealtime();
         boolean fresh = now - time < GameScore.FRESH_MS;
@@ -302,6 +302,7 @@ public final class MainActivity extends Activity {
         main.removeCallbacks(expiration);
         if (fresh && ids != null)
             main.postDelayed(expiration, GameScore.FRESH_MS + 1 - (now - time));
+        if (fresh && confirmation != 0) recordConfirmedGuess(confirmation);
     }
 
     private void expire() {
@@ -322,16 +323,21 @@ public final class MainActivity extends Activity {
     private void updateReading() {
         long now = SystemClock.elapsedRealtime();
         boolean ready = game.ready(now);
-        if (ready) scanStatus.setText("카드 네 장을 읽었습니다");
+        boolean pending = game.awaitingConfirmation();
+        if (pending) scanStatus.setText("카드 네 장을 다시 확인하고 있습니다");
+        else if (ready) scanStatus.setText("카드 네 장을 읽었습니다");
         else if (game.visible(now)) scanStatus.setText("이미 기록한 조합입니다");
         else scanStatus.setText("카드 네 장의 모서리를 맞대세요");
         form.setVisibility(ready ? View.VISIBLE : View.GONE);
-        submit.setEnabled(ready);
+        submit.setEnabled(ready && !pending);
+        guess.setEnabled(!pending);
         if (ready) heading.setText((game.history().size() + 1) + "번째 추측");
     }
 
     private void saveGuess() {
-        if (!game.ready(SystemClock.elapsedRealtime())) {
+        long now = SystemClock.elapsedRealtime();
+        if (game.awaitingConfirmation()) return;
+        if (camera == null || !game.ready(now)) {
             showReading(null, SystemClock.elapsedRealtime());
             return;
         }
@@ -342,8 +348,18 @@ public final class MainActivity extends Activity {
             value = -1;
         }
         if (!GameScore.validGuess(value)) { guess.setError("4~52 사이의 숫자를 입력하세요"); return; }
+        long request = game.requestSubmission(value, now);
+        if (request == 0) return;
+        updateReading();
+        camera.requestConfirmation(request);
+        main.postDelayed(() -> {
+            if (game.cancelSubmission(request)) updateReading();
+        }, GameScore.CONFIRM_MS);
+    }
+
+    private void recordConfirmedGuess(long request) {
         try {
-            GameScore.Round round = game.submit(value, SystemClock.elapsedRealtime());
+            GameScore.Round round = game.confirmSubmission(request, SystemClock.elapsedRealtime());
             if (round == null) { updateReading(); return; }
             ((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE))
                     .hideSoftInputFromWindow(guess.getWindowToken(), 0);
@@ -352,6 +368,7 @@ public final class MainActivity extends Activity {
             updateReading();
             showHistory();
         } catch (IOException e) {
+            updateReading();
             Toast.makeText(this, "기록을 저장하지 못했습니다. 다시 시도하세요.", Toast.LENGTH_LONG).show();
         }
     }

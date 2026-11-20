@@ -26,7 +26,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 final class LiveCamera {
-    interface Observer { void frame(LiveCamera camera, int[] cards, long acquiredAt); }
+    interface Observer { void frame(LiveCamera camera, int[] cards, long acquiredAt, long confirmation); }
     interface Failure { void error(LiveCamera camera); }
 
     final int width, height, sensorRotation;
@@ -41,9 +41,11 @@ final class LiveCamera {
     private final HandlerThread cameraThread = new HandlerThread("qroker-camera");
     private final ExecutorService decode = Executors.newSingleThreadExecutor();
     private final AtomicBoolean busy = new AtomicBoolean();
+    private final ConfirmationFrame confirmation = new ConfirmationFrame();
     private Handler handler;
     private CameraDevice device;
     private CameraCaptureSession session;
+    private CaptureRequest previewRequest;
     private ImageReader imageReader;
     private Surface preview;
     private volatile boolean closed;
@@ -135,7 +137,8 @@ final class LiveCamera {
                                 if (continuousFocus)
                                     request.set(CaptureRequest.CONTROL_AF_MODE,
                                             CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
-                                session.setRepeatingRequest(request.build(), null, handler);
+                                previewRequest = request.build();
+                                session.setRepeatingRequest(previewRequest, null, handler);
                             } catch (CameraAccessException | IllegalStateException error) {
                                 fail();
                             }
@@ -148,15 +151,34 @@ final class LiveCamera {
         }
     }
 
+    @SuppressWarnings("deprecation")
+    void requestConfirmation(long id) {
+        handler.post(() -> {
+            if (closed || session == null || previewRequest == null) return;
+            confirmation.request(id);
+            try {
+                session.capture(previewRequest, new CameraCaptureSession.CaptureCallback() {
+                    @Override public void onCaptureStarted(CameraCaptureSession source, CaptureRequest request,
+                                                           long timestamp, long frameNumber) {
+                        confirmation.started(id, timestamp);
+                    }
+                }, handler);
+            } catch (CameraAccessException | IllegalStateException | IllegalArgumentException error) {
+                fail();
+            }
+        });
+    }
+
     private void frameAvailable(ImageReader input) {
         try (Image image = input.acquireLatestImage()) {
             if (image == null || closed || !busy.compareAndSet(false, true)) return;
             long time = SystemClock.elapsedRealtime();
+            long confirmed = confirmation.take(image.getTimestamp());
             OpticalReader.Frame frame = luminance(image);
             decode.execute(() -> {
                 try {
                     int[] cards = reader.read(frame);
-                    main.post(() -> { if (!closed) observer.frame(this, cards, time); });
+                    main.post(() -> { if (!closed) observer.frame(this, cards, time, confirmed); });
                 } catch (RuntimeException error) {
                     fail();
                 } finally {

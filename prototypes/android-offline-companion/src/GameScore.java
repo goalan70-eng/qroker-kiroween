@@ -16,12 +16,27 @@ import java.util.Set;
 final class GameScore {
     private static final int[] REWARDS = {10, 5, 4, 3, 2, 1};
     static final long FRESH_MS = 1000;
+    static final long CONFIRM_MS = 2000;
     private final File file;
     private final List<Round> history = new ArrayList<>();
     private final Set<Integer> recorded = new HashSet<>();
     private int total;
     private int[] cards;
     private long observedAt;
+    private Submission pending;
+    private long nextSubmission;
+
+    private static final class Submission {
+        final long id, requestedAt;
+        final int key, guess;
+
+        Submission(long id, long requestedAt, int key, int guess) {
+            this.id = id;
+            this.requestedAt = requestedAt;
+            this.key = key;
+            this.guess = guess;
+        }
+    }
 
     static final class Round {
         final int key, guess, actual, points;
@@ -63,14 +78,18 @@ final class GameScore {
     }
 
     void observe(int[] ids, long time) {
-        cards = null;
-        if (ids == null || ids.length != 4) return;
+        cards = orderedGroup(ids);
+        observedAt = time;
+        if (pending != null && (cards == null || pending.key != key())) pending = null;
+    }
+
+    private static int[] orderedGroup(int[] ids) {
+        if (ids == null || ids.length != 4) return null;
         int[] ordered = ids.clone();
         Arrays.sort(ordered);
         if (ordered[0] < 0 || ordered[3] >= 52
-                || ordered[0] == ordered[1] || ordered[1] == ordered[2] || ordered[2] == ordered[3]) return;
-        cards = ordered;
-        observedAt = time;
+                || ordered[0] == ordered[1] || ordered[1] == ordered[2] || ordered[2] == ordered[3]) return null;
+        return ordered;
     }
 
     private int key() {
@@ -87,11 +106,29 @@ final class GameScore {
 
     List<Round> history() { return Collections.unmodifiableList(history); }
 
-    Round submit(int guess, long now) throws IOException {
-        if (!validGuess(guess) || !ready(now)) return null;
+    long requestSubmission(int guess, long now) {
+        if (!validGuess(guess) || !ready(now) || pending != null) return 0;
+        pending = new Submission(++nextSubmission, now, key(), guess);
+        return pending.id;
+    }
+
+    boolean awaitingConfirmation() { return pending != null; }
+
+    boolean cancelSubmission(long id) {
+        if (pending == null || pending.id != id) return false;
+        pending = null;
+        return true;
+    }
+
+    Round confirmSubmission(long id, long now) throws IOException {
+        if (pending == null || pending.id != id) return null;
+        Submission submission = pending;
+        pending = null;
+        if (!ready(now) || observedAt < submission.requestedAt || now - submission.requestedAt >= CONFIRM_MS)
+            return null;
         int actual = 0;
         for (int card : cards) actual += card % 13 + 1;
-        Round round = new Round(key(), guess, actual, points(Math.abs(guess - actual)));
+        Round round = new Round(submission.key, submission.guess, actual, points(Math.abs(submission.guess - actual)));
         List<Round> updated = new ArrayList<>(history);
         updated.add(round);
         write(updated);
@@ -106,6 +143,7 @@ final class GameScore {
         history.clear();
         recorded.clear();
         cards = null;
+        pending = null;
         total = 0;
     }
 
