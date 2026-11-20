@@ -101,3 +101,27 @@ rewrite history or relabel Codex work as Kiro work.
 - Commit: `5d75eee`. PR: [#13](https://github.com/goalan70-eng/qroker-kiroween/pull/13)
   (draft, stacked on PR #12; no merge). The successful local checks above are
   distinct from the new PR-head GitHub Actions result, which is not yet verified.
+
+## 2026-11-20 — Offline Android companion prototype
+
+- Context: owner-requested Android prototype using the local 30 mm uniform-bar
+  layout. Related optical research: [Issue #16](https://github.com/goalan70-eng/qroker-kiroween/issues/16).
+  The source and evidence are on `codex/android-offline-companion`.
+- Actual implementation and test tool: **Codex**. Supporting tools: Git,
+  PowerShell, Python, JDK 21, Android SDK Build Tools and ADB. The historical
+  handoff identifies **Kiro** as the author of sections 0–10. The Codex
+  implementation and validation appear in subsequent sections.
+- Files: `prototypes/android-offline-companion/` contains the native Java
+  app, build and test scripts, and text evidence. The companion handoff is
+  `docs/optical-v2/android-prototype-handoff.md`.
+- Verification: the APK built and its signature verified, 19 JVM regression
+  checks passed, and the 480-row deck audit reproduced from the imported
+  source. In Android API 36 with networking disabled, a synthetic camera
+  sequence exercised scoring, a missing card, and restoring two rounds and
+  13 points after restarting the app.
+- Evidence and limits: recognition results are from synthetic inputs. Real
+  phone cameras and printed cards await testing. The prototype build uses
+  local 30 mm data and fixtures. Artwork, print assets, APKs and signing keys
+  are held locally. Optical V2 acceptance and scoring decisions remain open
+  as recorded in the handoff.
+- Source and evidence commit: `8d91e53`.
