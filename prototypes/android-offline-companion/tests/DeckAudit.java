@@ -127,9 +127,23 @@ public final class DeckAudit {
     }
 
     private static void image(OpticalReader.Frame frame, Path path) throws IOException {
+        image(frame, path, -1, false);
+    }
+
+    private static void image(OpticalReader.Frame frame, Path path, int cue, boolean covered) throws IOException {
         BufferedImage image = new BufferedImage(frame.width, frame.height, BufferedImage.TYPE_INT_RGB);
         int[] rgb = new int[frame.data.length];
         for (int i = 0; i < rgb.length; i++) rgb[i] = (frame.data[i] & 255) * 0x010101;
+        if (covered) {
+            // Cover the left half of the projected marker while retaining all four card bodies.
+            for (int y = 395; y < 525; y++)
+                Arrays.fill(rgb, y * frame.width + 212, y * frame.width + 317, 0x454545);
+        }
+        if (cue >= 0) {
+            // Camera-scene identifier for the UI test, drawn outside the marker.
+            for (int y = 60; y < 210; y++)
+                Arrays.fill(rgb, y * frame.width + 62, y * frame.width + 154, cue);
+        }
         image.setRGB(0, 0, frame.width, frame.height, rgb, 0, frame.width);
         if (!ImageIO.write(image, "jpeg", path.toFile())) throw new IOException("No JPEG encoder");
     }
@@ -192,9 +206,27 @@ public final class DeckAudit {
         image(photograph(second, voidMask, DIM_151, 0, -1, SEED + 1, true), root.resolve("emu-52.jpg"));
     }
 
+    private static void guessFlowFixtures(Path root) throws Exception {
+        byte[] voidMask = Files.readAllBytes(root.resolve("void.raw"));
+        List<String> groups = Files.readAllLines(root.resolve("groups.tsv"));
+        Group first = new Group(root, groups.get(0));
+        Group second = new Group(root, groups.stream().filter(row -> row.startsWith("rank-13\t"))
+                .findFirst().orElseThrow());
+        OpticalReader.Frame a = photograph(first, voidMask, DIM_151, 0, -1, SEED, true);
+        OpticalReader.Frame missing = photograph(first, voidMask, DIM_151, 0, 2, SEED, true);
+        OpticalReader.Frame b = photograph(second, voidMask, DIM_151, 0, -1, SEED + 1, true);
+        image(a, root.resolve("guess-1.jpg"), 0xe33131, false);
+        image(missing, root.resolve("guess-2.jpg"), 0x32cb49, false);
+        image(a, root.resolve("guess-3.jpg"), 0x3464ed, false);
+        image(b, root.resolve("guess-4.jpg"), 0xe5d62b, false);
+        image(b, root.resolve("guess-5.jpg"), 0xd23bd8, true);
+        image(b, root.resolve("guess-6.jpg"), 0x2fdadd, false);
+    }
+
     public static void main(String[] args) throws Exception {
         Path root = Path.of(args[0]);
         if (args.length == 2 && args[1].equals("--emulator")) emulatorFixtures(root);
+        else if (args.length == 2 && args[1].equals("--guess-flow")) guessFlowFixtures(root);
         else run(root);
     }
 }

@@ -26,4 +26,4 @@ Android 8.0 이상에서 실행하는 개인용 시제품이다. 후면 카메�
 
 2026-11-20 검증에서 JVM 회귀 검사 19개가 통과했다. 비행기 모드에서 Wi-Fi를 끈 Android API 36 에뮬레이터로 합성 장면을 후면 카메라에 입력했다. 예측 전 정답이 숨겨지고, 27을 제출하면 정답 27과 10점이 기록되며, 프로세스를 강제 종료하고 다시 실행했을 때 총점과 기록이 유지되고, 확인 삭제가 총점을 0점으로 되돌리는 것을 확인했다. 합성 장면의 마커는 테스트 카메라의 촬영 범위 안에 들어오도록 위치를 이동했다.
 
-[Kiro 인수인계와 Codex 후속 기록](../../docs/optical-v2/android-prototype-handoff.md) · [52장 검증 결과와 재현 절차](tests/deck-audit-report.md)
+[Kiro 인수인계와 Codex 후속 기록](../../docs/optical-v2/android-prototype-handoff.md) · [52장 검증 결과와 재현 절차](tests/deck-audit-report.md) · [추측 취소·중복 채점 에뮬레이터 시험](tests/guess-flow-report.md)
