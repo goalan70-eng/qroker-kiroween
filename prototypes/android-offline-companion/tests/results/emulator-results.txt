@@ -1,0 +1,5 @@
+6.5s  PASS first four-card group opens guessing with the answer hidden
+17.5s  PASS four cards sum to 27 and award 10 points
+53.6s  PASS frame sequence with a card missing offers no guess and retains 10 recorded points
+80.5s  PASS four kings sum to 52, guess 49 awards 3 points, total is 13
+84.8s  PASS process restart restores both rounds and 13 total points
