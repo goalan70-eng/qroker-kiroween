@@ -51,14 +51,15 @@ public class OfflineTest {
             score.observe(first, 100);
             // The camera has the changed scene, but its decoded result is still in flight.
             long request = score.requestSubmission(27, 130);
-            ConfirmationFrame camera = new ConfirmationFrame();
+            ConfirmationFrame<String> camera = new ConfirmationFrame<>();
             camera.request(request);
             camera.started(request, 3_000);
-            check(request != 0 && score.awaitingConfirmation() && camera.take(2_999) == 0
+            check(request != 0 && score.awaitingConfirmation() && camera.arrived(2_999, "preview") == null
                     && score.confirmSubmission(0, 132) == null && !Files.exists(journal),
                     "an in-flight preview cannot confirm a guess before the " + labels[i] + " scene arrives");
             score.observe(changes[i], 145);
-            check(score.confirmSubmission(camera.take(3_001), 150) == null
+            ConfirmationFrame.Match<String> changed = camera.arrived(3_000, labels[i]);
+            check(changed != null && score.confirmSubmission(changed.id, 150) == null
                     && score.history().isEmpty() && score.total() == 0 && !Files.exists(journal),
                     labels[i] + " scene cannot record the old guess");
             score.observe(first, 155);
@@ -69,15 +70,32 @@ public class OfflineTest {
     }
 
     private static void captureBoundary() {
-        ConfirmationFrame camera = new ConfirmationFrame();
+        ConfirmationFrame<String> camera = new ConfirmationFrame<>();
         camera.request(1);
-        check(camera.take(8_000) == 0, "frames before the capture-start callback cannot confirm");
+        check(camera.arrived(8_000, "earlier request") == null, "frames are not confirmed before the capture-start callback");
         camera.request(2);
-        camera.started(1, 8_000);
-        check(camera.take(8_500) == 0, "a late callback cannot arm the next submission");
+        check(camera.started(1, 8_000) == null && camera.arrived(8_500, "preview") == null,
+                "a late callback cannot arm the next submission");
         camera.started(2, 9_000);
-        check(camera.take(8_999) == 0 && camera.take(9_000) == 2 && camera.take(9_001) == 0,
-                "only the first frame at or after the tagged capture can confirm");
+        check(camera.arrived(8_999, "preview") == null, "an earlier preview cannot confirm the tagged capture");
+        ConfirmationFrame.Match<String> exact = camera.arrived(9_000, "confirmation");
+        check(exact != null && exact.id == 2 && "confirmation".equals(exact.image)
+                && camera.arrived(9_001, "preview") == null, "only the exact capture can confirm, and only once");
+        camera.request(3);
+        camera.started(3, 10_000);
+        check(camera.arrived(10_001, "restored group") == null,
+                "a later restored group cannot stand in for a dropped confirmation capture");
+        camera.request(4);
+        camera.arrived(11_000, "missing");
+        camera.arrived(11_001, "restored");
+        ConfirmationFrame.Match<String> early = camera.started(4, 11_000);
+        check(early != null && early.id == 4 && "missing".equals(early.image),
+                "an exact capture delivered early survives a later preview");
+        camera.request(5);
+        camera.arrived(12_000, "cancelled");
+        camera.cancel(5);
+        check(camera.started(5, 12_000) == null && !camera.waiting(),
+                "a late callback cannot restore a cancelled capture");
     }
 
     private static GameScore.Round submitConfirmed(GameScore score, int[] group, int guess, long time)

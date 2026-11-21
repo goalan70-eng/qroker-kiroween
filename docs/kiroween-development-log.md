@@ -143,3 +143,20 @@ rewrite history or relabel Codex work as Kiro work.
 - Evidence: the delayed-result race was controlled in the JVM. The emulator
   exercised camera confirmation and score persistence with a synthetic scene.
   Real phone and printed-card timing remains unmeasured.
+
+## 2026-11-20 — Android confirmation capture matching
+
+- Codex reproduced a dropped-confirmation case at `3b26ecb`. A later
+  preview could supply the submission number when the requested image
+  was unavailable. The companion now matches the requested exposure by
+  its exact timestamp. It buffers a small number of early image deliveries
+  and prioritizes the matched image over preview decoding.
+- Changes: `ConfirmationFrame.java`, `LiveCamera.java`, `OfflineTest.java`
+  and the guess-flow report within `prototypes/android-offline-companion/`.
+  The workspace-level `AGENTS.md` separately records the read-only rule
+  for Kiro files in all local checkouts.
+- Supporting tools: JDK, Android SDK, PowerShell and Android API 36
+  emulator via ADB. The JVM check for the dropped image failed before
+  the fix. After the change 37 JVM checks passed, the APK signature
+  verified, and the offline emulator scored and restored one 10-point
+  round while blocking repeats. Physical camera timing remains unmeasured.

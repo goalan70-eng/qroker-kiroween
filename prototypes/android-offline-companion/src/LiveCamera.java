@@ -9,6 +9,7 @@ import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CaptureFailure;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
@@ -41,7 +42,7 @@ final class LiveCamera {
     private final HandlerThread cameraThread = new HandlerThread("qroker-camera");
     private final ExecutorService decode = Executors.newSingleThreadExecutor();
     private final AtomicBoolean busy = new AtomicBoolean();
-    private final ConfirmationFrame confirmation = new ConfirmationFrame();
+    private final ConfirmationFrame<FrameSample> confirmation = new ConfirmationFrame<>();
     private Handler handler;
     private CameraDevice device;
     private CameraCaptureSession session;
@@ -49,6 +50,16 @@ final class LiveCamera {
     private ImageReader imageReader;
     private Surface preview;
     private volatile boolean closed;
+
+    private static final class FrameSample {
+        final OpticalReader.Frame frame;
+        final long acquiredAt;
+
+        FrameSample(OpticalReader.Frame frame, long acquiredAt) {
+            this.frame = frame;
+            this.acquiredAt = acquiredAt;
+        }
+    }
 
     LiveCamera(Context context, SurfaceTexture texture, OpticalReader reader, Handler main,
                Observer observer, Failure failure) throws CameraAccessException {
@@ -160,9 +171,15 @@ final class LiveCamera {
                 session.capture(previewRequest, new CameraCaptureSession.CaptureCallback() {
                     @Override public void onCaptureStarted(CameraCaptureSession source, CaptureRequest request,
                                                            long timestamp, long frameNumber) {
-                        confirmation.started(id, timestamp);
+                        decodeConfirmation(confirmation.started(id, timestamp));
+                    }
+
+                    @Override public void onCaptureFailed(CameraCaptureSession source, CaptureRequest request,
+                                                          CaptureFailure failure) {
+                        confirmation.cancel(id);
                     }
                 }, handler);
+                handler.postDelayed(() -> confirmation.cancel(id), GameScore.CONFIRM_MS);
             } catch (CameraAccessException | IllegalStateException | IllegalArgumentException error) {
                 fail();
             }
@@ -170,25 +187,42 @@ final class LiveCamera {
     }
 
     private void frameAvailable(ImageReader input) {
-        try (Image image = input.acquireLatestImage()) {
-            if (image == null || closed || !busy.compareAndSet(false, true)) return;
+        boolean previewSlot = false;
+        // Preserve the requested image even while the decoder is processing a preview.
+        try (Image image = confirmation.waiting() ? input.acquireNextImage() : input.acquireLatestImage()) {
+            if (image == null || closed) return;
+            long timestamp = image.getTimestamp();
+            boolean candidate = confirmation.candidate(timestamp);
+            if (!candidate) {
+                previewSlot = busy.compareAndSet(false, true);
+                if (!previewSlot) return;
+            }
             long time = SystemClock.elapsedRealtime();
-            long confirmed = confirmation.take(image.getTimestamp());
-            OpticalReader.Frame frame = luminance(image);
-            decode.execute(() -> {
-                try {
-                    int[] cards = reader.read(frame);
-                    main.post(() -> { if (!closed) observer.frame(this, cards, time, confirmed); });
-                } catch (RuntimeException error) {
-                    fail();
-                } finally {
-                    busy.set(false);
-                }
-            });
+            FrameSample sample = new FrameSample(luminance(image), time);
+            if (candidate) decodeConfirmation(confirmation.arrived(timestamp, sample));
+            else decodeFrame(sample, 0);
         } catch (RuntimeException error) {
-            busy.set(false);
+            if (previewSlot) busy.set(false);
             fail();
         }
+    }
+
+    private void decodeConfirmation(ConfirmationFrame.Match<FrameSample> match) {
+        if (match != null && !closed) decodeFrame(match.image, match.id);
+    }
+
+    private void decodeFrame(FrameSample sample, long id) {
+        decode.execute(() -> {
+            try {
+                if (closed) return;
+                int[] cards = reader.read(sample.frame);
+                main.post(() -> { if (!closed) observer.frame(this, cards, sample.acquiredAt, id); });
+            } catch (RuntimeException error) {
+                fail();
+            } finally {
+                if (id == 0) busy.set(false);
+            }
+        });
     }
 
     private static OpticalReader.Frame luminance(Image image) {
