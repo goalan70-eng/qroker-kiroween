@@ -160,3 +160,34 @@ rewrite history or relabel Codex work as Kiro work.
   the fix. After the change 37 JVM checks passed, the APK signature
   verified, and the offline emulator scored and restored one 10-point
   round while blocking repeats. Physical camera timing remains unmeasured.
+
+## 2026-11-21 — Local Optical V2 screen playtest
+
+- **Codex** composed the 52 Kennard faces, evaluated partial marker loss,
+  and added the standalone screen playtest. It reuses the existing
+  Kiro-specified game and the Codex Android companion. The companion
+  confirmation-frame fix is recorded in `903d37a`.
+- Source and reproducible checks are in `prototypes/screen-playtest/`.
+  The web layer presents the 52 matching card faces and a scannable
+  2×2 layout for the sample or a code the game has already revealed.
+  Android uses the latest trial word table, replicated observations
+  on the original grid, and a one-sided central observation. The
+  protected V1 format and canonical game rules are independent.
+- Layout experiments used the same 30 mm assembly and Joker artwork.
+  The trial word set increased minimum pairwise bit distance from 8 to
+  13. The central-grid variant read 22/26 deliberately damaged groups
+  versus 13/26 before adding the central observation. Its 160 synthetic
+  comparison cases matched the previous layout's verdicts.
+- Supporting tools: Python, TypeScript, Vite, Playwright Chromium,
+  JDK, Android SDK and ADB. Browser captures with only the composite code
+  retained both sets of four IDs and gave sums 27 and 20. Covering the
+  central code while leaving the visible ranks intact caused rejection.
+  The JVM also verified cancellation of a pending guess, two scores,
+  persistence and duplicate rejection. The screen APK was signed and
+  installed on the offline emulator. System UI stopped responding
+  before its camera flow could be verified. The owner reported
+  successful screen recognition on a phone. Controlled real-device and
+  printed-card measurements are pending.
+- Local inputs, artwork, screenshots, videos, binaries and signing
+  materials stay outside Git. No milestone approval is implied by
+  this local experiment.

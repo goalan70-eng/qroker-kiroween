@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QRoker · 화면 판독 테스트</title>
+<link rel="icon" href="data:,">
+<header id="screen-tools">
+  <a href="#app">QRoker</a>
+  <button type="button" id="sample-open">카메라 판독 연습</button>
+</header>
+<div id="app"></div>
+<dialog id="scan-dialog" aria-labelledby="scan-title">
+  <div class="scan-toolbar">
+    <div><h1 id="scan-title"></h1><p>Android 화면 검증 앱의 카메라에 중앙 코드 전체를 넣으세요.</p></div>
+    <button type="button" id="scan-close">닫기</button>
+  </div>
+  <div id="scan-board" aria-label="카메라에 비출 카드 배치"></div>
+  <div class="scan-actions">
+    <button type="button" id="scan-remove">한 장 빼기</button>
+  </div>
+</dialog>
+<script type="module" src="./main.ts"></script>
+</html>
