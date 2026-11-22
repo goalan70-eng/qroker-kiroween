@@ -191,3 +191,19 @@ rewrite history or relabel Codex work as Kiro work.
 - Local inputs, artwork, screenshots, videos, binaries and signing
   materials stay outside Git. No milestone approval is implied by
   this local experiment.
+
+## 2026-11-22 — Archive matched optical stress and scoring checks
+
+- Codex recorded the 2026-11-21 stress comparison at `aa0f384` in
+  `prototypes/screen-playtest/stress/` and added its replay commands.
+  The renderer's local inputs and derived captures remain outside Git.
+- Java and Python checks compared 1,490 matched scenarios per variant.
+  Complete groups read correctly in 1,198/1,394 and 1,204/1,394 cases.
+  Both readers rejected all 96 incomplete or occluded groups. No wrong
+  identities were observed. The six additional reads occurred at 60°
+  with low light and partial glare.
+- JVM replay canceled a pending guess on card removal, replacement by
+  another group with the same or a different sum, and a dropped
+  confirmation. A new matching capture scored and restored its record.
+  Printed-card performance and Android camera delivery timing remain
+  unmeasured in this audit.

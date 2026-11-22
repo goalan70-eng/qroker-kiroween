@@ -8,7 +8,7 @@ import java.util.HashMap;
 import javax.imageio.ImageIO;
 
 public final class VerifyScreen {
-    private static OpticalReader.Frame frame(Path file) throws Exception {
+    static OpticalReader.Frame frame(Path file) throws Exception {
         BufferedImage image = ImageIO.read(file.toFile());
         int width = image.getWidth(), height = image.getHeight();
         byte[] luma = new byte[width * height];
