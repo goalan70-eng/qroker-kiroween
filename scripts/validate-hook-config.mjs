@@ -38,7 +38,30 @@ for (const file of files) {
 assert.equal(seen.size, expected.size);
 const guard = JSON.parse(readFileSync('.kiro/hooks/development-automation.json', 'utf8'))
   .hooks.find(hook => hook.trigger === 'PreToolUse');
-// Guard is initially disabled in the distributed config but may be enabled by the owner.
-assert.equal(typeof guard.enabled, 'boolean');
+// Repository defaults are safe. Local operator opt-in must not be committed.
+assert.equal(guard.enabled, false, 'destructive shell guard must ship disabled');
 assert.equal(guard.matcher, 'shell');
-console.log('QRoker Hook definitions passed: ' + seen.size + ' command-only Hooks.');
+
+const devHooks = JSON.parse(readFileSync('.kiro/hooks/development-automation.json', 'utf8')).hooks;
+const save = devHooks.find(hook => hook.trigger === 'PostFileSave');
+assert.equal(save.enabled, true, 'local on-save typecheck should remain enabled');
+const savePathPattern = new RegExp(save.matcher);
+for (const path of [
+  'src/game/ui/main.ts',
+  'src/game/ui/main.tsx',
+  'src\\game\\ui\\main.ts',
+  'D:\\Project\\QRoker\\qroker-kiroween\\src\\game\\ui\\main.tsx'
+]) assert.ok(savePathPattern.test(path), 'must match game TypeScript: ' + path);
+for (const path of [
+  'src/optical/detect.ts',
+  'src/game/notes.js',
+  'src/game/folder/readme.md',
+  'xsrc/game/ui/main.ts'
+]) assert.ok(!savePathPattern.test(path), 'must not match unrelated path: ' + path);
+
+const external = JSON.parse(readFileSync('.kiro/hooks/optional-openai-review.json', 'utf8'))
+  .hooks.find(hook => hook.name === 'QRoker optional OpenAI independent review');
+assert.equal(external.enabled, false, 'billable API review must ship disabled');
+assert.equal(external.action.command, 'node scripts/openai-review.mjs --send --hook');
+console.log('QRoker Hook definitions passed: ' + seen.size +
+  ' command-only Hooks; safe defaults and on-save path matcher verified.');
