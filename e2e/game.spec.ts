@@ -91,12 +91,12 @@ test.describe('2 placement', () => {
     test.setTimeout(LONG_TEST);
     await stubSeeds(page, [SEED_A]);
     await startGame(page);
-    await expect(page.locator('.hand-card')).toHaveCount(4);
+    await expect(page.locator('.hand-card')).toHaveCount(3);
 
     // --- A. rotation control exists exactly for clubs and spades (read from the owner's own card faces) ---
     const glyphs = await page.locator('.hand-card .card-face__suit').allTextContents();
-    expect(glyphs).toHaveLength(4);
-    for (let i = 0; i < 4; i++) {
+    expect(glyphs).toHaveLength(3);
+    for (let i = 0; i < glyphs.length; i++) {
       await page.locator('.hand-card').nth(i).click();
       await expect(page.locator('.hand-card').nth(i)).toHaveAttribute('aria-pressed', 'true');
       const expected = glyphs[i] === '♣' || glyphs[i] === '♠' ? 1 : 0;
@@ -156,7 +156,7 @@ test.describe('2 placement', () => {
     const afterFirst = await publicState(page);
     expect(afterFirst.occupied).toBe(idle.occupied + 1);
     const me = Object.keys(idle.scores)[0]!;
-    expect(afterFirst.scores[me]!.hand).toBe(idle.scores[me]!.hand - 1); // the first placement never draws
+    expect(afterFirst.scores[me]!.hand).toBe(idle.scores[me]!.hand); // no code: replace the played card
     await expect(page.locator('.hand-card:not(.is-disabled)')).toHaveCount(0); // not the human's turn any more
 
     // --- E. position first: select the cell, then the card, then Confirm ---
@@ -345,12 +345,12 @@ test.describe('5 replay and rematch', () => {
     expect(seed).toContain(String(SEED_A));
     const hand = await handLabels(page);
     const board = await boardLabels(page);
-    expect(hand).toHaveLength(4);
+    expect(hand).toHaveLength(3);
     await playUntil(page);
     const ranking = await page.locator('.end-ranking').innerText();
 
     await page.locator('#end-replay').click();
-    await expect(page.locator('.hand-card')).toHaveCount(4);
+    await expect(page.locator('.hand-card')).toHaveCount(3);
     expect(await seedLine(page)).toBe(seed);
     expect(await handLabels(page)).toEqual(hand);
     expect(await boardLabels(page)).toEqual(board);
@@ -358,7 +358,7 @@ test.describe('5 replay and rematch', () => {
     expect(await page.locator('.end-ranking').innerText(), 'the same seed and the same moves give the same result').toBe(ranking);
 
     await page.locator('#end-rematch').click();
-    await expect(page.locator('.hand-card')).toHaveCount(4);
+    await expect(page.locator('.hand-card')).toHaveCount(3);
     const reSeed = await seedLine(page);
     expect(reSeed).not.toBe(seed);
     expect(reSeed).toContain(String(SEED_B));
@@ -392,7 +392,7 @@ test.describe('6 overlays', () => {
     test.setTimeout(LONG_TEST);
     await stubSeeds(page, [SEED_A]);
     await startGame(page);
-    await expect(page.locator('.hand-card')).toHaveCount(4);
+    await expect(page.locator('.hand-card')).toHaveCount(3);
     const state = await publicState(page);
     const board = await boardLabels(page);
 
@@ -490,7 +490,7 @@ for (const size of MOBILE_SIZES) {
       await expect(page.locator('#setup-start')).toBeVisible();
       await sample('setup');
       await act(page.locator('#setup-start'));
-      await expect(page.locator('.hand-card')).toHaveCount(4);
+      await expect(page.locator('.hand-card')).toHaveCount(3);
       await sample('placement');
 
       // Board and Hand are inside the viewport horizontally.

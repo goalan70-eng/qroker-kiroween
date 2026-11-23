@@ -28,12 +28,13 @@ const CATALOG: readonly string[] = ["H", "D", "C", "S"].flatMap((suit) =>
 const SEED_1 = {
   neutral: ["D-Q", "S-6", "D-J", "H-J"],
   hands: {
-    P0: ["S-5", "C-6", "S-Q", "S-3"],
-    P1: ["H-7", "C-4", "C-10", "D-10"],
-    P2: ["S-2", "C-9", "H-Q", "H-4"],
-    P3: ["S-J", "C-8", "H-9", "D-2"],
+    P0: ["S-5", "C-6", "S-Q"],
+    P1: ["S-3", "H-7", "C-4"],
+    P2: ["C-10", "D-10", "S-2"],
+    P3: ["C-9", "H-Q", "H-4"],
   },
   deck: [
+    "S-J", "C-8", "H-9", "D-2",
     "H-5", "C-2", "S-7", "C-K", "C-5", "H-8", "D-9", "D-4", "H-K", "H-2", "C-J", "C-Q", "D-K", "S-9", "H-3", "D-5",
     "S-A", "H-10", "D-3", "H-6", "D-8", "D-7", "S-4", "D-6", "S-K", "C-3", "D-A", "S-8", "S-10", "C-A", "H-A", "C-7",
   ],
@@ -82,18 +83,17 @@ describe("initial state of seed 1 (literal expected values)", () => {
     expect(occupied).toEqual([27, 28, 35, 36]);
   });
 
-  it("deals 4 cards to each seat in deal order and a 32-card deck with the top last", () => {
+  it("deals 3 cards to each seat in deal order and a 36-card deck with the top last", () => {
     expect(state.hands).toEqual(SEED_1.hands);
     expect(Object.keys(state.hands)).toEqual(["P0", "P1", "P2", "P3"]);
     expect(state.deck).toEqual(SEED_1.deck);
-    expect(state.deck).toHaveLength(32);
+    expect(state.deck).toHaveLength(36);
     expect(state.deck[state.deck.length - 1]).toBe("C-7");
   });
 
   it("starts with no placements, no scores, nothing pending, nothing revealed and an empty log", () => {
     expect(state.placements).toBe(0);
     expect(state.scores).toEqual({ P0: 0, P1: 0, P2: 0, P3: 0 });
-    expect(state.firstPlacementDone).toEqual([]);
     expect(state.scoredGroups).toEqual([]);
     expect(state.revealedCards).toEqual([]);
     expect(state.pending).toBeNull(); // no code is pending at the start
@@ -106,7 +106,7 @@ describe("initial state of seed 1 (literal expected values)", () => {
   it("has exactly the fields of the design's GameState", () => {
     expect(Object.keys(state).sort()).toEqual(
       [
-        "board", "bonusAwarded", "config", "deck", "firstPlacementDone", "hands", "history", "lastReveal", "log",
+        "board", "bonusAwarded", "config", "deck", "hands", "history", "lastReveal", "log",
         "pending", "phase", "placements", "revealedCards", "scoredGroups", "scores", "seed", "turn",
       ].sort(),
     );
@@ -121,16 +121,16 @@ describe("initial state of seed 1 (literal expected values)", () => {
 describe("deal partition (independent check)", () => {
   const seeds = [0, 1, 2, 3, 20260601, 123456789, 4294967294, 4294967295, ...Array.from({ length: 40 }, (_, i) => 100 + i)];
 
-  it("holds 20 dealt cards (4 neutral + 4 x 4 hands) and a 32-card deck, 52 distinct catalog cards in total", () => {
+  it("holds 16 dealt cards (4 neutral + 4 x 3 hands) and a 36-card deck, 52 distinct catalog cards in total", () => {
     for (const seed of seeds) {
       const state = ok(seed);
       const neutral = boardCards(state);
       expect(neutral, `seed ${seed}`).toHaveLength(4);
-      for (const seat of SEATS) expect(state.hands[seat], `seed ${seed} ${seat}`).toHaveLength(4);
-      expect(state.deck, `seed ${seed}`).toHaveLength(32);
+      for (const seat of SEATS) expect(state.hands[seat], `seed ${seed} ${seat}`).toHaveLength(3);
+      expect(state.deck, `seed ${seed}`).toHaveLength(36);
       const dealt = [...neutral, ...SEATS.flatMap((s) => state.hands[s])];
-      expect(dealt, `seed ${seed}`).toHaveLength(20);
-      expect(new Set(dealt).size, `seed ${seed}`).toBe(20);
+      expect(dealt, `seed ${seed}`).toHaveLength(16);
+      expect(new Set(dealt).size, `seed ${seed}`).toBe(16);
       const all = allCards(state);
       expect(all, `seed ${seed}`).toHaveLength(52);
       expect(new Set(all).size, `seed ${seed}`).toBe(52);

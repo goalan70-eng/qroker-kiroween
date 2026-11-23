@@ -53,7 +53,7 @@
 //   VIEWS      `viewFor(final, seat)` for all four seats: phase ENDED, no pending Quad_Keys, nobody has submitted,
 //              `myGuesses` null, `ranking` equal to `rankPlayers`, the last reveal record equal to the last history
 //              record, and none of the sealed keys (seed, deck, hands, log, pending, groupId, scoredGroups, guesses,
-//              firstPlacementDone, revealedCards) anywhere in the serialization.
+//              revealedCards) anywhere in the serialization.
 //   DETERMINISM  every `DETERMINISM_STRIDE`-th Seed (seed % 10 === 0) of every configuration is played a second time:
 //              the final state and the log must be canonically identical. (Every game of Property 21 is played twice.)
 //
@@ -245,7 +245,7 @@ interface GameInspection {
   readonly problems: readonly string[];
 }
 
-const SEALED_KEYS = ["seed", "deck", "hands", "log", "pending", "groupId", "scoredGroups", "guesses", "firstPlacementDone", "revealedCards"];
+const SEALED_KEYS = ["seed", "deck", "hands", "log", "pending", "groupId", "scoredGroups", "guesses", "revealedCards"];
 
 function collectKeys(value: unknown, out: Set<string> = new Set<string>()): Set<string> {
   if (typeof value !== "object" || value === null) return out;
@@ -350,16 +350,16 @@ function inspectGame(seed: number, config: GameConfig, result: PlayGameResult): 
   // BONUS.
   const bonusSeat = final.bonusAwarded;
   const lastPlacer = placeEntries[placeEntries.length - 1]?.player ?? null;
-  check("BONUS", bonusSeat !== null, () => "bonusAwarded is null at ENDED");
+  check("BONUS", bonusSeat !== null || final.scoredGroups.length >= 5, () => "neither ending condition was reached");
   if (bonusSeat !== null) {
     check("BONUS", final.hands[bonusSeat].length === 0, () => `bonus seat ${bonusSeat} holds ${final.hands[bonusSeat].length} cards`);
     check("BONUS", bonusSeat === lastPlacer, () => `bonus seat ${bonusSeat} is not the seat of the last PLACE (${String(lastPlacer)})`);
   }
   const emptyHands = SEATS.filter((seat) => final.hands[seat].length === 0);
-  check("BONUS", emptyHands.length === 1, () => `${emptyHands.length} empty hands at the end (${emptyHands.join(",")})`);
+  check("BONUS", emptyHands.length === (bonusSeat ? 1 : 0), () => `${emptyHands.length} empty hands at the end (${emptyHands.join(",")})`);
   const sumScores = SEATS.reduce((sum, seat) => sum + final.scores[seat], 0);
   const sumEarned = SEATS.reduce((sum, seat) => sum + cumulative[seat], 0);
-  check("BONUS", sumScores - sumEarned === bonusValue, () => `scores exceed the prediction points by ${sumScores - sumEarned}, one bonus is ${bonusValue}`);
+  check("BONUS", sumScores - sumEarned === (bonusSeat ? bonusValue : 0), () => `scores exceed the prediction points by ${sumScores - sumEarned}, one bonus is ${bonusValue}`);
   for (const seat of SEATS) {
     const expected = cumulative[seat] + (seat === bonusSeat ? bonusValue : 0);
     check("SCORES", final.scores[seat] === expected, () => `${seat} final score ${final.scores[seat]}, recomputed ${expected}`);
@@ -448,6 +448,7 @@ interface Tally {
   batches: number;
   codes: number;
   multiCodeBatches: number;
+  codeOnlyEnds: number;
   gamesWithMultiCodeBatch: number;
   actions: number;
   endedAfterGuess: number;
@@ -469,7 +470,7 @@ function newTally(configuration: Configuration): Tally {
     configuration, games: 0, failed: 0, rejectedActions: 0, strategyErrors: 0, invariantViolations: 0, actionLimitErrors: 0,
     otherErrors: 0, inspectionProblems: 0, replayMismatches: 0, determinismChecked: 0, determinismMismatches: 0,
     placementsMin: Number.POSITIVE_INFINITY, placementsMax: 0, placementsSum: 0, batches: 0, codes: 0, multiCodeBatches: 0,
-    gamesWithMultiCodeBatch: 0, actions: 0, endedAfterGuess: 0, endedByEmptyingPlace: 0, bonusSeat: perSeat(0),
+    codeOnlyEnds: 0, gamesWithMultiCodeBatch: 0, actions: 0, endedAfterGuess: 0, endedByEmptyingPlace: 0, bonusSeat: perSeat(0),
     scoreSum: perSeat(0), outrightWins: perSeat(0), sharedWins: perSeat(0), tiesAtTop: 0, elapsedMs: 0,
     logs: new Map<number, string>(), batchesBySeed: new Map<number, { batches: number; multiCodeBatches: number }>(),
   };
@@ -488,6 +489,7 @@ function addFacts(tally: Tally, facts: GameFacts): void {
   if (facts.endedAfterGuess) tally.endedAfterGuess++;
   else tally.endedByEmptyingPlace++;
   if (facts.bonusSeat !== null) tally.bonusSeat[facts.bonusSeat]++;
+  else tally.codeOnlyEnds++;
   const winners = SEATS.filter((seat) => facts.ranks[seat] === 1);
   if (winners.length > 1) tally.tiesAtTop++;
   for (const seat of SEATS) tally.scoreSum[seat] += facts.scores[seat];
@@ -750,7 +752,7 @@ describe(`end-to-end headless acceptance run: seeds 0..${N - 1} in each of the 6
         expect(tally.determinismMismatches).toBe(0);
         expect(tally.determinismChecked).toBe(Math.ceil(N / DETERMINISM_STRIDE));
         expect(tally.placementsMax).toBeLessThanOrEqual(48);
-        expect(tally.bonusSeat.P0 + tally.bonusSeat.P1 + tally.bonusSeat.P2 + tally.bonusSeat.P3).toBe(N);
+        expect(tally.bonusSeat.P0 + tally.bonusSeat.P1 + tally.bonusSeat.P2 + tally.bonusSeat.P3 + tally.codeOnlyEnds).toBe(N);
       },
     );
   }

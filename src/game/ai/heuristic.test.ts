@@ -170,7 +170,8 @@ const placementSamples: Sample[] = [];
 const guessSamples: Sample[] = [];
 
 function buildCorpus(): void {
-  for (let g = 0; g < GAME_COUNT; g++) {
+  // Include a reachable all-visible OWNER_ONLY guess.
+  for (const g of [...Array.from({ length: GAME_COUNT }, (_, i) => i), 410]) {
     const visibility: IdentityVisibility = g % 2 === 0 ? "OWNER_ONLY" : "FACE_UP";
     const config: GameConfig = { ...defaultConfig(), identityVisibility: visibility };
     const style: PlayStyle = { codeBias: BIASES[g % BIASES.length] as number, submitOrder: g % 3 === 0 ? "RANDOM" : "SEAT_ORDER" };

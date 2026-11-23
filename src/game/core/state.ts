@@ -44,7 +44,7 @@ export interface PendingBatch {
   readonly codes: readonly CompositeCodeResult[];
   /** SEALED: guesses submitted so far, by seat. */
   readonly guesses: Readonly<Partial<Record<PlayerId, Readonly<Record<QuadKey, number>>>>>;
-  /** True when the placement emptied the placer's hand (the game ends after the reveal). */
+  /** True when the placing hand is empty or the cumulative code limit has been reached. */
   readonly endsGame: boolean;
 }
 
@@ -66,7 +66,6 @@ export interface GameState {
   readonly deck: readonly CardId[];
   readonly hands: Readonly<Record<PlayerId, readonly CardId[]>>;
   readonly turn: PlayerId;
-  readonly firstPlacementDone: readonly PlayerId[];
   /** Sorted groupIds of every code that was ever revealed or is pending. SEALED. */
   readonly scoredGroups: readonly string[];
   /** Cards of revealed codes (public). */
@@ -138,9 +137,9 @@ export function defaultConfig(): GameConfig {
  *
  * Initial state (all values frozen):
  * - the four Neutral_Cards of `dealGame(seed)` on D4, E4, D5, E5 at orientation 0 with owner `NEUTRAL`
- *   (OQ-2, via `initialBoard`), hands P0..P3 of 4 cards each in deal order, a 32-card deck (top = last);
+ *   (OQ-2, via `initialBoard`), hands P0..P3 of 3 cards each in deal order, a 36-card deck (top = last);
  * - `phase = 'PLACEMENT'`, `turn = 'P0'` (requirement 6.1), `placements = 0`, all scores 0;
- * - nothing pending, nothing revealed, no `firstPlacementDone`, `bonusAwarded = null`, empty `log`;
+ * - nothing pending, nothing revealed, `bonusAwarded = null`, empty `log`;
  * - `scoredGroups = startingScoredGroups()`: empty under the provisional policy that the starting group is
  *   never scored (`STARTING_GROUP_SCORING`, OQ-3, requirement 5.7). No score, no pending batch and no
  *   reveal record exist at the start.
@@ -172,7 +171,6 @@ export function newGame(options: NewGameOptions): Result<GameState> {
     deck: [...deal.deck],
     hands,
     turn: 'P0',
-    firstPlacementDone: [],
     scoredGroups: startingScoredGroups(),
     revealedCards: [],
     pending: null,

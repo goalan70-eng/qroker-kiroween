@@ -76,7 +76,7 @@ graph TD
 
 **Key algorithms:**
 - Fisher–Yates shuffle (using a PRNG that accepts an injected seed — simulation reproducibility)
-- Dealing: 4 starting cards (board) + 4 cards × 4 players per player = 20 cards. The remaining 32 cards stay in the deck.
+- Dealing: 4 starting cards (board) + 3 cards for each of the 4 players = 16 cards. The remaining 36 cards stay in the draw pile (owner decision on the three-card rules; qroker-game Requirement 3.2).
 
 ```typescript
 interface DeckState {
@@ -218,7 +218,7 @@ Configuration validation: `rewardByError` must have length at least 1, every val
 ```typescript
 interface ScoreConfig {
   rewardByError: number[]; // index = absolute error. TBD — determined by simulation
-  handEmptyBonus: number;  // TBD — determined by simulation
+  handEmptyBonus: number;  // final value TBD by simulation; provisional default 5, awarded only to the player whose hand is empty
 }
 
 interface PredictionBatch {
@@ -250,11 +250,11 @@ interface ScoreEngineOperations {
 
 ### DrawManager
 
-**Responsibility:** Enforce the draw rule (excluding the first round; draw 1 card when no Composite Code is completed).
+**Responsibility:** Enforce the draw rule (draw 1 card when no new Composite Code is completed, from the very first placement; there is no first-round exemption).
 
 ```typescript
 interface DrawManagerState {
-  firstPlacementDone: Set<string>; // set of IDs of players who have completed their first placement
+  // Superseded: the earlier `firstPlacementDone` set no longer exists. Every placement follows the same draw rule.
 }
 
 interface DrawManagerOperations {
@@ -263,14 +263,15 @@ interface DrawManagerOperations {
     completedCodes: CompositeCodeResult[],
     state: DrawManagerState
   ): boolean;
-  // Returns: false if first placement or ≥1 code completed; true otherwise
+  // Returns: false if ≥1 new code completed; true otherwise (also for a player's first placement)
   
-  markFirstPlacement(playerId: string, state: DrawManagerState): DrawManagerState;
+  // Superseded: `markFirstPlacement` is no longer part of the rules (qroker-game Requirement 3.5).
 }
 ```
 
 **Rules:**
-- `playerId ∉ firstPlacementDone` → `shouldDraw = false` (first placement exempt), then add to `firstPlacementDone`
+- The same rule applies to every placement, including each player's first. If the draw pile is empty, a required draw is skipped.
+- The empty-hand check of the game end happens AFTER the draw is resolved: a player who places the last hand card without forming a code and draws a replacement still holds one card.
 - `completedCodes.length >= 1` → `shouldDraw = false`
 - Otherwise → `shouldDraw = true`
 
@@ -309,8 +310,8 @@ interface PlayerView {
 }
 ```
 
-**Game end condition (Requirement 3.7):**
-All Composite Codes scored and all Guess values collected → end declared → `ScoreConfig.handEmptyBonus` awarded.
+**Game end condition (Requirements 3.7, 3.13 to 3.15):** The game ends after the batch of the last placement is fully scored (all four players' Guesses for every code of that placement are collected and revealed) when (a) the placer's hand is empty after the required draw, or (b) the shared Completed_Code_Count has reached five or more. The count grows by the number of new eligible codes of each placement, so a placement can take it from four to six, and the whole batch is scored. `ScoreConfig.handEmptyBonus` is awarded exactly once, to the player whose hand is empty, and only then: an ending by (b) alone awards no bonus, and an ending in which (a) and (b) both hold awards it once. Guess submissions and scoring batches do not change the count.
+(Replaces the earlier wording "all Composite Codes scored and all Guess values collected → end declared → handEmptyBonus awarded", which assumed the hand-empty end was the only ending.)
 
 ---
 
@@ -835,7 +836,7 @@ When the print file of a face is produced, the Face_Local_Frame of the FRONT fac
 
 ### Property 7: Card dealing uniqueness invariant
 
-*For any* game initialization, the card set `board_cards ∪ all_player_hands` consists of exactly 20 distinct cards, all belonging to the standard 52-card deck.
+*For any* game initialization, the card set `board_cards ∪ all_player_hands` consists of exactly 16 distinct cards (4 neutral plus 3 for each of 4 players), all belonging to the standard 52-card deck, and the draw pile holds the other 36 cards.
 
 **Validates: Requirements 3.2**
 
@@ -859,9 +860,10 @@ When the print file of a face is produced, the Face_Local_Frame of the FRONT fac
 
 ### Property 10: Draw rule — symmetry according to whether a Composite Code is completed
 
-*For any* non-first placement action:
-- If the action completes one or more new Composite Codes → no draw
-- If the action does not complete a Composite Code → the hand increases by 1 card if the deck is not empty
+*For any* placement action, including each player's first placement:
+- If the action completes one or more new Composite Codes → no draw (the hand shrinks by 1)
+- If the action does not complete a Composite Code → one card is drawn if the draw pile is not empty, so the hand size is unchanged; if the pile is empty the draw is skipped and the hand shrinks by 1
+- A player who places the last hand card without a code and draws still holds one card, so no hand-empty ending follows; the hand-empty check happens after the draw
 
 **Validates: Requirements 3.5, 3.6**
 
@@ -1082,7 +1084,7 @@ Target modules and cases:
 - **`CardValue`**: exact value mapping for each of the 13 Ranks. Verify that jokers are not included.
 - **`CompositeCodeDetector`**: valid/invalid Quad_Group cases (fixtures based on the example table in 14.4).
 - **`ScoreEngine`**: configuration validation (reject negative values, increasing segments, empty tables), table boundaries (e = length − 1, length, length + 1), batch reveal of multiple codes placed together.
-- **`DrawManager`**: first-placement exemption, no draw when a Composite Code is completed, skip when the deck is exhausted.
+- **`DrawManager`**: draw from the very first placement when no code is completed, no draw when a Composite Code is completed, skip when the draw pile is exhausted, and the hand-empty check after the draw. Game end: hand-empty bonus exactly once, no bonus for a code-limit-only ending, whole last batch scored.
 - **`Deck`**: initializing twice with the same seed gives the same shuffle result.
 - **`OpticalDecoder`**: a rejection test for each of NOT_DETECTED, INCOMPLETE_GROUP, CORRUPTED_FRAGMENT, DUPLICATE_CARD, INVALID_ARRANGEMENT, REFERENCE_MISMATCH.
 
@@ -1153,7 +1155,7 @@ The following items are currently undecided and will be determined through proto
    - The scope of hiding in Requirement 6 can be finalized only after deciding which face carries the markers and which face up cards are placed. The previous review assumed face-up placement, and this assumption has not been verified.
 
 2. **Center starting group**
-                 - 4 random cards may not satisfy the slot conditions (for example, ♥ in the TR slot). How the orientation of the starting ♣ and ♠ is decided, and whether this group is scored, are undefined.
+                 - 4 random cards may not satisfy the slot conditions (for example, ♥ in the TR slot). How the orientation of the starting ♣ and ♠ is decided is undefined here (the playable-game spec uses 0° as a provisional default, OQ-2). Whether this group is scored is decided by the owner: the starting neutral group is never scored and is not counted toward the five-code limit (qroker-game Requirements 3.1 and 3.14).
 
 3. **Acceptance radius default**
    - Choose between r_acc = 1 (conservative) and 2 (recall-first) based on the recall and misidentification rates from the synthetic degradation experiments.
@@ -1169,9 +1171,9 @@ The following items are currently undecided and will be determined through proto
    - A card participates in only 2 of its 4 vertices, and the slots of ♥ and ♦ are restricted. The frequency with which Composite Codes form and the game length will be measured by Phase 3 simulation.
 
 7. **Score table and hand-empty bonus**
-   - The table length and values and `handEmptyBonus` are **TBD — determined by simulation** (Phase 3).
+   - The final table length and values and `handEmptyBonus` are **TBD — determined by simulation** (Phase 3). The current new-game configuration uses the owner-selected provisional table `[10, 5, 4, 3, 2, 1]` and bonus `5`, both configurable.
 
-8. **Definition of the first round**
+8. **Definition of the first round** (RESOLVED by the owner's three-card rules: there is no first-round exemption; the draw rule applies from the very first placement, qroker-game Requirement 3.5. The text below is kept as history.)
    - Requirement 3.5: "each player's first placement"
    - Current design: `DrawManager.firstPlacementDone` tracks each player's first placement individually.
    - Clarification needed: whether the first N placements of the whole game are exempt, or each player's first placement is exempt.

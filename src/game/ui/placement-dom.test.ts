@@ -10,7 +10,7 @@ useMountCleanup(afterEach);
 afterEach(() => vi.restoreAllMocks());
 
 function setup(): MountedApp {
-  const app = mountTestApp({ seed: 7, autoFlush: false });
+  const app = mountTestApp({ seed: 1, autoFlush: false });
   clickByLabel(app, label(app, 'setup.start'));
   return app;
 }
@@ -144,7 +144,7 @@ describe('placement DOM contracts (fake-DOM)', () => {
   });
 
   it('invalidates the previous human view and active gesture across a hand-over', () => {
-    const app = mountTestApp({ seed: 7, autoFlush: false });
+    const app = mountTestApp({ seed: 1, autoFlush: false });
     (app.root.querySelector('#setup-humans-2') as HTMLInputElement).click();
     clickByLabel(app, label(app, 'setup.start'));
     clickByLabel(app, app.root.querySelector('.hand-card')!.getAttribute('aria-label')!);

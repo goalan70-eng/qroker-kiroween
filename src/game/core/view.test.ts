@@ -227,9 +227,9 @@ describe("viewFor of a new game", () => {
       expect(view.turn).toBe("P0");
       expect(view.board.filter((c) => c !== null)).toHaveLength(4);
       expect(visibleBoardCards(view)).toHaveLength(4);
-      expect(view.myHand).toHaveLength(4);
-      expect(view.handCounts).toEqual({ P0: 4, P1: 4, P2: 4, P3: 4 });
-      expect(view.deckCount).toBe(32);
+      expect(view.myHand).toHaveLength(3);
+      expect(view.handCounts).toEqual({ P0: 3, P1: 3, P2: 3, P3: 3 });
+      expect(view.deckCount).toBe(36);
       expect(view.scores).toEqual({ P0: 0, P1: 0, P2: 0, P3: 0 });
       expect(view.pendingQuadKeys).toEqual([]);
       expect(view.guessSubmitted).toEqual({ P0: false, P1: false, P2: false, P3: false });
@@ -237,7 +237,7 @@ describe("viewFor of a new game", () => {
       expect(view.lastReveal).toBeNull();
       expect(view.history).toEqual([]);
       expect(view.ranking).toBeNull();
-      expect(unseenCards(view)).toHaveLength(52 - 4 - 4);
+      expect(unseenCards(view)).toHaveLength(52 - 4 - 3);
     }
   });
 

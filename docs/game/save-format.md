@@ -1,6 +1,6 @@
 # Save format and privacy (task 20.1)
 
-Code: `src/game/persistence/save-format.ts`. A save is a replay log, not a snapshot. Anyone who can read the text can rebuild the whole game.
+Code: `src/game/persistence/save-format.ts`. The three-card rules use the key `qroker.practice.save.rules3`. Four-card saves stay under the previous key and can be resumed with their original build. A save is a replay log, not a snapshot. Anyone who can read the text can rebuild the whole game.
 
 ## What the serialized envelope contains
 

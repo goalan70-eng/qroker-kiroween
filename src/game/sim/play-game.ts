@@ -57,6 +57,7 @@ import { getStrategy } from '../ai/registry';
 import type { AIStrategy, AiContext } from '../ai/strategy';
 import { cardCount } from '../core/board';
 import { ALL_CARDS } from '../core/cards';
+import { COMPLETED_CODE_LIMIT } from '../core/rules';
 import { HAND_SIZE } from '../core/deck';
 import { actingSeats, reduce } from '../core/engine';
 import { mix32 } from '../core/prng';
@@ -216,14 +217,14 @@ function safeJson(value: unknown): string {
  * - `PHASE_SHAPE`: `REVEAL` has `lastReveal` of the turn seat and a non-empty hand; `ENDED` has no pending batch.
  * - `PHASE_TRANSITION`: (with a previous state) only PLACEMENT to PLACEMENT, GUESS_COLLECT or ENDED; GUESS_COLLECT to
  *   GUESS_COLLECT, REVEAL or ENDED; REVEAL to PLACEMENT; nothing leaves ENDED.
- * - `HAND_SIZE`: every hand has 0 to 4 cards (a hand starts with 4 and the draw rule never exceeds that).
+ * - `HAND_SIZE`: every hand has 0 to 3 cards (a hand starts with 3 and the draw rule never exceeds that).
  * - `SCORES_NON_NEGATIVE`: every score is a finite number of at least 0.
  * - `SCORES_MONOTONIC`: (with a previous state) no score decreases.
  * - `SCORE_CONSISTENCY`: every score equals the cumulative of the last reveal record (0 before the first) plus, for
  *   the bonus seat only, `handEmptyBonus`; the cumulative values chain from record to record.
  * - `HISTORY_CONSISTENCY`: `history[i].batchIndex = i`, `lastReveal` is the last record (or null when empty).
- * - `BONUS`: `bonusAwarded` is non-null if and only if the phase is `ENDED`, that seat's hand is empty, and (with a
- *   previous state) an awarded bonus never changes: the bonus is applied exactly once.
+ * - `BONUS`: `bonusAwarded` is set only when an empty hand ended the game; a code-only finish has no bonus. With a
+ *   previous state, an awarded bonus never changes: the bonus is applied exactly once.
  * - `LOG_CONSISTENCY`: `placements` = the number of PLACE entries of `log`; (with a previous state) `log` grew by one.
  * - `FROZEN`: the state is deeply frozen.
  */
@@ -372,7 +373,8 @@ export function listInvariantViolations(state: GameState, previous?: GameState):
     if (batch.codes.length === 0) problems.push('no codes');
     if (batch.placer !== state.turn) problems.push(`placer ${batch.placer} is not the turn seat ${state.turn}`);
     if (submitted.length >= SEATS.length) problems.push('all seats submitted but the batch is still pending');
-    if (batch.endsGame !== ((state.hands[batch.placer]?.length ?? -1) === 0)) problems.push('endsGame disagrees with the placer hand');
+    const shouldEnd = state.hands[batch.placer]?.length === 0 || state.scoredGroups.length >= COMPLETED_CODE_LIMIT;
+    if (batch.endsGame !== shouldEnd) problems.push('endsGame disagrees with the hand and code limit');
     for (const seat of submitted) {
       const guesses = batch.guesses[seat] as Readonly<Record<string, number>>;
       if (JSON.stringify(Object.keys(guesses).sort()) !== JSON.stringify(keys)) problems.push(`${seat} guess keys differ from the batch`);
@@ -428,10 +430,12 @@ export function listInvariantViolations(state: GameState, previous?: GameState):
   }
 
   // Bonus applied exactly once, at ENDED.
-  if ((state.bonusAwarded !== null) !== (state.phase === 'ENDED')) {
+  const emptyHand = SEATS.find((seat) => state.hands[seat]?.length === 0);
+  if (state.phase === 'ENDED' && !emptyHand && state.scoredGroups.length < COMPLETED_CODE_LIMIT) {
+    add('PHASE_SHAPE', 'ENDED without an empty hand or five codes');
+  }
+  if (state.bonusAwarded !== (state.phase === 'ENDED' ? emptyHand ?? null : null)) {
     add('BONUS', `phase ${state.phase} with bonusAwarded ${String(state.bonusAwarded)}`);
-  } else if (state.bonusAwarded !== null && (state.hands[state.bonusAwarded]?.length ?? -1) !== 0) {
-    add('BONUS', `bonus seat ${state.bonusAwarded} still holds cards`);
   }
   if (state.phase === 'ENDED' && state.pending !== null) add('PHASE_SHAPE', 'ENDED with a pending batch');
 

@@ -94,13 +94,13 @@ function refShuffle(cards: readonly string[], rng: () => number): string[] {
   return a;
 }
 
-/** Reference deal: neutral = first 4, hand of seat k = cards 4+4k..7+4k, deck = the remaining 32 (top = last). */
+/** Reference deal: neutral = first 4, hand of seat k = cards 4+3k..6+3k, deck = the remaining 36 (top = last). */
 function refDeal(seed: number): { neutral: string[]; hands: string[][]; deck: string[] } {
   const s = refShuffle(CATALOG, refMulberry32(seed));
   return {
     neutral: s.slice(0, 4),
-    hands: [0, 1, 2, 3].map((k) => s.slice(4 + 4 * k, 8 + 4 * k)),
-    deck: s.slice(20),
+    hands: [0, 1, 2, 3].map((k) => s.slice(4 + 3 * k, 7 + 3 * k)),
+    deck: s.slice(16),
   };
 }
 
@@ -190,7 +190,7 @@ function fail(message: string): never {
 
 describe("Property 4: deterministic deal partition", () => {
   it(
-    "newGame is deterministic and deals 4 neutral + 4x4 hand + 32 deck cards that partition the catalog",
+    "newGame is deterministic and deals 4 neutral + 4x3 hand + 36 deck cards that partition the catalog",
     { timeout: TIMEOUT_MS },
     () => {
       // Feature: qroker-playable-game, Property 4: Deterministic deal partition
@@ -218,13 +218,13 @@ describe("Property 4: deterministic deal partition", () => {
           expect(state.board).toHaveLength(64);
           expect(countCards(state.board)).toBe(4);
 
-          // 4 cards per seat, 32 in the deck, 20 dealt cards pairwise distinct.
-          for (const seat of SEAT_IDS) expect(state.hands[seat]).toHaveLength(4);
-          expect(state.deck).toHaveLength(32);
+          // 3 cards per seat, 36 in the deck, 16 dealt cards pairwise distinct.
+          for (const seat of SEAT_IDS) expect(state.hands[seat]).toHaveLength(3);
+          expect(state.deck).toHaveLength(36);
           const neutralCards = neutral.map((cell) => cell?.card as string);
           const dealt = [...neutralCards, ...SEAT_IDS.flatMap((seat) => state.hands[seat] as readonly string[])];
-          expect(dealt).toHaveLength(20);
-          expect(new Set(dealt).size).toBe(20);
+          expect(dealt).toHaveLength(16);
+          expect(new Set(dealt).size).toBe(16);
 
           // Neutral + hands + deck are the 52-card catalog exactly (no duplicate, nothing missing).
           const everything = [...dealt, ...state.deck];
@@ -261,10 +261,7 @@ describe("Property 4: deterministic deal partition", () => {
 interface DrawCoverage {
   runs: number;
   skipped: number;
-  first: number;
-  firstWithCode: number;
   code: number;
-  nonFirstCode: number;
   noCodeDraw: number;
   emptyDeckNoCode: number;
   emptyDeckAny: number;
@@ -275,7 +272,7 @@ interface DrawCoverage {
   fellBack: number;
 }
 
-type Prefer = "ANY" | "FIRST" | "EMPTY_DECK" | "CODE" | "CODE_NOT_FIRST" | "LAST_CARD" | "TWO_CODES";
+type Prefer = "ANY" | "EMPTY_DECK" | "CODE" | "LAST_CARD" | "TWO_CODES";
 
 /** How many new codes the best legal placement of the turn seat forms (the engine's own detector steers the choice). */
 const bestCodes = (state: GameState): number => legalPlacements(state).reduce((best, p) => Math.max(best, p.newCodes), 0);
@@ -284,20 +281,18 @@ const inPlacement = (s: GameState): boolean => s.phase === "PLACEMENT";
 /** The kind of state each preference asks for. A kind that no prefix state has is reached by further legal play. */
 const WANTED: Record<Prefer, (s: GameState) => boolean> = {
   ANY: inPlacement,
-  FIRST: (s) => inPlacement(s) && !s.firstPlacementDone.includes(s.turn),
   EMPTY_DECK: (s) => inPlacement(s) && s.deck.length === 0,
   CODE: (s) => inPlacement(s) && bestCodes(s) >= 1,
-  CODE_NOT_FIRST: (s) => inPlacement(s) && s.firstPlacementDone.includes(s.turn) && bestCodes(s) >= 1,
   LAST_CARD: (s) => inPlacement(s) && s.hands[s.turn].length === 1 && bestCodes(s) >= 1,
   TWO_CODES: (s) => inPlacement(s) && bestCodes(s) >= 2,
 };
 /** Codes the chosen placement must form (0: any legal placement, steered by `codeBias`). */
-const NEED_CODES: Record<Prefer, number> = { ANY: 0, FIRST: 0, EMPTY_DECK: 0, CODE: 1, CODE_NOT_FIRST: 1, LAST_CARD: 1, TWO_CODES: 2 };
+const NEED_CODES: Record<Prefer, number> = { ANY: 0, EMPTY_DECK: 0, CODE: 1, LAST_CARD: 1, TWO_CODES: 2 };
 
 const arbDrawCase = fc.record({
   reach: arbReachableState(),
   prefer: fc.constantFrom<Prefer>(
-    "ANY", "ANY", "FIRST", "EMPTY_DECK", "EMPTY_DECK", "CODE", "CODE", "CODE_NOT_FIRST", "LAST_CARD", "LAST_CARD", "TWO_CODES",
+    "ANY", "ANY", "EMPTY_DECK", "EMPTY_DECK", "CODE", "CODE", "LAST_CARD", "LAST_CARD", "TWO_CODES",
   ),
   pick: fc.nat({ max: 1_000_000 }),
   codeBias: fc.constantFrom(0, 0, 40, 100),
@@ -305,11 +300,11 @@ const arbDrawCase = fc.record({
 });
 
 describe("Property 12: draw rule", () => {
-  it("a PLACE draws exactly when it is not the first placement and forms no code, from the top of the deck", { timeout: TIMEOUT_MS }, () => {
+  it("a PLACE draws exactly when it forms no new code, regardless of placement number", { timeout: TIMEOUT_MS }, () => {
     // Feature: qroker-playable-game, Property 12: Draw rule
     // Validates: Requirements 6.3, 6.4, 6.5, 6.6, 7.9
     const cov: DrawCoverage = {
-      runs: 0, skipped: 0, first: 0, firstWithCode: 0, code: 0, nonFirstCode: 0, noCodeDraw: 0,
+      runs: 0, skipped: 0, code: 0, noCodeDraw: 0,
       emptyDeckNoCode: 0, emptyDeckAny: 0, twoCodes: 0, endedByPlacement: 0, codeEndsGame: 0,
       advanced: 0, fellBack: 0,
     };
@@ -353,7 +348,6 @@ describe("Property 12: draw rule", () => {
 
         const seat = action.player;
         const handBefore = from.hands[seat];
-        const first = !from.firstPlacementDone.includes(seat);
         const deckBefore = from.deck;
 
         // Independent count of the new codes, from the new board and the scored groups before the placement.
@@ -364,7 +358,7 @@ describe("Property 12: draw rule", () => {
         expect(batch.map((code) => [...code.cards]), `cards: ${ctx}`).toEqual(codes.map((code) => [...code.cards]));
 
         // The draw rule.
-        const draws = !first && codes.length === 0 && deckBefore.length > 0;
+        const draws = codes.length === 0 && deckBefore.length > 0;
         const handAfter = after.hands[seat];
         const expectedSize = draws ? handBefore.length : handBefore.length - 1;
         expect(handAfter.length, `hand size after: ${ctx}`).toBe(expectedSize);
@@ -384,7 +378,7 @@ describe("Property 12: draw rule", () => {
         expect(after.phase === "GUESS_COLLECT", `phase GUESS_COLLECT iff a code formed: ${ctx}`).toBe(codes.length > 0);
         if (codes.length > 0) {
           expect(after.pending?.placer).toBe(seat);
-          expect(after.pending?.endsGame, `endsGame: ${ctx}`).toBe(handAfter.length === 0);
+          expect(after.pending?.endsGame, `endsGame: ${ctx}`).toBe(handAfter.length === 0 || from.scoredGroups.length + codes.length >= 5);
           expect(after.turn).toBe(seat);
         } else if (handAfter.length === 0) {
           expect(after.phase, `hand-emptying placement without a code ends the game: ${ctx}`).toBe("ENDED");
@@ -392,21 +386,17 @@ describe("Property 12: draw rule", () => {
           expect(after.phase, ctx).toBe("PLACEMENT");
           expect(after.turn, ctx).toBe(successor(seat));
         }
-        // First placement is recorded; the placement is counted.
-        expect(after.firstPlacementDone.includes(seat)).toBe(true);
+        // The placement is counted; draw eligibility has no per-seat history.
         expect(after.placements).toBe(from.placements + 1);
         // The placed card sits on the chosen cell with the chosen orientation and the seat as owner.
         expect(after.board[action.pos.row * 8 + action.pos.col]).toEqual({ card: action.card, orientation: action.orientation, owner: seat });
 
         // Coverage.
-        if (first) cov.first++;
-        if (first && codes.length > 0) cov.firstWithCode++;
         if (codes.length > 0) cov.code++;
         if (codes.length > 1) cov.twoCodes++;
-        if (!first && codes.length > 0) cov.nonFirstCode++;
         if (draws) cov.noCodeDraw++;
         if (deckBefore.length === 0) cov.emptyDeckAny++;
-        if (!first && codes.length === 0 && deckBefore.length === 0) cov.emptyDeckNoCode++;
+        if (codes.length === 0 && deckBefore.length === 0) cov.emptyDeckNoCode++;
         if (after.phase === "ENDED") cov.endedByPlacement++;
         if (after.pending?.endsGame === true) cov.codeEndsGame++;
       }),
@@ -417,12 +407,9 @@ describe("Property 12: draw rule", () => {
     // (see the notes at the end of this file for the numbers).
     if (process.env.QROKER_COVERAGE_LOG === "1") console.info("P12 coverage", JSON.stringify(cov));
     expect(cov.skipped).toBe(0);
-    expect(cov.first, "first placements").toBeGreaterThanOrEqual(30);
-    expect(cov.firstWithCode, "first placements that form a code").toBeGreaterThanOrEqual(3);
     expect(cov.code, "placements that form a code").toBeGreaterThanOrEqual(50);
-    expect(cov.nonFirstCode, "non-first placements that form a code").toBeGreaterThanOrEqual(40);
-    expect(cov.noCodeDraw, "non-first placements without a code and with a non-empty deck").toBeGreaterThanOrEqual(30);
-    expect(cov.emptyDeckNoCode, "non-first placements without a code and with an EMPTY deck").toBeGreaterThanOrEqual(20);
+    expect(cov.noCodeDraw, "placements without a code and with a non-empty deck").toBeGreaterThanOrEqual(30);
+    expect(cov.emptyDeckNoCode, "placements without a code and with an EMPTY deck").toBeGreaterThanOrEqual(20);
     expect(cov.endedByPlacement, "placements that end the game at once").toBeGreaterThanOrEqual(4);
     expect(cov.codeEndsGame, "code placements that empty the hand").toBeGreaterThanOrEqual(8);
   });
@@ -445,9 +432,8 @@ describe("Property 13: conservation invariants under random legal play", () => {
         games++;
         // Re-run the whole play with our own reduce calls and bookkeeping.
         let state = reach.states[0] as GameState;
-        const handSize: Record<PlayerId, number> = { P0: 4, P1: 4, P2: 4, P3: 4 };
-        let deckSize = 32;
-        const placed = new Set<PlayerId>();
+        const handSize: Record<PlayerId, number> = { P0: 3, P1: 3, P2: 3, P3: 3 };
+        let deckSize = 36;
         let placements = 0;
         let scoredPrev: readonly string[] = [];
 
@@ -476,10 +462,9 @@ describe("Property 13: conservation invariants under random legal play", () => {
           if (action.type === "PLACE") {
             const seat = action.player;
             const codes = oracleNewCodes(next.board, action.pos.row, action.pos.col, previous.scoredGroups);
-            const draws = placed.has(seat) && codes.length === 0 && deckSize > 0;
+            const draws = codes.length === 0 && deckSize > 0;
             handSize[seat] += draws ? 0 : -1;
             deckSize -= draws ? 1 : 0;
-            placed.add(seat);
             placements++;
             expect(countCards(next.board), `cardCount increases by exactly 1: ${ctx}`).toBe(countCards(previous.board) + 1);
           } else {
@@ -817,14 +802,8 @@ describe("Property 14: action authorization", () => {
 // Runs: Property 4: 300 (about 0.4 s). Property 12: 300 (about 4 s). Property 13: 200 games, 7829 accepted actions
 // in total (about 9 s). Property 14: 200 states x about 25 probes = 5016 verdicts (about 6 s).
 //
-// Property 12 (300 placements; set QROKER_COVERAGE_LOG=1 to print the counters): 80 first placements (9 of them
-// form a code), 122 code placements (113 by a seat that had already placed), 60 draws from a non-empty deck, 74
-// placements with an empty deck (47 of them non-first without a code, so a card is NOT drawn), 6 placements that end
-// the game at once, 23 code placements that empty the hand (endsGame), 41 states reached by further legal play, 65
-// cases that fell back to any PLACEMENT prefix state. Placements that form TWO codes at once were seen 0 times in
-// 300 (random legal play rarely offers one; an exploration of 600 games with codeBias 90 found 5), so no guard
-// requires them: the oracle counts any number of codes, and the two-code scenario is covered by the example test of
-// task 8.2 (engine.test.ts).
+// Property 12 coverage counts are intentionally not hard-coded: prior counts used the removed first-placement
+// exemption and are no longer valid. Re-run with QROKER_COVERAGE_LOG=1 to record current-rule coverage.
 //
 // Property 13: 92 of the 200 games reached ENDED.
 //

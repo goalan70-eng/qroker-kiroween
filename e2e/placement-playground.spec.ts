@@ -22,7 +22,7 @@ test('dev playground renders a seeded 8x8 board with no browser exceptions', asy
   await page.goto(playground(1, 'en'));
   await expect(page.locator('.board-cell')).toHaveCount(64);
   await expect(page.locator('.board-cell--occupied')).toHaveCount(4);
-  await expect(page.locator('.hand-card')).toHaveCount(4);
+  await expect(page.locator('.hand-card')).toHaveCount(3);
   await expect(page.locator('.placement-button--confirm')).toBeDisabled();
   await expect(page.locator('.dev-status')).toContainText('phase PLACEMENT');
   await expect(page.locator('.board-cell[tabindex="0"]')).toHaveCount(1);
@@ -101,7 +101,7 @@ test('390px mobile viewport keeps playable board and hand in view', async ({ pag
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(playground(1, 'ko'));
   await expect(page.locator('.board-cell')).toHaveCount(64);
-  await expect(page.locator('.hand-card')).toHaveCount(4);
+  await expect(page.locator('.hand-card')).toHaveCount(3);
   await expect(page.locator('html')).toHaveAttribute('lang', 'ko');
   await expect(page.locator('.board-cell--occupied')).toHaveCount(4);
   const overflows = await page.evaluate(() =>

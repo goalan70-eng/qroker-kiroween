@@ -51,10 +51,10 @@ const bodyText = (page: Page): Promise<string> => page.evaluate(() => document.b
 /** Plays `n` human placements (each followed by the AI turns up to the next human turn). */
 async function placeCards(page: Page, n: number): Promise<void> {
   for (let i = 0; i < n; i++) {
-    expect(await currentStep(page)).toBe('PLACE');
+    expect((await playUntil(page, { stopAt: kind => kind === 'PLACE' })).stoppedAt).toBe('PLACE');
     await playHumanTurn(page);
   }
-  expect(await currentStep(page)).toBe('PLACE'); // stable human turn: the AI Seats have acted
+  expect((await playUntil(page, { stopAt: kind => kind === 'PLACE' })).stoppedAt).toBe('PLACE');
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -358,7 +358,7 @@ for (const spec of [
       await stubSeeds(page, [SEED_A]);
       const { hands, seatName, seed } = await playToSeatTurn(page, spec.humans, spec.turns, String(SEED_A));
       const own = hands.get(seatName)!;
-      expect(own).toHaveLength(4);
+      expect(own).toHaveLength(3);
       const allNames = [...hands.values()].flat();
       const others = [...hands.entries()].filter(([name]) => name !== seatName);
       if (spec.turns > 0) expect(others.length).toBeGreaterThan(0);

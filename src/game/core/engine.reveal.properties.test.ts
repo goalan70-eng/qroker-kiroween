@@ -508,7 +508,7 @@ describe("Property 17: simultaneous reveal", () => {
               const codes = oracleCodesOf(batchCase);
               expect(codes.length).toBe(want);
               const guesses = realizeGuesses(codes, specs);
-              const outcome = oracleOutcome(codes, guesses, table, bonus, before.scores, place.player, pending.endsGame, before.history.length);
+              const outcome = oracleOutcome(codes, guesses, table, bonus, before.scores, place.player, batch.hands[place.player].length === 0, before.history.length);
               const actions = SEAT_IDS.map((seat) => submitAction(seat, guesses));
               const needles: { seat: PlayerId; quadKey: string; value: number }[] = SEAT_IDS.flatMap((seat) =>
                 codes.map((code) => ({ seat, quadKey: code.quadKey, value: (guesses[seat] as Record<string, number>)[code.quadKey] as number })),
@@ -574,7 +574,7 @@ describe("Property 17: simultaneous reveal", () => {
               // The outcome equals the independent oracle.
               const final = first;
               expect(final.phase, "phase after the reveal").toBe(pending.endsGame ? "ENDED" : "REVEAL");
-              expect(final.bonusAwarded, "bonus seat").toBe(pending.endsGame ? place.player : null);
+              expect(final.bonusAwarded, "bonus seat").toBe(batch.hands[place.player].length === 0 ? place.player : null);
               expect(final.pending, "pending is cleared by the reveal").toBeNull();
               expect(final.history, "history gains exactly the new record").toEqual([...before.history, outcome.record]);
               expect(final.lastReveal, "lastReveal is the new record").toEqual(outcome.record);
@@ -586,7 +586,7 @@ describe("Property 17: simultaneous reveal", () => {
               // Total points are the per-code rewards only (plus the bonus once when the hand emptied): no completion bonus.
               const totalGain = SEAT_IDS.reduce((sum, seat) => sum + (final.scores[seat] as number) - (before.scores[seat] as number), 0);
               const totalRewards = SEAT_IDS.reduce((sum, seat) => sum + codes.reduce((s, code) => s + oracleReward(table, (guesses[seat] as Record<string, number>)[code.quadKey] as number, code.hiddenSum), 0), 0);
-              expect(near(totalGain, totalRewards + (pending.endsGame ? bonus : 0)), `total gain ${totalGain} = rewards ${totalRewards}${pending.endsGame ? ` + bonus ${bonus}` : ""}`).toBe(true);
+              expect(near(totalGain, totalRewards + (batch.hands[place.player].length === 0 ? bonus : 0)), `total gain ${totalGain} = rewards ${totalRewards}${pending.endsGame ? ` + bonus ${bonus}` : ""}`).toBe(true);
               // Everything else is untouched by the reveal.
               const rest = ["pending", "log", "scores", "history", "lastReveal", "revealedCards", "phase", "bonusAwarded"] as const;
               expect(without(final, rest), "board, hands, deck, turn, counters and config are unchanged").toEqual(without(batch, rest));
@@ -877,7 +877,7 @@ describe("Property 18: submission protocol", () => {
               seatOrder.slice(submitted).forEach((seat) => {
                 state = applyOk(state, submitAction(seat, guesses), `completing submission by ${seat}`);
               });
-              const outcome = oracleOutcome(codes, guesses, table, bonus, before.scores, place.player, pending.endsGame, before.history.length);
+              const outcome = oracleOutcome(codes, guesses, table, bonus, before.scores, place.player, batch.hands[place.player].length === 0, before.history.length);
               expect(state.lastReveal, "the reveal scores the accepted submissions").toEqual(outcome.record);
               SEAT_IDS.forEach((seat) => expect(state.scores[seat], `score of ${seat}`).toBe(outcome.finalScores[seat]));
               expect(state.pending).toBeNull();
@@ -933,9 +933,9 @@ interface Simulation {
  * hand-empty bonus. It never reads `scores`, `history` or `bonusAwarded` of an engine state.
  */
 function simulate(r: Reachable, table: readonly number[], bonus: number): Simulation {
-  const hand: Record<PlayerId, number> = { P0: 4, P1: 4, P2: 4, P3: 4 };
-  let deck = 32;
-  const placed = new Set<PlayerId>();
+  const hand: Record<PlayerId, number> = { P0: 3, P1: 3, P2: 3, P3: 3 };
+  let deck = 36;
+
   const scored: string[] = [];
   const scores: Scores = { P0: 0, P1: 0, P2: 0, P3: 0 };
   const batches: SimBatch[] = [];
@@ -946,20 +946,20 @@ function simulate(r: Reachable, table: readonly number[], bonus: number): Simula
   let lastPlaceCodes: OracleCode[] = [];
 
   r.actions.forEach((action, i) => {
-    if (bonusSeat !== null) fail(`an action follows the end of the game at index ${i}`);
+    if (endedBy !== null) fail(`an action follows the end of the game at index ${i}`);
     const next = r.states[i + 1] as GameState;
     if (action.type === "PLACE") {
       const seat = action.player;
       const codes = oracleNewCodes(next.board, action.pos.row, action.pos.col, scored);
       for (const code of codes) scored.push(code.groupId);
-      const draws = placed.has(seat) && codes.length === 0 && deck > 0;
+      const draws = codes.length === 0 && deck > 0;
       hand[seat] += draws ? 0 : -1;
       if (draws) deck -= 1;
-      placed.add(seat);
+
       lastPlacer = seat;
       lastPlaceCodes = codes;
       if (codes.length > 0) {
-        open = { placer: seat, codes, guesses: {}, endsGame: hand[seat] === 0 };
+        open = { placer: seat, codes, guesses: {}, endsGame: hand[seat] === 0 || scored.length >= 5 };
       } else if (hand[seat] === 0) {
         scores[seat] += bonus;
         bonusSeat = seat;
@@ -977,8 +977,10 @@ function simulate(r: Reachable, table: readonly number[], bonus: number): Simula
         }
         batches.push({ placer: open.placer, quadKeys: open.codes.map((c) => c.quadKey), earned: outcome.earned, cumulative });
         if (open.endsGame) {
-          scores[open.placer] += bonus;
-          bonusSeat = open.placer;
+          if (hand[open.placer] === 0) {
+            scores[open.placer] += bonus;
+            bonusSeat = open.placer;
+          }
           endedBy = "SUBMIT";
         }
         open = null;
@@ -1074,18 +1076,20 @@ describe("Property 19: hand-empty bonus and game end ordering", () => {
                 expect(s.phase, `phase before the last action (state ${i})`).not.toBe("ENDED");
                 expect(s.bonusAwarded, `no bonus before the end (state ${i})`).toBeNull();
               });
-              expect(final.bonusAwarded, "bonus seat is recorded").not.toBeNull();
               const lastAction = r.actions[n - 1] as Action;
               expect(lastAction.type, "the game never ends by an acknowledgement").not.toBe("ACK_REVEAL");
 
               // Independent bookkeeping from the log.
               const sim = simulate(r, table, bonus);
               expect(sim.bonusSeat, "bonus seat by independent hand bookkeeping").toBe(final.bonusAwarded);
-              expect(sim.hand[final.bonusAwarded as PlayerId], "the bonus seat's hand is empty (bookkeeping)").toBe(0);
-              expect(final.hands[final.bonusAwarded as PlayerId], "the bonus seat's hand is empty (state)").toHaveLength(0);
-              // The seat whose hand is empty is the one that made the last placement; every other seat still holds cards.
-              expect(sim.lastPlacer, "bonus goes to the seat of the last placement").toBe(final.bonusAwarded);
-              expect(SEAT_IDS.filter((seat) => final.hands[seat].length === 0), "exactly one hand is empty").toEqual([final.bonusAwarded]);
+              if (final.bonusAwarded !== null) {
+                expect(sim.hand[final.bonusAwarded as PlayerId], "the bonus seat's hand is empty (bookkeeping)").toBe(0);
+                expect(final.hands[final.bonusAwarded], "the bonus seat's hand is empty (state)").toHaveLength(0);
+                expect(sim.lastPlacer, "bonus goes to the seat of the last placement").toBe(final.bonusAwarded);
+              } else {
+                expect(final.scoredGroups.length).toBeGreaterThanOrEqual(5);
+              }
+              expect(SEAT_IDS.filter((seat) => final.hands[seat].length === 0)).toEqual(final.bonusAwarded ? [final.bonusAwarded] : []);
               expect(sim.deck).toBe(final.deck.length);
 
               // The batches: one RevealRecord per fully collected batch, with the earned points of the bookkeeping.
@@ -1119,16 +1123,16 @@ describe("Property 19: hand-empty bonus and game end ordering", () => {
                 expect(lastAction.type).toBe("SUBMIT_GUESSES");
                 const lastRecord = final.history[final.history.length - 1] as NonNullable<GameState["lastReveal"]>;
                 expect(lastRecord.codes.map((c) => c.quadKey), "the last record is the batch of the ending placement").toEqual(sim.lastPlaceCodes.map((c) => c.quadKey));
-                expect(lastRecord.placer).toBe(final.bonusAwarded);
+                expect(lastRecord.placer).toBe(sim.lastPlacer);
                 const beforeLast = r.states[n - 1] as GameState;
                 expect(beforeLast.phase, "the last action is the 4th submission of a batch").toBe("GUESS_COLLECT");
                 expect(Object.keys((beforeLast.pending as PendingBatch).guesses)).toHaveLength(3);
                 expect((beforeLast.pending as PendingBatch).endsGame).toBe(true);
                 expect(beforeLast.history).toHaveLength(final.history.length - 1);
                 expect(beforeLast.bonusAwarded, "no bonus before the last guess is scored").toBeNull();
-                const winner = final.bonusAwarded as PlayerId;
+                const winner = lastRecord.placer;
                 const entry = lastRecord.perPlayer.find((p) => p.player === winner) as { cumulative: number };
-                expect(near(final.scores[winner] as number, entry.cumulative + bonus), "the bonus comes after the scoring of the last batch").toBe(true);
+                expect(near(final.scores[winner] as number, entry.cumulative + (final.bonusAwarded ? bonus : 0)), "the bonus comes after the scoring of the last batch").toBe(true);
               } else {
                 cov.endedByNonCodePlacement++;
                 expect(sim.endedBy).toBe("PLACE");
@@ -1141,7 +1145,7 @@ describe("Property 19: hand-empty bonus and game end ordering", () => {
               }
               if (final.deck.length > 0) cov.endedWithCardsInDeck++;
               if (final.history.length === 0) cov.gamesWithoutAnyCode++;
-              cov.bonusSeat[final.bonusAwarded as PlayerId]++;
+              if (final.bonusAwarded) cov.bonusSeat[final.bonusAwarded]++;
               if (!Number.isInteger(bonus)) cov.fractionalBonus++;
 
               // No scoring batch is ever left unscored: every batch opened by a PLACE has its record.

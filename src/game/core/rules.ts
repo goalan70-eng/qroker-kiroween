@@ -33,6 +33,9 @@ import type {
   SeatConfig,
 } from './types';
 
+/** End after settling the batch that reaches this many distinct codes. */
+export const COMPLETED_CODE_LIMIT = 5;
+
 export { DECK_SIZE_AFTER_DEAL, HAND_SIZE, NEUTRAL_COUNT, RULES_VERSION, SEATS };
 
 /**

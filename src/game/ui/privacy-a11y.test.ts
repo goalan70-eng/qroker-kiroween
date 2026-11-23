@@ -133,7 +133,7 @@ describe('Task 21.3 privacy, accessibility, language and persistence (fake-DOM)'
 
   it('resumes the same game after re-mount and continues playing', () => {
     const store = memoryStore();
-    const first = mountTestApp({ seed: 7, store });
+    const first = mountTestApp({ seed: 1, store });
     start(first);
     playHumanTurnAuto(first);
     const before = first.controller.getView('P0');

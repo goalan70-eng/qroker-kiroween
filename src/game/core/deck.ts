@@ -2,7 +2,7 @@
  * Deck and dealing of the QRoker game engine (task 3.1).
  *
  * Source: .kiro/specs/qroker-playable-game/design.md, "Deck (`core/deck.ts`)" and "DrawManager".
- * Requirements: 2.2 and 2.3 (seeded shuffle, 4 neutral + 4x4 hand cards + 32 deck cards, partition of
+ * Requirements: 2.2 and 2.3 (seeded shuffle, 4 neutral + 4x3 hand cards + 36 deck cards, partition of
  * the catalog), 6.6 (a draw on an empty deck is skipped). qroker-game Requirement 3.
  *
  * Pure module: no DOM, no node, no randomness except the seeded generator, no clock, no import from
@@ -11,10 +11,10 @@
  * Deal procedure (frozen by the golden test of task 3.2; changing it changes every game):
  *   shuffled = shuffle(ALL_CARDS, mulberry32(seed))      // ALL_CARDS in canonical order
  *   neutral  = shuffled[0..3]                            // placed later on D4, E4, D5, E5 in this order
- *   hands[Pk] = shuffled[4+4k .. 7+4k], k = 0..3         // P0..P3, stored in DEAL ORDER (not sorted)
- *   deck     = shuffled[20..51]                          // 32 cards, TOP = LAST element
+ *   hands[Pk] = shuffled[4+3k .. 6+3k], k = 0..3         // P0..P3, stored in DEAL ORDER (not sorted)
+ *   deck     = shuffled[16..51]                          // 36 cards, TOP = LAST element
  *
- * The Hand is stored in deal order, as the design states ("4 cards each, in deal order"). The
+ * The Hand is stored in deal order, as the design states ("3 cards each, in deal order"). The
  * canonical (sorted) order is applied only by the ViewProjector (task 9.1) when it builds a view.
  *
  * Scope: this module only partitions the cards. It does not decide the orientation of the neutral
@@ -32,18 +32,18 @@ import type { CardId, PlayerId, Result } from './types';
 export interface Deal {
   /** D4, E4, D5, E5 in this order. */
   readonly neutral: readonly [CardId, CardId, CardId, CardId];
-  /** 4 cards each, in deal order. */
+  /** 3 cards each, in deal order. */
   readonly hands: Readonly<Record<PlayerId, readonly CardId[]>>;
-  /** 32 cards, top = last element. */
+  /** 36 cards, top = last element. */
   readonly deck: readonly CardId[];
 }
 
 /** Number of neutral cards on the board at the start. */
 export const NEUTRAL_COUNT = 4;
 /** Number of cards in each starting Hand. */
-export const HAND_SIZE = 4;
-/** Number of cards in the deck after the deal (52 - 4 - 4 * 4). */
-export const DECK_SIZE_AFTER_DEAL = 32;
+export const HAND_SIZE = 3;
+/** Number of cards in the deck after the deal (52 - 4 - 4 * 3). */
+export const DECK_SIZE_AFTER_DEAL = 36;
 
 const SEATS: readonly PlayerId[] = ['P0', 'P1', 'P2', 'P3'];
 

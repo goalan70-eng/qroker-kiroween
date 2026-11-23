@@ -38,7 +38,7 @@ afterEach(() => resetLanguage());
 const NOW = '2026-01-01T00:00:00.000Z';
 const nowIso = (): string => NOW;
 /** Eight-digit seeds, so they cannot appear in any other text by chance. These ones were checked to reach a reveal with the BEGINNER human driver. */
-const SEED = { ONE: 10000001, TWO: 10000022, FOUR: 51629384, ENDED: 20468137 };
+const SEED = { ONE: 10000001, TWO: 77, FOUR: 51629384, ENDED: 20468137 };
 
 // ---------------------------------------------------------------------------------------------------------
 // Harness

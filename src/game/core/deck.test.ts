@@ -32,12 +32,13 @@ interface Golden {
 const GOLDEN_SEED_1: Golden = {
   neutral: ["D-Q", "S-6", "D-J", "H-J"],
   hands: {
-    P0: ["S-5", "C-6", "S-Q", "S-3"],
-    P1: ["H-7", "C-4", "C-10", "D-10"],
-    P2: ["S-2", "C-9", "H-Q", "H-4"],
-    P3: ["S-J", "C-8", "H-9", "D-2"],
+    P0: ["S-5", "C-6", "S-Q"],
+    P1: ["S-3", "H-7", "C-4"],
+    P2: ["C-10", "D-10", "S-2"],
+    P3: ["C-9", "H-Q", "H-4"],
   },
   deck: [
+    "S-J", "C-8", "H-9", "D-2",
     "H-5", "C-2", "S-7", "C-K", "C-5", "H-8", "D-9", "D-4", "H-K", "H-2", "C-J", "C-Q", "D-K", "S-9", "H-3", "D-5",
     "S-A", "H-10", "D-3", "H-6", "D-8", "D-7", "S-4", "D-6", "S-K", "C-3", "D-A", "S-8", "S-10", "C-A", "H-A", "C-7",
   ],
@@ -46,12 +47,13 @@ const GOLDEN_SEED_1: Golden = {
 const GOLDEN_SEED_20260601: Golden = {
   neutral: ["H-6", "D-A", "C-8", "C-6"],
   hands: {
-    P0: ["S-5", "C-9", "C-3", "D-8"],
-    P1: ["H-Q", "C-7", "H-5", "H-4"],
-    P2: ["S-10", "C-J", "D-4", "D-6"],
-    P3: ["S-8", "C-5", "H-3", "D-7"],
+    P0: ["S-5", "C-9", "C-3"],
+    P1: ["D-8", "H-Q", "C-7"],
+    P2: ["H-5", "H-4", "S-10"],
+    P3: ["C-J", "D-4", "D-6"],
   },
   deck: [
+    "S-8", "C-5", "H-3", "D-7",
     "D-Q", "S-4", "H-A", "H-10", "C-4", "H-9", "D-10", "C-2", "D-5", "S-9", "H-8", "S-J", "C-A", "S-3", "H-K", "S-6",
     "S-K", "S-2", "H-J", "D-9", "H-7", "C-Q", "C-K", "C-10", "S-A", "D-J", "S-7", "D-2", "D-K", "H-2", "D-3", "S-Q",
   ],
@@ -108,7 +110,7 @@ function refShuffleForward(cards: readonly string[], rng: () => number): string[
 type ReferenceDeal = { neutral: string[]; hands: Record<PlayerId, string[]>; deck: string[] };
 
 /**
- * Deals with the documented procedure (neutral = first 4, hand of Pk = 4+4k .. 7+4k, deck = remaining 32).
+ * Deals with the documented procedure (neutral = first 4, hand of Pk = 4+3k .. 6+3k, deck = remaining 36).
  * `wrong` selects a deliberately wrong variant for the mutation-style check.
  */
 type WrongVariant =
@@ -125,24 +127,24 @@ function refDeal(seed: number, wrong: WrongVariant = "none"): ReferenceDeal {
   const s = wrong === "forward-shuffle" ? refShuffleForward(CANONICAL, rng) : refShuffleDescending(CANONICAL, rng);
   let neutral = s.slice(0, 4);
   let handStart = 4;
-  let deck = s.slice(20);
+  let deck = s.slice(16);
   let seatOrder: PlayerId[] = ["P0", "P1", "P2", "P3"];
   if (wrong === "hands-from-end") {
-    // Hands are the LAST 16 cards, the deck is the middle.
-    handStart = 36;
-    deck = s.slice(4, 36);
+    // Hands are the LAST 12 cards, the deck is the middle.
+    handStart = 40;
+    deck = s.slice(4, 40);
   }
   if (wrong === "reversed-deck") deck = [...deck].reverse();
   if (wrong === "reversed-seat-order") seatOrder = ["P3", "P2", "P1", "P0"];
   if (wrong === "hands-before-neutral") {
-    // Hands take the first 16 cards, neutral takes the next 4.
+    // Hands take the first 12 cards, neutral takes the next 4.
     handStart = 0;
-    neutral = s.slice(16, 20);
+    neutral = s.slice(12, 16);
   }
   if (wrong === "neutral-from-end") neutral = s.slice(48, 52).reverse();
   const hands = {} as Record<PlayerId, string[]>;
   seatOrder.forEach((seat, k) => {
-    hands[seat] = s.slice(handStart + 4 * k, handStart + 4 * k + 4);
+    hands[seat] = s.slice(handStart + 3 * k, handStart + 3 * k + 3);
   });
   return { neutral, hands, deck };
 }
@@ -166,12 +168,12 @@ function deepFreeze<T>(value: T): T {
 // ---------------------------------------------------------------------------------------------
 
 describe("golden initial deals", () => {
-  it("the frozen golden values themselves are well formed (4 + 16 + 32 distinct catalog cards)", () => {
+  it("the frozen golden values themselves are well formed (4 + 12 + 36 distinct catalog cards)", () => {
     for (const { golden } of GOLDENS) {
       const all = [...golden.neutral, ...SEATS.flatMap((s) => golden.hands[s]), ...golden.deck];
       expect(golden.neutral).toHaveLength(4);
-      for (const s of SEATS) expect(golden.hands[s]).toHaveLength(4);
-      expect(golden.deck).toHaveLength(32);
+      for (const s of SEATS) expect(golden.hands[s]).toHaveLength(3);
+      expect(golden.deck).toHaveLength(36);
       expect(new Set(all).size).toBe(52);
       expect([...all].sort()).toEqual([...CANONICAL].sort());
     }
@@ -299,15 +301,15 @@ describe("drawTop", () => {
     expect(r.deck).toEqual([]);
   });
 
-  it("drawing the 32 cards of a dealt deck gives the reverse of the stored order, then null with the deck unchanged", () => {
+  it("drawing the 36 cards of a dealt deck gives the reverse of the stored order, then null with the deck unchanged", () => {
     const original = [...dealGame(1).deck];
     let deck: readonly CardId[] = dealGame(1).deck;
     const drawn: (CardId | null)[] = [];
-    for (let i = 0; i < 32; i++) {
+    for (let i = 0; i < 36; i++) {
       const r = drawTop(deck);
       drawn.push(r.card);
       deck = r.deck;
-      expect(deck).toHaveLength(31 - i);
+      expect(deck).toHaveLength(35 - i);
     }
     expect(drawn).toEqual([...original].reverse());
     expect(drawn).toEqual([...GOLDEN_SEED_1.deck].reverse());
@@ -326,7 +328,7 @@ describe("input immutability", () => {
       const copy = asPlain(frozen);
       // drawTop on a frozen deck must not throw (strict mode would throw on any write) and must not change it.
       let deck: readonly CardId[] = frozen.deck;
-      for (let i = 0; i < 33; i++) deck = drawTop(deck).deck;
+      for (let i = 0; i <= frozen.deck.length; i++) deck = drawTop(deck).deck;
       expect(deck).toEqual([]);
       expect(asPlain(frozen)).toEqual(copy);
       expect(Object.isFrozen(frozen.deck)).toBe(true);

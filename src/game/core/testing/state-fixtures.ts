@@ -1,7 +1,7 @@
 // Test support for the reducer scenarios (task 8.2). Imported by tests only, never by engine code.
 //
 // `makeState` builds a real `GameState` (the shape of `newGame`) from hand-picked pieces: board cells, hands,
-// deck, phase, turn, `firstPlacementDone`, `scoredGroups`, scores and so on. Every value is frozen with
+// deck, phase, turn, `scoredGroups`, scores and so on. Every value is frozen with
 // `deepFreeze`, like the states the engine returns. Pieces that are not given keep the `newGame` value, except
 // the three card zones, which are completed so that the 52 catalog cards are always accounted for exactly once:
 //   - board: the four neutral cards `FIXTURE_NEUTRAL` on D4, E4, D5, E5 plus the given `cells`;
@@ -53,7 +53,6 @@ export interface StateParts {
   readonly deck?: readonly CardId[];
   readonly phase?: GamePhase;
   readonly turn?: PlayerId;
-  readonly firstPlacementDone?: readonly PlayerId[];
   readonly scoredGroups?: readonly string[];
   readonly scores?: Partial<Record<PlayerId, number>>;
   readonly pending?: PendingBatch | null;
@@ -111,7 +110,6 @@ export function makeState(parts: StateParts = {}): GameState {
     deck,
     hands,
     turn: parts.turn ?? "P0",
-    firstPlacementDone: parts.firstPlacementDone ?? [],
     scoredGroups: parts.scoredGroups ?? base.scoredGroups,
     revealedCards: parts.revealedCards ?? [],
     pending: parts.pending ?? null,

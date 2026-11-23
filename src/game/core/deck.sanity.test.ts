@@ -23,12 +23,12 @@ function deepFreeze<T>(value: T): T {
 }
 
 describe('dealGame', () => {
-  it('has the sizes 4 neutral, 4 hands of 4, 32 deck', () => {
+  it('has the sizes 4 neutral, 4 hands of 3, 36 deck', () => {
     for (const seed of [0, 1, 42, 4294967295]) {
       const d = dealGame(seed);
       expect(d.neutral).toHaveLength(4);
-      for (const s of SEATS) expect(d.hands[s]).toHaveLength(4);
-      expect(d.deck).toHaveLength(32);
+      for (const s of SEATS) expect(d.hands[s]).toHaveLength(3);
+      expect(d.deck).toHaveLength(36);
     }
   });
 
@@ -45,8 +45,8 @@ describe('dealGame', () => {
     const shuffled = shuffle(ALL_CARDS, mulberry32(7));
     const d = dealGame(7);
     expect(d.neutral).toEqual(shuffled.slice(0, 4));
-    SEATS.forEach((s, k) => expect(d.hands[s]).toEqual(shuffled.slice(4 + 4 * k, 8 + 4 * k)));
-    expect(d.deck).toEqual(shuffled.slice(20));
+    SEATS.forEach((s, k) => expect(d.hands[s]).toEqual(shuffled.slice(4 + 3 * k, 7 + 3 * k)));
+    expect(d.deck).toEqual(shuffled.slice(16));
   });
 
   it('is deterministic', () => {
@@ -86,11 +86,11 @@ describe('drawTop', () => {
     expect(r.deck).toBe(deck);
   });
 
-  it('draws all 32 cards of a dealt deck from last to first, then null', () => {
+  it('draws all 36 cards of a dealt deck from last to first, then null', () => {
     let deck = dealGame(9).deck;
     const original = [...deck];
     const drawn: CardId[] = [];
-    for (let i = 0; i < 32; i++) {
+    for (let i = 0; i < 36; i++) {
       const r = drawTop(deck);
       expect(r.card).not.toBeNull();
       drawn.push(r.card as CardId);

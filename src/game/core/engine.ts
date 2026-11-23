@@ -17,8 +17,8 @@
  *   PLACEMENT    --PLACE, no code, hand reaches 0-->        ENDED (bonus)
  *   PLACEMENT    --PLACE, 1 or more new codes-->            GUESS_COLLECT (pending batch)
  *   GUESS_COLLECT--SUBMIT_GUESSES, not all 4 seats yet-->   GUESS_COLLECT
- *   GUESS_COLLECT--last SUBMIT_GUESSES, placer hand > 0-->  REVEAL
- *   GUESS_COLLECT--last SUBMIT_GUESSES, placer hand = 0-->  ENDED (reveal, then bonus; no ACK_REVEAL needed)
+ *   GUESS_COLLECT--last SUBMIT_GUESSES, no end condition-->  REVEAL
+ *   GUESS_COLLECT--last SUBMIT_GUESSES, hand empty or code limit-->  ENDED (score all codes; bonus only for empty hand)
  *   REVEAL       --ACK_REVEAL-->                            PLACEMENT (turn = nextSeat(placer))
  *   ENDED        --any action-->                            rejected with GAME_ENDED
  *
@@ -48,9 +48,10 @@
  * Pure: no DOM, no node, no randomness, no clock, no import from `src/optical`.
  */
 
+import { COMPLETED_CODE_LIMIT } from './rules';
 import { placeOnBoard } from './board';
 import { detect } from './composite-code';
-import { applyDraw, markFirstPlacement, shouldDraw } from './draw';
+import { applyDraw, shouldDraw } from './draw';
 import { score, validateGuess } from './score';
 import { deepFreeze } from './state';
 import type { GameState, PendingBatch, RevealRecord } from './state';
@@ -123,9 +124,8 @@ function reducePlace(state: GameState, action: Extract<Action, { type: 'PLACE' }
   const codes = detect(board, pos, new Set(state.scoredGroups));
   const scoredGroups = [...new Set([...state.scoredGroups, ...codes.map((code) => code.groupId)])].sort(compareText);
 
-  // Step 6: the draw verdict uses `firstPlacementDone` BEFORE this placement is recorded.
-  const draw = shouldDraw(player, state.firstPlacementDone, codes.length);
-  const firstPlacementDone = markFirstPlacement(state.firstPlacementDone, player);
+  // Step 6: every placement follows the same rule: draw only when no new code was completed.
+  const draw = shouldDraw(codes.length);
   const drawn = applyDraw(
     state.deck,
     hand.filter((c) => c !== card),
@@ -138,7 +138,6 @@ function reducePlace(state: GameState, action: Extract<Action, { type: 'PLACE' }
     board,
     deck: drawn.deck,
     hands: { ...state.hands, [player]: drawn.hand } as Record<PlayerId, readonly CardId[]>,
-    firstPlacementDone,
     scoredGroups,
     placements: state.placements + 1,
     log: [...state.log, logEntry],
@@ -146,7 +145,10 @@ function reducePlace(state: GameState, action: Extract<Action, { type: 'PLACE' }
 
   // Step 7: one or more codes open a prediction batch.
   if (codes.length >= 1) {
-    const pending: PendingBatch = { placer: player, codes, guesses: {}, endsGame: drawn.hand.length === 0 };
+    const pending: PendingBatch = {
+      placer: player, codes, guesses: {},
+      endsGame: drawn.hand.length === 0 || scoredGroups.length >= COMPLETED_CODE_LIMIT,
+    };
     return ok({ ...next, phase: 'GUESS_COLLECT', pending });
   }
   // Step 8: a hand-emptying placement without a code ends the game at once.
@@ -236,6 +238,7 @@ function revealBatch(
     log,
   };
   if (pending.endsGame) {
+    if (state.hands[pending.placer].length > 0) return { ...next, phase: 'ENDED', scores };
     return {
       ...next,
       phase: 'ENDED',

@@ -13,6 +13,10 @@ Ground rules for every task:
 - Test sub-tasks are not marked optional, because requirement 21 makes the property, boundary, end-to-end and smoke tests part of the definition of done.
 - All checkboxes start unchecked.
 
+### Amendment: approved three-card rules (documentation only, no checkbox changed)
+
+The owner approved the three-card rules after tasks 3 to 8 were ticked: 3-card Hands, 36-card deck, the same draw rule from the first placement, game end by an empty Hand after the draw or by five distinct codes in total, the whole last batch scored, and the hand-empty bonus only for the player who emptied their Hand. The specification text was updated by Kiro (requirements 2, 6, 7, 8, 9, 12, 16, OQ-4, OQ-10, OQ-16, IC-5 and design sections Deck, DrawManager, GameState, Reducer, Invariants, Properties 7, 12, 13, 19 and the new 19a). The implementation (`RULES_VERSION = 3`, `HAND_SIZE = 3`, `COMPLETED_CODE_LIMIT = 5`) and its tests were changed by Codex in the working tree. Kiro has not re-run those tests, so no task status and no recorded test result below was changed or re-attested. Where a task below still describes the earlier rules, an "Amended" note under it states the current rule; the original acceptance text and its historical evidence are kept as they were.
+
 ### Milestones
 
 | Milestone | Tasks | Purpose |
@@ -118,6 +122,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
   - [x] 3.1 Implement the deck (`core/deck.ts`)
     - `dealGame(seed)` and `drawTop` as in design.md: shuffle with `mulberry32(seed)`, neutral = first 4, Hand of `Pk` = cards `4+4k` to `7+4k`, deck = remaining 32 with top = last element.
     - Acceptance: partition of 52 cards, no duplicates; `drawTop` on an empty deck returns `card: null` and the same deck.
+    - Amended (three-card rules, Kiro text edit): Hand of `Pk` = cards `4+3k` to `6+3k`, deck = remaining 36. The 4-card Hand and 32-card deck above describe the superseded rules.
     - Tests: unit tests for sizes and the empty-deck draw.
     - Depends on: 2.1, 2.2.
     - _Requirements: 2.2, 2.3, 6.6_
@@ -186,6 +191,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
   - [x] 7.1 Implement `shouldDraw` and `nextSeat` (`core/draw.ts`, `core/turn.ts`)
     - As in design.md. `shouldDraw(player, firstPlacementDone, newCodes)` and the cyclic `nextSeat`.
     - Acceptance: full truth table (first placement yes/no × codes 0/1/2) gives the values of requirements 6.3 to 6.5; `nextSeat` cycles `P0` to `P3` and back.
+    - Amended (three-card rules, Kiro text edit): `shouldDraw(newCodes)` has no player or `firstPlacementDone` argument; it is false only when `newCodes ≥ 1`, for every placement including the first (requirement 6.3 to 6.5 as amended). The first-placement rows of the truth table above are superseded.
     - Tests: exhaustive truth-table unit tests. The reducer-level draw property is Property 12 in task 8.3.
     - Depends on: 3.1.
     - _Requirements: 6.1, 6.3, 6.4, 6.5_
@@ -194,12 +200,14 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
   - [x] 8.1 Implement `GameState`, rules and `newGame` (`core/state.ts`, `core/rules.ts`)
     - `GameState`, `PendingBatch`, `RevealRecord`, `NewGameOptions`, `newGame`, `defaultConfig` (1 human `P0` + 3 AI, `DEV_PLACEHOLDER_SCORE_CONFIG`, `OWNER_ONLY`), config validation (`INVALID_CONFIG`, `INVALID_SCORE_CONFIG`). Neutral cards at orientation 0 with owner `NEUTRAL` (OQ-2), `turn = P0`.
     - Acceptance: 20 dealt cards, 32 deck cards; board holds 4 cards on D4, E4, D5, E5; invalid configs return errors; no code is pending at start.
+    - Amended (three-card rules, Kiro text edit): 16 dealt cards (4 neutral plus 12 Hand cards) and 36 deck cards; no `firstPlacementDone` field.
     - Tests: unit tests for the initial state fields and invalid configs (3 seats, duplicate seat id, invalid score config).
     - Depends on: 3.1, 4.1, 6.1.
     - _Requirements: 2.2, 3.1, 5.7, 6.1, 8.3, 8.4, 12.1, 12.6_
   - [x] 8.2 Implement the reducer (`core/engine.ts`)
     - `reduce` for `PLACE`, `SUBMIT_GUESSES`, `ACK_REVEAL` exactly as in design.md "Reducer", plus `actingSeats`. Append every accepted action to `log`.
     - Acceptance: scenarios of the design's Testing Strategy pass: first placement with a code (no draw, guess phase), non-first placement without a code (draw), a placement with two codes (one batch), a Hand-emptying placement with a code (reveal then `ENDED` with bonus), a Hand-emptying placement without a code (`ENDED` immediately), deck exhaustion, all error codes of the Error Handling table.
+    - Amended (three-card rules, Kiro text edit): the draw applies from the first placement. The end check follows the draw. Add the five scenarios of design Property 19a (first placement without a code keeps 3 cards; last card without a code draws and the game continues; last card without a code on an empty deck ends with the bonus; a non-last card on an empty deck only skips the draw and play continues; a fifth code with a non-empty Hand ends without a bonus; four codes plus a two-code placement that empties the Hand ends at six with the bonus once). The earlier "first placement with a code (no draw)" and "non-first placement" wording is superseded. Not re-run by Kiro.
     - Tests: example scenarios built from hand-picked states (construct a `GameState` through a test helper that overrides hands, deck and board).
     - Depends on: 8.1, 5.1, 7.1, 6.2, 4.1.
     - _Requirements: 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 6.2, 6.3, 6.4, 6.5, 6.6, 7.1, 7.2, 7.3, 7.4, 7.6, 7.9, 8.1, 8.6, 8.7, 8.8, 9.1, 9.2, 9.3, 9.7_
@@ -218,6 +226,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - **Property 18: Submission protocol**
     - **Property 19: Hand-empty bonus and game end ordering**
     - Acceptance: Property 17 permutes the 4 Seats' submission order; Property 19 plays random legal games to the end.
+    - Amended (three-card rules, Kiro text edit): Property 19 now allows a code-limit-only ending with no bonus (`bonusAwarded = null`) and checks that the whole last batch is scored; Property 12 has no first-placement branch; design Property 19a lists the end-condition table. Not re-run by Kiro.
     - Depends on: 8.2.
     - **Validates: Requirements 7.3, 7.4, 7.6, 7.7, 8.6, 8.7, 8.8, 9.1, 9.3**
 
@@ -634,8 +643,8 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
 |----|----------|---------------------------------------|---------------|
 | OQ-1 | Hidden-identity handling for hot-seat (open-decisions #2) | Option `OWNER_ONLY` (default) and `FACE_UP` both implemented | 8.1, 9.1, 9.2, 13.x, 19.1 |
 | OQ-2 | Orientation of the 4 starting cards | All 0° | 8.1 |
-| OQ-3 | Valid starting four cards (#3) | Starting group never scored (qroker-game 4.4b); no redeal | 5.1, 8.1 |
-| OQ-4 | First-round exemption scope (#6) | Per-Seat first placement, as in the approved qroker-game 3.5 | 7.1, 8.2 |
+| OQ-3 | Valid starting four cards (#3) | CLOSED by the owner: starting group earns no points, opens no guesses, counts zero toward the shared code count; no redeal (qroker-game 4.4b) | 5.1, 8.1 |
+| OQ-4 | First-round exemption scope (#6) | RESOLVED by the owner's three-card rules: no exemption, draw from the first placement (earlier default "per-Seat first placement" superseded) | 7.1, 8.2 |
 | OQ-5 | First Seat, direction, who guesses | `P0` first, increasing order, all 4 Seats guess | 7.1, 8.2 |
 | OQ-6 | Tied rank numbering | Competition ranking (1,1,3,4) | 6.2 |
 | OQ-7 | UI framework and bundler | Vite as an explicit devDependency, no UI framework | 16.1 |
@@ -647,6 +656,7 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
 | OQ-13 | Staging of the third AI tier | `EXPERT` in P2 | 23.x |
 | OQ-14 | Post-game disclosure of Guesses | Never disclosed | 8.2, 9.1 |
 | OQ-15 | Board row direction | Row 1 at the top | 2.3, 17.2 |
+| OQ-16 | Three-card rules and the shared five-code limit (owner decision) | Fixed constants `HAND_SIZE = 3`, `COMPLETED_CODE_LIMIT = 5`; CLOSED by the owner as fixed rules for this version (reward table and bonus stay configurable and provisional) | 3.1, 7.1, 8.1, 8.2, 8.3 (amended text only) |
 
 ## Notes
 

@@ -48,7 +48,7 @@ export interface KeyValueStore {
   readonly durable?: boolean;
 }
 
-export const SAVE_KEY = 'qroker.practice.save';
+export const SAVE_KEY = 'qroker.practice.save.rules3';
 export const PREFS_KEY = 'qroker.practice.prefs';
 const PROBE_KEY = 'qroker.practice.probe';
 

@@ -2062,7 +2062,6 @@ describe('task 19.4: seat to show, gate, publicView and seed', () => {
   interface Oracle {
     last: PlayerId | null;
     acked: PlayerId | null;
-    started: boolean;
     gates: number;
   }
 
@@ -2072,7 +2071,7 @@ describe('task 19.4: seat to show, gate, publicView and seed', () => {
    * seat (and was not just acknowledged). The first seat to show at game start counts as the last private seat.
    */
   function installOracle(r: Rig, extra?: (input: RenderInput) => void): Oracle {
-    const oracle: Oracle = { last: null, acked: null, started: false, gates: 0 };
+    const oracle: Oracle = { last: r.ctl.getModel().viewer, acked: null, gates: 0 };
     const humans = humansOf(r.kinds);
     r.stub.hook = (input) => {
       extra?.(input);
@@ -2085,10 +2084,6 @@ describe('task 19.4: seat to show, gate, publicView and seed', () => {
       expect(input.publicView === null, 'publicView is present exactly when no private view is').toBe(input.view !== null);
       expect(model.gate === null || model.viewer === null).toBe(true);
       expect(input.view === null).toBe(model.viewer === null);
-      if (!oracle.started) {
-        oracle.started = true;
-        if (model.actionCount === 0) oracle.last = candidate; // no gate at game start
-      }
       if (candidate === null) {
         expect(model.viewer, `${v.phase} turn ${v.turn}`).toBeNull();
         expect(model.gate).toBeNull();

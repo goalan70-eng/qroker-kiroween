@@ -90,7 +90,7 @@ function revealState(visibility: IdentityVisibility = 'OWNER_ONLY'): GameState {
 
 /** A mid-game state with at least 10 placed cards (so other seats' cards are on the Board). */
 function midGame(visibility: IdentityVisibility = 'OWNER_ONLY'): GameState {
-  const run = advanceUntil(start(3, visibility), (s) => s.board.filter((c) => c !== null).length >= 10 && s.phase === 'PLACEMENT', CHOICES);
+  const run = advanceUntil(start(1, visibility), (s) => s.board.filter((c) => c !== null).length >= 10 && s.phase === 'PLACEMENT', CHOICES);
   return run.state;
 }
 

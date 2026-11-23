@@ -6,6 +6,8 @@ The browser game supports one to four local human players, with offline
 The browser game does not scan physical cards and does not implement the complete
 physical game or the Scoring Companion.
 
+Each player starts with three cards. From the first placement, draw one card if no new code was completed and the deck has a card. End when someone empties their hand or the table has completed at least five distinct codes. Score every code from the final placement before ranking. Only the player who emptied their hand receives the bonus.
+
 Current owner-selected provisional scores (2026-11-16):
 
 | Absolute Guess error | Points |
@@ -19,7 +21,7 @@ Current owner-selected provisional scores (2026-11-16):
 | ±6 or more | 0 |
 | Hand emptied | +5 bonus |
 
-These defaults apply to new games. Resuming an older save preserves the score
+These defaults apply to new games. Rules version 3 uses a separate save slot. Previous four-card games remain in their old slot and cannot resume under these rules. Resuming a compatible save preserves the score
 configuration stored with that game; it does not silently rescore the game.
 
 ## Install and run
@@ -132,14 +134,14 @@ No credentials, paid model calls or Kiro credits are needed for these commands.
 
 ## Approved provisional defaults / open questions
 
-These summarize the existing playable-game Spec's OQ table; they are not new decisions.
+These summarize the playable-game open questions and the rules used in the current build.
 
 | ID | Topic | Existing default / status |
 | --- | --- | --- |
 | OQ-1 | Identity visibility | `OWNER_ONLY` default; `FACE_UP` supported |
 | OQ-2 | Starting-card orientation | Four neutral cards at 0° |
 | OQ-3 | Starting group | Not scored; no redeal |
-| OQ-4 | First-placement draw exemption | Per Seat |
+| OQ-4 | Draw on a placement with no new code | Draw one from the first placement onward if the deck has a card |
 | OQ-5 | Seat order and Guess participants | P0 first, increasing order, all four guess |
 | OQ-6 | Ties | Competition ranks, e.g. 1,1,3,4 |
 | OQ-7 | UI stack | Vite, no UI framework |

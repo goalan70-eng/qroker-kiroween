@@ -81,6 +81,15 @@ const STATES = prefixStates(SEED, GAME.final.config, GAME.log);
 const LOG = GAME.log;
 const FIRST_ACK = LOG.findIndex((a) => a.type === 'ACK_REVEAL');
 const PARTIAL = STATES.findIndex((s) => s.phase === 'GUESS_COLLECT' && s.pending !== null && Object.keys(s.pending.guesses).length === 2);
+it('preserves the four-card save when starting and resuming a new three-card game', () => {
+  const legacyKey = 'qroker.practice.save';
+  const store = memoryStore({ [legacyKey]: 'old four-card replay' });
+  expect(loadGame(store).kind).toBe('NONE');
+  saveGame(store, STATES[0]!, NOW);
+  expect(loadGame(store).kind).toBe('RESUMABLE');
+  expect(store.getItem(legacyKey)).toBe('old four-card replay');
+});
+
 const OTHER_KEY = 'unrelated.key';
 
 const consoleSpies: ReturnType<typeof vi.spyOn>[] = [];

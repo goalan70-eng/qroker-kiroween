@@ -34,7 +34,7 @@ const allCardsOf = (d: ReturnType<typeof dealGame>): CardId[] => [
 ];
 
 describe("Property 4: Deterministic deal partition", () => {
-  it("deals the same partition of the 52-card catalog (4 neutral, 4 hands of 4, 32 deck) on every call", () => {
+  it("deals the same partition of the 52-card catalog (4 neutral, 4 hands of 3, 36 deck) on every call", () => {
     // Feature: qroker-playable-game, Property 4: Deterministic deal partition
     fc.assert(
       fc.property(arbSeed, (seed) => {
@@ -46,16 +46,16 @@ describe("Property 4: Deterministic deal partition", () => {
         expect(checked.ok).toBe(true);
         if (checked.ok) expect(checked.value).toEqual(deal);
 
-        // Sizes 4 + 4x4 + 32 (requirement 2.2).
+        // Sizes 4 + 4x3 + 36 (requirement 2.2).
         expect(deal.neutral).toHaveLength(4);
         expect(Object.keys(deal.hands).sort()).toEqual(["P0", "P1", "P2", "P3"]);
-        for (const s of SEATS) expect(deal.hands[s]).toHaveLength(4);
-        expect(deal.deck).toHaveLength(32);
+        for (const s of SEATS) expect(deal.hands[s]).toHaveLength(3);
+        expect(deal.deck).toHaveLength(36);
 
-        // The 20 dealt cards (neutral plus hands) are pairwise distinct (requirement 2.3).
+        // The 16 dealt cards (neutral plus hands) are pairwise distinct (requirement 2.3).
         const dealt = [...deal.neutral, ...SEATS.flatMap((s) => deal.hands[s])];
-        expect(dealt).toHaveLength(20);
-        expect(new Set(dealt).size).toBe(20);
+        expect(dealt).toHaveLength(16);
+        expect(new Set(dealt).size).toBe(16);
 
         // Neutral, hands and deck together are the catalog exactly: 52 cards, all distinct, same set.
         const all = allCardsOf(deal);
@@ -71,7 +71,7 @@ describe("Property 4: Deterministic deal partition", () => {
 // Supplementary checks of the deck module (task 3.2). They are not numbered design properties: the draw rule
 // of the reducer is Property 12 and is tested in task 8.3. They check `drawTop` on dealt decks.
 describe("drawTop on dealt decks (supplementary to Property 4)", () => {
-  it("conserves the cards of the deck across 32 draws and keeps the input deck unchanged", () => {
+  it("conserves the cards of the deck across 36 draws and keeps the input deck unchanged", () => {
     fc.assert(
       fc.property(arbSeed, (seed) => {
         const input = dealGame(seed).deck;
@@ -79,16 +79,16 @@ describe("drawTop on dealt decks (supplementary to Property 4)", () => {
 
         let deck: readonly CardId[] = input;
         const drawn: CardId[] = [];
-        for (let i = 0; i < 32; i++) {
+        for (let i = 0; i < 36; i++) {
           const r = drawTop(deck);
           expect(r.card).not.toBeNull();
           drawn.push(r.card as CardId);
           // drawn + remaining is the original deck, with no card lost or duplicated.
-          expect(r.deck).toHaveLength(31 - i);
+          expect(r.deck).toHaveLength(35 - i);
           expect([...drawn, ...r.deck].sort()).toEqual([...clone].sort());
-          expect(new Set([...drawn, ...r.deck]).size).toBe(32);
+          expect(new Set([...drawn, ...r.deck]).size).toBe(36);
           // The remaining deck is the original without its last i + 1 cards.
-          expect(r.deck).toEqual(clone.slice(0, 31 - i));
+          expect(r.deck).toEqual(clone.slice(0, 35 - i));
           deck = r.deck;
         }
 

@@ -34,7 +34,8 @@ Scope, in priority order:
 - **Seeded_Random**: The engine's own deterministic pseudo-random number generator (PRNG). It is the only source of randomness in `core/` and `ai/`.
 - **CardId**: A string of the form `<Suit>-<Rank>`, for example `H-7`, `S-10`, `D-A`. Suit is one of `H`, `D`, `C`, `S`. Rank is one of `A`, `2`–`10`, `J`, `Q`, `K`. The convention matches the card keys used by the optical module, but the engine defines its own type and does not import that module.
 - **Seat**: One of the 4 player positions `P0`–`P3`. Each Seat is a human Seat or an AI Seat.
-- **Hand**: The cards held privately by one Seat.
+- **Hand**: The cards held privately by one Seat. Each Seat starts with 3 cards (owner decision on the three-card rules).
+- **Completed_Code_Count**: The number of distinct, eligible Composite_Codes completed on the table so far, shared by all Seats, equal to the length of `scoredGroups` (qroker-game Glossary). The starting neutral group is not counted. Guess submissions and Prediction_Batches do not change it.
 - **Neutral_Card**: One of the 4 cards placed on D4, E4, D5, E5 at the start. Neutral_Cards have no owner.
 - **Quad_Key**: The public identifier of a 2×2 group, equal to the notation of its top-left cell (for example `D4`). It contains no card identity.
 - **Group_Id**: The internal identifier of a Quad_Group, the sorted set of its 4 CardIds serialized as in qroker-game Requirement 4.3. It is sealed and never part of a Player_View while cards are hidden.
@@ -63,7 +64,7 @@ Scope, in priority order:
 - **Rotation_Control**: The control labelled "180° rotation" (Korean "180° 회전") that switches the draft orientation of a Placement_Draft between 0 and 180.
 - **Meaningful_Rotation**: The property of a card identity that rotating the card by 180° changes its printed fragment-corner arrangement in the Fragment_Layout. It is true for clubs and spades and false for hearts and diamonds (Requirement 4 Criterion 2).
 
-Terms defined in qroker-game (Board, Card, Card_Value, Quad_Group, Composite_Code, Hidden_Sum, Guess, Score, Placement_Action, Card_Orientation, Inward_Corner, Suit_Group, Fragment_Layout, Draw_Rule, Hand_Empty_End) keep their approved meaning.
+Terms defined in qroker-game (Board, Card, Card_Value, Quad_Group, Composite_Code, Hidden_Sum, Guess, Score, Placement_Action, Card_Orientation, Inward_Corner, Suit_Group, Fragment_Layout, Draw_Rule, Hand_Empty_End, Code_Limit_End) keep their approved meaning, as amended by the owner's three-card rules (qroker-game requirements, Amendment).
 
 ---
 
@@ -91,8 +92,8 @@ Terms defined in qroker-game (Board, Card, Card_Value, Quad_Group, Composite_Cod
 #### Acceptance Criteria
 
 1. THE Seeded_Random SHALL produce an identical sequence of values for an identical Seed, and SHALL be implemented inside `src/game/core/` without importing `src/optical`.
-2. WHEN `newGame` is called with a Seed and a game configuration, THE Game_Engine SHALL shuffle the 52 cards with a Fisher–Yates shuffle that consumes only Seeded_Random, place 4 Neutral_Cards on D4, E4, D5 and E5, deal 4 Hand cards to each of the 4 Seats, and keep the remaining 32 cards as the deck (qroker-game Requirements 3.1 and 3.2).
-3. FOR ALL Seeds, THE Game_Engine SHALL deal 20 pairwise-distinct cards (4 neutral plus 16 Hand cards) and 32 deck cards, and the union of the three zones SHALL equal the 52-card catalog (qroker-game design Property 7).
+2. WHEN `newGame` is called with a Seed and a game configuration, THE Game_Engine SHALL shuffle the 52 cards with a Fisher–Yates shuffle that consumes only Seeded_Random, place 4 Neutral_Cards on D4, E4, D5 and E5, deal 3 Hand cards to each of the 4 Seats, and keep the remaining 36 cards as the deck (draw pile) (qroker-game Requirements 3.1 and 3.2).
+3. FOR ALL Seeds, THE Game_Engine SHALL deal 16 pairwise-distinct cards (4 neutral plus 12 Hand cards) and 36 deck cards, and the union of the three zones SHALL equal the 52-card catalog (qroker-game design Property 7).
 4. FOR ALL game configurations, calling `newGame` twice with the same Seed and configuration SHALL return deeply equal Game_State values.
 5. WHEN the user supplies seed text, THE Seed_Parser SHALL map a decimal integer in the range 0 to 4294967295 to that integer, SHALL map any other non-empty text to an unsigned 32-bit integer by a documented, deterministic hash, and SHALL map text that is empty or whitespace only to the Error_Code `SEED_EMPTY`.
 6. THE Game_Engine and the AI_Player modules SHALL NOT call `Math.random`, `Date`, `performance.now` or `crypto`, so that all randomness derives from the Seed.
@@ -146,23 +147,23 @@ Terms defined in qroker-game (Board, Card, Card_Value, Quad_Group, Composite_Cod
 4. THE Composite_Code_Detector SHALL derive the Group_Id from the sorted set of the 4 CardIds, and SHALL record the Group_Id of every code that enters a Prediction_Batch in a scored-groups record (qroker-game Requirement 4.3).
 5. THE Composite_Code_Detector SHALL grant scoring eligibility only when the Composite_Code is formed, is newly formed by the current placement, and its Group_Id is not in the scored-groups record (qroker-game Requirement 4.4).
 6. FOR ALL Board states, running the detector repeatedly on the same Board state and the same scored-groups record SHALL not return any additional eligible code after the first run has recorded its results (qroker-game Requirement 4.5).
-7. THE Game_Engine SHALL NOT make the 2×2 group of the 4 Neutral_Cards eligible for scoring, because that group is not newly formed by a placement (qroker-game Requirement 4.4b; Open Question OQ-3).
+7. THE Game_Engine SHALL NOT make the 2×2 group of the 4 Neutral_Cards eligible for scoring, because that group is not newly formed by a placement (qroker-game Requirement 4.4b; Open Question OQ-3, closed). The starting group earns no points, opens no guesses and counts zero toward the Completed_Code_Count; there is no redeal. Later codes that include Neutral_Cards score normally.
 8. THE Game_Engine SHALL identify each Composite_Code in every public structure by its Quad_Key and SHALL NOT place the Group_Id or any CardId of a hidden card in a public structure before the code is revealed.
 
 ---
 
 ### Requirement 6: Turn Management and Drawing
 
-**User Story:** As a player, I want turns, drawing and the first-round exemption to follow the approved rules, so that hand sizes and the game length are predictable.
+**User Story:** As a player, I want turns and drawing to follow the approved rules (the same draw rule from the first placement), so that hand sizes and the game length are predictable.
 
 #### Acceptance Criteria
 
 1. THE Turn_Manager SHALL give the turn to Seat `P0` first and then to the Seats in increasing order `P0`, `P1`, `P2`, `P3`, `P0`, and so on (Open Question OQ-5).
 2. WHILE the phase is `PLACEMENT`, THE Game_Engine SHALL accept a `PLACE` Action only from the Seat whose turn it is, and SHALL reject any other Action or Seat with the Error_Code `NOT_YOUR_TURN` or `WRONG_PHASE`.
-3. WHEN a placement does not complete a new Composite_Code and the Seat has already completed its first placement, THE Draw_Manager SHALL draw 1 card from the top of the deck into the Seat's Hand (qroker-game Requirement 3.5).
-4. WHEN a placement is the first placement of that Seat, THE Draw_Manager SHALL NOT draw, whether or not the placement completes a Composite_Code (qroker-game Requirement 3.5 and Open Question OQ-4).
+3. WHEN a placement completes no new Composite_Code, THE Draw_Manager SHALL draw 1 card from the top of the deck into the Seat's Hand if the deck holds a card, for every placement including the very first placement of each Seat (qroker-game Requirement 3.5). A Seat that holds 3 cards and makes its first placement without a code therefore holds 3 cards afterwards.
+4. THE Draw_Manager SHALL NOT exempt any placement from Criterion 3: there is no first-placement exemption and the Game_State holds no record of first placements (qroker-game Requirement 3.5; Open Question OQ-4, resolved by the owner). The check of whether the placing Seat's Hand is empty (Requirement 9 Criterion 1) is made AFTER the draw of this placement has been resolved.
 5. WHEN a placement completes one or more new Composite_Codes, THE Draw_Manager SHALL NOT draw (qroker-game Requirement 3.6).
-6. WHEN a draw is required while the deck is empty, THE Draw_Manager SHALL skip the draw and keep the Hand size unchanged (qroker-game Requirement 3.8).
+6. WHEN a draw is required while the deck is empty, THE Draw_Manager SHALL skip the draw, so the Seat's Hand is one card smaller than before the placement (qroker-game Requirement 3.8). An empty deck only skips the required draw. If that leaves the placing Seat with an empty Hand, Requirement 9 Criterion 1 ends the game with the hand-empty bonus. If the Seat still holds cards and the code limit has not been reached, play continues.
 7. FOR ALL reachable Game_States, the number of deck cards plus Board cards plus the sum of all Hand sizes SHALL equal 52, all those cards SHALL be pairwise distinct, and the number of Board cards SHALL equal the number of accepted `PLACE` Actions plus 4 (qroker-game Requirements 3.2 and 3.10; design GameStateManager invariants).
 
 ---
@@ -173,7 +174,7 @@ Terms defined in qroker-game (Board, Card, Card_Value, Quad_Group, Composite_Cod
 
 #### Acceptance Criteria
 
-1. WHEN a placement newly forms one or more Composite_Codes, THE Game_Engine SHALL move to the phase `GUESS_COLLECT` with one Prediction_Batch that contains all those codes, and SHALL require every one of the 4 Seats, including the placing Seat, to submit one Guess per code (qroker-game Requirements 6.1 and 6.5; Open Question OQ-5).
+1. WHEN a placement newly forms one or more Composite_Codes, THE Game_Engine SHALL move to the phase `GUESS_COLLECT` with one Prediction_Batch that contains all those codes, and SHALL require every one of the 4 Seats, including the placing Seat, to submit one Guess per code (qroker-game Requirements 6.1 and 6.5; Open Question OQ-5). This applies without exception to the batch of the placement that ends the game, including when that batch takes the Completed_Code_Count past five (Requirement 9 Criterion 8).
 2. WHEN a `SUBMIT_GUESSES` Action contains a Guess that is not an integer or is outside 4 to 52 inclusive, THE Game_Engine SHALL reject the Action with the Error_Code `GUESS_NOT_INTEGER` or `GUESS_OUT_OF_RANGE` and SHALL keep the Seat's submission pending (qroker-game Requirements 2.8 and 11.3).
 3. IF a Seat submits a second `SUBMIT_GUESSES` Action for the same Prediction_Batch, THEN THE Game_Engine SHALL reject the second Action with the Error_Code `DUPLICATE_SUBMISSION` and SHALL keep the first submission.
 4. IF a `SUBMIT_GUESSES` Action does not contain exactly one Guess for each Quad_Key of the Prediction_Batch, THEN THE Game_Engine SHALL reject the Action with the Error_Code `GUESS_KEYS_MISMATCH`.
@@ -198,7 +199,7 @@ Terms defined in qroker-game (Board, Card, Card_Value, Quad_Group, Composite_Cod
 5. THE Game_Engine SHALL provide DEV_PLACEHOLDER_SCORE_CONFIG with `provisional: true`, a non-increasing table that awards the highest value at e=0, and a comment stating that the values are a development placeholder, chosen only to make scoring visible during development, and that no balance claim is made (docs/open-decisions.md item 7).
 6. THE Game_Engine SHALL NOT award a completion bonus for forming a Composite_Code (qroker-game Requirement 2.5).
 7. THE Score_Engine SHALL compute a prediction score only from the Guess and Hidden_Sum of the current Prediction_Batch (qroker-game Requirement 2.6).
-8. WHEN a Seat's Hand reaches 0 cards, THE Game_Engine SHALL add `handEmptyBonus` to that Seat's cumulative Score exactly once (qroker-game Requirement 2.9).
+8. WHEN a Seat's Hand is empty after the draw of its placement has been resolved, THE Game_Engine SHALL add `handEmptyBonus` to that Seat's cumulative Score exactly once, after the batch of that placement (if any) has been scored (qroker-game Requirement 2.9). A game that ends only because the Completed_Code_Count reached five SHALL award no `handEmptyBonus`, so a finished game does not always have a bonus recipient. The reward table and `handEmptyBonus` stay configurable and provisional; the current new-game configuration uses `rewardByError` `[10, 5, 4, 3, 2, 1]` and `handEmptyBonus` 5.
 
 ---
 
@@ -208,13 +209,17 @@ Terms defined in qroker-game (Board, Card, Card_Value, Quad_Group, Composite_Cod
 
 #### Acceptance Criteria
 
-1. WHEN a placement reduces a Seat's Hand to 0 cards, THE Game_Engine SHALL finish the scoring and Guess collection that belong to that placement, apply the hand-empty bonus, and then set the phase to `ENDED` (qroker-game Requirement 3.7).
+1. WHEN the placing Seat's Hand is empty after the draw of that placement has been resolved, THE Game_Engine SHALL finish the scoring and Guess collection that belong to that placement, apply the hand-empty bonus, and then set the phase to `ENDED` (qroker-game Requirement 3.7). A Seat that places its last card without forming a code and draws a replacement still holds one card, so that placement does not end the game. A Seat that places its last card without forming a code while the deck is empty has no draw to make, so the game ends and the bonus is awarded.
 2. WHILE the phase is `ENDED`, THE Game_Engine SHALL reject every Action with the Error_Code `GAME_ENDED`.
 3. WHEN the deck becomes empty, THE Game_Engine SHALL continue the game and SHALL NOT end the game (qroker-game Requirement 3.8).
 4. WHEN the game ends, THE Ranking_Function SHALL rank Seats by descending final Score, assign the same rank to Seats with equal Scores, and apply no further tiebreak (qroker-game Requirement 3.9; Open Question OQ-6).
 5. FOR ALL final score distributions, Seats with equal Scores SHALL have equal ranks, a Seat with a higher Score SHALL have a lower rank number, and at least one Seat SHALL have rank 1 (qroker-game design Property 19).
 6. FOR ALL Seeds and ALL combinations of AI strategies, THE Game_Engine SHALL reach the phase `ENDED` after at most 48 accepted `PLACE` Actions (52 cards minus 4 Neutral_Cards), with every placement succeeding from a legal cell.
 7. WHEN the phase is `ENDED`, THE Game_Engine SHALL provide the full history of revealed Composite_Codes, each with its Quad_Key, card identities, Hidden_Sum and per-Seat earned score, for display on the final scoreboard (qroker-game Requirement 8.4).
+8. WHEN a placement takes the Completed_Code_Count to five or more, THE Game_Engine SHALL collect the Guesses of all 4 Seats for EVERY code created by that placement, score and reveal the entire Prediction_Batch, and then set the phase to `ENDED` (qroker-game Requirement 3.13). The batch SHALL NOT be truncated at five. For example, with four previous codes and a placement that creates two more, both new codes are scored and the game ends with six codes. The code limit value is `COMPLETED_CODE_LIMIT = 5` in `src/game/core/rules.ts` (Open Question OQ-16).
+9. THE Game_Engine SHALL count each newly completed, eligible Composite_Code once toward the Completed_Code_Count, including two codes formed by the same placement, SHALL NOT count the starting neutral group, and SHALL NOT change the count on `SUBMIT_GUESSES`, `ACK_REVEAL` or scoring (qroker-game Requirement 3.14). The count is shared by all Seats and belongs to the shared game; it is not a limit on any personal score record of a Scoring_Companion.
+10. WHEN the game ends only because the Completed_Code_Count reached five and the placing Seat still holds cards, THE Game_Engine SHALL award no `handEmptyBonus`. WHEN the same placement both empties the placing Seat's Hand after the draw and reaches the code limit, THE Game_Engine SHALL score the entire batch and award `handEmptyBonus` once, to that Seat (qroker-game Requirement 3.15).
+11. WHEN no code is completed and no Seat's Hand is empty after the draw, THE Game_Engine SHALL NOT end the game, however many cards remain in the deck.
 
 ---
 
@@ -263,7 +268,7 @@ Terms defined in qroker-game (Board, Card, Card_Value, Quad_Group, Composite_Cod
 3. THE Game_Engine, the AI_Player modules, the persistence layer and the Practice_UI SHALL NOT import any module under `src/optical` at runtime, except one test-only parity test named in Requirement 4 Criterion 6.
 4. WHEN `replay(seed, configuration, actionLog)` is called, THE Game_Engine SHALL return a Game_State deeply equal to the state reached by applying the same Actions one by one to `newGame(seed, configuration)`, and SHALL return an error identifying the index of the first rejected Action.
 5. THE Game_Engine SHALL include the AI_Players' Actions in the Action_Log, so that replay needs no AI computation.
-6. THE Game_Engine SHALL define a `RULES_VERSION` integer constant that is part of every configuration and every Save_Envelope, and that SHALL be incremented whenever a change alters the outcome of replaying an existing Action_Log.
+6. THE Game_Engine SHALL define a `RULES_VERSION` integer constant that is part of every configuration and every Save_Envelope, and that SHALL be incremented whenever a change alters the outcome of replaying an existing Action_Log. The approved three-card rules (3-card Hands, 36-card deck, draw from the first placement, five-code limit, bonus only for an empty hand) are `RULES_VERSION = 3` in the current implementation (by Codex), so a save or configuration of an earlier rules version is incompatible. Earlier saves stay untouched in their own slot and are never resumed by the current build (Requirement 18 Criterion 9).
 7. THE Game_Engine SHALL report every rejection as an Error_Code from one closed enumeration, so that each code has exactly one Korean and one English message.
 
 ---
@@ -365,7 +370,7 @@ Terms defined in qroker-game (Board, Card, Card_Value, Quad_Group, Composite_Cod
 
 #### Acceptance Criteria
 
-1. THE Practice_UI SHALL provide a rules and help overlay, openable from every screen, that summarizes the placement rules, orientation, drawing, Guess and reveal, and ranking, states that scoring is provisional while the ScoreConfig is provisional, and closes with the Escape key and a close button.
+1. THE Practice_UI SHALL provide a rules and help overlay, openable from every screen, that summarizes the placement rules, orientation, drawing (from the first placement), the two game-end conditions (an empty Hand after the draw, or five codes in total, with the whole last batch scored and the bonus only for the player who emptied their Hand), Guess and reveal, and ranking, states that scoring is provisional while the ScoreConfig is provisional, and closes with the Escape key and a close button.
 2. THE Localizer SHALL provide every user-visible string through a key lookup in a Korean table and an English table, and a test SHALL fail if a key exists in one table and not in the other or if the placeholder names differ between the two.
 3. THE Localizer SHALL provide the Korean text of the approved Error Handling table of qroker-game design verbatim for the placement errors, and an English message for each Error_Code.
 4. WHEN the user changes the language, THE Practice_UI SHALL apply the new language without losing the game in progress and SHALL store the choice in `localStorage`.
@@ -407,6 +412,7 @@ Terms defined in qroker-game (Board, Card, Card_Value, Quad_Group, Composite_Cod
 6. IF `localStorage` is unavailable or a write fails, THEN THE Persistence_Layer SHALL keep the game in memory, SHALL show a notice that the game cannot be saved, and SHALL continue the game.
 7. FOR ALL valid Game_States reachable by legal Actions, serializing a Save_Envelope, parsing the result and replaying SHALL produce a Game_State deeply equal to the original (round-trip property).
 8. WHEN the game reaches the phase `ENDED`, THE Persistence_Layer SHALL remove the in-progress save, and SHALL keep the stored language and setup preferences (stored under a separate key).
+9. THE Persistence_Layer SHALL keep in-progress games of `RULES_VERSION = 3` in their own slot, `qroker.practice.save.rules3`. The earlier four-card build used `qroker.practice.save`. The current build SHALL NOT read, migrate, overwrite or delete that earlier slot, so older records survive, and SHALL resume games only from its own slot. `saveVersion` (the envelope format) and `rulesVersion` (the game rules) are separate integers and SHALL NOT be conflated. Criterion 5 therefore applies to the envelope found in the current slot.
 
 ---
 
@@ -479,18 +485,19 @@ Each item has a provisional default that the design and tasks use. Changing a de
 |----|----------|--------|---------|---------------------|
 | OQ-1 | Hidden-identity handling (docs/open-decisions.md #2). With every placed card visible, any Seat can add 4 visible values, the Guess is trivial, and ties dominate. qroker-game 6.1 and 7.4 imply visible Board cards, while 6.4 implies face-down cards flipped at reveal. | open-decisions #2; qroker-game 6.1, 6.4, 7.4 | (a) `FACE_UP`: all placed cards public. (b) `OWNER_ONLY`: only the placer sees a placed card until its code is revealed. (c) Both as an option. | (c) Implement both as the option Identity_Visibility, default `OWNER_ONLY` so that the Guess is a real inference. The setup screen shows the option. No rule is changed. |
 | OQ-2 | Orientation of the 4 Neutral_Cards (not stated in qroker-game 3.1). It matters for ♣ and ♠ in later groups. | qroker-game 3.1, 3.11 | (a) all 0°. (b) seeded random per card. | (a) all 0°. |
-| OQ-3 | Valid starting four cards (open-decisions #3). | open-decisions #3; qroker-game 4.4b | (a) starting group never scored. (b) adjust orientation or arrangement until valid. (c) redeal until valid. | (a), which follows qroker-game 4.4b because the starting group is not formed by a placement. No redeal. |
-| OQ-4 | First-round exemption scope (open-decisions #6). qroker-game 3.5 and the Glossary (Draw_Rule) already say "each player's first placement". | qroker-game 3.5; open-decisions #6 | (a) per-Seat first placement. (b) first N placements of the game. | (a), the approved text. The open-decisions row appears outdated. |
+| OQ-3 | Valid starting four cards (open-decisions #3). | open-decisions #3; qroker-game 4.4b | (a) starting group never scored. (b) adjust orientation or arrangement until valid. (c) redeal until valid. | CLOSED by the owner for `RULES_VERSION = 3`: (a). The four central neutral cards are dealt once. Even if they form a valid code, the starting group earns no points, opens no guesses and counts zero toward the shared code count. There is no redeal and no adjustment. Later codes formed by a placement may include neutral cards and score normally. |
+| OQ-4 | First-round exemption scope (open-decisions #6). RESOLVED by the owner's three-card rules: there is no exemption and the draw rule applies from the very first placement (qroker-game 3.5, as amended; docs/open-decisions.md row 6 updated by Codex). The earlier options below are kept as history. | qroker-game 3.5; open-decisions #6 | (a) per-Seat first placement. (b) first N placements of the game. (c) no exemption (chosen). | (c), the owner's decision. Superseded: (a) per-Seat first placement. |
 | OQ-5 | Unspecified turn rules: first Seat, direction, and whether the placing Seat also guesses. | qroker-game 3.x, 6.1 ("all participating players") | various | `P0` first, increasing order, all 4 Seats guess including the placer. |
 | OQ-6 | Numbering of tied ranks ("same rank", no tiebreak). | qroker-game 3.9 | (a) competition ranking 1,1,3,4. (b) dense ranking 1,1,2,3. | (a) competition ranking. |
 | OQ-7 | UI framework and bundler. | qroker-game design Overview ("bundler-agnostic") | (a) no bundler (tsc + static files). (b) Vite. (c) a UI framework. | (b) Vite as an explicit devDependency, no UI framework. Vite 8.3.8 is already installed as a transitive dependency of Vitest 5.1.0. Flagged decision D3. |
 | OQ-8 | Number of AI players in P1. | qroker-game 7.1, 8 | 1 or 3 AI | 3 AI plus 1 human, because qroker-game 3.2 fixes 4 players. Setup also allows 1–4 human Seats. |
 | OQ-9 | Localization scope. | user request | ko only; ko+en; more | Korean and English for all UI text, help and errors. Card names are glyph based. No other language. |
-| OQ-10 | Score table and hand-empty bonus (open-decisions #7). | qroker-game 2.2, 2.4, 2.9 | simulation | Placeholder only. Final values are decided in P3 or later. |
+| OQ-10 | Score table and hand-empty bonus (open-decisions #7). | qroker-game 2.2, 2.4, 2.9 | simulation | Placeholder only. The new-game configuration currently uses the owner-selected provisional values `[10, 5, 4, 3, 2, 1]` and bonus 5, both configurable. Final values are decided in P3 or later. |
 | OQ-11 | Headless DOM test environment and browser tests. | user request | jsdom, happy-dom, Playwright | `happy-dom` as a devDependency, selected per test file. Playwright is deferred and optional (large browser download). Flagged decision D4. |
 | OQ-12 | Depth of the Composite_Code visualization (qroker-game 8.3). `src/optical/fragments.ts` reads the codebook through `node:fs`, so the optical module cannot run in the browser without a change outside this spec. | qroker-game 8.3 | (a) schematic. (b) pixel patterns via optical module. | (a) schematic, pixel rendering deferred to the Scoring Companion integration. |
 | OQ-13 | Staging of the third AI tier. | qroker-game 7.1, 7.5 | P1 or P2 | P1 ships `BEGINNER` and `ADVANCED` (the two levels required by 7.5). `EXPERT` follows in P2, which completes 7.1. |
 | OQ-14 | Post-game disclosure of Guess values. | qroker-game 6.3 ("while the game is in progress") | never, or after the game | Never disclosed. |
+| OQ-16 | Three-card rules and the shared code limit (owner decision, recorded by Kiro; implementation by Codex, `RULES_VERSION = 3`): 3-card Hands, 36-card draw pile, draw from the first placement, game end by an empty Hand after the draw or by five distinct codes, whole last batch scored, bonus only for the emptier. CLOSED for this version: the Hand size and the code limit are fixed rules. | owner decision; qroker-game 3.2, 3.5, 3.7, 3.13 to 3.15 | (a) fixed constants. (b) configuration fields. | CLOSED: (a), `HAND_SIZE = 3` and `COMPLETED_CODE_LIMIT = 5` are fixed for `RULES_VERSION = 3`; the game configuration has no fields for them. The prediction reward table and the hand-empty bonus stay configurable and provisional (OQ-10). |
 | OQ-15 | Board row direction and cell naming. | qroker-game Glossary | row 1 top or bottom | Row 1 at the top. This does not affect any rule, because rules use TL/TR/BL/BR relative to the screen. |
 
 ## Inconsistencies and Gaps Found in the Approved Documents
@@ -501,7 +508,7 @@ None of these changes an approved rule. Each is resolved here by a provisional d
 - **IC-2**: qroker-game design defines `CardId` as an object `{ suit, rank }` in Core Types but uses a `"suit-rank"` string in `DeckState`, `groupId` and the optical keys (`H-7`). This spec uses the string form.
 - **IC-3**: qroker-game design `GridPosition` is described both as "row 1–8" and "row 0–7". This spec uses zero-based coordinates with notation conversion.
 - **IC-4**: `PredictionBatch.groupIds` in qroker-game design are sorted card ids, so a public batch would reveal the 4 card identities and therefore the Hidden_Sum before collection is complete. This spec uses the Quad_Key in public structures.
-- **IC-5**: docs/open-decisions.md #6 lists the first-round exemption scope as undecided, while qroker-game Requirement 3.5 states it. This spec follows Requirement 3.5.
+- **IC-5** (historical, superseded by the owner's three-card rules): docs/open-decisions.md #6 listed the first-round exemption scope as undecided, while qroker-game Requirement 3.5 stated a per-player exemption. The owner has since removed the exemption (OQ-4, OQ-16); this spec follows Requirement 3.5 as amended.
 - **IC-6**: qroker-game Requirements 6.1 and 7.4 (visible Board cards) and 6.4 (cards flipped at reveal) do not agree on whether Board cards are hidden (see OQ-1).
 - **IC-7**: qroker-game Requirement 8.3 asks Practice Mode to render the Composite_Code for optical verification, but the optical module is a separate library that is not browser-loadable (see OQ-12).
 - **IC-8**: qroker-game Requirement 11.4 says to "document the tiebreaking rule" while Requirement 3.9 says no separate tiebreak applies. This spec treats equal Guesses as equal scores and equal final Scores as shared ranks, and documents that no tiebreak exists.

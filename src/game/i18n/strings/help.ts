@@ -23,7 +23,7 @@ export const en = Object.freeze({
 
   'help.s2.title': 'The board',
   'help.s2.body':
-    'The board is an 8×8 grid with columns A to H. At the start, 4 neutral cards lie in the middle of the board. Neutral cards belong to nobody.',
+    'The board is an 8×8 grid with columns A to H. At the start, 4 neutral cards lie in the middle of the board. Neutral cards belong to nobody. Each player starts with three cards.',
 
   'help.s3.title': 'Where a card can go',
   'help.s3.body':
@@ -47,7 +47,7 @@ export const en = Object.freeze({
 
   'help.s8.title': 'Drawing cards',
   'help.s8.body':
-    'After you place a card that does not complete a new code, you draw one card from the deck. There are two exceptions: your first placement never draws, and a placement that completes a code draws nothing. When the deck is empty nothing is drawn and the game goes on.',
+    'After you place a card that does not complete a new code, you draw one card from the deck. This applies from your first placement. A placement that completes a code draws nothing. When the deck is empty nothing is drawn and the game goes on.',
 
   'help.s9.title': 'Reveal and points',
   'help.s9.body':
@@ -55,7 +55,7 @@ export const en = Object.freeze({
 
   'help.s10.title': 'End of the game and ranking',
   'help.s10.body':
-    'The game ends when a player has no cards left in hand. The guesses and scoring of that last placement are finished first, and that player receives an end bonus. An empty deck does not end the game. Players are ranked by final score, highest first. Players with equal scores share the same rank, and there is no further tiebreak.',
+    'The game ends when a player has no cards left in hand or the players have completed at least five codes in total. Every code from the last placement is scored first. Only a player who empties their hand receives an end bonus. An empty deck does not end the game. Players are ranked by final score, highest first. Players with equal scores share the same rank, and there is no further tiebreak.',
 
   'help.visibility.title': 'Card visibility option',
   'help.visibility.body':
@@ -82,7 +82,7 @@ export const ko: Record<keyof typeof en, string> = Object.freeze({
   'help.s2.title': '보드',
   // REVIEW: new text, needs native-speaker check
   'help.s2.body':
-    '보드는 열 A부터 H까지의 8×8 격자입니다. 게임을 시작할 때 중립 카드 4장이 보드 가운데에 놓여 있습니다. 중립 카드는 누구의 것도 아닙니다.',
+    '보드는 열 A부터 H까지의 8×8 격자입니다. 게임을 시작할 때 중립 카드 4장이 보드 가운데에 놓여 있습니다. 중립 카드는 누구의 것도 아닙니다. 각 플레이어는 손패 세 장으로 시작합니다.',
 
   // REVIEW: new text, needs native-speaker check
   'help.s3.title': '카드를 놓을 수 있는 곳',
@@ -118,7 +118,7 @@ export const ko: Record<keyof typeof en, string> = Object.freeze({
   'help.s8.title': '카드 뽑기',
   // REVIEW: new text, needs native-speaker check
   'help.s8.body':
-    '새 조합을 완성하지 않는 카드를 놓으면 덱에서 카드 한 장을 뽑습니다. 예외가 두 가지 있습니다. 각 플레이어의 첫 번째 배치에서는 뽑지 않고, 조합을 완성하는 배치에서도 뽑지 않습니다. 덱이 비어 있으면 아무것도 뽑지 않고 게임은 계속됩니다.',
+    '새 조합을 완성하지 않는 카드를 놓으면 덱에서 카드 한 장을 뽑습니다. 첫 배치부터 이 규칙을 적용합니다. 조합을 완성하면 뽑지 않습니다. 덱이 비어 있으면 아무것도 뽑지 않고 게임은 계속됩니다.',
 
   // REVIEW: new text, needs native-speaker check
   'help.s9.title': '공개와 점수',
@@ -130,7 +130,7 @@ export const ko: Record<keyof typeof en, string> = Object.freeze({
   'help.s10.title': '게임 종료와 순위',
   // REVIEW: new text, needs native-speaker check
   'help.s10.body':
-    '한 플레이어의 손패가 비면 게임이 끝납니다. 그 마지막 배치에 따른 예측과 점수 계산을 먼저 마치고, 그 플레이어는 종료 보너스를 받습니다. 덱이 비는 것만으로는 게임이 끝나지 않습니다. 최종 점수가 높은 순서대로 순위를 매기며, 점수가 같은 플레이어는 같은 순위를 공유합니다. 동점을 가르는 별도의 규칙은 없습니다.',
+    '한 플레이어의 손패가 비거나 모두가 완성한 조합이 누적 다섯 개에 도달하면 게임이 끝납니다. 마지막 배치에서 생긴 모든 조합의 예측과 채점을 마친 뒤, 손패를 비운 플레이어만 종료 보너스를 받습니다. 덱이 비는 것만으로는 게임이 끝나지 않습니다. 최종 점수가 높은 순서대로 순위를 매기며, 점수가 같은 플레이어는 같은 순위를 공유합니다. 동점을 가르는 별도의 규칙은 없습니다.',
 
   // REVIEW: new text, needs native-speaker check
   'help.visibility.title': '카드 공개 방식 설정',

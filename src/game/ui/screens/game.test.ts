@@ -278,7 +278,7 @@ describe('one human seat: setup to final ranking through the host DOM', () => {
 
   it('keeps the typed Guess, its element and its focus through re-renders and a language switch', () => {
     const h = boot();
-    click(byId(h, 'setup-start'));
+    expect(h.ctl.startFromSetup(options(1, '1'))).toEqual({ ok: true });
     drive(h, hasGuessForm);
     const input = byClass(h, 'guess-input')[0] as FakeEl;
     const id = input.getAttribute('id') as string;
@@ -303,7 +303,7 @@ describe('one human seat: setup to final ranking through the host DOM', () => {
 
   it('keeps the typed Guess when Help opens, makes the region inert, closes on Escape and restores the focus', () => {
     const h = boot();
-    click(byId(h, 'setup-start'));
+    expect(h.ctl.startFromSetup(options(1, '1'))).toEqual({ ok: true });
     drive(h, hasGuessForm);
     const input = byClass(h, 'guess-input')[0] as FakeEl;
     (input as unknown as { value: string }).value = '41';
@@ -557,7 +557,7 @@ describe('two human seats and two AI seats', () => {
 
 describe('four human seats', () => {
   it('plays to the end behind gates with no foreign cards, no previous Guesses and no hidden private DOM', () => {
-    const r = playMultiHuman(4, '9');
+    const r = playMultiHuman(4, '1');
     expect(r.gates).toBeGreaterThan(0);
     expect(r.reveals).toBeGreaterThan(0);
     const rows = elementsOf(byClass(r.h, 'end-ranking')[0] as FakeEl).filter((e) => e.tagName === 'tr' && e.hasAttribute('data-seat'));

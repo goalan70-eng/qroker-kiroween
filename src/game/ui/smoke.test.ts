@@ -277,7 +277,7 @@ describe('replay and rematch from the end screen', () => {
   it(`replay same seed ${REPLAY_SEED}: same seed, same initial hand and board`, () => {
     const app = mountTestApp({ seed: REPLAY_SEED });
     const { ctx, stats } = playGame(app, REPLAY_SEED, 'OWNER_ONLY', false);
-    ensure(ctx, stats.initial !== null && stats.initial.hand.length === 4, 'the first initial hand was not captured');
+    ensure(ctx, stats.initial !== null && stats.initial.hand.length === 3, 'the first initial hand was not captured');
     clickByLabel(app, label(app, 'end.replay'));
     const model = app.controller.getModel();
     ensure(ctx, model.screen === 'GAME' && model.lastError === null, 'the replay did not start a game');
@@ -292,7 +292,7 @@ describe('replay and rematch from the end screen', () => {
   it(`rematch: a different injected seed and a different initial hand`, () => {
     const app = mountTestApp({ seeds: [REPLAY_SEED, REMATCH_SEED] });
     const { ctx, stats } = playGame(app, REPLAY_SEED, 'OWNER_ONLY', false);
-    ensure(ctx, stats.initial !== null && stats.initial.hand.length === 4, 'the first initial hand was not captured');
+    ensure(ctx, stats.initial !== null && stats.initial.hand.length === 3, 'the first initial hand was not captured');
     clickByLabel(app, label(app, 'end.rematch'));
     const model = app.controller.getModel();
     ensure(ctx, model.screen === 'GAME' && model.lastError === null, 'the rematch did not start a game');
