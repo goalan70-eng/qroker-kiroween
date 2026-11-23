@@ -35,11 +35,11 @@ export const GUESS_MAX = 52;
 /**
  * Development placeholder, no balance claim.
  *
- * The numbers below are provisional and undecided. They exist only so that scores are visible and
- * differ by accuracy during development. They are not a balance decision and must not be read as
- * balanced or final. The final values are to be determined by simulation (docs/open-decisions.md
+ * The owner selected these provisional values on 2026-11-16: exact 10, errors 1..5 score 5..1,
+ * and hand-empty bonus 5. They must not be read as experimentally balanced or final.
+ * Final balance is to be evaluated by simulation (docs/open-decisions.md
  * item 7, milestone P3). Nothing may depend on these values; tests derive expectations from the
- * configuration they pass in.
+ * configuration they pass in, except the explicit owner-approved default-score contract tests.
  *
  * This is the only place in the game code where a numeric score table is written
  * (checked by the 'score-table' rule of src/game/boundaries.test.ts).
@@ -48,8 +48,8 @@ export const DEV_PLACEHOLDER_SCORE_CONFIG: NamedScoreConfig = {
   id: 'DEV_PLACEHOLDER',
   provisional: true,
   config: {
-    rewardByError: [6, 4, 3, 2, 1],
-    handEmptyBonus: 3,
+    rewardByError: [10, 5, 4, 3, 2, 1],
+    handEmptyBonus: 5,
   },
 };
 

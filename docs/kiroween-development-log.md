@@ -66,3 +66,38 @@ rewrite history or relabel Codex work as Kiro work.
   commit (`git log -- docs/kiroween-development-log.md`).
   No amend/rebase/history rewriting is used. Branch remains for review;
   no merge, application deployment or application publication is authorized by this entry.
+
+## 2026-11-16 — Owner-approved provisional score revision
+
+- Context: [Issue #9](https://github.com/goalan70-eng/qroker-kiroween/issues/9).
+  The owner explicitly requested `10 / 5·4·3·2·1 / 5` in this chat. This
+  authorizes the default-score revision, not completion of the balance study.
+- Implementation tool: **Codex**. Supporting tools: TypeScript, Vitest,
+  happy-DOM, Vite, Playwright/Chromium 159.0.8154.6 and Git/GitHub. No Kiro
+  execution or paid model API request occurred.
+- Changed files: `src/game/core/score.ts` (new defaults, provisional flag kept),
+  `src/game/core/score.test.ts` (exact/error/cutoff/bonus contract),
+  `src/game/persistence/storage.test.ts` (legacy-score save round trip),
+  `src/game/ui/overlays/help.test.ts` (derive prohibited score tokens rather
+  than pin the obsolete defaults), `.kiro/specs/qroker-playable-game/design.md`
+  (owner-authorized numeric examples and compatibility note),
+  `docs/practice-mode.md` (current points table) and this log.
+- New games: exact Guess 10; absolute errors 1–5 score 5,4,3,2,1; error ≥6
+  scores 0; empty-Hand bonus +5. Existing saves retain their serialized
+  ScoreConfig and already-earned scores. Replay semantics, RULES_VERSION,
+  save format, game flow, optical codebook and Kiro task history are unchanged.
+  Earlier diagnostic reports are historical evidence and were not rewritten.
+- Verification: new contract tests first failed on the old defaults (7
+  expected failures); after the change, root/game type checks and build
+  passed. `E2E_SEEDS=200 npm run test:ci`: **109 files / 3,048 tests passed**
+  (89.64 s), including 1,200 headless games. Fresh built-preview Chromium:
+  **4/4 passed** (1.4 min), covering full game, public reveal/scoring,
+  save/resume and calibrated Guess scoring after reload. Command:
+  `PLAYWRIGHT_PREVIEW=1 npx playwright test game.spec.ts persistence.spec.ts --grep 'one human and three BEGINNER|earned and cumulative points|calibrated Guesses|Continue restores Board'`.
+- Limits: no claim that these values are balanced; Issue #9's comparative
+  experiments remain outstanding. No new human/device or Firefox/Safari
+  testing, merge or deployment. Branch `codex/issue-9-score-table` is based on
+  the unmerged Issue #8 branch so that the existing audit PR remains separate.
+- Commit: `5d75eee`. PR: [#13](https://github.com/goalan70-eng/qroker-kiroween/pull/13)
+  (draft, stacked on PR #12; no merge). The successful local checks above are
+  distinct from the new PR-head GitHub Actions result, which is not yet verified.

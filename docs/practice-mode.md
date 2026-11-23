@@ -6,6 +6,22 @@ The browser game supports one to four local human players, with offline
 The browser game does not scan physical cards and does not implement the complete
 physical game or the Scoring Companion.
 
+Current owner-selected provisional scores (2026-11-16):
+
+| Absolute Guess error | Points |
+| --- | --- |
+| Exact | 10 |
+| ±1 | 5 |
+| ±2 | 4 |
+| ±3 | 3 |
+| ±4 | 2 |
+| ±5 | 1 |
+| ±6 or more | 0 |
+| Hand emptied | +5 bonus |
+
+These defaults apply to new games. Resuming an older save preserves the score
+configuration stored with that game; it does not silently rescore the game.
+
 ## Install and run
 
 Use Node.js 24 and npm. From the repository root:
