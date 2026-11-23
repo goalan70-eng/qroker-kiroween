@@ -11,7 +11,7 @@ const expected = new Map([
   ['QRoker Spec start evidence', 'PreTaskExec'],
   ['QRoker destructive shell guard', 'PreToolUse'],
   ['QRoker fast TypeScript syntax check', 'PostFileSave'],
-  ['QRoker agent turn mobile notification', 'AgentStop'],
+  ['QRoker agent turn mobile notification', 'Stop'],
   ['QRoker optional OpenAI independent review', 'PostTaskExec']
 ]);
 const files = [

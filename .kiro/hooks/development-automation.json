@@ -39,7 +39,7 @@
     {
       "name": "QRoker agent turn mobile notification",
       "description": "Optional generic ntfy alert when an agent response ends, throttled and deduplicated against Spec notifications.",
-      "trigger": "AgentStop",
+      "trigger": "Stop",
       "action": {
         "type": "command",
         "command": "node scripts/automation-hooks.mjs agent-stop"
