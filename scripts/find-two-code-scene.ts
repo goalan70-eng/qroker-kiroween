@@ -63,10 +63,10 @@ function search(seed: number): Candidate | null {
   let state: GameState = created.value;
   const humanMoves: Array<Record<string, unknown>> = [];
 
-  const apply = (action: Action): void => {
+  const apply = (action: Action): GameState => {
     const next = reduce(state, action);
     if (!next.ok) throw new Error(`seed ${seed}: rejected ${JSON.stringify(action)}: ${next.error.code} ${next.error.detail ?? ''}`);
-    state = next.value;
+    return next.value;
   };
 
   let captured: Candidate | null = null;
@@ -79,7 +79,7 @@ function search(seed: number): Candidate | null {
         const guessesBySeat = Object.fromEntries(submissions.map((a) => [a.player, { ...a.guesses }]));
         return { ...captured, guessesBySeat, reveal: state.lastReveal, cumulativeAfter: Object.fromEntries(state.lastReveal.perPlayer.map((p) => [p.player, p.cumulative])), humanMoves };
       }
-      apply({ type: 'ACK_REVEAL' });
+      state = apply({ type: 'ACK_REVEAL' });
       continue;
     }
 
@@ -92,11 +92,11 @@ function search(seed: number): Candidate | null {
         const cell = legalCellsFor(view)[0];
         if (card === undefined || cell === undefined) throw new Error(`seed ${seed}: no card or cell`);
         humanMoves.push({ seat: HUMAN, action: 'PLACE', card, row: cell.row, col: cell.col, orientation: 0 });
-        apply({ type: 'PLACE', player: HUMAN, card, pos: { row: cell.row, col: cell.col }, orientation: 0 });
+        state = apply({ type: 'PLACE', player: HUMAN, card, pos: { row: cell.row, col: cell.col }, orientation: 0 });
       } else {
         const ctx = Object.freeze({ decisionSeed: decisionSeed(state.seed, seat, state.log.length) });
         const difficulty = config.seats[SEATS.indexOf(seat)]!.difficulty!;
-        apply(getStrategy(difficulty).choosePlacement(viewFor(state, seat), ctx));
+        state = apply(getStrategy(difficulty).choosePlacement(viewFor(state, seat), ctx));
       }
       const placed = state.log[placeIndex] as Extract<Action, { type: 'PLACE' }>;
       if (state.phase === 'GUESS_COLLECT' && state.pending !== null && state.pending.codes.length >= 2 && captured === null) {
@@ -128,11 +128,11 @@ function search(seed: number): Candidate | null {
           guesses[c.quadKey] = 20 + i;
         });
         humanMoves.push({ seat: HUMAN, action: 'SUBMIT_GUESSES', guesses: { ...guesses } });
-        apply({ type: 'SUBMIT_GUESSES', player: HUMAN, guesses });
+        state = apply({ type: 'SUBMIT_GUESSES', player: HUMAN, guesses });
       } else {
         const ctx = Object.freeze({ decisionSeed: decisionSeed(state.seed, seat, state.log.length) });
         const difficulty = config.seats[SEATS.indexOf(seat)]!.difficulty!;
-        apply(getStrategy(difficulty).chooseGuesses(viewFor(state, seat), ctx));
+        state = apply(getStrategy(difficulty).chooseGuesses(viewFor(state, seat), ctx));
       }
       continue;
     }

@@ -83,8 +83,8 @@ interface GameRecord {
 }
 
 function configFor(mode: IdentityVisibility, lineup: Record<PlayerId, Difficulty>): GameConfig {
-  const seats: SeatConfig[] = SEATS.map((id) => ({ id, kind: 'AI', difficulty: lineup[id], name: id }) as SeatConfig);
-  return { ...defaultConfig(), seats, identityVisibility: mode };
+  const aiSeat = (id: PlayerId): SeatConfig => ({ id, kind: 'AI', difficulty: lineup[id], name: id });
+  return { ...defaultConfig(), seats: [aiSeat('P0'), aiSeat('P1'), aiSeat('P2'), aiSeat('P3')], identityVisibility: mode };
 }
 
 function dealHash(seed: number, config: GameConfig): string {
