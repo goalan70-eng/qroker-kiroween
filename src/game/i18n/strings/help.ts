@@ -51,7 +51,7 @@ export const en = Object.freeze({
 
   'help.s9.title': 'Reveal and points',
   'help.s9.body':
-    'When every player has guessed, the cards of the code and its hidden sum are revealed to everyone at the same time. The points depend on the distance between each guess and the hidden sum, and a closer guess never earns fewer points than a farther one. If one placement forms several codes, they are guessed and revealed together. The guesses themselves are not shown.',
+    'When every player has guessed, all players see the points together. In Normal they also see the four cards and their sum. Blind keeps cards hidden and shows the sum only if that feedback was selected. The points depend on the distance between each guess and the hidden sum, and a closer guess never earns fewer points than a farther one. If one placement forms several codes, they are guessed and revealed together. The guesses themselves are not shown.',
 
   'help.s10.title': 'End of the game and ranking',
   'help.s10.body':
@@ -59,7 +59,7 @@ export const en = Object.freeze({
 
   'help.visibility.title': 'Card visibility option',
   'help.visibility.body':
-    'The setup screen has an option for who can see placed cards. Only the owner sees a card: the player who placed a card sees it until the code that contains it is revealed, then everyone sees it. Neutral cards are visible to everyone. Cards are face up: every placed card is visible to everyone.',
+    'Normal starts with the four center cards face up. You can see your own placements. Once everyone predicts, the four cards of each completed code stay face up for everyone. In Blind you can see your hand, but all board cards stay face down through the final history. Choose points only or the correct sum and points at setup.',
 
   'help.provisional.body': 'the point values are a development placeholder and may change.',
 } as const);
@@ -124,7 +124,7 @@ export const ko: Record<keyof typeof en, string> = Object.freeze({
   'help.s9.title': '공개와 점수',
   // REVIEW: new text, needs native-speaker check
   'help.s9.body':
-    '모든 플레이어가 예측을 마치면 조합의 카드와 숨겨진 합이 모두에게 동시에 공개됩니다. 점수는 각 예측값과 숨겨진 합의 차이에 따라 정해지며, 더 가까운 예측이 더 먼 예측보다 적은 점수를 받는 일은 없습니다. 한 번의 배치로 조합이 여러 개 만들어지면 함께 예측하고 함께 공개합니다. 예측값 자체는 표시되지 않습니다.',
+    '모두 예측을 마치면 함께 점수를 확인합니다. 일반에서는 조합의 네 장과 정답 합도 공개됩니다. 블라인드에서는 카드가 계속 가려지고 정답 합은 선택한 설정에 따라 표시됩니다. 점수는 각 예측값과 숨겨진 합의 차이에 따라 정해지며, 더 가까운 예측이 더 먼 예측보다 적은 점수를 받는 일은 없습니다. 한 번의 배치로 조합이 여러 개 만들어지면 함께 예측하고 함께 공개합니다. 예측값 자체는 표시되지 않습니다.',
 
   // REVIEW: new text, needs native-speaker check
   'help.s10.title': '게임 종료와 순위',
@@ -136,7 +136,7 @@ export const ko: Record<keyof typeof en, string> = Object.freeze({
   'help.visibility.title': '카드 공개 방식 설정',
   // REVIEW: new text, needs native-speaker check
   'help.visibility.body':
-    '설정 화면에서 놓인 카드를 누가 볼 수 있는지 고를 수 있습니다. 카드 주인만 볼 수 있음: 카드를 놓은 플레이어만 그 카드를 볼 수 있고, 그 카드가 속한 조합이 공개되면 모두가 볼 수 있습니다. 중립 카드는 모두에게 보입니다. 카드를 앞면으로 공개: 놓인 모든 카드를 모든 플레이어가 볼 수 있습니다.',
+    '일반에서는 중앙 4장을 앞면으로 놓습니다. 자기가 놓은 카드는 볼 수 있고, 모두 예측하면 완성된 조합의 네 장을 모두에게 공개합니다. 블라인드에서는 자기 손패만 보이고 중앙 카드를 포함한 보드 전체가 끝까지 뒷면입니다. 정답 합과 점수를 볼지, 점수만 볼지 시작 전에 고르세요.',
 
   // REVIEW: new text, needs native-speaker check
   'help.provisional.body': '점수 값은 개발용 임시 값이며 바뀔 수 있습니다.',

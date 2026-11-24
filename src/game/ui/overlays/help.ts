@@ -21,7 +21,7 @@
 //   drawing     draw rule, first placement       6.3, 6.4, 6.5, 6.6, 9.3
 //   reveal      simultaneous reveal, points      7.1, 7.6, 7.8, 8.1, 8.2
 //   end         hand-empty end, ranking          8.8, 9.1, 9.3, 9.4
-//   visibility  OWNER_ONLY and FACE_UP           10.4, 10.5, 15.1 (option only; no default is stated, OQ-1)
+//   visibility  Normal and Blind feedback options    10.4, 10.5, 15.1
 //   provisional notice, only when flagged        16.1, 14.8, 8.5
 //
 // Behaviour: see `modal.ts` for the shared dialog mechanics (focus trap, Escape, focus restoration, no duplicate

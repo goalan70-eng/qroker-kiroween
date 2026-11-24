@@ -102,7 +102,7 @@ export interface EndHistoryCode {
   readonly cells: readonly string[];
   /** The card identities the record supplies (public once revealed). */
   readonly cards: readonly CardId[];
-  readonly hiddenSum: number;
+  readonly hiddenSum: number | null;
 }
 
 export interface EndHistorySeat {
@@ -448,8 +448,8 @@ export function renderEnd(doc: EndDocument, root: HTMLElement, input: EndInput, 
             { class: 'end-code', attrs: { 'data-quad-key': code.quadKey }, aria: { labelledby: codeTitleId } },
             h('h5', { id: codeTitleId }, t('reveal.code.title', { key: code.quadKey })),
             h('p', { class: 'end-cells' }, t('end.history.cells', { cells: code.cells.join(', ') })),
-            h('p', { class: 'end-sum' }, t('reveal.code.sum', { sum: code.hiddenSum })),
-            h('ul', { class: 'end-cards', aria: { label: t('reveal.code.cards', { key: code.quadKey }) } }, ...code.cards.map(paintCard)),
+            code.hiddenSum === null ? null : h('p', { class: 'end-sum' }, t('reveal.code.sum', { sum: code.hiddenSum })),
+            code.cards.length === 0 ? null : h('ul', { class: 'end-cards', aria: { label: t('reveal.code.cards', { key: code.quadKey }) } }, ...code.cards.map(paintCard)),
           ),
         );
       }

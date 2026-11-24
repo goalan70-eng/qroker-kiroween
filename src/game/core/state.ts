@@ -49,10 +49,10 @@ export interface PendingBatch {
 }
 
 /** Public once created. Contains no guess value. */
-export interface RevealRecord {
+export interface RevealRecord<Sum extends number | null = number> {
   readonly batchIndex: number;
   readonly placer: PlayerId;
-  readonly codes: readonly { readonly quadKey: QuadKey; readonly cards: readonly CardId[]; readonly hiddenSum: number }[];
+  readonly codes: readonly { readonly quadKey: QuadKey; readonly cards: readonly CardId[]; readonly hiddenSum: Sum }[];
   readonly perPlayer: readonly { readonly player: PlayerId; readonly earned: number; readonly cumulative: number }[];
 }
 

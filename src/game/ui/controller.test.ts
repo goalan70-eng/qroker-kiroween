@@ -1796,7 +1796,7 @@ describe('task 19.1: startFromSetup', () => {
 
   it('applies both visibilities and keeps the rules version and the provisional score config of defaultConfig()', () => {
     const base = defaultConfig();
-    for (const visibility of ['OWNER_ONLY', 'FACE_UP'] as const) {
+    for (const visibility of ['OWNER_ONLY', 'BLIND', 'BLIND_SCORE_ONLY'] as const) {
       const { ctl } = make(new QueueScheduler().schedule);
       expect(ctl.startFromSetup(setup({ identityVisibility: visibility }))).toEqual({ ok: true });
       const rules = (ctl.getView('P0') as PlayerView).rules;
@@ -1843,11 +1843,11 @@ describe('task 19.1: startFromSetup', () => {
     const seen: string[] = [];
     for (let run = 0; run < 2; run++) {
       const { ctl } = make(new QueueScheduler().schedule);
-      expect(ctl.startFromSetup(setup({ seedText: 'qroker', humanCount: 2, difficulties: tiers, identityVisibility: 'FACE_UP' }))).toEqual({ ok: true });
+      expect(ctl.startFromSetup(setup({ seedText: 'qroker', humanCount: 2, difficulties: tiers, identityVisibility: 'BLIND' }))).toEqual({ ok: true });
       seen.push(JSON.stringify(ctl.getView('P0')));
     }
     expect(seen[0]).toBe(seen[1]);
-    const direct = directView(fnv1a32('qroker'), expectedConfig(2, tiers, 'FACE_UP'), 'P0');
+    const direct = directView(fnv1a32('qroker'), expectedConfig(2, tiers, 'BLIND'), 'P0');
     expect(JSON.parse(seen[0] as string)).toEqual(JSON.parse(JSON.stringify(direct)));
   });
 

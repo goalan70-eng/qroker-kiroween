@@ -77,7 +77,7 @@ export interface RevealCode {
   /** The card identities the record supplies (public once revealed). */
   readonly cards: readonly CardId[];
   /** The publicly revealed Hidden_Sum. */
-  readonly hiddenSum: number;
+  readonly hiddenSum: number | null;
 }
 
 export interface RevealSeat {
@@ -290,8 +290,11 @@ export function renderReveal(
           'section',
           { class: 'reveal-code', attrs: { 'data-quad-key': code.quadKey }, aria: { labelledby: titleId } },
           h('h3', { id: titleId, class: 'reveal-code-title' }, t('reveal.code.title', { key: code.quadKey })),
-          h('p', { class: 'reveal-sum' }, t('reveal.code.sum', { sum: code.hiddenSum })),
-          h(
+          code.hiddenSum === null ? null : h('p', { class: 'reveal-sum' },
+            h('span', null, t('reveal.code.sum', { sum: '' })),
+            h('strong', null, code.hiddenSum),
+          ),
+          code.cards.length === 0 ? null : h(
             'ul',
             { class: 'reveal-cards', aria: { label: t('reveal.code.cards', { key: code.quadKey }) } },
             ...code.cards.map((card) => h('li', { class: 'reveal-card' }, revealCardFace(h, card, t))),
@@ -315,7 +318,7 @@ export function renderReveal(
               'tr',
               { attrs: { 'data-seat': seat.id } },
               h('th', { attrs: { scope: 'row' } }, seat.name),
-              h('td', { class: 'reveal-earned' }, seat.earned),
+              h('td', { class: 'reveal-earned' }, h('span', { class: 'score-stamp' }, seat.earned)),
               h('td', { class: 'reveal-total' }, seat.cumulative),
               seat.finalScore === null ? null : h('td', { class: 'reveal-final' }, seat.finalScore),
             ),

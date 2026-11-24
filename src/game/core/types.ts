@@ -80,7 +80,12 @@ export interface NamedScoreConfig {
   readonly config: ScoreConfig;
 }
 
-export type IdentityVisibility = 'OWNER_ONLY' | 'FACE_UP';
+/** FACE_UP is retained for existing saves. New sessions offer normal and two blind feedback settings. */
+export type IdentityVisibility = 'OWNER_ONLY' | 'FACE_UP' | 'BLIND' | 'BLIND_SCORE_ONLY';
+
+export function isBlindMode(mode: IdentityVisibility): boolean {
+  return mode === 'BLIND' || mode === 'BLIND_SCORE_ONLY';
+}
 
 export interface SeatConfig {
   readonly id: PlayerId;

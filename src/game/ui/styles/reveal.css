@@ -23,16 +23,68 @@
   border: var(--stroke) solid var(--color-banner-border);
 }
 .reveal-code {
-  margin: var(--space-3) 0;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  grid-template-areas: "cards title" "cards sum";
+  align-content: center;
+  gap: .2rem clamp(.65rem, 2vw, 1.5rem);
+  margin: .8rem 0;
+  padding: .85rem;
+  color: var(--felt);
+  background: var(--color-paper);
+  border: 1px solid var(--rule);
+  border-inline-start: .35rem solid var(--felt);
+}
+.reveal-code:not(:has(.reveal-cards)) { display: block; }
+.reveal-code-title {
+  grid-area: title;
+  align-self: end;
+  margin: 0;
+  font: bold 1.2rem var(--font-display);
+}
+.reveal-sum {
+  grid-area: sum;
+  margin: 0;
+  font-size: .875rem;
+}
+.reveal-sum strong {
+  display: block;
+  font: bold clamp(2rem, 4vw, 3.4rem)/1.1 var(--font-display);
+  color: var(--print-red);
 }
 .reveal-cards {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+  grid-area: cards;
+  display: grid;
+  grid-template-columns: repeat(2, max-content);
+  gap: 2px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
+.reveal-card .card-face--hand {
+  --card-unit: clamp(2.75rem, 5vw, 3.4rem);
+  display: block;
+}
+.reveal-points caption, .scoreboard-table caption {
+  text-align: start;
+  font: bold 1.2rem var(--font-display);
+  color: var(--felt);
+  padding-block: .45rem;
+}
+.reveal-points thead, .scoreboard-table thead {
+  color: var(--stock);
+  background: var(--felt);
+}
+.reveal-points tbody tr, .scoreboard-table tbody tr { border-block-end: 1px solid var(--rule); }
+.score-stamp {
+  display: inline-block;
+  padding: .08rem .42rem;
+  border: 1px solid currentColor;
+  border-radius: .16rem;
+  color: var(--print-red);
+  font-weight: 750;
+}
+.score-stamp::before { content: '+'; }
 .reveal-points,
 .scoreboard-table {
   display: block;

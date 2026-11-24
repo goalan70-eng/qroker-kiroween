@@ -84,7 +84,7 @@ const MAX_SEED = 4294967295;
 
 const SEAT_IDS: readonly PlayerId[] = ['P0', 'P1', 'P2', 'P3'];
 const DIFFICULTIES: readonly string[] = ['BEGINNER', 'ADVANCED', 'EXPERT'] satisfies readonly Difficulty[];
-const VISIBILITIES: readonly string[] = ['OWNER_ONLY', 'FACE_UP'] satisfies readonly IdentityVisibility[];
+const VISIBILITIES: readonly string[] = ['OWNER_ONLY', 'FACE_UP', 'BLIND', 'BLIND_SCORE_ONLY'] satisfies readonly IdentityVisibility[];
 /** `<Suit>-<Rank>`: suits H D C S, ranks A 2..10 J Q K (the 52 CardIds of core/cards). */
 const CARD_ID_PATTERN = /^[HDCS]-(?:A|10|[2-9]|J|Q|K)$/;
 /** Notation of the top-left cell of a 2x2 region: columns A-G, rows 1-7 (core/geometry `quadKey`). */

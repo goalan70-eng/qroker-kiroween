@@ -441,7 +441,7 @@ describe('Continue', () => {
 describe('Discard', () => {
   it('removes only the save, shows the setup screen, keeps the stored prefs and the language', () => {
     const prefsStore = memoryStore();
-    const prefs: SetupPrefs = { humanCount: 3, difficulties: ['BEGINNER', 'ADVANCED', 'BEGINNER', 'ADVANCED'], identityVisibility: 'FACE_UP' };
+    const prefs: SetupPrefs = { humanCount: 3, difficulties: ['BEGINNER', 'ADVANCED', 'BEGINNER', 'ADVANCED'], identityVisibility: 'BLIND' };
     writePrefs(prefsStore, { language: 'ko', setup: prefs });
     const prefsText = prefsStore.getItem(PREFS_KEY) as string;
     const h = boot(withSave(SAVES.placement1(), { init: { [PREFS_KEY]: prefsText }, language: 'en' }));
@@ -455,7 +455,7 @@ describe('Discard', () => {
     expect(text(byId(h, 'setup-start'))).toBe(text(byId(h, 'setup-start'))); // present
     expect(h.input().model.language).toBe('ko');
     expect(checked(byId(h, 'setup-humans-3'))).toBe(true);
-    expect(checked(byId(h, 'setup-visibility-FACE_UP'))).toBe(true);
+    expect(checked(byId(h, 'setup-visibility-BLIND'))).toBe(true);
     expect(h.doc.activeElement).toBe(byId(h, 'setup-seed')); // the focus did not fall to the page
     expect(h.ctl.discardSaved()).toEqual({ ok: false, reason: 'NO_RESUME' });
   });
@@ -700,10 +700,10 @@ describe('language switch', () => {
 describe('setup preferences', () => {
   it('starts with the stored prefs, persists a change as sanitized prefs without a seed, and a started game stores them', () => {
     const prefsStore = memoryStore();
-    writePrefs(prefsStore, { language: 'en', setup: { humanCount: 2, difficulties: ['BEGINNER', 'BEGINNER', 'ADVANCED', 'ADVANCED'], identityVisibility: 'FACE_UP' } });
+    writePrefs(prefsStore, { language: 'en', setup: { humanCount: 2, difficulties: ['BEGINNER', 'BEGINNER', 'ADVANCED', 'ADVANCED'], identityVisibility: 'BLIND' } });
     const h = boot({ init: { [PREFS_KEY]: prefsStore.getItem(PREFS_KEY) as string }, durable: true });
     expect(checked(byId(h, 'setup-humans-2'))).toBe(true);
-    expect(checked(byId(h, 'setup-visibility-FACE_UP'))).toBe(true);
+    expect(checked(byId(h, 'setup-visibility-BLIND'))).toBe(true);
     expect(h.input().model.setupPrefs.humanCount).toBe(2);
 
     const three = byId(h, 'setup-humans-3') as FakeEl;
@@ -711,14 +711,14 @@ describe('setup preferences', () => {
     expect(h.input().model.setupPrefs.humanCount).toBe(3);
     const stored = readPrefs(h.inner);
     expect(stored.language).toBe('en');
-    expect(stored.setup).toEqual({ humanCount: 3, difficulties: ['BEGINNER', 'BEGINNER', 'ADVANCED', 'ADVANCED'], identityVisibility: 'FACE_UP' });
+    expect(stored.setup).toEqual({ humanCount: 3, difficulties: ['BEGINNER', 'BEGINNER', 'ADVANCED', 'ADVANCED'], identityVisibility: 'BLIND' });
     expect(h.inner.getItem(PREFS_KEY)).not.toMatch(/seed/i);
 
     (byId(h, 'setup-seed') as unknown as { value: string }).value = '31415926';
     click(byId(h, 'setup-start'));
     expect(h.input().model.screen).toBe('GAME');
     expect(h.input().seed).toBe(31415926);
-    expect(readPrefs(h.inner).setup).toEqual({ humanCount: 3, difficulties: ['BEGINNER', 'BEGINNER', 'ADVANCED', 'ADVANCED'], identityVisibility: 'FACE_UP' });
+    expect(readPrefs(h.inner).setup).toEqual({ humanCount: 3, difficulties: ['BEGINNER', 'BEGINNER', 'ADVANCED', 'ADVANCED'], identityVisibility: 'BLIND' });
     expect(h.inner.getItem(PREFS_KEY)).not.toContain('31415926');
     expect(envelopeOf(h.inner.getItem(SAVE_KEY) as string).config.seats.filter((s) => s.kind === 'HUMAN')).toHaveLength(3);
   });

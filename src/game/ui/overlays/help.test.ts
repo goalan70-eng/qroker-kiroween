@@ -359,14 +359,14 @@ describe('content', () => {
       ['first placement draws', /applies from your first placement/],
       ['three cards and five-code ending', /three cards[\s\S]+five codes in total/],
       ['completing placement draws nothing', /A placement that completes a code draws nothing/],
-      ['simultaneous reveal', /revealed to everyone at the same time/],
+      ['simultaneous reveal', /all players see the points together/],
       ['points by distance', /depend on the distance between each guess and the hidden sum/],
       ['hand-empty end', /ends when a player has no cards left in hand/],
       ['end bonus without value', /empties their hand receives an end bonus/],
       ['empty deck does not end', /An empty deck does not end the game/],
       ['shared ranks', /equal scores share the same rank/],
-      ['owner only', /Only the owner sees a card: the player who placed a card sees it until the code that contains it is revealed/],
-      ['face up', /Cards are face up: every placed card is visible to everyone/],
+      ['owner only', /You can see your own placements/],
+      ['blind', /all board cards stay face down through the final history/],
     ],
     ko: [
       ['8x8 board', /8×8/],
@@ -389,14 +389,14 @@ describe('content', () => {
       ['first placement draws', /첫 배치부터 이 규칙/],
       ['three cards and five-code ending', /손패 세 장[\s\S]+누적 다섯 개/],
       ['completing placement draws nothing', /조합을 완성하면 뽑지 않습니다/],
-      ['simultaneous reveal', /모두에게 동시에 공개됩니다/],
+      ['simultaneous reveal', /모두 예측을 마치면 함께 점수를 확인합니다/],
       ['points by distance', /각 예측값과 숨겨진 합의 차이에 따라/],
       ['hand-empty end', /손패가 비거나/],
       ['end bonus without value', /종료 보너스를 받습니다/],
       ['empty deck does not end', /덱이 비는 것만으로는 게임이 끝나지 않습니다/],
       ['shared ranks', /같은 순위를 공유합니다/],
-      ['owner only', /카드 주인만 볼 수 있음: 카드를 놓은 플레이어만 그 카드를 볼 수 있고/],
-      ['face up', /카드를 앞면으로 공개: 놓인 모든 카드를 모든 플레이어가 볼 수 있습니다/],
+      ['owner only', /자기가 놓은 카드는 볼 수 있고/],
+      ['blind', /중앙 카드를 포함한 보드 전체가 끝까지 뒷면입니다/],
     ],
   };
 
@@ -410,7 +410,7 @@ describe('content', () => {
     });
   }
 
-  it('says nothing of the one-versus-four revealed cards, OQ-1 default or any recommendation', () => {
+  it('does not recommend an option or describe a single-card reveal', () => {
     for (const lang of ['en', 'ko'] as const) {
       setLanguage(lang);
       const { handle } = setup(input(lang));
@@ -427,7 +427,7 @@ describe('content', () => {
     // reward table and the end bonus would show up as a stray digit.
     const ALLOWED: Record<Lang, readonly RegExp[]> = {
       en: [/8×8/g, /2×2/g, /180°/g, /4 to 52/g, /4 neutral cards/g],
-      ko: [/8×8/g, /2×2/g, /180°/g, /4에서 52/g, /중립 카드 4장/g],
+      ko: [/8×8/g, /2×2/g, /180°/g, /4에서 52/g, /(?:중립 카드|중앙) 4장/g],
     };
     for (const lang of ['en', 'ko'] as const) {
       setLanguage(lang);

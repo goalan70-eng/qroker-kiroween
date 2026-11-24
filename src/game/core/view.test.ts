@@ -305,6 +305,26 @@ describe("Identity_Visibility on a fixed board", () => {
     }
   });
 
+  it.each(["BLIND", "BLIND_SCORE_ONLY"] as const)("redacts the board and reveal records for every seat in %s", (mode) => {
+    let state = batchState(mode);
+    for (const seat of SEATS) {
+      state = apply(state, { type: "SUBMIT_GUESSES", player: seat, guesses: guessesOf(state, seat) });
+    }
+    const record = state.lastReveal!;
+    expect(record.codes.length).toBeGreaterThan(0);
+    for (const seat of SEATS) {
+      const view = viewFor(state, seat);
+      expect(view.myHand).toEqual(CANONICAL(state.hands[seat]));
+      expect(view.board.every(cell => cell === null || cell.card === null)).toBe(true);
+      expect(view.lastReveal?.perPlayer).toEqual(record.perPlayer);
+      const expectedCodes = record.codes.map(code => ({
+        quadKey: code.quadKey, cards: [], hiddenSum: mode === "BLIND" ? code.hiddenSum : null,
+      }));
+      expect(view.lastReveal?.codes).toEqual(expectedCodes);
+      expect(view.history.at(-1)?.codes).toEqual(expectedCodes);
+    }
+  });
+
   it("OWNER_ONLY: owner, orientation and occupancy of a hidden cell stay visible", () => {
     const view = viewFor(build("OWNER_ONLY"), "P0");
     expect(at(view, "F4")).toEqual({ owner: "P1", orientation: 180, card: null });

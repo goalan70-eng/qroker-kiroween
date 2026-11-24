@@ -19,7 +19,7 @@ export const MAX_HUMANS = 4;
 /** The tiers the setup screen offers (not `EXPERT`; task 23.4 adds it). */
 export const SETUP_DIFFICULTIES: readonly Difficulty[] = Object.freeze(['BEGINNER', 'ADVANCED'] as const);
 /** The identity visibilities the setup screen offers. The first is the default (OQ-1, provisional). */
-export const SETUP_VISIBILITIES: readonly IdentityVisibility[] = Object.freeze(['OWNER_ONLY', 'FACE_UP'] as const);
+export const SETUP_VISIBILITIES: readonly IdentityVisibility[] = Object.freeze(['OWNER_ONLY', 'BLIND', 'BLIND_SCORE_ONLY'] as const);
 
 const DEFAULT_DIFFICULTY: Difficulty = 'BEGINNER';
 const DEFAULT_VISIBILITY: IdentityVisibility = 'OWNER_ONLY';

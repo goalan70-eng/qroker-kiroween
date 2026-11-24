@@ -48,6 +48,7 @@
 //
 // Imports: ui/, i18n/, core/view and core/types only (screen-class module of boundaries.test.ts).
 
+import { isBlindMode } from '../../core/types';
 import type { CardId, GridPosition, Orientation, Owner, PlayerId } from '../../core/types';
 import { legalCellsFor } from '../../core/view';
 import type { PlayerView } from '../../core/view';
@@ -86,7 +87,7 @@ export type BoardRegionKey = 'board.cell.name.pending' | 'board.cell.name.reveal
 
 /** The ghost of the drafted card, on the target cell only. The card is one of the viewer's OWN Hand cards. */
 export interface BoardCellPreview {
-  readonly card: CardId;
+  readonly card: CardId | null;
   readonly orientation: Orientation;
   /** The viewer: the owner the card will have once placed. */
   readonly owner: PlayerId;
@@ -254,7 +255,7 @@ export function boardModel(view: PlayerView, draft: PlacementDraft, options: Boa
       isDropTarget,
       inPendingRegion,
       inRevealedRegion,
-      preview: isPreview && ghostCard !== null ? { card: ghostCard, orientation: draft.orientation, owner: view.viewer } : null,
+      preview: isPreview && ghostCard !== null ? { card: isBlindMode(view.rules.identityVisibility) ? null : ghostCard, orientation: draft.orientation, owner: view.viewer } : null,
       state,
       nameKey,
       nameParams: { notation },

@@ -28,11 +28,14 @@ export const en = Object.freeze({
   'setup.ai.none': 'Every seat is a human player, so there is no AI difficulty to choose.',
 
   // Identity visibility.
-  'setup.visibility.legend': 'Card identities',
-  'setup.visibility.OWNER_ONLY': 'Only the owner sees a card',
-  'setup.visibility.FACE_UP': 'Cards are face up',
+  'setup.visibility.legend': 'Game mode',
+  'setup.visibility.OWNER_ONLY': 'Normal',
+  'setup.visibility.BLIND': 'Blind',
+  'setup.blind.feedback': 'After all predictions',
+  'setup.blind.sum': 'Show the correct sum and points',
+  'setup.blind.score': 'Show points only',
   'setup.visibility.default': '(default)',
-  'setup.visibility.hint': 'Chooses whether other players can see which card is on the board.',
+  'setup.visibility.hint': 'Normal starts with four face-up center cards and reveals each completed group after everyone predicts. In Blind, only your hand is visible. Board cards stay face down.',
 
   'setup.start': 'Start game',
 } as const);
@@ -63,15 +66,21 @@ export const ko: Record<keyof typeof en, string> = Object.freeze({
   'setup.ai.none': '모든 자리가 사람 플레이어이므로 선택할 AI 난이도가 없습니다.',
 
   // REVIEW: new text, needs native-speaker check
-  'setup.visibility.legend': '카드 공개 방식',
+  'setup.visibility.legend': '게임 모드',
   // REVIEW: new text, needs native-speaker check
-  'setup.visibility.OWNER_ONLY': '카드 주인만 볼 수 있음',
+  'setup.visibility.OWNER_ONLY': '일반',
   // REVIEW: new text, needs native-speaker check
-  'setup.visibility.FACE_UP': '카드를 앞면으로 공개',
+  'setup.visibility.BLIND': '블라인드',
+  // REVIEW: new text, needs native-speaker check
+  'setup.blind.feedback': '모두 예측한 뒤',
+  // REVIEW: new text, needs native-speaker check
+  'setup.blind.sum': '정답 합과 점수 공개',
+  // REVIEW: new text, needs native-speaker check
+  'setup.blind.score': '점수만 공개',
   // REVIEW: new text, needs native-speaker check
   'setup.visibility.default': '(기본값)',
   // REVIEW: new text, needs native-speaker check
-  'setup.visibility.hint': '보드 위 카드가 무엇인지 다른 플레이어에게 보일지 정합니다.',
+  'setup.visibility.hint': '일반은 중앙 4장을 앞면으로 놓고, 모두 예측하면 완성된 조합의 4장을 공개합니다. 블라인드는 자기 손패만 보이고 보드의 모든 카드는 끝까지 뒷면입니다.',
 
   // REVIEW: new text, needs native-speaker check
   'setup.start': '게임 시작',

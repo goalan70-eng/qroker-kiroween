@@ -42,6 +42,12 @@
   --color-board-bg: #e9e5d8;
   --color-cell-bg: #e9e5d8;
   --color-card-back: #e9e5d8;
+  --felt: #183d33;
+  --felt-light: #dce4d4;
+  --stock: #f7f1df;
+  --rule: #b7ad92;
+  --print-red: #922c37;
+  --font-display: Georgia, "Batang", "바탕", serif;
 
   /* Suit tones: hearts and diamonds red, clubs and spades dark */
   --color-red: #b00020;

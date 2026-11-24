@@ -977,14 +977,14 @@ describe('continueSaved and discardSaved guards', () => {
 describe('preferences', () => {
   it('stored language and setup prefs are applied at startup', () => {
     const store = memoryStore();
-    writePrefs(store, { language: 'ko', setup: { humanCount: 3, difficulties: ['BEGINNER', 'ADVANCED', 'BEGINNER', 'ADVANCED'], identityVisibility: 'FACE_UP' } });
+    writePrefs(store, { language: 'ko', setup: { humanCount: 3, difficulties: ['BEGINNER', 'ADVANCED', 'BEGINNER', 'ADVANCED'], identityVisibility: 'BLIND_SCORE_ONLY' } });
     const r = rig({ init: { [PREFS_KEY]: store.getItem(PREFS_KEY) as string }, language: 'en' });
     expect(r.ctl.getModel().language).toBe('ko');
     expect(getLanguage()).toBe('ko');
     expect(r.ctl.getModel().setupPrefs).toEqual({
       humanCount: 3,
       difficulties: ['BEGINNER', 'ADVANCED', 'BEGINNER', 'ADVANCED'],
-      identityVisibility: 'FACE_UP',
+      identityVisibility: 'BLIND_SCORE_ONLY',
     });
     expect(r.renders[0]!.model.language).toBe('ko');
   });

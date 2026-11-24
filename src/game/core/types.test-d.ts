@@ -34,7 +34,7 @@ assertType<Equal<Orientation, 0 | 180>>();
 assertType<Equal<Slot, Corner>>();
 assertType<Equal<Owner, PlayerId | 'NEUTRAL'>>();
 assertType<Equal<Difficulty, 'BEGINNER' | 'ADVANCED' | 'EXPERT'>>();
-assertType<Equal<IdentityVisibility, 'OWNER_ONLY' | 'FACE_UP'>>();
+assertType<Equal<IdentityVisibility, 'OWNER_ONLY' | 'FACE_UP' | 'BLIND' | 'BLIND_SCORE_ONLY'>>();
 
 // ErrorCode is exactly the 18 codes of the design Error Handling table.
 assertType<

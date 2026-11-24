@@ -229,6 +229,27 @@ Tasks 1 and 2 (and then 3 to 7) depend only on the provisional defaults in the O
     - Amended (three-card rules, Kiro text edit): Property 19 now allows a code-limit-only ending with no bonus (`bonusAwarded = null`) and checks that the whole last batch is scored; Property 12 has no first-placement branch; design Property 19a lists the end-condition table. Not re-run by Kiro.
     - Depends on: 8.2.
     - **Validates: Requirements 7.3, 7.4, 7.6, 7.7, 8.6, 8.7, 8.8, 9.1, 9.3**
+  - [x] 8.5 Verify the player's own typed guess is visible before submission (follow-up, browser)
+    - Test: `e2e/game.spec.ts`, "a typed Guess survives opening and closing Help". Immediately after the value is entered, before Help opens, the guess input is visible and holds the entered value. The existing checks after Help closes stay unchanged.
+    - Run only this case against the built production page (`PLAYWRIGHT_PREVIEW=1`). Production code and Hook configuration are not changed.
+    - Acceptance: the case passes with the new assertions. Recorded in `docs/validation/kiro-private-guess-reveal.md`.
+    - Evidence class: real Chromium (Playwright), one seed. Not a happy-dom or model result.
+    - _Requirements: 7.5, 16.1_
+  - [x] 8.6 Browser check: one placement completing two Composite Codes gives one reveal with both sums and per-seat points (follow-up, browser)
+    - Goal: in the built production game, one legal card placement that completes two distinct Composite Codes produces one Prediction_Batch and one reveal showing both correct sums and each seat's correct earned and cumulative points for both codes.
+    - Find the seed and placement first, using the existing headless engine (`src/game/sim/play-game.ts`, `src/game/core/engine.ts`) read-only. `docs/game/headless-diagnostics.md` lists seeds 152, 158, 178 and 195 with two-code batches for ALL_BEGINNER games. Those are leads only: the browser game uses one human seat and three BEGINNER AI seats, so the seed must be confirmed for that configuration before it is used. Record the seed, the placement cell, the card and the two code locations (Quad_Keys) in the test and in the verification report.
+    - Play through the normal game UI with legal moves (`playUntil` and the placement helpers in `e2e/helpers/`). Do not inject state. Use the existing `stubSeeds`, `startGame` and `acknowledgeReveal` helpers. Add one focused test to `e2e/game.spec.ts`.
+    - Acceptance:
+      - (a) The two codes have two distinct Quad_Keys. Both 2×2 groups contain the newly placed card's cell. The test checks both Quad_Keys and checks that each group contains the placed cell.
+      - (b) Before the final guess submission, the guess screen does not disclose either hidden sum as an answer: no `.reveal` or `.reveal-sum` element exists, and neither hidden sum is shown as the correct answer or as a labelled value. An unrelated number on that screen (a score, a count, the player's own input) may legitimately equal a hidden sum; the test must not count a numeric coincidence as a leak.
+      - (c) After the final submission, one reveal screen shows both Quad_Keys with their correct Hidden_Sums.
+      - (d) For each of the four seats, the expected points are derived independently of the displayed result: the test computes `score(guess, hiddenSum)` for each of the two codes from the guesses it submitted and the hidden sums it derived from the seed and the legal move sequence, using the active `ScoreConfig` (`[10, 5, 4, 3, 2, 1]`, error 6 or more scores 0, no bonus unless the hand is empty). Earned points are the sum over the two codes. Cumulative points equal the earned points plus any earlier total. The displayed values are compared with these expected values; they are not used to derive them.
+      - (e) The reveal does not expose individual guesses and does not associate any guess with a seat or a Quad_Key (no guess value tied to a seat or code, no guess element or label). Public sums and scores on the reveal may equal a submitted guess; a numeric match alone is not a leak.
+    - Reproduction record: the seed and the complete ordered legal move sequence that reaches the placement (placements, each seat's guesses, acknowledgements) are recorded in the test and in the verification report, so the same moment can be filmed.
+    - If the check fails, keep the failing test, record the mismatch (seed, placement, expected and observed values, screenshot or trace path) in the verification report, and do not change production code in the same step.
+    - Evidence class: real Chromium (Playwright) on the built page, one seed. Not happy-dom, not a model result.
+    - Do not change `.kiro/hooks/`, the score table or production code to make this pass.
+    - _Requirements: 7.1, 7.6, 8.1, 8.2_
 
 - [x] 9. Player views and information isolation
   - [x] 9.1 Implement the ViewProjector (`core/view.ts`)

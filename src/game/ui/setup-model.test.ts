@@ -27,7 +27,7 @@ const problemFields = (value: unknown): string[] => {
 describe('constants', () => {
   it('offers BEGINNER and ADVANCED, both visibilities, and 1 to 4 humans', () => {
     expect([...SETUP_DIFFICULTIES]).toEqual(['BEGINNER', 'ADVANCED']);
-    expect([...SETUP_VISIBILITIES]).toEqual(['OWNER_ONLY', 'FACE_UP']);
+    expect([...SETUP_VISIBILITIES]).toEqual(['OWNER_ONLY', 'BLIND', 'BLIND_SCORE_ONLY']);
     expect([MIN_HUMANS, MAX_HUMANS]).toEqual([1, 4]);
     expect(SETUP_DIFFICULTIES).not.toContain('EXPERT');
   });
@@ -158,9 +158,10 @@ describe('sanitizeSetupPrefs', () => {
   });
 
   it('keeps valid fields and falls back field by field', () => {
+    expect(sanitizeSetupPrefs({ identityVisibility: 'FACE_UP' })).toEqual(DEFAULT_SETUP_PREFS);
     expect(sanitizeSetupPrefs({ humanCount: 3 })).toEqual({ ...DEFAULT_SETUP_PREFS, humanCount: 3 });
-    expect(sanitizeSetupPrefs({ identityVisibility: 'FACE_UP' })).toEqual({ ...DEFAULT_SETUP_PREFS, identityVisibility: 'FACE_UP' });
-    expect(sanitizeSetupPrefs({ humanCount: 5, identityVisibility: 'FACE_UP' })).toEqual({ ...DEFAULT_SETUP_PREFS, identityVisibility: 'FACE_UP' });
+    expect(sanitizeSetupPrefs({ identityVisibility: 'BLIND' })).toEqual({ ...DEFAULT_SETUP_PREFS, identityVisibility: 'BLIND' });
+    expect(sanitizeSetupPrefs({ humanCount: 5, identityVisibility: 'BLIND' })).toEqual({ ...DEFAULT_SETUP_PREFS, identityVisibility: 'BLIND' });
     expect(sanitizeSetupPrefs({ humanCount: 2.5 }).humanCount).toBe(1);
     expect(sanitizeSetupPrefs({ humanCount: '2' }).humanCount).toBe(1);
     expect([...sanitizeSetupPrefs({ difficulties: ['ADVANCED', 'EXPERT', 'ADVANCED'] }).difficulties]).toEqual(['ADVANCED', 'BEGINNER', 'ADVANCED', 'BEGINNER']);
@@ -175,7 +176,7 @@ describe('sanitizeSetupPrefs', () => {
   });
 
   it('is idempotent and survives a JSON round trip', () => {
-    const prefs = sanitizeSetupPrefs({ humanCount: 3, difficulties: ['BEGINNER', 'ADVANCED', 'ADVANCED', 'BEGINNER'], identityVisibility: 'FACE_UP' });
+    const prefs = sanitizeSetupPrefs({ humanCount: 3, difficulties: ['BEGINNER', 'ADVANCED', 'ADVANCED', 'BEGINNER'], identityVisibility: 'BLIND' });
     expect(sanitizeSetupPrefs(prefs)).toEqual(prefs);
     expect(sanitizeSetupPrefs(JSON.parse(JSON.stringify(prefs)))).toEqual(prefs);
   });

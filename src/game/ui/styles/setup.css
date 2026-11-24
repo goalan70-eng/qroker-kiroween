@@ -88,3 +88,101 @@
   align-self: stretch;
   font-weight: 700;
 }
+
+.setup {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  margin: .25rem auto 2rem;
+  max-width: 66rem;
+  border: 1px solid var(--rule);
+  background: var(--color-paper);
+  box-shadow: 0 3px 0 #d1c7ae;
+}
+.setup-cover {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
+  margin: 0;
+  background: var(--stock);
+  border: .5rem solid var(--felt);
+  outline: 3px double #9a885a;
+  outline-offset: -.95rem;
+}
+.setup-engraving {
+  display: block;
+  width: 5rem;
+  height: 5rem;
+  background: center / contain no-repeat url('./court-jester.webp?inline');
+  filter: grayscale(1) contrast(1.2) brightness(1.06);
+  mix-blend-mode: multiply;
+}
+.setup-title {
+  margin: 0;
+  color: var(--felt);
+  font: bold clamp(1.75rem, 4vw, 3.35rem)/1.16 var(--font-display);
+  letter-spacing: -.04em;
+}
+.setup-form {
+  max-inline-size: none;
+  padding: clamp(1rem, 3vw, 2.3rem);
+  gap: 1.1rem;
+}
+.setup-legend, .setup-label { color: var(--felt); }
+.setup-hint { color: #575749; font-size: .875rem; }
+.setup-input, .setup-select, .setup-button {
+  min-width: 0;
+  border: 1px solid #918d7a;
+  border-radius: .2rem;
+  color: var(--color-ink);
+  background: var(--color-paper);
+}
+.setup-seed {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.setup-seed :is(label, p) { grid-column: 1 / -1; }
+.setup-button { background: var(--stock); font-weight: 600; }
+.setup-humans, .setup-visibility { display: block; min-width: 0; }
+.setup-choice {
+  display: inline-flex;
+  gap: 0;
+  padding-inline-end: .85rem;
+}
+.setup-radio {
+  appearance: none;
+  flex: none;
+  --radio-dot: transparent;
+  background: radial-gradient(circle, var(--radio-dot) 0 4px, transparent 5px 7px, var(--felt) 7px 8px, transparent 9px);
+}
+.setup-radio:checked { --radio-dot: var(--felt); }
+@media (forced-colors: active) {
+  .setup-radio { appearance: auto; }
+}
+.setup-ai-rows {
+  display: grid;
+  gap: .65rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(7rem, 100%), 1fr));
+}
+.setup-ai-row { min-width: 0; margin: 0; }
+.setup-start {
+  color: var(--stock);
+  background: var(--felt);
+  border: 3px double #b1ad86;
+  border-radius: .25rem;
+  min-height: 3rem;
+  cursor: pointer;
+}
+@media (min-width: 48rem) {
+  .setup { grid-template-columns: minmax(16rem, 4fr) minmax(0, 6fr); }
+  .setup-cover {
+    flex-direction: column;
+    gap: 1.4rem;
+    padding: 2rem;
+    border-width: .85rem;
+    outline-offset: -1.4rem;
+  }
+  .setup-engraving { width: 100%; height: auto; aspect-ratio: 4 / 5; }
+}

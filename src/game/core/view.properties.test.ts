@@ -621,7 +621,7 @@ describe("Property 22: no leakage of pending or hidden information in views", ()
       // Validates: Requirements 5.8, 7.5, 7.8, 10.3, 10.4, 10.5
       const cov: Coverage22 = {
         runs: 0, twoCodeAttempts: 0, twoCodeBatches: 0, states: 0, views: 0, byCategory: zeroCategories(),
-        byMode: { OWNER_ONLY: 0, FACE_UP: 0 }, byViewer: { P0: 0, P1: 0, P2: 0, P3: 0 }, gcBatchOfTwo: 0, gcBatchOfOne: 0,
+        byMode: { OWNER_ONLY: 0, FACE_UP: 0, BLIND: 0, BLIND_SCORE_ONLY: 0 }, byViewer: { P0: 0, P1: 0, P2: 0, P3: 0 }, gcBatchOfTwo: 0, gcBatchOfOne: 0,
         viewsWithHiddenCells: 0, viewsWithHiddenCellsInGc: 0, groupIdNeedles: 0, cardTokenNeedles: 0, logNeedlesChecked: 0,
         logNeedlesSkippedOwn: 0, ownNeedleControls: 0, handTokenControls: 0, rankingTies: 0, statesWithHistory: 0,
       };
@@ -798,7 +798,7 @@ describe("Property 23: view non-interference", () => {
       // Feature: qroker-playable-game, Property 23: View non-interference
       // Validates: Requirements 10.4, 10.5, 10.6
       const cov: Coverage23 = {
-        runs: 0, pairs: 0, byKind: zeroKinds(), requestedByKind: zeroKinds(), byMode: { OWNER_ONLY: 0, FACE_UP: 0 },
+        runs: 0, pairs: 0, byKind: zeroKinds(), requestedByKind: zeroKinds(), byMode: { OWNER_ONLY: 0, FACE_UP: 0, BLIND: 0, BLIND_SCORE_ONLY: 0 },
         byCategory: zeroCategories(), byViewer: { P0: 0, P1: 0, P2: 0, P3: 0 }, ownerOnlyBases: 0, swapApplicable: 0,
         swapNotApplicable: 0, handContentChanged: 0, multiKindPairs: 0, sensitivitySwapOwner: 0, sensitivityHand: 0, sensitivityGuess: 0,
       };

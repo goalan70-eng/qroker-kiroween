@@ -25,7 +25,8 @@
 }
 .game-host {
   box-sizing: border-box;
-  max-inline-size: 100%;
+  max-inline-size: 76rem;
+  margin-inline: auto;
   padding: 0 var(--board-pad) var(--space-4);
   font-family: var(--font-ui);
   color: var(--color-ink);
@@ -41,6 +42,8 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
+  padding-block: .5rem;
+  border-block-end: 1px solid var(--rule);
 }
 .game-bar__button {
   box-sizing: border-box;
@@ -65,11 +68,19 @@
 }
 .game-banner-slot .banner {
   margin: 0;
+  font-size: .875rem;
+  padding: .3rem .65rem;
+  color: #514628;
+  background: #f3eacf;
+  border: 0;
+  border-inline-start: 2px solid #9a885a;
 }
 .game-seed {
   margin: 0;
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
+  color: #55574b;
+  font-size: .875rem;
 }
 /* The live region is read by screen readers and not shown (the status text and the panel carry the visible text). */
 .game-live {

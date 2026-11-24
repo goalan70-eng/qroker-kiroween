@@ -1,13 +1,15 @@
 <!doctype html>
 <html lang="ko">
+<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>QRoker · 화면 판독 테스트</title>
 <link rel="icon" href="data:,">
-<header id="screen-tools">
-  <a href="#app">QRoker</a>
+</head>
+<body>
+<div id="screen-tools">
   <button type="button" id="sample-open">카메라 판독 연습</button>
-</header>
+</div>
 <div id="app"></div>
 <dialog id="scan-dialog" aria-labelledby="scan-title">
   <div class="scan-toolbar">
@@ -20,4 +22,5 @@
   </div>
 </dialog>
 <script type="module" src="./main.ts"></script>
+</body>
 </html>

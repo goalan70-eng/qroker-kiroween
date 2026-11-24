@@ -14,8 +14,8 @@
 //
 // DOM
 //   section.setup
+//     header.setup-cover > h2#setup-title
 //     form.setup-form  (novalidate; aria-labelledby the title)
-//       h2#setup-title
 //       div.setup-field.setup-seed
 //         label[for=setup-seed], input#setup-seed (text, autocomplete=off, spellcheck=false, aria-invalid,
 //         aria-describedby = hint + error), button#setup-random-seed (only when `options.randomSeedText` is given),
@@ -23,7 +23,7 @@
 //       fieldset.setup-humans: legend + radios #setup-humans-1..4 (name setup-humans) + p#setup-humans-hint
 //       fieldset.setup-ai: legend + one `div.setup-ai-row` per AI seat with label[for=setup-difficulty-<seat>] and
 //         select#setup-difficulty-<seat> (BEGINNER, ADVANCED), or a text when no seat is AI
-//       fieldset.setup-visibility: legend + radios #setup-visibility-OWNER_ONLY / -FACE_UP + p hint
+//       fieldset.setup-visibility: legend + radios #setup-visibility-OWNER_ONLY / -BLIND, hint and blind feedback selector
 //       div.setup-field.setup-language: label[for=setup-language] + select#setup-language (ko, en)
 //       p.setup-general-error[role=alert]
 //       button#setup-start[type=submit]
@@ -46,6 +46,7 @@
 //
 // Imports: ui/, i18n/, core/view and core/types only (the screen import rule); the seed is never parsed here.
 
+import { isBlindMode } from '../../core/types';
 import type { ErrorCode, PlayerId } from '../../core/types';
 import { errorMessageKey, isLang, LANGUAGES } from '../../i18n';
 import type { Lang, StringKey } from '../../i18n';
@@ -109,7 +110,10 @@ export const SETUP_STRING_KEYS = [
   'setup.ai.none',
   'setup.visibility.legend',
   'setup.visibility.OWNER_ONLY',
-  'setup.visibility.FACE_UP',
+  'setup.visibility.BLIND',
+  'setup.blind.feedback',
+  'setup.blind.sum',
+  'setup.blind.score',
   'setup.visibility.default',
   'setup.visibility.hint',
   'setup.start',
@@ -128,7 +132,7 @@ const DIFFICULTY_KEYS: Readonly<Record<string, StringKey>> = {
 };
 const VISIBILITY_KEYS: Readonly<Record<string, StringKey>> = {
   OWNER_ONLY: 'setup.visibility.OWNER_ONLY',
-  FACE_UP: 'setup.visibility.FACE_UP',
+  BLIND: 'setup.visibility.BLIND',
 };
 const LANGUAGE_KEYS: Readonly<Record<Lang, StringKey>> = {
   en: 'common.languageName.en',
@@ -329,7 +333,20 @@ export function renderSetup(
   // Identity visibility: a radio group.
   const visibilityLegend = h('legend', { class: 'setup-legend' });
   const visibilityHint = h('p', { id: 'setup-visibility-hint', class: 'setup-hint' });
-  const visibilityItems = SETUP_VISIBILITIES.map((value) => {
+  const feedbackLabel = h('label', { class: 'setup-label', attrs: { for: 'setup-blind-feedback' } });
+  const sumOption = h('option', { attrs: { value: 'BLIND' } });
+  const scoreOption = h('option', { attrs: { value: 'BLIND_SCORE_ONLY' } });
+  const feedback = h('select', {
+    id: 'setup-blind-feedback', focusKey: 'setup-blind-feedback', class: 'setup-select',
+    on: { change: () => {
+      if (inert || disposed) return;
+      visibilityRaw = valueOf(feedback);
+      notifyPrefs();
+    } },
+  }, sumOption, scoreOption);
+  setValue(feedback, prefs.identityVisibility === 'BLIND_SCORE_ONLY' ? 'BLIND_SCORE_ONLY' : 'BLIND');
+  const feedbackField = h('div', { class: 'setup-field' }, feedbackLabel, feedback);
+  const visibilityItems = SETUP_VISIBILITIES.filter(value => value !== 'BLIND_SCORE_ONLY').map((value) => {
     const id = `setup-visibility-${value}`;
     const radio = h('input', {
       id,
@@ -340,14 +357,14 @@ export function renderSetup(
         change: () => {
           if (inert || disposed) return;
           for (const item of visibilityItems) setChecked(item.radio, item.radio === radio);
-          visibilityRaw = valueOf(radio);
+          visibilityRaw = valueOf(radio) === 'BLIND' ? valueOf(feedback) : valueOf(radio);
           generalErrorCode = null;
           paint();
           notifyPrefs();
         },
       },
     });
-    setChecked(radio, value === prefs.identityVisibility);
+    setChecked(radio, value === prefs.identityVisibility || (value === 'BLIND' && isBlindMode(prefs.identityVisibility)));
     return { value, radio, label: h('label', { class: 'setup-radio-label', attrs: { for: id } }) };
   });
   const visibilitySet = h(
@@ -409,7 +426,6 @@ export function renderSetup(
         },
       },
     },
-    titleEl,
     seedField,
     humansSet,
     aiSet,
@@ -418,7 +434,11 @@ export function renderSetup(
     generalError,
     startButton,
   );
-  const panel = h('section', { class: 'setup' }, form);
+  const frontispiece = h('header', { class: 'setup-cover' },
+    h('span', { class: 'setup-engraving', aria: { hidden: 'true' } }),
+    titleEl,
+  );
+  const panel = h('section', { class: 'setup' }, frontispiece, form);
 
   // ---- text -----------------------------------------------------------------------------------------------
 
@@ -449,6 +469,14 @@ export function renderSetup(
       setText(item.label, item.value === SETUP_VISIBILITIES[0] ? `${text} ${t('setup.visibility.default')}` : text);
     }
     setText(visibilityHint, t('setup.visibility.hint'));
+    setText(feedbackLabel, t('setup.blind.feedback'));
+    setText(sumOption, t('setup.blind.sum'));
+    setText(scoreOption, t('setup.blind.score'));
+    if (visibilityRaw === 'BLIND' || visibilityRaw === 'BLIND_SCORE_ONLY') {
+      if (feedbackField.parentNode !== visibilitySet) visibilitySet.appendChild(feedbackField);
+    } else if (feedbackField.parentNode === visibilitySet) {
+      visibilitySet.removeChild(feedbackField);
+    }
 
     setText(languageLabel, t('common.language.label'));
     for (const option of languageOptions) setText(option.el, t(LANGUAGE_KEYS[option.lang]));

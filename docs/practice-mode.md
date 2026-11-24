@@ -49,8 +49,12 @@ the public reveal to continue to the final four-player ranking.
 
 ## Privacy and saving
 
-`OWNER_ONLY` (default) hides other players' unrevealed Board identities;
-`FACE_UP` exposes Board identities. Each player sees only their own Hand and
+Normal starts with four face-up center cards. A placed card is visible to its owner,
+and everyone sees a completed group after all four predictions. In Blind, every
+board card stays face down, including the center four, your own placements,
+and cards in the results and final history. Choose either the correct sum and
+points or points only. To compare feedback, use the same seed, seat setup, moves,
+and guesses for both games. Previously saved face-up games retain their rules. Each player sees only their own Hand and
 their own pending Guess entry. Other players' Guess values, including AI
 Guesses, are never displayed, including after the game ends.
 
@@ -138,7 +142,7 @@ These summarize the playable-game open questions and the rules used in the curre
 
 | ID | Topic | Existing default / status |
 | --- | --- | --- |
-| OQ-1 | Identity visibility | `OWNER_ONLY` default; `FACE_UP` supported |
+| OQ-1 | Identity visibility | Normal by default; Blind offers two feedback settings |
 | OQ-2 | Starting-card orientation | Four neutral cards at 0° |
 | OQ-3 | Starting group | Not scored; no redeal |
 | OQ-4 | Draw on a placement with no new code | Draw one from the first placement onward if the deck has a card |

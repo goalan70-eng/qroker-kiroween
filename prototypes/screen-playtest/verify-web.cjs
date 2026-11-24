@@ -66,11 +66,19 @@ async function captureIsolation(page, name, codes) {
   }
 }
 
-async function gameReveal(page) {
+async function gameReveal(page, feedback) {
+  if (feedback) {
+    await page.locator('#setup-visibility-BLIND').check();
+    await page.locator('#setup-blind-feedback').selectOption(feedback);
+  }
   await page.locator('#setup-humans-1').check();
   await page.locator('#setup-seed').fill(isolate ? '777001' : '20240601');
   for (const select of await page.locator('.setup-ai-row select').all()) await select.selectOption('BEGINNER');
   await page.locator('#setup-start').click();
+  await page.locator('.board-frame').waitFor();
+  const boardFaces = page.locator('.board-cell .card-face--up');
+  assert.equal(await boardFaces.count(), feedback ? 0 : 4);
+  assert.equal(await page.locator('.hand .card-face--up').count(), 3);
   for (let step = 0; step < 80; step++) {
     const kind = await page.waitForFunction(() => {
       const visible = selector => !!document.querySelector(selector)?.getClientRects().length;
@@ -80,6 +88,11 @@ async function gameReveal(page) {
       if (visible('.hand-card:not(.is-disabled)')) return 'place';
       return null;
     }).then(handle => handle.jsonValue());
+    if (feedback) {
+      assert.equal(await boardFaces.count(), 0);
+      assert.equal(await page.locator('#sample-open').isVisible(), false);
+      assert.equal(await page.locator('.screen-reveal-tools button').count(), 0);
+    }
     if (kind === 'reveal') return;
     assert.equal(await page.locator('.screen-reveal-tools button').count(), 0, 'No camera sheet before the reveal');
     assert.equal(await page.locator('.card-face--down img').count(), 0, 'No private card artwork on a card back');
@@ -93,6 +106,7 @@ async function gameReveal(page) {
       await page.locator('.hand-card:not(.is-disabled)').first().click();
       assert.ok(await page.locator('.hand-card .screen-card-art').count() > 0);
       await page.locator('.board-cell.is-legal').first().click();
+      if (feedback) assert.equal(await boardFaces.count(), 0, 'Drafts on the blind board stay face down');
       const confirm = page.locator('.placement-button--confirm');
       const turn = page.locator('.placement-button--rotate');
       if (await confirm.isDisabled() && await turn.count()) await turn.click();
@@ -114,6 +128,7 @@ async function main() {
       if (request.url() !== base && !request.url().startsWith('data:')) external.push(request.url());
     });
     await page.goto(base);
+    assert.equal(await page.locator('#setup-title').textContent(), '새 게임', 'Korean is intact in the standalone HTML');
     await page.locator('#sample-open').click();
     const sampleIds = [4, 21, 36, 40];
     await capture(page, 'web-sample', sampleIds);
@@ -129,6 +144,15 @@ async function main() {
     console.log('PASS sample, removal, restore, and modal cleanup');
 
     await gameReveal(page);
+    const positions = await page.locator('.reveal-cards').first().locator('li').evaluateAll(cards =>
+      cards.map(card => {
+        const { x, y } = card.getBoundingClientRect();
+        return { x, y };
+      }));
+    assert.equal(positions.length, 4);
+    const [tl, tr, bl, br] = positions;
+    assert.ok(tl.x === bl.x && tr.x === br.x && tl.x < tr.x &&
+      tl.y === tr.y && bl.y === br.y && tl.y < bl.y, 'Public cards follow their 2×2 board order');
     const reveal = page.locator('.screen-reveal-tools button').first();
     const label = await reveal.textContent();
     const quad = label.split(' · ')[1];
@@ -152,6 +176,30 @@ async function main() {
     await fs.writeFile(path.join(output, 'expected.tsv'), rows.join('\n') + '\n');
     await fs.writeFile(path.join(output, 'game-reveal.json'), JSON.stringify({ quad, ids, sum }, null, 2) + '\n');
     console.log('PASS engine-driven public reveal', quad, ids.join(' '), 'sum', sum);
+    let comparison;
+    for (const feedback of ['BLIND', 'BLIND_SCORE_ONLY']) {
+      const blind = await browser.newPage({ locale: 'ko-KR' });
+      try {
+        await blind.goto(base);
+        await gameReveal(blind, feedback);
+        const results = () => blind.locator('.reveal-earned').allTextContents();
+        const earned = await results();
+        assert.equal(earned.length, 4);
+        assert.equal(await blind.locator('.reveal-cards, .board-cell .card-face--up').count(), 0);
+        assert.equal(await blind.locator('.reveal-sum').count(), feedback === 'BLIND' ? 1 : 0);
+        if (comparison) assert.deepEqual(earned, comparison);
+        comparison = earned;
+        await blind.reload();
+        await blind.locator('#resume-continue').click();
+        await blind.locator('.reveal').waitFor();
+        assert.deepEqual(await results(), earned);
+        assert.equal(await blind.locator('.reveal-sum').count(), feedback === 'BLIND' ? 1 : 0);
+        assert.equal(await blind.locator('.reveal-cards, .board-cell .card-face--up, .screen-reveal-tools button').count(), 0);
+        console.log('PASS', feedback, 'same-seed scores', earned.join('/'), 'after reload');
+      } finally {
+        await blind.close();
+      }
+    }
   } finally {
     await browser.close();
   }

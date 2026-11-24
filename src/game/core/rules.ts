@@ -69,7 +69,7 @@ export function startingScoredGroups(): readonly string[] {
 export const DIFFICULTIES: readonly Difficulty[] = Object.freeze(['BEGINNER', 'ADVANCED', 'EXPERT'] as const);
 
 /** The Identity_Visibility values, the closed set accepted in a configuration. */
-export const IDENTITY_VISIBILITIES: readonly IdentityVisibility[] = Object.freeze(['OWNER_ONLY', 'FACE_UP'] as const);
+export const IDENTITY_VISIBILITIES: readonly IdentityVisibility[] = Object.freeze(['OWNER_ONLY', 'FACE_UP', 'BLIND', 'BLIND_SCORE_ONLY'] as const);
 
 /**
  * Default Identity_Visibility of a new game (OQ-1, PROVISIONAL, decision D10). This is only the default

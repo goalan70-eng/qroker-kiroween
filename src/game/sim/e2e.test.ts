@@ -808,7 +808,7 @@ describe("Property 21: Termination and bounded length", () => {
       const tiers = registeredDifficulties();
       const cov: Coverage21 = {
         runs: 0, mixes: new Set<string>(), seatTier: { P0: {}, P1: {}, P2: {}, P3: {} },
-        byVisibility: { OWNER_ONLY: 0, FACE_UP: 0 }, humanSeats: 0, aiSeats: 0, gamesWithTwoCodeBatch: 0, twoCodeBatches: 0,
+        byVisibility: { OWNER_ONLY: 0, FACE_UP: 0, BLIND: 0, BLIND_SCORE_ONLY: 0 }, humanSeats: 0, aiSeats: 0, gamesWithTwoCodeBatch: 0, twoCodeBatches: 0,
         batches: 0, bonusSeat: perSeat(0), endedAfterGuess: 0, endedByEmptyingPlace: 0, placementsMin: Number.POSITIVE_INFINITY,
         placementsMax: 0, actionsMax: 0, replayMismatches: 0,
       };

@@ -32,6 +32,10 @@
   padding: 0;
   color: var(--color-ink);
   font-family: var(--font-ui);
+  --color-cell-bg: var(--felt-light);
+  --color-board-bg: var(--felt-light);
+  background-color: var(--felt);
+  box-shadow: 0 0 0 3px var(--felt), 0 0 0 4px var(--rule);
 }
 
 .board-col-labels {
@@ -58,6 +62,7 @@
   font-weight: 700;
   line-height: 1;
   user-select: none;
+  color: var(--stock);
 }
 
 /* The grid: 8 rows of 8 cells, each `--cell` square, no gap. */

@@ -434,9 +434,9 @@ describe("Property 24: AI action validity and determinism", () => {
       // Validates: Requirements 11.2, 11.3, 11.4
       const cov: Coverage24 = {
         runs: 0, states: 0, fixtureStates: 0, decisions: {}, byPhase: { PLACEMENT: 0, GUESS_COLLECT: 0 },
-        byMode: { OWNER_ONLY: 0, FACE_UP: 0 }, bySeat: { P0: 0, P1: 0, P2: 0, P3: 0 }, byPriorSubmissions: [0, 0, 0, 0],
+        byMode: { OWNER_ONLY: 0, FACE_UP: 0, BLIND: 0, BLIND_SCORE_ONLY: 0 }, bySeat: { P0: 0, P1: 0, P2: 0, P3: 0 }, byPriorSubmissions: [0, 0, 0, 0],
         batchOfOne: 0, batchOfTwo: 0, withHiddenCells: 0, hiddenCellsMax: 0, candidatesMax: 0, candidatesOver100: 0,
-        advancedExactCodes: { OWNER_ONLY: 0, FACE_UP: 0 }, advancedCodesTotal: { OWNER_ONLY: 0, FACE_UP: 0 },
+        advancedExactCodes: { OWNER_ONLY: 0, FACE_UP: 0, BLIND: 0, BLIND_SCORE_ONLY: 0 }, advancedCodesTotal: { OWNER_ONLY: 0, FACE_UP: 0, BLIND: 0, BLIND_SCORE_ONLY: 0 },
         beginnerFaceUpCodes: 0, beginnerFaceUpExact: 0, placementCompared: 0, placementDiffer: 0, guessCompared: 0, guessDiffer: 0,
       };
       const started = Date.now();
@@ -541,9 +541,9 @@ describe("Property 24: AI action validity and determinism", () => {
 function scratchCoverage(): Coverage24 {
   return {
     runs: 0, states: 0, fixtureStates: 0, decisions: {}, byPhase: { PLACEMENT: 0, GUESS_COLLECT: 0 },
-    byMode: { OWNER_ONLY: 0, FACE_UP: 0 }, bySeat: { P0: 0, P1: 0, P2: 0, P3: 0 }, byPriorSubmissions: [0, 0, 0, 0],
+    byMode: { OWNER_ONLY: 0, FACE_UP: 0, BLIND: 0, BLIND_SCORE_ONLY: 0 }, bySeat: { P0: 0, P1: 0, P2: 0, P3: 0 }, byPriorSubmissions: [0, 0, 0, 0],
     batchOfOne: 0, batchOfTwo: 0, withHiddenCells: 0, hiddenCellsMax: 0, candidatesMax: 0, candidatesOver100: 0,
-    advancedExactCodes: { OWNER_ONLY: 0, FACE_UP: 0 }, advancedCodesTotal: { OWNER_ONLY: 0, FACE_UP: 0 },
+    advancedExactCodes: { OWNER_ONLY: 0, FACE_UP: 0, BLIND: 0, BLIND_SCORE_ONLY: 0 }, advancedCodesTotal: { OWNER_ONLY: 0, FACE_UP: 0, BLIND: 0, BLIND_SCORE_ONLY: 0 },
     beginnerFaceUpCodes: 0, beginnerFaceUpExact: 0, placementCompared: 0, placementDiffer: 0, guessCompared: 0, guessDiffer: 0,
   };
 }
@@ -633,7 +633,7 @@ describe("Property 25: AI non-interference", () => {
       // Feature: qroker-playable-game, Property 25: AI non-interference
       // Validates: Requirements 10.7, 11.3
       const cov: Coverage25 = {
-        runs: 0, pairs: 0, decisions: {}, byPhase: { PLACEMENT: 0, GUESS_COLLECT: 0 }, byMode: { OWNER_ONLY: 0, FACE_UP: 0 },
+        runs: 0, pairs: 0, decisions: {}, byPhase: { PLACEMENT: 0, GUESS_COLLECT: 0 }, byMode: { OWNER_ONLY: 0, FACE_UP: 0, BLIND: 0, BLIND_SCORE_ONLY: 0 },
         byViewer: { P0: 0, P1: 0, P2: 0, P3: 0 },
         byCategory: { PLACEMENT: 0, GC0: 0, GC1: 0, GC2: 0, GC3: 0, OTHER: 0 }, byKind: zeroKinds(), byKindPlacement: zeroKinds(),
         byKindGuess: zeroKinds(), multiKindPairs: 0, nonInternalPairs: 0, handContentChanged: 0, swapApplicable: 0,

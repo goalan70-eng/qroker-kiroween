@@ -17,6 +17,7 @@ import { mountApp } from '../../src/game/ui/controller';
 import type { RenderInput } from '../../src/game/ui/controller';
 import { createGameScreen } from '../../src/game/ui/screens/game';
 import type { PlayerView } from '../../src/game/core/view';
+import { isBlindMode } from '../../src/game/core/types';
 import type { Orientation } from '../../src/game/core/types';
 import { BOARD_SIZE, fromNotation, quadCells } from '../../src/game/core/geometry';
 
@@ -146,8 +147,8 @@ revealTools.className = 'screen-reveal-tools';
 let buttonsKey = '';
 function renderRevealTools(input: RenderInput): void {
   const view = input.publicView ?? input.view;
-  const permitted = input.model.gate === null && (view?.phase === 'REVEAL' || view?.phase === 'ENDED');
-  tools.hidden = input.model.gate !== null;
+  tools.hidden = input.model.gate !== null || (view != null && isBlindMode(view.rules.identityVisibility));
+  const permitted = !tools.hidden && (view?.phase === 'REVEAL' || view?.phase === 'ENDED');
   if (tools.hidden && dialog.open) closePhoto();
   const record = permitted ? view?.lastReveal : null;
   const candidates = record?.codes.flatMap(code => {
@@ -197,3 +198,4 @@ mountApp(root, {
   nowIso: () => new Date().toISOString(),
   renderer: input => { host.render(input); withFaceArt(); renderRevealTools(input); },
 });
+root.querySelector('.shell__language')?.before(tools);

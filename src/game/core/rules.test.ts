@@ -44,7 +44,7 @@ describe("provisional policy constants", () => {
 
   it("OQ-1: the default visibility is OWNER_ONLY and both values are accepted", () => {
     expect(DEFAULT_IDENTITY_VISIBILITY).toBe("OWNER_ONLY");
-    expect([...IDENTITY_VISIBILITIES]).toEqual(["OWNER_ONLY", "FACE_UP"]);
+    expect([...IDENTITY_VISIBILITIES]).toEqual(["OWNER_ONLY", "FACE_UP", "BLIND", "BLIND_SCORE_ONLY"]);
   });
 
   it("the default AI tiers are valid difficulty labels, one per AI seat", () => {

@@ -24,7 +24,7 @@ useMountCleanup(afterEach);
 const SEEDS = [7, 16, 20240601] as const;
 const REPLAY_SEED = SEEDS[0]; // the cheapest game of the three
 const REMATCH_SEED = 987654321;
-const VISIBILITIES: readonly IdentityVisibility[] = ['OWNER_ONLY', 'FACE_UP'];
+const VISIBILITIES: readonly IdentityVisibility[] = ['OWNER_ONLY', 'BLIND', 'BLIND_SCORE_ONLY'];
 
 const HUMAN: PlayerId = 'P0';
 const MAX_ITERATIONS = 200;
@@ -95,9 +95,10 @@ function startFromSetup(app: MountedApp, ctx: Ctx): void {
   ensure(ctx, before === null || before.hasAttribute('hidden') || textOf(before) === '', 'a Seed line is shown before the game starts');
   ensure(ctx, (app.root.querySelector('#setup-humans-1') as HTMLInputElement | null)?.checked === true, 'one human is not the default');
   typeInto(app, label(app, 'setup.seed.label'), String(ctx.seed));
-  const key: StringKey = `setup.visibility.${ctx.visibility}`;
+  const key: StringKey = ctx.visibility === 'OWNER_ONLY' ? 'setup.visibility.OWNER_ONLY' : 'setup.visibility.BLIND';
   const text = label(app, key);
   clickByLabel(app, ctx.visibility === 'OWNER_ONLY' ? `${text} ${label(app, 'setup.visibility.default')}` : text);
+  if (ctx.visibility === 'BLIND_SCORE_ONLY') typeInto(app, label(app, 'setup.blind.feedback'), 'BLIND_SCORE_ONLY');
   clickByLabel(app, label(app, 'setup.start'));
   const model = app.controller.getModel();
   ensure(ctx, model.screen === 'GAME' && model.lastError === null, 'the game did not start');
@@ -154,8 +155,10 @@ function checkRevealScreen(app: MountedApp, ctx: Ctx, view: PlayerView): void {
   record.codes.forEach((code, i) => {
     const el = codes[i] as Element;
     ensure(ctx, el.getAttribute('data-quad-key') === code.quadKey, 'a reveal code is out of order');
-    ensure(ctx, el.querySelectorAll('.card-face').length === 4 && code.cards.length === 4, 'a revealed code does not list 4 cards');
-    ensure(ctx, textOf(el.querySelector('.reveal-sum')) === label(app, 'reveal.code.sum', { sum: code.hiddenSum }), 'the hidden sum of a code is wrong');
+    ensure(ctx, (code.hiddenSum === null) === (ctx.visibility === 'BLIND_SCORE_ONLY'), 'feedback setting must control sum visibility');
+    const faceCount = ctx.visibility === 'OWNER_ONLY' ? 4 : 0;
+    ensure(ctx, el.querySelectorAll('.card-face').length === faceCount && code.cards.length === faceCount, 'revealed card visibility is wrong');
+    ensure(ctx, code.hiddenSum === null ? el.querySelector('.reveal-sum') === null : textOf(el.querySelector('.reveal-sum')) === label(app, 'reveal.code.sum', { sum: code.hiddenSum }), 'the hidden sum of a code is wrong');
   });
 }
 
@@ -188,10 +191,10 @@ function checkEnd(app: MountedApp, ctx: Ctx, view: PlayerView): void {
     record.codes.forEach((code, j) => {
       const el = codes[j] as Element;
       ensure(ctx, el.getAttribute('data-quad-key') === code.quadKey, 'a history code is out of order');
-      ensure(ctx, textOf(el.querySelector('.end-sum')) === tr('reveal.code.sum', { sum: code.hiddenSum }), 'a history hidden sum differs from the record');
+      ensure(ctx, code.hiddenSum === null ? el.querySelector('.end-sum') === null : textOf(el.querySelector('.end-sum')) === tr('reveal.code.sum', { sum: code.hiddenSum }), 'a history hidden sum differs from the record');
       const faces = Array.from(el.querySelectorAll('.end-cards [role="img"]')).map(nameOf);
       const expected = code.cards.map((card) => nameOf(revealCardFace(h, card, tr)));
-      ensure(ctx, faces.length === 4 && faces.join('|') === expected.join('|'), 'the card faces of a history code differ from the record');
+      ensure(ctx, faces.length === (ctx.visibility === 'OWNER_ONLY' ? 4 : 0) && faces.join('|') === expected.join('|'), 'the card faces of a history code differ from the record');
     });
   });
   // No Guess data on the end screen: no form, no field, no typed value, no Guess wording in its text or markup.

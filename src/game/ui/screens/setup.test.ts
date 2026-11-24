@@ -142,7 +142,7 @@ describe('structure and defaults', () => {
     const m = mount({}, { randomSeedText: () => '1' });
     const all = m.doc.all();
     const labelFor = new Set(all.filter((el) => el.tagName === 'label').map((el) => el.getAttribute('for')));
-    for (const id of ['setup-seed', 'setup-humans-1', 'setup-humans-4', 'setup-difficulty-P1', 'setup-difficulty-P3', 'setup-visibility-OWNER_ONLY', 'setup-visibility-FACE_UP', 'setup-language']) {
+    for (const id of ['setup-seed', 'setup-humans-1', 'setup-humans-4', 'setup-difficulty-P1', 'setup-difficulty-P3', 'setup-visibility-OWNER_ONLY', 'setup-visibility-BLIND', 'setup-language']) {
       expect(labelFor.has(id), id).toBe(true);
       expect(m.doc.getElementById(id), id).not.toBeNull();
     }
@@ -169,9 +169,9 @@ describe('structure and defaults', () => {
     expect(checkedOf(get(m.doc, 'setup-humans-1'))).toBe(true);
     expect(checkedOf(get(m.doc, 'setup-humans-2'))).toBe(false);
     expect(checkedOf(get(m.doc, 'setup-visibility-OWNER_ONLY'))).toBe(true);
-    expect(checkedOf(get(m.doc, 'setup-visibility-FACE_UP'))).toBe(false);
+    expect(checkedOf(get(m.doc, 'setup-visibility-BLIND'))).toBe(false);
     expect(text(m.doc.all().find((el) => el.getAttribute('for') === 'setup-visibility-OWNER_ONLY') as FakeEl)).toContain(t('setup.visibility.default'));
-    expect(text(m.doc.all().find((el) => el.getAttribute('for') === 'setup-visibility-FACE_UP') as FakeEl)).not.toContain(t('setup.visibility.default'));
+    expect(text(m.doc.all().find((el) => el.getAttribute('for') === 'setup-visibility-BLIND') as FakeEl)).not.toContain(t('setup.visibility.default'));
     expect(valOf(get(m.doc, 'setup-language'))).toBe('en');
     expect(tierSelects(m)).toEqual(['P1', 'P2', 'P3']);
     for (const seat of ['P1', 'P2', 'P3']) expect(valOf(get(m.doc, `setup-difficulty-${seat}`))).toBe('BEGINNER');
@@ -196,11 +196,11 @@ describe('structure and defaults', () => {
   });
 
   it('applies initialPrefs through the sanitizer: valid fields are used, garbage falls back', () => {
-    const m = mount({ initialPrefs: { humanCount: 3, difficulties: ['ADVANCED', 'EXPERT', 'ADVANCED', 'ADVANCED'], identityVisibility: 'FACE_UP' } });
+    const m = mount({ initialPrefs: { humanCount: 3, difficulties: ['ADVANCED', 'EXPERT', 'ADVANCED', 'ADVANCED'], identityVisibility: 'BLIND' } });
     expect(checkedOf(get(m.doc, 'setup-humans-3'))).toBe(true);
     expect(tierSelects(m)).toEqual(['P3']);
     expect(valOf(get(m.doc, 'setup-difficulty-P3'))).toBe('ADVANCED');
-    expect(checkedOf(get(m.doc, 'setup-visibility-FACE_UP'))).toBe(true);
+    expect(checkedOf(get(m.doc, 'setup-visibility-BLIND'))).toBe(true);
     const bad = mount({ initialPrefs: { humanCount: 99, difficulties: 'EXPERT', identityVisibility: 'x' } });
     expect(checkedOf(get(bad.doc, 'setup-humans-1'))).toBe(true);
     expect(checkedOf(get(bad.doc, 'setup-visibility-OWNER_ONLY'))).toBe(true);
@@ -278,14 +278,14 @@ describe('start with a stub handler', () => {
     typeSeed(m, 'my seed');
     chooseHumans(m, 2);
     chooseTier(m, 'P2', 'ADVANCED');
-    chooseVisibility(m, 'FACE_UP');
+    chooseVisibility(m, 'BLIND');
     clickStart(m);
     expect(m.stub.starts).toHaveLength(1);
     expect(m.stub.starts[0]).toEqual({
       seedText: 'my seed',
       humanCount: 2,
       difficulties: ['BEGINNER', 'BEGINNER', 'ADVANCED', 'BEGINNER'],
-      identityVisibility: 'FACE_UP',
+      identityVisibility: 'BLIND',
     });
   });
 
@@ -340,12 +340,12 @@ describe('start with a stub handler', () => {
     typeSeed(m, 'keep me');
     chooseHumans(m, 3);
     chooseTier(m, 'P3', 'ADVANCED');
-    chooseVisibility(m, 'FACE_UP');
+    chooseVisibility(m, 'BLIND');
     clickStart(m);
     expect(valOf(get(m.doc, 'setup-seed'))).toBe('keep me');
     expect(checkedOf(get(m.doc, 'setup-humans-3'))).toBe(true);
     expect(valOf(get(m.doc, 'setup-difficulty-P3'))).toBe('ADVANCED');
-    expect(checkedOf(get(m.doc, 'setup-visibility-FACE_UP'))).toBe(true);
+    expect(checkedOf(get(m.doc, 'setup-visibility-BLIND'))).toBe(true);
     expect(alertText(m, 'setup-general-error')).toBe(t('error.INVALID_CONFIG'));
     m.stub.reply = () => ({ ok: true });
     clickStart(m);
@@ -429,12 +429,12 @@ describe('onPrefsChange', () => {
     expect(m.prefs).toHaveLength(0); // the seed is not a pref
     chooseHumans(m, 2);
     chooseTier(m, 'P2', 'ADVANCED');
-    chooseVisibility(m, 'FACE_UP');
+    chooseVisibility(m, 'BLIND');
     clickStart(m);
     expect(m.prefs).toHaveLength(4);
     expect(m.prefs[0]).toEqual({ ...DEFAULT_SETUP_PREFS, humanCount: 2 });
     expect(m.prefs[1]?.difficulties[2]).toBe('ADVANCED');
-    expect(m.prefs[3]).toEqual({ humanCount: 2, difficulties: ['BEGINNER', 'BEGINNER', 'ADVANCED', 'BEGINNER'], identityVisibility: 'FACE_UP' });
+    expect(m.prefs[3]).toEqual({ humanCount: 2, difficulties: ['BEGINNER', 'BEGINNER', 'ADVANCED', 'BEGINNER'], identityVisibility: 'BLIND' });
     for (const prefs of m.prefs) {
       expect(Object.keys(prefs).sort()).toEqual(['difficulties', 'humanCount', 'identityVisibility']);
       expect(Object.isFrozen(prefs)).toBe(true);
@@ -490,7 +490,7 @@ describe('language', () => {
     typeSeed(m, 'hello');
     chooseHumans(m, 3);
     chooseTier(m, 'P3', 'ADVANCED');
-    chooseVisibility(m, 'FACE_UP');
+    chooseVisibility(m, 'BLIND');
     const select = get(doc, 'setup-language');
     select.focus();
     expect(text(get(doc, 'setup-start'))).toBe('Start game');
@@ -506,7 +506,7 @@ describe('language', () => {
     expect(valOf(get(doc, 'setup-seed'))).toBe('hello');
     expect(checkedOf(get(doc, 'setup-humans-3'))).toBe(true);
     expect(valOf(get(doc, 'setup-difficulty-P3'))).toBe('ADVANCED');
-    expect(checkedOf(get(doc, 'setup-visibility-FACE_UP'))).toBe(true);
+    expect(checkedOf(get(doc, 'setup-visibility-BLIND'))).toBe(true);
     expect(doc.activeElement).toBe(select);
     expect(text(doc.all().find((el) => el.getAttribute('for') === 'setup-humans-3') as FakeEl)).toBe('3명');
 
@@ -586,10 +586,10 @@ describe('start with the real controller', () => {
         typeSeed(m, '31337');
         chooseHumans(m, humans);
         for (const seat of tierSelects(m)) chooseTier(m, seat as PlayerId, tiers[SEAT_IDS.indexOf(seat as PlayerId)] as string);
-        chooseVisibility(m, 'FACE_UP');
+        chooseVisibility(m, 'BLIND');
         clickStart(m);
         expect(ctl.getModel().screen, `${humans}`).toBe('GAME');
-        expect(ctl.getView('P0'), `${humans} ${tiers.join()}`).toEqual(directView(31337, humans, tiers, 'FACE_UP'));
+        expect(ctl.getView('P0'), `${humans} ${tiers.join()}`).toEqual(directView(31337, humans, tiers, 'BLIND'));
         expect(m.prefs.at(-1)?.humanCount).toBe(humans);
       }
     }
@@ -618,7 +618,7 @@ describe('start with the real controller', () => {
         setLanguage(lang);
         m.handle.update({ ...m.input, model: { language: lang } });
         chooseHumans(m, 2);
-        chooseVisibility(m, 'FACE_UP');
+        chooseVisibility(m, 'BLIND');
         typeSeed(m, blank);
         clickStart(m);
         expect(ctl.getModel().screen).toBe('SETUP');
@@ -627,7 +627,7 @@ describe('start with the real controller', () => {
         expect(get(m.doc, 'setup-seed').getAttribute('aria-invalid')).toBe('true');
         expect(m.doc.activeElement).toBe(get(m.doc, 'setup-seed'));
         expect(checkedOf(get(m.doc, 'setup-humans-2'))).toBe(true);
-        expect(checkedOf(get(m.doc, 'setup-visibility-FACE_UP'))).toBe(true);
+        expect(checkedOf(get(m.doc, 'setup-visibility-BLIND'))).toBe(true);
         expect(valOf(get(m.doc, 'setup-seed'))).toBe(blank);
         // the setup can be completed afterwards
         typeSeed(m, '5');
@@ -689,7 +689,7 @@ function tamperHumans(m: Mounted, count: number, value: string): void {
   radio.fire('change');
 }
 function tamperVisibility(m: Mounted, value: string): void {
-  const radio = get(m.doc, 'setup-visibility-FACE_UP');
+  const radio = get(m.doc, 'setup-visibility-BLIND');
   setVal(radio, value);
   radio.fire('change');
 }
@@ -731,7 +731,7 @@ describe('dispose and stale handles', () => {
       'setup-difficulty-P2',
       'setup-difficulty-P3',
       'setup-visibility-OWNER_ONLY',
-      'setup-visibility-FACE_UP',
+      'setup-visibility-BLIND',
       'setup-language',
       'setup-start',
     ]);

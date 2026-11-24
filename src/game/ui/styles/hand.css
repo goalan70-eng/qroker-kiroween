@@ -50,6 +50,11 @@
   display: block;
   pointer-events: none;
 }
+.hand .card-face--hand {
+  --card-unit: clamp(3.5rem, calc(var(--cell) + .75rem), 5rem);
+  border-radius: .22rem;
+  filter: drop-shadow(0 2px 1px rgb(23 35 30 / 22%));
+}
 
 /* The drag source: only this class takes the touches of its own area. */
 .hand-card--draggable {
@@ -61,6 +66,7 @@
 
 /* Selected: a solid ring inside the box and a bar at the bottom edge (shape cues, not colour alone). */
 .hand-card.is-selected {
+  transform: translateY(-.22rem);
   outline: var(--stroke-strong) solid var(--color-focus);
   outline-offset: calc(-1 * var(--stroke-strong));
 }

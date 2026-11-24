@@ -18,7 +18,9 @@
  *   card of a Composite_Code that was already revealed (`state.revealedCards` and the cards of the reveal
  *   history, which are public anyway). Every other occupied cell has `card: null`. Occupancy, owner and
  *   orientation of every occupied cell stay visible.
- * - `FACE_UP`: `CellView.card` is non-null for every occupied cell.
+ * - `FACE_UP` (legacy saves): every occupied cell is visible.
+ * - Both blind settings hide all board identities and redact cards from reveal history.
+ *   BLIND_SCORE_ONLY also redacts each revealed sum. The viewer still sees their hand.
  * In both modes the view never contains: the seed, the deck contents or order, the Hand of another Seat, a Guess of
  * another Seat, the Hidden_Sum or any other sealed field of a pending batch, the `groupId` of any code, the
  * `scoredGroups` record, the action log, or the raw `PendingBatch`.
@@ -52,6 +54,7 @@
  * re-exported here (`GamePhase`, `RevealRecord`, `RankEntry`), so an AI module never imports `core/state`.
  */
 
+import { isBlindMode } from './types';
 import { ALL_CARDS } from './cards';
 import { BOARD_SIZE, orthogonalNeighbors } from './geometry';
 import { rankPlayers } from './ranking';
@@ -108,8 +111,8 @@ export interface PlayerView {
   readonly guessSubmitted: Readonly<Record<PlayerId, boolean>>;
   /** The viewer's own submission for the batch being collected, else `null`. Never another Seat's. */
   readonly myGuesses: Readonly<Record<QuadKey, number>> | null;
-  readonly lastReveal: RevealRecord | null;
-  readonly history: readonly RevealRecord[];
+  readonly lastReveal: RevealRecord<number | null> | null;
+  readonly history: readonly RevealRecord<number | null>[];
   /** Final ranking when the phase is `ENDED`, else `null`. */
   readonly ranking: readonly RankEntry[] | null;
 }
@@ -151,11 +154,15 @@ function copyRules(config: GameConfig): PublicRules {
   };
 }
 
-function copyReveal(record: RevealRecord): RevealRecord {
+function copyReveal(record: RevealRecord, mode: IdentityVisibility): RevealRecord<number | null> {
   return {
     batchIndex: record.batchIndex,
     placer: record.placer,
-    codes: record.codes.map((code) => ({ quadKey: code.quadKey, cards: [...code.cards], hiddenSum: code.hiddenSum })),
+    codes: record.codes.map((code) => ({
+      quadKey: code.quadKey,
+      cards: isBlindMode(mode) ? [] : [...code.cards],
+      hiddenSum: mode === 'BLIND_SCORE_ONLY' ? null : code.hiddenSum,
+    })),
     perPlayer: record.perPlayer.map((entry) => ({
       player: entry.player,
       earned: entry.earned,
@@ -183,7 +190,7 @@ export function viewFor(state: GameState, viewer: PlayerId): PlayerView {
   const visibility = state.config.identityVisibility;
   const revealed = revealedSet(state);
   const showCard = (owner: Owner, card: CardId): boolean =>
-    visibility === 'FACE_UP' || owner === 'NEUTRAL' || owner === viewer || revealed.has(card);
+    !isBlindMode(visibility) && (visibility === 'FACE_UP' || owner === 'NEUTRAL' || owner === viewer || revealed.has(card));
 
   const board: (CellView | null)[] = new Array<CellView | null>(CELL_COUNT).fill(null);
   for (let index = 0; index < CELL_COUNT; index++) {
@@ -220,8 +227,8 @@ export function viewFor(state: GameState, viewer: PlayerId): PlayerView {
     pendingQuadKeys,
     guessSubmitted,
     myGuesses,
-    lastReveal: state.lastReveal === null ? null : copyReveal(state.lastReveal),
-    history: state.history.map(copyReveal),
+    lastReveal: state.lastReveal === null ? null : copyReveal(state.lastReveal, visibility),
+    history: state.history.map(record => copyReveal(record, visibility)),
     ranking:
       state.phase === 'ENDED'
         ? rankPlayers(state.scores).map((entry) => ({ player: entry.player, score: entry.score, rank: entry.rank }))
