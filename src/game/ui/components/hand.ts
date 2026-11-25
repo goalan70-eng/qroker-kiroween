@@ -93,7 +93,7 @@ export function handModel(view: PlayerView, draft: PlacementDraft, ownerLabel: s
     const selected = draft.card === card;
     return {
       index,
-      face: cardFaceModel({ card, owner: view.viewer, orientation: 0, size: 'hand', ownerLabel }),
+      face: cardFaceModel({ card, owner: view.viewer, orientation: selected ? draft.orientation : 0, size: 'hand', ownerLabel }),
       selected,
       disabled,
       focusKey: `hand-${index}`,

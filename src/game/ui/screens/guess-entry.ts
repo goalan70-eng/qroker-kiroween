@@ -11,10 +11,10 @@
 //   section.guess-entry
 //     div.guess-body
 //       form.guess-form  (novalidate; aria-labelledby the title)
-//         h2#guess-title, p.guess-intro
+//         h2#guess-title
 //         per pending Quad_Key, in `view.pendingQuadKeys` order:
 //           div.guess-field[data-quad-key]
-//             label[for=guess-input-<key>]       the public Quad_Key plus the instruction (whole number 4 to 52)
+//             label[for=guess-input-<key>]       the public Quad_Key
 //             input#guess-input-<key>            type=text, inputmode=numeric, autocomplete=off, aria-invalid,
 //                                                aria-describedby = region hint + error element
 //             p#guess-region-<key>               the public 2x2 region: Quad_Key and its four cell notations
@@ -69,7 +69,7 @@ import { errorMessageKey } from '../../i18n';
 import { createH, renderWithFocus } from '../dom';
 import type { CreateDoc, FocusDoc } from '../dom';
 import type { Translate } from '../components/card-face';
-import { buildGuesses, GUESS_MAX, GUESS_MIN, guessFormToken, isGuessFormStale, regionCells } from '../guess-model';
+import { buildGuesses, GUESS_MAX, GUESS_MIN, guessFormToken, isGuessFormStale, parseGuessText, regionCells } from '../guess-model';
 import type { GuessFormToken } from '../guess-model';
 
 /** The only Action this screen sends. */
@@ -123,10 +123,10 @@ export interface GuessEntryHandle {
 /** Every string key this module passes to `t`, apart from the engine's `error.<code>` messages. */
 export const GUESS_ENTRY_STRING_KEYS = [
   'guess.form.label',
-  'guess.form.intro',
   'guess.input.label',
   'guess.input.region',
   'guess.error.missing',
+  'guess.error.range',
   'guess.submit',
   'guess.status.submitted',
   'guess.status.stale',
@@ -193,7 +193,6 @@ export function renderGuessEntry(
   let engineError: ErrorCode | null = null;
   let rows: Row[] = [];
   let titleEl: HTMLElement | null = null;
-  let introEl: HTMLElement | null = null;
   let submitEl: HTMLElement | null = null;
   let engineEl: HTMLElement | null = null;
   let statusEl: HTMLElement | null = null;
@@ -215,7 +214,7 @@ export function renderGuessEntry(
       id: inputId(key),
       focusKey: inputId(key),
       class: 'guess-input',
-      attrs: { type: 'text', inputmode: 'numeric', autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false' },
+      attrs: { type: 'text', inputmode: 'numeric', placeholder: `${GUESS_MIN}–${GUESS_MAX}`, autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false' },
       aria: { describedby: `${regionId(key)} ${errorId(key)}`, invalid: 'false' },
       on: {
         keydown: (event) => {
@@ -225,7 +224,16 @@ export function renderGuessEntry(
           submit();
         },
         focus: () => options.onRegionFocus?.(key),
-        blur: () => options.onRegionFocus?.(null),
+        blur: () => {
+          options.onRegionFocus?.(null);
+          const text = valueOf(inputEl).trim();
+          if (!text || mode !== 'form' || disposed) return;
+          const parsed = parseGuessText(text);
+          if (!parsed.ok) {
+            rowErrors.set(key, { code: parsed.error.code, missing: false });
+            paint();
+          }
+        },
         input: () => {
           // Typing in a field clears its own message (and an engine message): the text is new.
           if (rowErrors.delete(key) || engineError !== null) {
@@ -235,7 +243,7 @@ export function renderGuessEntry(
         },
       },
     });
-    const region = h('p', { id: regionId(key), class: 'guess-region' });
+    const region = h('p', { id: regionId(key), class: 'guess-region', attrs: { hidden: true } });
     const error = h('p', { id: errorId(key), class: 'guess-error', attrs: { role: 'alert' } });
     const field = h('div', { class: 'guess-field', attrs: { 'data-quad-key': key } }, label, inputEl, region, error);
     return { row: { key, input: inputEl, label, region, error }, field };
@@ -243,7 +251,6 @@ export function renderGuessEntry(
 
   function buildForm(keys: readonly QuadKey[]): void {
     titleEl = h('h2', { id: 'guess-title', class: 'guess-title' });
-    introEl = h('p', { class: 'guess-intro' });
     submitEl = h('button', {
       id: 'guess-submit',
       focusKey: 'guess-submit',
@@ -273,7 +280,6 @@ export function renderGuessEntry(
         },
       },
       titleEl,
-      introEl,
       ...built.map((b) => b.field),
       engineEl,
       submitEl,
@@ -287,7 +293,7 @@ export function renderGuessEntry(
     for (const row of rows) clearValue(row.input);
     const hadRows = rows.length > 0;
     rows = [];
-    titleEl = introEl = submitEl = engineEl = null;
+    titleEl = submitEl = engineEl = null;
     rowErrors = new Map();
     engineError = null;
     clear(bodySlot);
@@ -316,6 +322,7 @@ export function renderGuessEntry(
   // ---- text -----------------------------------------------------------------------------------------------
 
   function messageFor(error: RowError): string {
+    if (error.code === 'GUESS_OUT_OF_RANGE') return t('guess.error.range', range);
     return error.missing ? t('guess.error.missing', range) : t(errorMessageKey(error.code));
   }
 
@@ -339,11 +346,10 @@ export function renderGuessEntry(
   function paint(): void {
     if (mode === 'form') {
       if (titleEl !== null) setText(titleEl, t('guess.form.label'));
-      if (introEl !== null) setText(introEl, t('guess.form.intro', range));
       if (submitEl !== null) setText(submitEl, t('guess.submit'));
       if (engineEl !== null) setText(engineEl, engineError === null ? '' : t(errorMessageKey(engineError)));
       for (const row of rows) {
-        setText(row.label, t('guess.input.label', { key: row.key, ...range }));
+        setText(row.label, t('guess.input.label', { key: row.key }));
         setText(row.region, t('guess.input.region', { key: row.key, cells: regionCells(row.key).join(', ') }));
         const error = rowErrors.get(row.key);
         setText(row.error, error === undefined ? '' : messageFor(error));

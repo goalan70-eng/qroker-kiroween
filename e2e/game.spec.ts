@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import backMarks from '../src/game/ui/back-marks/index.json' with { type: 'json' };
 import type { Locator, Page } from '@playwright/test';
 import {
   SEED_A,
@@ -28,6 +30,7 @@ import {
 // Evidence class 2/3: real Chromium engine, emulated viewport and touch. Not a real device, not other browsers.
 // The Seed is controlled by a `crypto.getRandomValues` stub (helpers/game.ts); AI pacing (600 ms) is real time.
 
+const hasLocalDeck = existsSync('prototypes/screen-playtest/inputs/cards/AH.svg');
 const LONG_TEST = 5 * 60_000;
 const confirmButton = (page: Page): Locator => page.locator('.placement-button--confirm');
 
@@ -59,6 +62,65 @@ const hasNumber = (markup: string, n: number): boolean => new RegExp(`(?<![0-9])
 // ---------------------------------------------------------------------------------------------------------------
 // 1
 // ---------------------------------------------------------------------------------------------------------------
+
+test('four marked backs complete D3 after rotating the second club', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#setup-humans-4').check();
+  await page.locator('#setup-visibility-BLIND').check();
+  await page.locator('#setup-seed').fill('1');
+  await page.locator('#setup-start').click();
+
+  const gate = page.locator('#privacy-gate-ack');
+  const deck = page.locator('.deck-stack .table-card-back');
+  let firstDraw: string | null = null;
+  for (const [rank, col] of [[6, 3], [4, 4]] as const) {
+    if (await gate.count()) await gate.click();
+    if (rank === 6) {
+      firstDraw = await deck.getAttribute('style');
+      await expect(page.locator(`[data-seat="P1"] .seat-card-back[style*="${backMarks['C-4']}"]`)).toHaveCount(1);
+    } else {
+      expect(firstDraw).toBeTruthy();
+      expect(await deck.getAttribute('style')).not.toBe(firstDraw);
+      const dealt = await page.locator('[data-seat="P0"] .seat-card-back').evaluateAll(
+        cards => cards.map(card => card.getAttribute('style')),
+      );
+      expect(dealt).toContain(firstDraw);
+    }
+    const club = page.locator('.hand-card').filter({ hasText: '♣' }).filter({
+      has: page.locator('.card-face__rank').filter({ hasText: new RegExp(`^${rank}$`) }),
+    });
+    await club.click();
+    await page.locator(`.board-cell[data-row="2"][data-col="${col}"]`).click();
+    if (rank === 4) await page.locator('.placement-button--rotate').click();
+    await confirmButton(page).click();
+  }
+  if (await gate.count()) await gate.click();
+  await expect(page.locator('.board-code-junction--open[data-quad-key="D3"]')).toBeVisible();
+  for (const [row, col, card] of [[2, 3, 'C-6'], [2, 4, 'C-4'], [3, 3, 'D-Q'], [3, 4, 'S-6']] as const) {
+    const face = page.locator(`.board-cell[data-row="${row}"][data-col="${col}"] .card-face--down`);
+    await expect(face).toHaveAttribute('style', new RegExp(backMarks[card]));
+    if (card === 'C-4') await expect(face).toHaveAttribute('data-orientation', '180');
+  }
+  const guess = page.locator('#guess-input-D3');
+  const warning = page.locator('#guess-error-D3');
+  await expect(page.locator('.guess-seats')).toBeHidden();
+  await expect(page.locator('.guess-region')).toBeHidden();
+  await guess.fill('3');
+  await guess.press('Tab');
+  await expect(warning).toHaveText('Try again with a whole number from 4 to 52.');
+  await guess.fill('53');
+  await guess.press('Enter');
+  await expect(warning).toBeVisible();
+  await expect(guess).toBeFocused();
+  await guess.fill('28');
+  await expect(warning).toBeHidden();
+  await page.locator('#game-board-view').click();
+  await expect(guess).toHaveValue('28');
+  const d3 = (await page.locator('.board-cell[data-row="2"][data-col="3"]').boundingBox())!;
+  const junction = (await page.locator('.board-code-junction[data-quad-key="D3"]').boundingBox())!;
+  expect(junction.x + junction.width / 2).toBeCloseTo(d3.x + d3.width, 1);
+  expect(junction.y + junction.height / 2).toBeCloseTo(d3.y, 1);
+});
 
 test.describe('1 full game', () => {
   test('one human and three BEGINNER AI Seats play from setup to a four-player ranking', async ({ page }) => {
@@ -94,13 +156,15 @@ test.describe('2 placement', () => {
     await expect(page.locator('.hand-card')).toHaveCount(3);
 
     // --- A. rotation control exists exactly for clubs and spades (read from the owner's own card faces) ---
-    const glyphs = await page.locator('.hand-card .card-face__suit').allTextContents();
-    expect(glyphs).toHaveLength(3);
-    for (let i = 0; i < glyphs.length; i++) {
+    const labels = await handLabels(page);
+    expect(labels).toHaveLength(3);
+    for (let i = 0; i < labels.length; i++) {
       await page.locator('.hand-card').nth(i).click();
       await expect(page.locator('.hand-card').nth(i)).toHaveAttribute('aria-pressed', 'true');
-      const expected = glyphs[i] === '♣' || glyphs[i] === '♠' ? 1 : 0;
-      await expect(page.locator('.placement-button--rotate'), `rotation for ${glyphs[i]}`).toHaveCount(expected);
+      await expect(page.locator('.placement-button--rotate')).toBeHidden();
+      await page.locator('.board-cell.is-legal').first().click();
+      const expected = /Clubs|Spades/.test(labels[i]!) ? 1 : 0;
+      await expect(page.locator('.placement-button--rotate'), `rotation for ${labels[i]}`).toHaveCount(expected);
       if (expected === 1) {
         const rotate = page.locator('.placement-button--rotate');
         await rotate.click();
@@ -556,26 +620,23 @@ test.describe('7 desktop 1280x800', () => {
 // 8.6 Two Composite Codes in one placement (Task 8.6, qroker-playable-game)
 //
 // Scene generated by `npx tsx scripts/find-two-code-scene.ts --from 1 --to 300` (read-only engine run, see that file).
-// Seed 47 (decimal text in the setup field). The FIRST prediction batch of the game is one placement by P0 (the human
-// seat): the card H-8 on B2 (row 1, col 1, orientation 0) completes A1 and B2 together. Both 2x2 groups contain B2.
-// Replay: `playUntil` with its default policy (first hand card, first legal cell, orientation 0) reaches this batch; the
-// test then types P0's guesses from SCENE_8_6 (A1 = 20, B2 = 27, changed from 21 in the follow-up for a non-zero B2 score).
-// The human moves before it are listed in docs/validation/kiro-private-guess-reveal.md (section 8).
+// Seed 115 produces C2 first, then the upright C-10 on E2 completes E1 and E2 together.
+// Use the default human policy up to that batch, then score an exact guess and a near miss.
 // The AI guesses below are private; the test uses them only to derive the expected points, never to read the screen.
 // ---------------------------------------------------------------------------------------------------------------
 
 const SCENE_8_6 = {
-  seed: 47,
-  placedCard: 'H-8',
-  placedCell: { row: 1, col: 1 }, // B2
-  quadKeys: ['A1', 'B2'],
-  hiddenSums: { A1: 20, B2: 28 } as Record<string, number>,
-  cumulativeBefore: { P0: 0, P1: 0, P2: 0, P3: 0 } as Record<string, number>,
+  seed: 115,
+  placedCard: 'C-10',
+  placedCell: { row: 1, col: 4 }, // E2
+  quadKeys: ['E1', 'E2'],
+  hiddenSums: { E1: 29, E2: 30 } as Record<string, number>,
+  cumulativeBefore: { P0: 5, P1: 0, P2: 3, P3: 5 } as Record<string, number>,
   guesses: {
-    P0: { A1: 20, B2: 27 }, // typed by the test. B2 is 27 (error 1 from 28, 5 points), so P0 earns from both codes: 10 + 5
-    P1: { A1: 21, B2: 10 },
-    P2: { A1: 28, B2: 40 },
-    P3: { A1: 4, B2: 17 },
+    P0: { E1: 29, E2: 31 },
+    P1: { E1: 42, E2: 19 },
+    P2: { E1: 41, E2: 15 },
+    P3: { E1: 26, E2: 42 },
   } as Record<string, Record<string, number>>,
 };
 
@@ -589,18 +650,31 @@ const rewardFor8_6 = (guess: number, hidden: number): number => {
 const SEATS_8_6 = ['P0', 'P1', 'P2', 'P3'] as const;
 
 test.describe('8 two codes in one placement', () => {
-  test('one placement completes A1 and B2: one reveal with both sums and each seat\'s points', async ({ page }, testInfo) => {
+  test.use({ locale: 'ko-KR' });
+  test('one placement completes E1 and E2: one reveal with both sums and each seat\'s points', async ({ page }, testInfo) => {
     test.setTimeout(LONG_TEST);
     const scene = SCENE_8_6;
     await startGame(page, { seedText: String(scene.seed) });
 
-    // The first guess step of the game is the two-code batch. Everything before it is played by the default policy.
-    const { stoppedAt } = await playUntil(page, { stopAt: (kind) => kind === 'GUESS' });
+    const { stoppedAt } = await playUntil(page, {
+      stopAt: async kind => kind === 'GUESS' && await page.locator('.guess-field').count() === 2,
+    });
     expect(stoppedAt).toBe('GUESS');
 
     // (a) Two distinct Quad_Keys, in guess-input order, and both 2x2 groups contain the newly placed cell.
     const keys = await page.locator('.guess-field').evaluateAll((els) => els.map((el) => el.getAttribute('data-quad-key')));
     expect(keys).toEqual(scene.quadKeys);
+    await expect(page.locator('.board-code-junction')).toHaveCount(3);
+    await expect(page.locator('.board-code-junction[data-quad-key="C2"]')).toBeVisible();
+    for (const key of scene.quadKeys) {
+      const marker = page.locator(`.board-code-junction[data-quad-key="${key}"]`);
+      await expect(marker).toBeVisible();
+      const dot = (await marker.boundingBox())!;
+      const cell = (await marker.locator('..').boundingBox())!;
+      expect(Math.abs(dot.x + dot.width / 2 - cell.x - cell.width)).toBeLessThan(1);
+      expect(Math.abs(dot.y + dot.height / 2 - cell.y - cell.height)).toBeLessThan(1);
+    }
+    await expect(page.locator('.card-face--down :is(img, .card-face__fragment)')).toHaveCount(0);
     expect(new Set(keys).size, 'two distinct Quad_Keys').toBe(2);
     for (const key of keys) {
       const top = { col: key.charCodeAt(0) - 'A'.charCodeAt(0), row: Number(key.slice(1)) - 1 };
@@ -616,11 +690,11 @@ test.describe('8 two codes in one placement', () => {
     for (const text of await page.locator('.guess-field').allTextContents()) {
       expect(text, 'no labelled hidden-sum answer in a guess field').not.toMatch(/숨겨진 합\s*:\s*\d+/);
     }
-    await page.locator('#guess-input-A1').fill(String(scene.guesses.P0.A1));
-    await expect(page.locator('#guess-input-A1')).toHaveValue(String(scene.guesses.P0.A1));
+    await page.locator('#guess-input-E1').fill(String(scene.guesses.P0.E1));
+    await expect(page.locator('#guess-input-E1')).toHaveValue(String(scene.guesses.P0.E1));
     await expect(page.locator('.reveal, .reveal-sum, .reveal-code')).toHaveCount(0);
-    await page.locator('#guess-input-B2').fill(String(scene.guesses.P0.B2));
-    await expect(page.locator('#guess-input-B2')).toHaveValue(String(scene.guesses.P0.B2));
+    await page.locator('#guess-input-E2').fill(String(scene.guesses.P0.E2));
+    await expect(page.locator('#guess-input-E2')).toHaveValue(String(scene.guesses.P0.E2));
     await expect(page.locator('.reveal, .reveal-sum, .reveal-code')).toHaveCount(0);
     await testInfo.attach('before-final-submission', { body: await page.screenshot(), contentType: 'image/png' });
 
@@ -637,7 +711,24 @@ test.describe('8 two codes in one placement', () => {
       })),
     );
     expect(codes).toEqual(scene.quadKeys.map((key) => ({ key, sum: scene.hiddenSums[key] })));
-    await testInfo.attach('reveal', { body: await page.screenshot(), contentType: 'image/png' });
+    for (const key of scene.quadKeys) {
+      await expect(page.locator(`.board-code-junction--open[data-quad-key="${key}"]`)).toBeVisible();
+      const faces = page.locator(`.reveal-code[data-quad-key="${key}"] .reveal-card`);
+      for (const [slot, corner] of ['br', 'bl', 'tr', 'tl'].entries()) {
+        if (hasLocalDeck) {
+          const artwork = faces.nth(slot).locator('img.card-face__art');
+          await expect(artwork).toBeVisible();
+          await expect.poll(() => artwork.evaluate(img => (img as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+        } else {
+          await expect(faces.nth(slot).locator(`.card-face__fragment--${corner}`)).toBeVisible();
+        }
+      }
+    }
+    await expect(page.locator('#reveal-continue')).toBeInViewport();
+    await expect(page.locator('.reveal-code').last()).toBeInViewport({ ratio: 1 });
+    const revealImage = testInfo.outputPath('reveal.png');
+    await page.screenshot({ path: revealImage });
+    await testInfo.attach('reveal', { path: revealImage, contentType: 'image/png' });
 
     // (d) Each seat's earned and total points, from the expected values derived above (not from the screen).
     const expected = Object.fromEntries(
@@ -662,9 +753,8 @@ test.describe('8 two codes in one placement', () => {
     for (const seat of SEATS_8_6) {
       expect(rows[seat], `points row of ${seat}`).toEqual(expected[seat]);
     }
-    // P0 earns 10 from A1 (guess 20, hidden 20, error 0) and 5 from B2 (guess 27, hidden 28, error 1): 15, and 15 in total
-    // because this is the first scoring batch of the game.
-    expect(rows.P0, 'P0 earned and total from both codes').toEqual({ earned: 15, total: 15 });
+    // An exact guess and a near miss earn 15 in this batch, in addition to 5 from C2.
+    expect(rows.P0, 'P0 earned and total from both codes').toEqual({ earned: 15, total: 20 });
 
     // (e) The reveal shows no individual guess and no guess tied to a seat or a code. Public sums and points may
     // equal a submitted guess; only the structure is checked here.

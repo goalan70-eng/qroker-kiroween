@@ -51,10 +51,12 @@ import type { CardId, GridPosition } from '../../core/types';
 import type { PlayerView } from '../../core/view';
 import { createH, renderWithFocus } from '../dom';
 import type { CreateDoc, FocusDoc } from '../dom';
+import type { TableBacks } from '../back-art';
 import type { DraftEvent, DraftResult, PlacementDraft, RotationInfoMap } from '../placement-draft';
 import { attachHandGestures } from '../pointer-gesture';
 import type { CancelReason, GestureDocument } from '../pointer-gesture';
-import { boardModel, renderBoard, viewerOwnerLabel } from './board';
+import type { LensHover } from './board-magnifier';
+import { boardModel, displayPosition, renderBoard, viewerOwnerLabel, type BoardView } from './board';
 import type { Translate } from './card-face';
 import { controlsModel, controlsStatusText, renderPlacementControls } from './placement-controls';
 import type { DisplayErrorLike } from './placement-controls';
@@ -74,6 +76,9 @@ export interface PlacementPanelInput {
   readonly model: { readonly draft: PlacementDraft; readonly gestureEpoch: number };
   readonly displayError: DisplayErrorLike | null;
   readonly rotationInfo: RotationInfoMap;
+  readonly backs?: TableBacks;
+  readonly boardView?: BoardView;
+  readonly viewButton?: HTMLElement;
   readonly handlers: PlacementHandlers;
 }
 
@@ -130,15 +135,44 @@ export function renderPlacementPanel(
 
   // ---- Board ----------------------------------------------------------------------------------------------
 
-  function buildBoard(view: PlayerView): HTMLElement {
+  const lensHover: LensHover = { point: null };
+  function appendBoard(view: PlayerView, controls = controlsModel(view, current.model.draft, current.rotationInfo, current.displayError)): void {
     const handlers = {
       draftEvent: (e: DraftEvent) => current.handlers.draftEvent(e),
       explainTarget: (c: GridPosition) => current.handlers.explainTarget(c),
     };
-    return renderBoard(h, boardModel(view, current.model.draft, { dragActive: dragging }), t, handlers, {
+    const board = renderBoard(h, boardModel(view, current.model.draft, { dragActive: dragging }), t, handlers, {
       dragActive: dragging,
+      lensHover,
+      boardView: current.boardView,
+      viewButton: current.viewButton,
+      boardBacks: current.backs?.board,
+      previewCard: current.model.draft.card,
       ownerLabel: viewerOwnerLabel(view.viewer, t), // the preview and own cards say "You", like the Hand
     });
+    const target = current.model.draft.target;
+    let actions: HTMLElement | undefined;
+    if (controls.canConfirm && target) {
+      const { row, col } = displayPosition(target, current.boardView ?? 'portrait');
+      actions = h('div', {
+        class: 'placement-card-actions',
+        attrs: {
+          role: 'group', hidden: dragging, 'data-below': row < 2 ? 'true' : 'false',
+          style: `--target-col: ${col}; --target-row: ${row}`,
+        },
+        aria: { label: t('hand.controls.label') },
+      });
+      board.appendChild(actions);
+    }
+    clear(controlsSlot);
+    controlsSlot.appendChild(
+      renderPlacementControls(h, controls, t, {
+        draftEvent: (e) => current.handlers.draftEvent(e),
+        confirmPlacement: () => current.handlers.confirmPlacement(),
+      }, actions),
+    );
+    boardSlot.appendChild(board);
+    lensHover.restore?.();
   }
 
   /** Re-renders only the Board (drag start and end change its drop-target classes). */
@@ -146,7 +180,7 @@ export function renderPlacementPanel(
     const view = current.view;
     if (disposed || updating || view === null) return;
     clear(boardSlot);
-    boardSlot.appendChild(buildBoard(view));
+    appendBoard(view);
   }
 
   // ---- drag ghost -----------------------------------------------------------------------------------------
@@ -173,6 +207,7 @@ export function renderPlacementPanel(
         const view = current.view;
         if (disposed || view === null) return;
         current.handlers.draftEvent({ type: 'dragStart', card }); // the draft does not change
+        lensHover.point = null;
         dragging = true;
         ghost = renderDragGhost(h, dragGhostFace(view, current.model.draft, card, ownerLabel()), t, x, y);
         overlayEl.appendChild(ghost);
@@ -227,25 +262,22 @@ export function renderPlacementPanel(
     clear(handSlot);
     clear(controlsSlot);
     if (view === null) {
+      lensHover.point = null;
+      lensHover.restore = undefined;
       hand = null;
       setText(statusEl, '');
       setText(errorEl, '');
       return;
     }
+    handSlot.setAttribute('data-seat', view.viewer);
     const draft = current.model.draft;
     hand = handModel(view, draft, ownerLabel());
     const controls = controlsModel(view, draft, current.rotationInfo, current.displayError);
     setText(statusEl, controlsStatusText(controls, t));
     setText(errorEl, controls.errorText ?? '');
-    boardSlot.appendChild(buildBoard(view));
+    appendBoard(view, controls);
     handSlot.appendChild(
       renderHand(h, hand, t, { draftEvent: (e) => current.handlers.draftEvent(e) }),
-    );
-    controlsSlot.appendChild(
-      renderPlacementControls(h, controls, t, {
-        draftEvent: (e) => current.handlers.draftEvent(e),
-        confirmPlacement: () => current.handlers.confirmPlacement(),
-      }),
     );
   }
 
@@ -255,6 +287,7 @@ export function renderPlacementPanel(
     updating = true;
     try {
       if (next.model.gestureEpoch !== lastEpoch) {
+        lensHover.point = null;
         lastEpoch = next.model.gestureEpoch;
         gesture.cancel('INVALIDATED'); // stale draft or turn: end an active drag, remove the ghost, no placement
         endDrag();

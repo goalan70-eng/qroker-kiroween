@@ -40,7 +40,7 @@ const cfgWith = (patch: Record<string, unknown>): unknown => ({ ...CUSTOM, ...pa
 describe("RULES_VERSION", () => {
   it("is a positive integer", () => {
     expect(Number.isInteger(RULES_VERSION)).toBe(true);
-    expect(RULES_VERSION).toBe(3);
+    expect(RULES_VERSION).toBe(4);
   });
 });
 

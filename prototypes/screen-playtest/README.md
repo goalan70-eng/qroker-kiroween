@@ -4,7 +4,7 @@ PC에서 기존 QRoker 게임을 플레이하고 Android 휴대전화로 PC 화�
 
 ## 웹게임 규칙
 
-각자 손패 3장으로 시작한다. 첫 배치부터 새 조합을 하나도 완성하지 못하면 공용 덱에서 1장을 뽑는다. 새 조합을 완성했거나 덱이 비었으면 뽑지 않는다.
+각자 손패 3장으로 시작한다. 첫 배치부터 새 조합을 하나도 완성하지 못하면 공용 덱에서 1장을 뽑는다. 새 조합을 완성하면 뽑지 않는다. 덱의 마지막 카드를 뽑으면 그 즉시 현재 점수로 게임을 끝낸다.
 
 드로우 처리 후 손패가 비거나, 네 사람이 이번 판에 완성한 서로 다른 조합이 누적 5개 이상이면 게임이 끝난다. 한 번에 두 조합이 생기면 두 조합 모두 전원이 추측하고 채점한다. 손패를 비운 사람만 보너스 5점을 받는다. 최종 점수가 가장 높은 사람이 이기며 동점은 공동 순위다.
 
@@ -18,6 +18,8 @@ PC에서 기존 QRoker 게임을 플레이하고 Android 휴대전화로 PC 화�
 두 빌드 모두 입력 지문을 확인한다. 시제품에서 사용하는 조커 원본·파생 카드 이미지와 촬영 자료는 별도로 갖고 있어야 한다.
 
 ```powershell
+$deckZip = '../../local-optical-previews/web-game/kennard-deck/center-grid/kennard-52-center-grid.zip'
+$layoutDirectory = '../../local-optical-previews/mosaic-camera-print/full-joker'
 ./build-web.ps1 -Deck $deckZip
 ./build-android.ps1 -Source $layoutDirectory
 ```

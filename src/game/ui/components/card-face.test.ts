@@ -1,7 +1,7 @@
 // Tests of the card face component (task 17.1). They run in Node WITHOUT a DOM library (happy-dom arrives with task
 // 21.1): the model tests are exhaustive over the 52 cards, and the render tests use a minimal hand-written fake
 // Document. They are unit tests against a stand-in, NOT browser tests: real layout, colour and focus are not exercised.
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -260,6 +260,32 @@ describe('renderCardFace, face-down', () => {
 });
 
 describe('renderCardFace, face-up', () => {
+  it.skipIf(!existsSync('prototypes/screen-playtest/inputs/cards/AH.svg'))('maps all 52 public faces to their original artwork and keeps hidden faces image-free', () => {
+    for (const card of ALL_IDS) {
+      const [suit, rank] = card.split('-');
+      for (const orientation of ORIENTATIONS) {
+        const face = render({ card, owner: 'P0', orientation, ownerLabel: 'P0' });
+        const images = subtreeElements(face).filter(el => el.tagName === 'img');
+        expect(images).toHaveLength(1);
+        expect(images[0]?.getAttribute('src')).toContain(`/${rank}${suit}.svg`);
+        expect(subtreeElements(face).some(el => el.getAttribute('class')?.includes('card-face__fragment'))).toBe(false);
+      }
+    }
+    const hidden = render({ card: null, owner: 'P0', orientation: 180, ownerLabel: 'P0' });
+    expect(subtreeElements(hidden).some(el => el.getAttribute('src') !== null)).toBe(false);
+  });
+
+  it('prints the matching number of suit marks on each numeric hand card', () => {
+    for (const card of ALL_IDS) {
+      const face = render({ card, size: 'hand', owner: 'P0', orientation: 0, ownerLabel: 'P0' });
+      const rows = subtreeElements(face).filter(el => el.getAttribute('class') === 'card-face__pip-row');
+      const rank = Number(card.split('-')[1]);
+      const marks = rows.flatMap(row => row.children.map(subtreeText));
+      expect(marks.length, card).toBe(Number.isInteger(rank) ? rank : 0);
+      if (marks.length) expect(new Set(marks), card).toEqual(new Set([GLYPH[card[0] as keyof typeof GLYPH]]));
+    }
+  });
+
   it('draws rank and suit glyph as text and the 180° mark only when rotated', () => {
     const upright = render({ card: 'H-7', owner: 'P0', orientation: 0, ownerLabel: 'x' });
     expect(subtreeText(upright)).toBe('7♥');
@@ -328,7 +354,7 @@ describe('renderCardFace, face-up', () => {
       for (const e of subtreeElements(el)) {
         expect(e.listeners).toEqual([]);
         expect(e.getAttribute('tabindex')).toBeNull();
-        expect(['span']).toContain(e.tagName);
+        expect(['span', 'img']).toContain(e.tagName);
       }
     }
   });
@@ -394,9 +420,10 @@ describe('tokens.css and card.css', () => {
     expect(rotated).toEqual(['.card-face.is-rotated .card-face__glyphs', '.card-face.is-rotated .card-face__orient::before']);
   });
 
-  it('refers to no url(), no @import and no http: no external font, image or network', () => {
+  it('bundles the shared card stock and uses no remote assets', () => {
+    expect(tokens).not.toMatch(/url\(/i);
+    expect([...card.matchAll(/url\(([^)]+)\)/gi)].map(match => match[1])).toEqual(["'./marked-card-back.webp'"]);
     for (const css of [tokens, card]) {
-      expect(css).not.toMatch(/url\(/i);
       expect(css).not.toMatch(/@import/i);
       expect(css).not.toMatch(/http/i);
       expect(css).not.toMatch(/@font-face/i);

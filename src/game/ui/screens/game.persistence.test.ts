@@ -227,7 +227,7 @@ function cached(key: string, make: () => string): string {
 }
 const SAVES = {
   placement1: () => cached('p1', () => savedText(1, SEED.ONE, placementOfP0)),
-  reveal1: () => cached('r1', () => savedText(1, SEED.ONE, atReveal)),
+  reveal1: () => cached('r1', () => savedText(1, 4, atReveal)),
   guess2: () => cached('g2', () => savedText(2, SEED.TWO, guessPartial)),
   placement4: () => cached('p4', () => savedText(4, SEED.FOUR, placementAny)),
 };

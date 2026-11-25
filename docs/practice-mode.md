@@ -6,7 +6,7 @@ The browser game supports one to four local human players, with offline
 The browser game does not scan physical cards and does not implement the complete
 physical game or the Scoring Companion.
 
-Each player starts with three cards. From the first placement, draw one card if no new code was completed and the deck has a card. End when someone empties their hand or the table has completed at least five distinct codes. Score every code from the final placement before ranking. Only the player who emptied their hand receives the bonus.
+Each player starts with three cards. From the first placement, draw one card if no new code was completed and the deck has a card. End immediately when the last card is drawn. The game also ends when someone empties their hand or the table has completed at least five distinct codes. Score every code from the final placement before ranking. Only the player who emptied their hand receives the bonus.
 
 Current owner-selected provisional scores (2026-11-16):
 
@@ -21,7 +21,7 @@ Current owner-selected provisional scores (2026-11-16):
 | ±6 or more | 0 |
 | Hand emptied | +5 bonus |
 
-These defaults apply to new games. Rules version 3 uses a separate save slot. Previous four-card games remain in their old slot and cannot resume under these rules. Resuming a compatible save preserves the score
+These defaults apply to new games. Rules version 4 uses a separate save slot. Games started under earlier rules remain in their original slots and cannot resume under these rules. Resuming a compatible save preserves the score
 configuration stored with that game; it does not silently rescore the game.
 
 ## Install and run

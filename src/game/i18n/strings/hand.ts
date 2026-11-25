@@ -20,14 +20,13 @@ export const en = Object.freeze({
   'hand.confirm': 'Confirm placement',
   'hand.cancel': 'Cancel',
   'hand.rotate': 'Rotate 180°',
-  'hand.rotation.state.0': '0° (upright)',
-  'hand.rotation.state.180': '180° (rotated)',
+  'hand.restoreOrientation': 'Return upright',
 
   // Hints by draft state (position first or card first; dragging is the third way).
   'hand.hint.idle': 'Select a card or a position on the board. You can also drag a card onto a legal cell.',
   'hand.hint.target': 'Position chosen. Now select a card from your hand.',
   'hand.hint.card': 'Card chosen. Now select a legal position on the board.',
-  'hand.hint.preview': 'Preview shown. Confirm the placement or cancel it.',
+  'hand.hint.preview': 'Press ✓ beside the card to place it.',
 
   // Status while the controls are off.
   'hand.status.ai': '{seat} is playing',
@@ -57,9 +56,7 @@ export const ko: Record<keyof typeof en, string> = Object.freeze({
   // REVIEW: new text, needs native-speaker check
   'hand.rotate': '180° 회전',
   // REVIEW: new text, needs native-speaker check
-  'hand.rotation.state.0': '0° (기본)',
-  // REVIEW: new text, needs native-speaker check
-  'hand.rotation.state.180': '180° (회전됨)',
+  'hand.restoreOrientation': '원래 방향으로',
 
   // REVIEW: new text, needs native-speaker check
   'hand.hint.idle': '카드나 보드의 위치를 선택하세요. 카드를 놓을 수 있는 칸으로 끌어다 놓을 수도 있습니다.',
@@ -68,7 +65,7 @@ export const ko: Record<keyof typeof en, string> = Object.freeze({
   // REVIEW: new text, needs native-speaker check
   'hand.hint.card': '카드를 선택했습니다. 이제 보드에서 놓을 수 있는 위치를 선택하세요.',
   // REVIEW: new text, needs native-speaker check
-  'hand.hint.preview': '미리보기가 표시되었습니다. 배치를 확정하거나 취소하세요.',
+  'hand.hint.preview': '카드 옆의 ✓를 누르면 이 칸에 놓습니다.',
 
   // REVIEW: new text, needs native-speaker check
   'hand.status.ai': '{seat}의 차례입니다',

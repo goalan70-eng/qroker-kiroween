@@ -242,12 +242,13 @@ describe('the form for one-code and two-code batches [fake-DOM, real engine]', (
           const input = byId(r.doc, `guess-input-${key}`);
           expect(input.getAttribute('type')).toBe('text'); // never type=number (it hides malformed text)
           expect(input.getAttribute('inputmode')).toBe('numeric');
+          expect(input.getAttribute('placeholder')).toBe('4–52');
           expect(input.getAttribute('autocomplete')).toBe('off');
           expect(input.getAttribute('name')).toBeNull();
           expect(input.getAttribute('aria-invalid')).toBe('false');
           expect(input.getAttribute('data-focus-key')).toBe(`guess-input-${key}`);
           const label = r.doc.all().find((el) => el.tagName === 'label' && el.getAttribute('for') === `guess-input-${key}`) as FakeEl;
-          expect(label.textContent).toBe(`Guess for code ${key} (whole number from 4 to 52)`);
+          expect(label.textContent).toBe(`Code ${key}`);
           const describedBy = (input.getAttribute('aria-describedby') as string).split(' ');
           expect(describedBy).toEqual([`guess-region-${key}`, `guess-error-${key}`]);
           expect(byId(r.doc, `guess-region-${key}`).textContent).toMatch(new RegExp(`^Code ${key}: the 2×2 region of the board with the cells ${key}, `));
@@ -307,7 +308,7 @@ describe('the form for one-code and two-code batches [fake-DOM, real engine]', (
     expect(byId(r.doc, 'guess-submit').textContent).toBe('예측값 제출');
     expect(ko).toMatch(/[\uAC00-\uD7A3]/);
     for (const key of viewOf(g, 'P0').pendingQuadKeys) {
-      expect(ko).toContain(`${key} 조합의 예측값 (4에서 52 사이의 정수)`);
+      expect(ko).toContain(`${key} 조합`);
     }
     expect(r.doc.all().filter((el) => el.tagName === 'li').map((el) => el.textContent)[0]).toBe('Alice: 대기 중');
   });
@@ -334,11 +335,11 @@ describe('validation before sending [fake-DOM, real engine]', () => {
     ['NaN', 'Enter a whole number'],
     ['Infinity', 'Enter a whole number'],
     ['٤', 'Enter a whole number'],
-    ['3', 'The guess must be between 4 and 52'],
-    ['53', 'The guess must be between 4 and 52'],
-    ['0', 'The guess must be between 4 and 52'],
-    ['-3', 'The guess must be between 4 and 52'],
-    ['99999999999999999999', 'The guess must be between 4 and 52'],
+    ['3', 'Try again with a whole number from 4 to 52.'],
+    ['53', 'Try again with a whole number from 4 to 52.'],
+    ['0', 'Try again with a whole number from 4 to 52.'],
+    ['-3', 'Try again with a whole number from 4 to 52.'],
+    ['99999999999999999999', 'Try again with a whole number from 4 to 52.'],
   ];
 
   it('sends nothing for invalid text: inline message, aria-invalid, first invalid input focused, engine state unchanged', () => {
@@ -373,7 +374,7 @@ describe('validation before sending [fake-DOM, real engine]', () => {
     typeInto(byId(r.doc, `guess-input-${k2}`), 'x');
     byId(r.doc, `guess-input-${k2}`).focus();
     form.submit();
-    expect(errorOf(r.doc, k1)).toBe('The guess must be between 4 and 52');
+    expect(errorOf(r.doc, k1)).toBe('Try again with a whole number from 4 to 52.');
     expect(errorOf(r.doc, k2)).toBe('Enter a whole number');
     expect(r.doc.activeElement).toBe(byId(r.doc, `guess-input-${k1}`));
     expect(r.calls).toEqual([]);
@@ -406,10 +407,10 @@ describe('validation before sending [fake-DOM, real engine]', () => {
     const [k1] = viewOf(g, 'P0').pendingQuadKeys as [string];
     typeInto(byId(r.doc, `guess-input-${k1}`), '53');
     form.submit();
-    expect(errorOf(r.doc, k1)).toBe('The guess must be between 4 and 52');
+    expect(errorOf(r.doc, k1)).toBe('Try again with a whole number from 4 to 52.');
     setLanguage('ko');
     form.update(r.inputFor('P0'));
-    expect(errorOf(r.doc, k1)).toBe('예측값은 4에서 52 사이여야 합니다');
+    expect(errorOf(r.doc, k1)).toBe('4~52 사이의 정수로 다시 입력해 주세요.');
     typeInto(byId(r.doc, `guess-input-${k1}`), '');
     form.submit();
     expect(errorOf(r.doc, k1)).toBe('4에서 52 사이의 정수를 입력하세요');

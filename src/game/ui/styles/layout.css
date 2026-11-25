@@ -25,7 +25,7 @@
 }
 .game-host {
   box-sizing: border-box;
-  max-inline-size: 76rem;
+  max-inline-size: calc(70rem + 2 * var(--board-pad));
   margin-inline: auto;
   padding: 0 var(--board-pad) var(--space-4);
   font-family: var(--font-ui);
@@ -42,8 +42,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
-  padding-block: .5rem;
-  border-block-end: 1px solid var(--rule);
+  padding-block: .5rem 0;
 }
 .game-bar__button {
   box-sizing: border-box;
@@ -52,10 +51,10 @@
   padding: var(--space-2) var(--space-4);
   font: inherit;
   font-weight: 600;
-  color: var(--color-ink);
+  color: var(--felt);
   background-color: var(--color-paper);
-  border: var(--stroke) solid var(--color-ink);
-  border-radius: 0.25rem;
+  border: 1px solid #919989;
+  border-radius: .45rem;
   cursor: pointer;
 }
 .game-bar__button:focus-visible {
@@ -67,13 +66,14 @@
   min-inline-size: 0;
 }
 .game-banner-slot .banner {
+  inline-size: fit-content;
   margin: 0;
   font-size: .875rem;
-  padding: .3rem .65rem;
+  padding: .35rem .7rem;
   color: #514628;
   background: #f3eacf;
   border: 0;
-  border-inline-start: 2px solid #9a885a;
+  border-radius: .4rem;
 }
 .game-seed {
   margin: 0;
@@ -137,27 +137,53 @@
   outline-offset: calc(-1 * var(--stroke-strong));
   box-shadow: inset 0 0 0 calc(var(--stroke-strong) + 2px) var(--color-paper);
 }
+.board-cell.is-focused-region:has(.card-face__art, .card-face--down[style]):not(:focus-visible) {
+  outline: 0;
+  box-shadow: none;
+}
+[data-focused-junction] + .board-code-junction--open {
+  outline: var(--stroke-strong) dashed var(--color-focus);
+  outline-offset: 1px;
+}
 /* Guess form (screens/guess-entry.ts): one field per code, large targets, a visible message under each field. */
 .guess-entry,
 .privacy-gate {
   font-family: var(--font-ui);
   color: var(--color-ink);
 }
+.game-layout:has(.board-frame) .game-main-slot:has(.guess-form) {
+  box-sizing: border-box;
+  inline-size: min(100%, 15rem);
+  justify-self: center;
+  padding: .75rem;
+  border-radius: .6rem;
+  scrollbar-gutter: auto;
+}
+.guess-entry:has(.guess-form) .guess-seats {
+  display: none;
+}
 .guess-form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: .45rem;
+}
+.guess-title {
+  font-size: 1.05rem;
+  line-height: 1.3;
 }
 .guess-title,
-.guess-intro,
-.guess-region,
 .guess-status {
   margin: 0;
 }
 .guess-field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: .25rem .75rem;
+}
+.guess-field .guess-error {
+  grid-column: 1 / -1;
+  font-size: .875rem;
 }
 .guess-label {
   font-weight: 600;
@@ -171,7 +197,7 @@
   font: inherit;
 }
 .guess-input[aria-invalid="true"] {
-  border-width: var(--stroke-strong);
+  border-color: var(--color-red);
 }
 .guess-error,
 .guess-engine-error {
@@ -243,7 +269,7 @@
   :root {
     --cell: clamp(
       24px,
-      min(calc((100vw - 2 * var(--board-pad) - var(--label-size) - 20rem) / 8), calc((100vh - 9rem) / 8)),
+      min(calc((100vw - 2 * var(--board-pad) - var(--label-size) - 20rem) / 8), calc((100vh - 9rem) / 8 / var(--card-height-ratio))),
       64px
     );
   }
@@ -271,6 +297,18 @@
   .game-score-slot {
     grid-column: 2;
   }
+  .placement-board { grid-row: 1 / 8; }
+  .placement-hand { grid-column: 1; grid-row: 8; }
+  .placement-controls-slot { grid-column: 1; grid-row: 9; }
+}
+@media (orientation: landscape) and (min-width: 64rem) {
+  .game-layout:has(.board-frame) {
+    padding: 1.25rem;
+    column-gap: clamp(1.5rem, 3vw, 3rem);
+    background: var(--color-paper);
+    border: 1px solid #c7c9bb;
+    border-radius: 1rem;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .game-host,
@@ -279,4 +317,365 @@
     animation: none !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* The desktop shell letterboxes the whole app. Dialogs share the frame; drag
+ * coordinates stay in the viewport used by the pointer events. */
+@media (min-width: 64rem) and (hover: hover) {
+  body:has(> #app) {
+    min-block-size: 100dvh;
+    display: grid;
+    place-items: center;
+    background: #101f1c;
+  }
+  #app {
+    --masthead: clamp(3.35rem, 4vw, 4.25rem);
+    position: relative;
+    isolation: isolate;
+    container: desktop / inline-size;
+    display: grid;
+    grid-template-rows: var(--masthead) minmax(0, 1fr);
+    inline-size: min(100%, calc(100dvh * 16 / 9));
+    aspect-ratio: 16 / 9;
+    min-inline-size: 0;
+    min-block-size: 0;
+    background: #eae9dc;
+  }
+  #app > .shell {
+    padding: 0 clamp(.75rem, 2vw, 2rem);
+    background: #183d33;
+    color: #fff9e6;
+    border-block-end: 1px solid #b59e69;
+  }
+  .shell__title::before { background-color: #a54848; }
+  .shell__language { font-size: .875rem; }
+  .shell__select {
+    background-color: #f8f3df;
+    border-color: #b6b699;
+    color: var(--felt);
+  }
+  #app > .game-host {
+    width: 100%;
+    max-inline-size: none;
+    min-block-size: 0;
+    overflow: auto;
+    padding: 0;
+  }
+  #app .overlay-backdrop { position: absolute; }
+}
+
+@container desktop (min-width: 42rem) {
+  .game-main {
+    --edge: clamp(.65rem, 1.5cqw, 1.8rem);
+    block-size: 100%;
+    display: grid;
+    grid-template: minmax(0, 1fr) 2.65rem / auto minmax(0, 1fr) auto;
+    gap: 0 .75rem;
+    padding: var(--edge) var(--edge) 0;
+  }
+  .game-bar { display: contents; }
+  .game-bar__button {
+    position: absolute;
+    top: calc((var(--masthead) - var(--touch-min)) / 2);
+    height: var(--touch-min);
+    padding: 0 .65rem;
+    font-size: .9rem;
+    font-weight: 550;
+    color: #fbf6e2;
+    background: transparent;
+    border-color: transparent;
+  }
+  .game-bar__button:active { background: #2b5347; }
+  .game-bar__button:focus-visible { outline-color: #ffda77; }
+  #game-help-open { inset-inline-end: 21rem; }
+  #game-abandon-open { inset-inline-end: 13rem; }
+  .game-banner-slot, .game-notices-slot, .game-seed {
+    grid-row: 2;
+    min-inline-size: 0;
+    align-self: center;
+    max-block-size: 100%;
+    overflow: auto;
+  }
+  .game-banner-slot { grid-column: 1; }
+  .game-banner-slot .banner {
+    color: #594d30;
+    background: transparent;
+    border-radius: 0;
+    padding: .1rem 0;
+    font-size: .78rem;
+  }
+  .game-notices-slot { grid-column: 2; }
+  .notice-status { border: 0; padding: .1rem 0; font-size: .75rem; line-height: 1.35; }
+  .game-seed { grid-column: 3; font-size: .8rem; }
+  .game-setup-slot, .game-gate-slot, .game-layout {
+    grid-area: 1 / 1 / 2 / -1;
+    min-block-size: 0;
+    overflow: auto;
+  }
+  .game-main:has(.game-setup-slot:not(:empty), .game-gate-slot:not(:empty)) .game-layout { display: none; }
+  .game-gate-slot:not(:empty), .game-setup-slot:has(.resume) {
+    display: grid;
+    place-items: center;
+    background: #e2e7db;
+    border: 1px solid #bdc5ad;
+    border-radius: .8rem;
+  }
+  .privacy-gate, .resume, .overlay-dialog {
+    padding: clamp(1.25rem, 2cqw, 2rem);
+    border: 1px solid #9d9e83;
+    border-block-start: .35rem solid var(--felt);
+    border-radius: .7rem;
+    box-shadow: 0 .75rem 2rem rgb(25 40 28 / 14%);
+  }
+
+  /* A deck cover and a facing setup sheet. The bottom row is always reachable. */
+  .setup {
+    height: 100%;
+    max-width: none;
+    margin: 0;
+    grid-template: minmax(0, 1fr) / minmax(0, 33fr) minmax(0, 67fr);
+    border-color: #b4b49c;
+    box-shadow: 0 3px 8px rgb(31 46 30 / 8%);
+  }
+  .setup-cover {
+    align-items: center;
+    justify-content: space-evenly;
+    gap: .5rem;
+    padding: clamp(1.25rem, 2.4cqw, 3rem);
+    background: radial-gradient(ellipse at 40% 60%, #386853, #1d483c 75%);
+  }
+  .setup-intro { align-self: stretch; }
+  .setup-title { font-size: clamp(2.25rem, 3.9cqw, 4.7rem); }
+  .setup-deck { inline-size: 64%; max-inline-size: min(21cqw, 17rem); }
+  .setup-form {
+    grid-template: minmax(0, 1fr) auto / minmax(0, 1fr);
+    align-items: stretch;
+    gap: 0;
+    padding: 0;
+    min-block-size: 0;
+  }
+  .setup-fields, .setup-footer {
+    display: grid;
+    padding: clamp(.75rem, 1.5cqw, 1.9rem);
+  }
+  .setup-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: minmax(clamp(7.75rem, 9.6cqw, 10rem), max-content)
+      minmax(clamp(11.5rem, 13cqw, 15rem), max-content) max-content;
+    align-items: start;
+    align-content: start;
+    gap: clamp(.6rem, 1.3cqw, 1.5rem);
+    overflow: auto;
+    overflow-anchor: none;
+    scrollbar-gutter: stable;
+  }
+  .setup-fields .setup-seed { grid-column: 1; }
+  .setup-fields .setup-humans { grid-column: 2; }
+  .setup-humans { grid-auto-rows: min-content; }
+  .setup-legend, .setup-field > .setup-label { font-size: clamp(.96rem, 1.3cqw, 1.35rem); }
+  .setup-seed .setup-button { padding-inline: .55rem; font-size: .875rem; }
+  .setup-hint, .setup-ai-hint { line-height: 1.4; }
+  .setup-ai, .setup-visibility { border-block-start: 1px solid #d8d7c6; }
+  .setup-ai-rows { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .65rem; }
+  .setup-ai-row {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: .35rem .45rem;
+    padding: clamp(.55rem, 1cqw, .95rem);
+    background: #f7f5e9;
+    box-shadow: inset 0 2px var(--felt);
+  }
+  .setup-ai-row::before { font-size: 1.3rem; }
+  .setup-ai-row:has(option[value="ADVANCED"]:checked) { box-shadow: inset 0 2px var(--print-red); }
+  .setup-ai-row .setup-select, .setup-ai-hint { grid-column: 1 / -1; }
+  .setup-ai-hint { min-block-size: 2.8em; }
+  .setup-ai { align-content: start; }
+  .setup-visibility {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(0, 2.4fr);
+    align-content: start;
+    align-items: center;
+  }
+  .setup-visibility .setup-choice { align-self: start; block-size: var(--touch-min); }
+  .setup-visibility .setup-hint { grid-area: 1 / 3; padding-inline-start: .4rem; }
+  .setup-visibility:has(select) .setup-hint { grid-area: 2 / 1 / 3 / -1; padding: 0; }
+  .setup-visibility .setup-field {
+    grid-area: 1 / 3;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+  }
+  .setup-visibility .setup-field .setup-label { font-size: .84rem; }
+  .setup-footer {
+    align-items: center;
+    gap: .35rem 1rem;
+    grid-template-columns: minmax(0, 1fr) minmax(10rem, .8fr);
+    border-block-start: 1px solid #c3c5ae;
+    background: #f4f2e5;
+    border-end-end-radius: 1rem;
+  }
+  .setup-language { grid-template-columns: auto minmax(5.5rem, 10rem); align-items: center; justify-content: start; }
+  .setup-footer .setup-general-error { grid-row: 1; }
+  .setup-form:has(.setup-general-error:not(:empty)) .setup-start { grid-column: 2; }
+  .setup-start { background: #763440; border-color: #612a33; --start-hover: #602833; }
+
+  /* One felt surface. The board, action rail and score sheet keep their tracks
+   * across placement, prediction and reveal, including when Rotate appears. */
+  .game-layout:has(.board-frame) {
+    --tray-height: clamp(5.6rem, 9.5cqw, 11.25rem);
+    --cell: clamp(24px, min(calc((56.25cqw - var(--tray-height) - var(--masthead) - 2.65rem - 2 * var(--edge) - 2.85rem) / 8 / var(--card-height-ratio)), 6cqw), 106px);
+    display: grid;
+    grid-template-columns: minmax(0, 34fr) minmax(0, 44fr) minmax(0, 22fr);
+    grid-template-rows: clamp(15rem, 18.3cqw, 21rem) minmax(0, 1fr) 1.6rem var(--tray-height);
+    align-items: stretch;
+    gap: .18rem var(--edge);
+    padding: var(--edge);
+    background: radial-gradient(ellipse at 25% 37%, #316451, #1b4438 73%);
+    border: 1px solid #536952;
+    border-radius: .95rem;
+    box-shadow: inset 0 0 0 3px #254b3d, inset 0 0 0 4px #798266;
+  }
+  .game-board-slot, .placement-board {
+    grid-area: 1 / 2 / 4 / 3;
+    align-self: center;
+    justify-self: center;
+    padding-inline-end: 0;
+  }
+  .game-layout .board-lens { display: block; }
+  .game-status, .placement-status {
+    grid-area: 2 / 1;
+    padding: .6rem .2rem;
+    color: #fff8e5;
+    align-self: start;
+    max-block-size: 100%;
+    overflow: auto;
+    font-size: clamp(.9rem, 1.15cqw, 1.22rem);
+    word-break: keep-all;
+  }
+  .placement-hand {
+    grid-area: 4 / 2;
+    min-width: 0;
+  }
+  .placement-hand .hand {
+    position: relative;
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(.4rem, 1cqw, 1rem);
+    padding: .5rem 4.5rem;
+    border: 0;
+    border-top: 1px solid #8d9777;
+    border-radius: 0;
+    background: linear-gradient(180deg, #143a3029, transparent);
+  }
+  .placement-hand .hand::before {
+    position: absolute;
+    left: .5rem;
+    font-size: clamp(.82rem, 1.1cqw, 1.05rem);
+  }
+  .hand .card-face--hand { --card-unit: clamp(44px, calc((var(--tray-height) - 1.2rem) / var(--card-height-ratio)), 8rem); }
+  .placement-controls-slot {
+    z-index: 1;
+    grid-area: 4 / 2;
+    align-self: center;
+    justify-self: end;
+    margin-right: .4rem;
+  }
+  .placement-button--cancel {
+    padding: .25rem .6rem;
+    border: 1px solid #a3b79c;
+    border-radius: .45rem;
+    color: #fff8e5;
+    background: #23493d;
+  }
+  .placement-button--cancel:disabled { visibility: hidden; }
+  .game-error, .placement-error { grid-area: 3 / 1; align-self: end; overflow: auto; color: #ffe2c8; }
+  .game-main-slot { grid-area: 2 / 1 / -1 / 2; overflow: auto; scrollbar-gutter: stable; }
+  .game-layout:has(.board-frame) .game-main-slot:not(:empty) {
+    padding: .75rem 1rem;
+    background: var(--color-paper);
+    border-radius: .6rem;
+  }
+  .game-main-slot:has(> .reveal) { overflow: hidden; scrollbar-gutter: auto; }
+  .reveal {
+    height: 100%;
+    display: grid;
+    grid-template: auto minmax(0, 1fr) / 1fr auto;
+    gap: .35rem .6rem;
+  }
+  .reveal-title { grid-area: 1 / 1; align-self: center; margin: 0; }
+  .reveal-actions { grid-area: 1 / 2; }
+  .reveal-continue { border-radius: .35rem; background: var(--felt); }
+  .reveal-content {
+    grid-area: 2 / 1 / 3 / -1;
+    min-height: 0;
+    overflow: auto;
+    scrollbar-gutter: stable;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+    align-content: start;
+    gap: .45rem;
+  }
+  .reveal-content > :not(.reveal-code) { grid-column: 1 / -1; }
+  .reveal-placer { margin: 0; }
+  .reveal-code { margin: 0; padding: .45rem; gap: .15rem .55rem; align-content: stretch; }
+  .reveal-sum { align-self: start; }
+  .reveal-card .card-face--hand { --card-unit: 2.75rem; }
+  .game-score-slot { grid-area: 1 / 1; overflow: auto; }
+  .scoreboard {
+    min-height: 100%;
+    padding: .4rem .75rem;
+    background: #fffbef;
+    border: 1px solid #c5b792;
+    border-radius: .55rem;
+  }
+  .scoreboard-table { table-layout: fixed; font-size: clamp(.82rem, 1.08cqw, 1.1rem); line-height: 1.34; }
+  .scoreboard-table th:first-child { width: 60%; }
+  .scoreboard-table th, .scoreboard-table td { padding: clamp(.12rem, .22cqw, .27rem) .4rem; }
+  .scoreboard-table thead { background: #e8e2cf; color: #3c493c; }
+  .scoreboard-table thead th:not(:first-child) { text-align: end; }
+  .scoreboard-table caption { padding-block: .1rem .3rem; }
+  .scoreboard-name::before {
+    content: "";
+    display: inline-block;
+    inline-size: .58em;
+    block-size: .58em;
+    margin-inline-end: .5em;
+    vertical-align: .06em;
+    background: var(--color-owner-p0);
+    border-radius: 50%;
+  }
+  .scoreboard-row[data-seat="P1"] .scoreboard-name::before { background: var(--color-owner-p1); border-radius: 0; }
+  .scoreboard-row[data-seat="P2"] .scoreboard-name::before { background: var(--color-owner-p2); border-radius: 0; rotate: 45deg; }
+  .scoreboard-row[data-seat="P3"] .scoreboard-name::before {
+    background: var(--color-owner-p3);
+    border-radius: 0;
+    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  }
+  .scoreboard-deck { margin-block-start: .25rem; font-size: .8rem; }
+  .game-layout:has(.end) {
+    display: grid;
+    grid-template: minmax(0, 1fr) / minmax(0, 3fr) minmax(0, 2fr);
+    align-items: stretch;
+    padding: var(--edge);
+    border-radius: .8rem;
+    background: var(--color-paper);
+  }
+  .game-layout:has(.end) .game-main-slot { grid-area: 1 / 1; }
+  .game-layout:has(.end) .game-score-slot { grid-area: 1 / 2; }
+}
+
+@container desktop (min-width: 42rem) and (max-width: 72rem) {
+  .game-main { --edge: .55rem; grid-template-rows: minmax(0, 1fr) 2.35rem; }
+  .setup-fields {
+    padding: .65rem .9rem;
+    gap: .5rem 1rem;
+    grid-template-rows: minmax(7.45rem, max-content) minmax(9.65rem, max-content) max-content;
+  }
+  .setup { grid-template-columns: minmax(0, 29fr) minmax(0, 71fr); }
+  .setup-footer { padding: .55rem .9rem; }
+  .setup-ai-row { padding: .45rem .55rem; gap: .2rem .4rem; }
+  .setup-hint { font-size: .8125rem; }
+  .setup-ai-hint { min-block-size: 0; }
 }

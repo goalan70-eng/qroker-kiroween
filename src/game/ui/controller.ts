@@ -81,6 +81,8 @@
 // No clock, no randomness and no global is used here: the scheduler, the seed provider, the language provider and
 // the strategy lookup are injected (`AppDeps`).
 
+import { backArt } from './back-art';
+import type { TableBacks } from './back-art';
 import { getStrategy } from '../ai/registry';
 import type { AIStrategy, AiContext } from '../ai/strategy';
 import { actingSeats, reduce } from '../core/engine';
@@ -222,6 +224,7 @@ export interface RenderInput {
    * scoreboard, banner, Seed line, status line, reveal, end screen and a read-only Board; never for a Hand or a Guess form.
    */
   readonly publicView: PlayerView | null;
+  readonly backs?: TableBacks;
   /** The Seed of the running game, or `null` when no game runs (requirement 15.2). */
   readonly seed: number | null;
   readonly model: AppModel;
@@ -571,7 +574,17 @@ export function createController(deps: AppDeps): Controller {
         const publicView =
           game !== null && model.viewer === null && humanSeatsOf(game.config).length >= 2 ? publicViewOf(game) : null;
         const seed = game === null ? null : game.state.seed;
-        deps.renderer({ view, publicView, seed, model, displayError: displayErrorOf(model), rotationInfo, handlers });
+        let backs: TableBacks | undefined;
+        if (game && !model.gate && model.screen === 'GAME') {
+          const { board, hands, deck } = game.state;
+          const top = deck.at(-1);
+          backs = deepFreeze({
+            board: board.map(cell => cell ? backArt(cell.card) : null),
+            seatMarks: { P0: hands.P0.map(backArt), P1: hands.P1.map(backArt), P2: hands.P2.map(backArt), P3: hands.P3.map(backArt) },
+            deckTop: top && backArt(top),
+          });
+        }
+        deps.renderer({ view, publicView, backs, seed, model, displayError: displayErrorOf(model), rotationInfo, handlers });
         if (!renderAgain || disposed) break;
       }
     } finally {

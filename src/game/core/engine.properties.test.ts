@@ -263,8 +263,8 @@ interface DrawCoverage {
   skipped: number;
   code: number;
   noCodeDraw: number;
-  emptyDeckNoCode: number;
-  emptyDeckAny: number;
+  lastDeckCardDrawn: number;
+  lastDeckCardAvailable: number;
   twoCodes: number;
   endedByPlacement: number;
   codeEndsGame: number;
@@ -272,7 +272,7 @@ interface DrawCoverage {
   fellBack: number;
 }
 
-type Prefer = "ANY" | "EMPTY_DECK" | "CODE" | "LAST_CARD" | "TWO_CODES";
+type Prefer = "ANY" | "LAST_DECK_CARD" | "CODE" | "LAST_CARD" | "TWO_CODES";
 
 /** How many new codes the best legal placement of the turn seat forms (the engine's own detector steers the choice). */
 const bestCodes = (state: GameState): number => legalPlacements(state).reduce((best, p) => Math.max(best, p.newCodes), 0);
@@ -281,18 +281,18 @@ const inPlacement = (s: GameState): boolean => s.phase === "PLACEMENT";
 /** The kind of state each preference asks for. A kind that no prefix state has is reached by further legal play. */
 const WANTED: Record<Prefer, (s: GameState) => boolean> = {
   ANY: inPlacement,
-  EMPTY_DECK: (s) => inPlacement(s) && s.deck.length === 0,
+  LAST_DECK_CARD: (s) => inPlacement(s) && s.deck.length === 1,
   CODE: (s) => inPlacement(s) && bestCodes(s) >= 1,
   LAST_CARD: (s) => inPlacement(s) && s.hands[s.turn].length === 1 && bestCodes(s) >= 1,
   TWO_CODES: (s) => inPlacement(s) && bestCodes(s) >= 2,
 };
 /** Codes the chosen placement must form (0: any legal placement, steered by `codeBias`). */
-const NEED_CODES: Record<Prefer, number> = { ANY: 0, EMPTY_DECK: 0, CODE: 1, LAST_CARD: 1, TWO_CODES: 2 };
+const NEED_CODES: Record<Prefer, number> = { ANY: 0, LAST_DECK_CARD: 0, CODE: 1, LAST_CARD: 1, TWO_CODES: 2 };
 
 const arbDrawCase = fc.record({
   reach: arbReachableState(),
   prefer: fc.constantFrom<Prefer>(
-    "ANY", "ANY", "EMPTY_DECK", "EMPTY_DECK", "CODE", "CODE", "LAST_CARD", "LAST_CARD", "TWO_CODES",
+    "ANY", "ANY", "LAST_DECK_CARD", "LAST_DECK_CARD", "CODE", "CODE", "LAST_CARD", "LAST_CARD", "TWO_CODES",
   ),
   pick: fc.nat({ max: 1_000_000 }),
   codeBias: fc.constantFrom(0, 0, 40, 100),
@@ -305,7 +305,7 @@ describe("Property 12: draw rule", () => {
     // Validates: Requirements 6.3, 6.4, 6.5, 6.6, 7.9
     const cov: DrawCoverage = {
       runs: 0, skipped: 0, code: 0, noCodeDraw: 0,
-      emptyDeckNoCode: 0, emptyDeckAny: 0, twoCodes: 0, endedByPlacement: 0, codeEndsGame: 0,
+      lastDeckCardDrawn: 0, lastDeckCardAvailable: 0, twoCodes: 0, endedByPlacement: 0, codeEndsGame: 0,
       advanced: 0, fellBack: 0,
     };
 
@@ -374,14 +374,14 @@ describe("Property 12: draw rule", () => {
         // Other seats are untouched.
         for (const other of SEAT_IDS) if (other !== seat) expect(after.hands[other]).toEqual(from.hands[other]);
 
-        // Phase: GUESS_COLLECT iff at least one new code; otherwise the game ends iff the hand is empty.
+        // Phase: GUESS_COLLECT iff at least one new code; otherwise the game ends when the hand or deck is empty.
         expect(after.phase === "GUESS_COLLECT", `phase GUESS_COLLECT iff a code formed: ${ctx}`).toBe(codes.length > 0);
         if (codes.length > 0) {
           expect(after.pending?.placer).toBe(seat);
           expect(after.pending?.endsGame, `endsGame: ${ctx}`).toBe(handAfter.length === 0 || from.scoredGroups.length + codes.length >= 5);
           expect(after.turn).toBe(seat);
-        } else if (handAfter.length === 0) {
-          expect(after.phase, `hand-emptying placement without a code ends the game: ${ctx}`).toBe("ENDED");
+        } else if (handAfter.length === 0 || after.deck.length === 0) {
+          expect(after.phase, `empty hand or deck ends the game: ${ctx}`).toBe("ENDED");
         } else {
           expect(after.phase, ctx).toBe("PLACEMENT");
           expect(after.turn, ctx).toBe(successor(seat));
@@ -395,8 +395,8 @@ describe("Property 12: draw rule", () => {
         if (codes.length > 0) cov.code++;
         if (codes.length > 1) cov.twoCodes++;
         if (draws) cov.noCodeDraw++;
-        if (deckBefore.length === 0) cov.emptyDeckAny++;
-        if (codes.length === 0 && deckBefore.length === 0) cov.emptyDeckNoCode++;
+        if (deckBefore.length === 1) cov.lastDeckCardAvailable++;
+        if (codes.length === 0 && deckBefore.length === 1) cov.lastDeckCardDrawn++;
         if (after.phase === "ENDED") cov.endedByPlacement++;
         if (after.pending?.endsGame === true) cov.codeEndsGame++;
       }),
@@ -409,7 +409,7 @@ describe("Property 12: draw rule", () => {
     expect(cov.skipped).toBe(0);
     expect(cov.code, "placements that form a code").toBeGreaterThanOrEqual(50);
     expect(cov.noCodeDraw, "placements without a code and with a non-empty deck").toBeGreaterThanOrEqual(30);
-    expect(cov.emptyDeckNoCode, "placements without a code and with an EMPTY deck").toBeGreaterThanOrEqual(20);
+    expect(cov.lastDeckCardDrawn, "placements that draw the last card").toBeGreaterThanOrEqual(20);
     expect(cov.endedByPlacement, "placements that end the game at once").toBeGreaterThanOrEqual(4);
     expect(cov.codeEndsGame, "code placements that empty the hand").toBeGreaterThanOrEqual(8);
   });

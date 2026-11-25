@@ -10,8 +10,7 @@
 }
 body {
   margin: 0;
-  background-color: var(--stock);
-  background-image: repeating-linear-gradient(0deg, transparent 0 3px, rgb(61 45 20 / 2%) 3px 4px);
+  background-color: #f1f2eb;
   color: var(--shell-fg);
   font-family: system-ui, -apple-system, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", Roboto, sans-serif;
   font-size: 1rem;
@@ -23,15 +22,27 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem 1rem;
-  padding: .45rem max(1rem, calc((100% - 74rem) / 2));
-  color: var(--stock);
-  background: var(--felt);
-  border-block-end: 3px double #b9a578;
+  padding: .65rem max(1rem, calc((100% - 70rem) / 2));
+  color: var(--felt);
+  background: var(--color-paper);
+  border-block-end: 1px solid #c7c9bb;
 }
 .shell__title {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
   margin: 0;
   font: bold italic 2.15rem/1 var(--font-display);
   line-height: 1.2;
+}
+.shell__title::before {
+  content: "";
+  width: .58em;
+  height: .76em;
+  border-radius: .06em;
+  transform: rotate(-12deg);
+  background: radial-gradient(ellipse, var(--stock) 0 18%, transparent 20%), var(--print-red);
+  box-shadow: -.09em .08em 0 var(--color-paper), -.13em .12em 0 var(--felt);
 }
 .shell__language {
   display: flex;
@@ -44,9 +55,9 @@ body {
   padding: 0.25rem 0.5rem;
   font: inherit;
   color: var(--color-ink);
-  background: var(--stock);
-  border: 1px solid #5f5f5f;
-  border-radius: 0.25rem;
+  background: var(--color-paper);
+  border: 1px solid #919989;
+  border-radius: .45rem;
 }
 .shell__select:focus-visible {
   outline: 3px solid var(--shell-focus);

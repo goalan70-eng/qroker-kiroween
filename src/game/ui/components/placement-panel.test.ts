@@ -177,7 +177,7 @@ describe('renderPlacementPanel: structure [fake-DOM]', () => {
     f.render(BASE, { target: null, card: hand0, orientation: 0 });
     expect(status(f)).toBe('Card chosen. Now select a legal position on the board.');
     f.render(BASE, { target: LEGAL, card: hand0, orientation: 0 });
-    expect(status(f)).toBe('Preview shown. Confirm the placement or cancel it.');
+    expect(status(f)).toBe('Press ✓ beside the card to place it.');
     // preview ghost on the target cell, selected card, confirm enabled
     expect(classesOf(cellAt(f, 3, 2))).toEqual(expect.arrayContaining(['is-target', 'has-preview']));
     expect(handButtons(f).filter((b) => b.getAttribute('aria-pressed') === 'true')).toHaveLength(1);
@@ -584,7 +584,7 @@ describe('focus and dispose [fake-DOM]', () => {
 describe('privacy of the panel DOM [fake-DOM]', () => {
   const CHOICES_RUN = advanceUntil(start(3), (s) => s.board.filter((c) => c !== null).length >= 10 && s.phase === 'PLACEMENT', CHOICES).state;
 
-  it('has only the viewer\'s own cards in the Hand and no CardId, title, data-card or draggable attribute anywhere', () => {
+  it('has only the viewer\'s own cards in the Hand and no CardId, title, data-card or native drag source anywhere', () => {
     for (const viewer of ['P0', 'P1', 'P2', 'P3'] as const) {
       const view = viewFor(CHOICES_RUN, viewer);
       const own = view.myHand[0] as CardId;
@@ -593,7 +593,8 @@ describe('privacy of the panel DOM [fake-DOM]', () => {
       for (const e of all(f)) {
         for (const [name, value] of e.attributes) {
           expect(value, `${name}=${value}`).not.toMatch(CARD_ID_TOKEN);
-          expect(['data-card', 'title', 'draggable'], name).not.toContain(name);
+          expect(['data-card', 'title'], name).not.toContain(name);
+          if (name === 'draggable') expect([e.tagName, value]).toEqual(['img', 'false']);
         }
         expect(e.tagName === '#text' ? e.textContent : '').not.toMatch(CARD_ID_TOKEN);
         // a face-down card shows no text at all
@@ -732,7 +733,7 @@ describe('integration with the real controller [model + fake-DOM]', () => {
     expect(g.ctl.getModel().draft).toEqual({ target: posOfCell(cell), card: view0.myHand[0], orientation: 0 });
     expect(viewJson(g.ctl)).toBe(before);
     expect(g.ctl.getModel().actionCount).toBe(0);
-    expect(status(g.f)).toBe('Preview shown. Confirm the placement or cancel it.');
+    expect(status(g.f)).toBe('Press ✓ beside the card to place it.');
 
     const confirmButton = control(g.f, 'confirm') as FakeEl;
     expect(confirmButton.hasAttribute('disabled')).toBe(false);
@@ -900,12 +901,12 @@ describe('integration with the real controller [model + fake-DOM]', () => {
       expect(control(g.f, 'rotate')).toBeUndefined(); // hearts and diamonds: no control in the DOM at all
     }
     click(handButtons(g.f)[hand.indexOf(turnable)] as FakeEl);
+    expect(control(g.f, 'rotate')).toBeUndefined();
+    click(cellAt(g.f, cell.row, cell.col));
     expect(control(g.f, 'rotate')?.getAttribute('aria-pressed')).toBe('false');
     click(control(g.f, 'rotate') as FakeEl);
-    expect(g.ctl.getModel().draft).toEqual({ target: null, card: turnable, orientation: 180 });
     expect(control(g.f, 'rotate')?.getAttribute('aria-pressed')).toBe('true');
-    click(cellAt(g.f, cell.row, cell.col));
-    expect(g.ctl.getModel().draft).toEqual({ target: cell, card: turnable, orientation: 180 }); // the rotation survives the target
+    expect(g.ctl.getModel().draft).toEqual({ target: cell, card: turnable, orientation: 180 });
     click(control(g.f, 'confirm') as FakeEl);
     expect(g.ctl.getModel().actionCount).toBe(1);
     expect(viewJson(g.ctl)).toBe(referenceAfter(seed, { type: 'PLACE', player: 'P0', card: turnable, pos: cell, orientation: 180 }));
@@ -918,6 +919,7 @@ describe('integration with the real controller [model + fake-DOM]', () => {
     while (!hasBoth(g.ctl.getView('P0') as PlayerView) && seed < 40) g = boot(++seed);
     const hand = (g.ctl.getView('P0') as PlayerView).myHand;
     click(handButtons(g.f)[hand.findIndex(TURNS)] as FakeEl);
+    click(firstLegalCell(g));
     click(control(g.f, 'rotate') as FakeEl);
     expect(g.ctl.getModel().draft.orientation).toBe(180);
     click(handButtons(g.f)[hand.findIndex((c) => !TURNS(c))] as FakeEl);

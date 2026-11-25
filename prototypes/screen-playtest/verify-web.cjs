@@ -104,7 +104,7 @@ async function gameReveal(page, feedback) {
       await page.locator('#guess-submit').click();
     } else {
       await page.locator('.hand-card:not(.is-disabled)').first().click();
-      assert.ok(await page.locator('.hand-card .screen-card-art').count() > 0);
+      assert.ok(await page.locator('.hand-card .card-face__art').count() > 0);
       await page.locator('.board-cell.is-legal').first().click();
       if (feedback) assert.equal(await boardFaces.count(), 0, 'Drafts on the blind board stay face down');
       const confirm = page.locator('.placement-button--confirm');

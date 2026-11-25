@@ -165,28 +165,23 @@ describe("PLACE: draw rule and phase transitions", () => {
     expect(next.board[4 * 8 + 6]).toEqual({ card: "C-6", orientation: 180, owner: "P0" });
   });
 
-  it("a no-code placement with an empty deck skips the required draw", () => {
+  it("drawing the last card ends the game immediately with the existing scores", () => {
+    const hands = handsWithEmptyDeck(["S-9"]);
+    const [last, ...others] = hands.P1!;
     const state = makeState({
       config: TEST_CONFIG,
-      hands: handsWithEmptyDeck(["S-9", "S-10", "S-J", "S-Q"]),
-      deck: [],
+      hands: { ...hands, P1: others },
+      deck: [last!],
+      scores: { P0: 2, P1: 4, P2: 4, P3: 0 },
     });
     const next = step(state, PLACE_NO_CODE);
-    expect(next.hands.P0).toEqual(["S-10", "S-J", "S-Q"]);
     expect(next.deck).toEqual([]);
-    expect(next.phase).toBe("PLACEMENT");
-    expect(next.turn).toBe("P1");
-  });
-
-  it("a one-card no-code placement ends only when the deck is empty", () => {
-    const state = makeState({ config: TEST_CONFIG, hands: handsWithEmptyDeck(["S-9"]), deck: [] });
-    const next = step(state, PLACE_NO_CODE);
+    expect(next.hands.P0).toEqual([last]);
     expect(next.phase).toBe("ENDED");
-    expect(next.hands.P0).toEqual([]);
-    expect(next.bonusAwarded).toBe("P0");
-    expect(next.scores).toEqual({ P0: TEST_BONUS, P1: 0, P2: 0, P3: 0 });
-    expect(next.history).toEqual([]);
+    expect(next.scores).toEqual(state.scores);
+    expect(next.bonusAwarded).toBeNull();
     expect(actingSeats(next)).toEqual([]);
+    expectRejected(next, PLACE_NO_CODE, "GAME_ENDED");
   });
 
   it("a one-card no-code placement draws when the deck has a card, so the game continues", () => {
@@ -563,7 +558,7 @@ describe("full-game smoke", () => {
     expect(state.history.length).toBeGreaterThan(0);
     expect(bonuses).toBe(state.bonusAwarded ? 1 : 0);
     if (state.bonusAwarded) expect(state.hands[state.bonusAwarded]).toEqual([]);
-    else expect(state.scoredGroups.length).toBeGreaterThanOrEqual(5);
+    else expect(state.deck.length === 0 || state.scoredGroups.length >= 5).toBe(true);
     expect(actingSeats(state)).toEqual([]);
 
     // Final score = sum of earned prediction scores, plus the bonus for the seat that emptied its hand.

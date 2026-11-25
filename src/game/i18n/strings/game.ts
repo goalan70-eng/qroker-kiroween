@@ -9,6 +9,9 @@
 // check`.
 export const en = Object.freeze({
   'game.bar.label': 'Game controls',
+  'game.fullscreen.enter': 'Enter fullscreen',
+  'game.fullscreen.exit': 'Exit fullscreen',
+  'game.fullscreen.failed': 'The browser could not switch fullscreen mode.',
   'game.seed': 'Seed: {seed}',
   // Live region (aria-live="polite"): public turn and phase changes only.
   'game.live.turn': 'Turn: {name}.',
@@ -24,6 +27,12 @@ export const en = Object.freeze({
 export const ko: Record<keyof typeof en, string> = Object.freeze({
   // REVIEW: new text, needs native-speaker check
   'game.bar.label': '게임 메뉴',
+  // REVIEW: new text, needs native-speaker check
+  'game.fullscreen.enter': '전체 화면으로 보기',
+  // REVIEW: new text, needs native-speaker check
+  'game.fullscreen.exit': '전체 화면 해제',
+  // REVIEW: new text, needs native-speaker check
+  'game.fullscreen.failed': '브라우저에서 전체 화면을 전환할 수 없습니다.',
   // REVIEW: new text, needs native-speaker check
   'game.seed': '시드: {seed}',
   // REVIEW: new text, needs native-speaker check

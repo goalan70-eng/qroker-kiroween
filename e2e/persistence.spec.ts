@@ -67,10 +67,9 @@ test.describe('A reload during placement', () => {
     await stubSeeds(page, [SEED_A]);
     await startFresh(page);
     const initialCells = await occupied(page); // the Board starts with the dealt starting cards
-    // (iv) the autosave line appears only while saving is durable (a running game, real localStorage)
-    await expect(statusLine(page)).toBeVisible();
-    await expect(statusLine(page)).toContainText('saved automatically');
-    await expect(statusLine(page)).toContainText('not secret');
+    // A durable save is available without a persistent footer on the table.
+    await expect(statusLine(page)).toBeHidden();
+    expect(await readStored(page, SAVE_KEY)).not.toBeNull();
     await placeCards(page, 3);
     const before = await snapshot(page);
     expect(before.seed).toContain(String(SEED_A));
@@ -109,7 +108,7 @@ test.describe('A reload during placement', () => {
 
     // the game continues through at least one more human turn, with the same Seed
     await playHumanTurn(page);
-    await expect(statusLine(page)).toBeVisible(); // the next accepted Action saved durably
+    await expect(statusLine(page)).toBeHidden(); // the next accepted Action saved durably
     const next = await atHumanTurn(page);
     expect(await occupied(page)).toBe(occupiedBefore + 4);
     expect(next.seed).toBe(before.seed);
@@ -594,7 +593,7 @@ test.describe('E storage unavailable', () => {
     await stubSeeds(page, [SEED_A]);
     await startFresh(page);
     const initialCells = await occupied(page);
-    await expect(statusLine(page)).toBeVisible(); // DURABLE after the game was created
+    await expect(statusLine(page)).toBeHidden(); // DURABLE after the game was created
     await expect(notice(page, 'STORAGE_NOT_DURABLE')).toHaveCount(0);
     await expect(notice(page, 'STORAGE_WRITE_FAILED')).toHaveCount(0);
     await page.evaluate(() => {
@@ -620,7 +619,7 @@ test.describe('E storage unavailable', () => {
     });
     await playHumanTurn(page); // the next accepted Action saves again: FAILED -> DURABLE
     await expect(notice(page, 'STORAGE_WRITE_FAILED')).toHaveCount(0);
-    await expect(statusLine(page)).toBeVisible();
+    await expect(statusLine(page)).toBeHidden();
     expect(await currentStep(page)).toBe('PLACE');
     expect(await occupied(page)).toBe(initialCells + 8);
     expect(await readStored(page, SAVE_KEY)).not.toBeNull();

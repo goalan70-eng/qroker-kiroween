@@ -165,7 +165,7 @@ describe("playGame: complete four-AI games", () => {
           const result = play(seed, tiers, visibility, { checkInvariants: true });
           const s = summarizeGame(result);
           expect(result.final.phase).toBe("ENDED");
-          expect(result.final.bonusAwarded !== null || result.final.scoredGroups.length >= 5).toBe(true);
+          expect(result.final.bonusAwarded !== null || result.final.deck.length === 0 || result.final.scoredGroups.length >= 5).toBe(true);
           expect(s.placements).toBe(result.final.placements);
           expect(s.placements).toBeLessThanOrEqual(48);
           expect(s.batches).toBe(result.final.history.length);
@@ -482,7 +482,8 @@ describe("checkStateInvariants", () => {
   });
 
   it("detects a bonus that is missing, applied twice or inconsistent at ENDED", () => {
-    const final = play(0, ALL_BEGINNER, "OWNER_ONLY").final;
+    const final = play(30, ALL_BEGINNER, "OWNER_ONLY").final;
+    expect(final.bonusAwarded).not.toBeNull();
     expect(names(final)).toEqual([]);
     expect(names(corrupt(final, (d) => (d.bonusAwarded = null)))).toContain("BONUS");
     const doubled = corrupt(final, (d) => {

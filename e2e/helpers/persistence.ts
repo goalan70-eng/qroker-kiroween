@@ -5,7 +5,7 @@ import type { StartOptions } from './game';
 // Additive helpers of e2e/persistence.spec.ts (task 20.4 stage C). They use the public DOM and `localStorage` only.
 
 /** The two storage keys of src/game/persistence/storage.ts (written here as literals so the e2e run imports no game code). */
-export const SAVE_KEY = 'qroker.practice.save.rules3';
+export const SAVE_KEY = 'qroker.practice.save.rules4';
 export const PREFS_KEY = 'qroker.practice.prefs';
 
 export const readStored = (page: Page, key: string): Promise<string | null> => page.evaluate((k) => window.localStorage.getItem(k), key);

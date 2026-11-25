@@ -56,6 +56,9 @@ import type { StringKey } from '../../i18n';
 import { createH } from '../dom';
 import type { CreateDoc, HFunction } from '../dom';
 import type { DraftEvent, DraftResult, PlacementDraft } from '../placement-draft';
+import type { LensHover } from './board-magnifier';
+import { backArt } from '../back-art';
+import { boardMagnifier } from './board-magnifier';
 import { cardFaceModel, cardFaceName, renderCardFace } from './card-face';
 import type { Translate } from './card-face';
 
@@ -120,6 +123,7 @@ export interface BoardCellModel {
   readonly isDropTarget: boolean;
   readonly inPendingRegion: boolean;
   readonly inRevealedRegion: boolean;
+  readonly hasCodeAtJunction: boolean;
   readonly preview: BoardCellPreview | null;
   readonly state: BoardCellState;
   /** String key of the accessible name; its parameter `{notation}` is in `nameParams`. */
@@ -199,6 +203,11 @@ export function boardModel(view: PlayerView, draft: PlacementDraft, options: Boa
   const revealed = regionSet(
     view.phase === 'REVEAL' && view.lastReveal !== null ? view.lastReveal.codes.map((c) => c.quadKey) : [],
   );
+  const completedKeys = new Set([
+    ...view.pendingQuadKeys,
+    ...view.history.flatMap(batch => batch.codes.map(code => code.quadKey)),
+    ...(view.lastReveal?.codes.map(code => code.quadKey) ?? []),
+  ]);
   const target = draft.target;
   const targetIndex = target === null ? -1 : target.row * BOARD_CELLS_PER_SIDE + target.col;
   // The ghost shows the drafted card only when it is a card of the viewer's own Hand.
@@ -255,6 +264,7 @@ export function boardModel(view: PlayerView, draft: PlacementDraft, options: Boa
       isDropTarget,
       inPendingRegion,
       inRevealedRegion,
+      hasCodeAtJunction: completedKeys.has(notation),
       preview: isPreview && ghostCard !== null ? { card: isBlindMode(view.rules.identityVisibility) ? null : ghostCard, orientation: draft.orientation, owner: view.viewer } : null,
       state,
       nameKey,
@@ -320,7 +330,19 @@ export interface BoardHandlers {
   readonly explainTarget: (cell: GridPosition) => unknown;
 }
 
+export type BoardView = 'portrait' | 'landscape';
+
+/** Rotate the table counterclockwise while keeping the game notation attached to its card. */
+export function displayPosition(cell: GridPosition, view: BoardView): GridPosition {
+  return view === 'landscape' ? { row: BOARD_CELLS_PER_SIDE - 1 - cell.col, col: cell.row } : cell;
+}
+
 export interface BoardRenderOptions {
+  readonly boardView?: BoardView;
+  readonly viewButton?: HTMLElement;
+  readonly boardBacks?: readonly (string | null)[];
+  readonly previewCard?: CardId | null;
+  readonly lensHover?: LensHover;
   /** The owner's name for card names. Default: 'Player n' / 'Neutral' in the current language. */
   readonly ownerLabel?: (owner: Owner) => string;
   /** The cell that is the tab stop (tabindex 0). Default: the target, else the first legal cell, else A1. */
@@ -349,6 +371,13 @@ export function renderBoard(
   const drag = options.dragActive ?? model.dragActive;
   const hintId = `${options.idPrefix ?? 'board'}-hint`;
   const buttons: HTMLElement[] = [];
+  const boardView = options.boardView ?? 'portrait';
+  const landscape = boardView === 'landscape';
+  const cells: BoardCellModel[] = [];
+  for (const cell of model.cells) {
+    const { row, col } = displayPosition(cell, boardView);
+    cells[row * BOARD_CELLS_PER_SIDE + col] = cell;
+  }
 
   const firstLegal = model.cells.find((c) => c.isLegal);
   const tabCell =
@@ -359,7 +388,7 @@ export function renderBoard(
         : firstLegal !== undefined
           ? firstLegal.index
           : 0;
-  let tabIndex = tabCell >= 0 && tabCell < CELL_COUNT ? tabCell : 0;
+  let tabIndex = Math.max(0, cells.findIndex(cell => cell.index === tabCell));
 
   const setTabStop = (index: number): void => {
     if (index === tabIndex) return;
@@ -382,7 +411,7 @@ export function renderBoard(
       handlers.explainTarget(position);
     }
   };
-  const onKeyDown = (cell: BoardCellModel) => (event: Event) => {
+  const onKeyDown = (cell: BoardCellModel, row: number, col: number) => (event: Event) => {
     const e = event as KeyboardEvent;
     if (e.isComposing === true || e.altKey === true || e.metaKey === true) return;
     const key = e.key;
@@ -390,27 +419,27 @@ export function renderBoard(
     switch (key) {
       case 'ArrowUp':
         e.preventDefault();
-        moveFocus(cell.row - 1, cell.col);
+        moveFocus(row - 1, col);
         return;
       case 'ArrowDown':
         e.preventDefault();
-        moveFocus(cell.row + 1, cell.col);
+        moveFocus(row + 1, col);
         return;
       case 'ArrowLeft':
         e.preventDefault();
-        moveFocus(cell.row, cell.col - 1);
+        moveFocus(row, col - 1);
         return;
       case 'ArrowRight':
         e.preventDefault();
-        moveFocus(cell.row, cell.col + 1);
+        moveFocus(row, col + 1);
         return;
       case 'Home':
         e.preventDefault();
-        moveFocus(e.ctrlKey === true ? 0 : cell.row, 0);
+        moveFocus(e.ctrlKey === true ? 0 : row, 0);
         return;
       case 'End':
         e.preventDefault();
-        moveFocus(e.ctrlKey === true ? BOARD_CELLS_PER_SIDE - 1 : cell.row, BOARD_CELLS_PER_SIDE - 1);
+        moveFocus(e.ctrlKey === true ? BOARD_CELLS_PER_SIDE - 1 : row, BOARD_CELLS_PER_SIDE - 1);
         return;
       case 'Enter':
       case ' ':
@@ -435,14 +464,15 @@ export function renderBoard(
   for (let row = 0; row < BOARD_CELLS_PER_SIDE; row++) {
     const gridcells: HTMLElement[] = [];
     for (let col = 0; col < BOARD_CELLS_PER_SIDE; col++) {
-      const cell = model.cells[row * BOARD_CELLS_PER_SIDE + col] as BoardCellModel;
+      const index = row * BOARD_CELLS_PER_SIDE + col;
+      const cell = cells[index]!;
       const drop = drag && cell.isLegal;
       let face: HTMLElement | null = null;
       if (cell.owner !== null && cell.orientation !== null) {
         face = renderCardFace(
           h,
           cardFaceModel({ card: cell.card, owner: cell.owner, orientation: cell.orientation, size: 'cell', ownerLabel: ownerLabel(cell.owner) }),
-          t,
+          t, options.boardBacks?.[cell.index],
         );
       } else if (cell.preview !== null) {
         face = h(
@@ -457,7 +487,7 @@ export function renderBoard(
               size: 'preview',
               ownerLabel: ownerLabel(cell.preview.owner),
             }),
-            t,
+            t, options.previewCard ? backArt(options.previewCard) : undefined,
           ),
         );
       }
@@ -470,15 +500,15 @@ export function renderBoard(
             type: 'button',
             'data-row': cell.row,
             'data-col': cell.col,
-            tabindex: cell.index === tabIndex ? 0 : -1,
+            tabindex: index === tabIndex ? 0 : -1,
           },
           aria: { label: cellName(cell, t, ownerLabel) },
           on: {
-            keydown: onKeyDown(cell),
+            keydown: onKeyDown(cell, row, col),
             keyup: onKeyUp,
-            focus: () => setTabStop(cell.index),
+            focus: () => setTabStop(index),
             click: () => {
-              setTabStop(cell.index);
+              setTabStop(index);
               activate(cell);
             },
           },
@@ -495,6 +525,12 @@ export function renderBoard(
             aria: { colindex: col + 1, selected: cell.isTarget ? 'true' : 'false' },
           },
           button,
+          cell.hasCodeAtJunction ? h('span', {
+            class: regionIndexes(cell.notation).every(index => model.cells[index]?.state === 'OCCUPIED_UP' || options.boardBacks?.[index])
+              ? 'board-code-junction board-code-junction--open' : 'board-code-junction',
+            attrs: { role: 'img', 'data-quad-key': cell.notation },
+            aria: { label: t('board.code.completed', { key: cell.notation }) },
+          }) : null,
         ),
       );
     }
@@ -506,27 +542,36 @@ export function renderBoard(
     {
       class: 'board',
       attrs: { role: 'grid' },
-      aria: { label: t('board.grid.label'), describedby: hintId, rowcount: BOARD_CELLS_PER_SIDE, colcount: BOARD_CELLS_PER_SIDE },
+      aria: { label: t(landscape ? 'board.grid.landscape' : 'board.grid.label'), describedby: hintId, rowcount: BOARD_CELLS_PER_SIDE, colcount: BOARD_CELLS_PER_SIDE },
     },
     ...rows,
   );
+  const letters = [...COLUMN_LETTERS];
+  const numbers = Array.from({ length: BOARD_CELLS_PER_SIDE }, (_, i) => String(i + 1));
   const columnLabels = h(
     'div',
     { class: 'board-col-labels', aria: { hidden: 'true' } },
-    ...[...COLUMN_LETTERS].map((letter) => h('span', { class: 'board-label' }, letter)),
+    ...(landscape ? numbers : letters).map(label => h('span', { class: 'board-label' }, label)),
   );
   const rowLabels = h(
     'div',
     { class: 'board-row-labels', aria: { hidden: 'true' } },
-    ...Array.from({ length: BOARD_CELLS_PER_SIDE }, (_, i) => h('span', { class: 'board-label' }, String(i + 1))),
+    ...(landscape ? letters.reverse() : numbers).map(label => h('span', { class: 'board-label' }, label)),
   );
   const hint = h('span', { class: 'board-hint', id: hintId }, t('board.hint'));
-  return h('div', { class: 'board-frame' }, columnLabels, rowLabels, grid, hint);
+  const lens = boardMagnifier(h, grid, buttons, cells, t('board.magnifier'), t('board.magnifierHint'), options.lensHover);
+  const viewButton = options.viewButton;
+  viewButton?.parentNode?.removeChild(viewButton);
+  return h('div', { class: 'board-frame', attrs: { 'data-board-view': boardView } }, columnLabels, rowLabels, grid, hint, lens, viewButton);
 }
 
 /** Every key this module passes to `t` (the completeness test of i18n covers the tables; this lists the use). */
 export const BOARD_STRING_KEYS: readonly StringKey[] = [
   'board.grid.label',
+  'board.grid.landscape',
+  'board.magnifier',
+  'board.magnifierHint',
+  'board.code.completed',
   'board.hint',
   'board.cell.name.empty',
   'board.cell.name.legal',

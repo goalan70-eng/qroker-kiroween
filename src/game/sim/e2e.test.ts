@@ -350,7 +350,7 @@ function inspectGame(seed: number, config: GameConfig, result: PlayGameResult): 
   // BONUS.
   const bonusSeat = final.bonusAwarded;
   const lastPlacer = placeEntries[placeEntries.length - 1]?.player ?? null;
-  check("BONUS", bonusSeat !== null || final.scoredGroups.length >= 5, () => "neither ending condition was reached");
+  check("BONUS", bonusSeat !== null || final.deck.length === 0 || final.scoredGroups.length >= 5, () => "no ending condition was reached");
   if (bonusSeat !== null) {
     check("BONUS", final.hands[bonusSeat].length === 0, () => `bonus seat ${bonusSeat} holds ${final.hands[bonusSeat].length} cards`);
     check("BONUS", bonusSeat === lastPlacer, () => `bonus seat ${bonusSeat} is not the seat of the last PLACE (${String(lastPlacer)})`);

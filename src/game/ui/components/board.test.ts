@@ -910,10 +910,10 @@ describe('board.css', () => {
   it('gives the grid, the rows and the frame gap 0, and border-box sizing to the cells', () => {
     for (const s of ['.board', '.board-row', '.board-frame', '.board-col-labels', '.board-row-labels']) expect(rule(s), s).toMatch(/gap:\s*0\s*;/);
     for (const s of ['.board-cell', '.board-gridcell', '.board']) expect(rule(s), s).toMatch(/box-sizing:\s*border-box\s*;/);
-    expect(rule('.board-gridcell')).toMatch(/inline-size:\s*var\(--cell\)/);
-    expect(rule('.board-gridcell')).toMatch(/block-size:\s*var\(--cell\)/);
-    expect(rule('.board')).toMatch(/grid-template-columns:\s*calc\(8 \* var\(--cell\)\)/);
-    expect(rule('.board-row')).toMatch(/grid-template-columns:\s*repeat\(8,\s*var\(--cell\)\)/);
+    expect(rule('.board-gridcell')).toMatch(/inline-size:\s*var\(--tile-width\)/);
+    expect(rule('.board-gridcell')).toMatch(/block-size:\s*var\(--tile-height\)/);
+    expect(rule('.board')).toMatch(/grid-template-columns:\s*calc\(8 \* var\(--tile-width\)\)/);
+    expect(rule('.board-row')).toMatch(/grid-template-columns:\s*repeat\(8,\s*var\(--tile-width\)\)/);
   });
 
   it('has no margin other than 0 on any cell, wrapper, ghost or card class', () => {

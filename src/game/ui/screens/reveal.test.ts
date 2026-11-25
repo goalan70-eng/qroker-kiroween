@@ -160,10 +160,12 @@ function revealGame(kinds: readonly Kind[], wanted: number, visibility: Identity
   throw new Error(`no seed gives a reveal with ${wanted} codes`);
 }
 
-function endedGame(kinds: readonly Kind[], seed = 7): Game {
-  const g = startGame(kinds, seed);
-  if (!drive(g, (v) => v.phase === 'ENDED')) throw new Error('game did not end');
-  return g;
+function endedGameWithReveal(kinds: readonly Kind[]): Game {
+  for (let seed = 1; seed <= 300; seed++) {
+    const game = startGame(kinds, seed);
+    if (drive(game, (view) => view.phase === 'ENDED' && view.lastReveal !== null)) return game;
+  }
+  throw new Error('no ended game with a scored batch');
 }
 
 const ONE_PLUS_THREE: readonly Kind[] = ['HUMAN', 'AI', 'AI', 'AI'];
@@ -346,7 +348,7 @@ describe('buildRevealModel [pure, real views]', () => {
   });
 
   it('in ENDED shows the view scores as the final column and no continuation', () => {
-    const g = endedGame(ONE_PLUS_THREE);
+    const g = endedGameWithReveal(ONE_PLUS_THREE);
     const view = viewOf(g, 'P0');
     expect(view.phase).toBe('ENDED');
     const model = buildRevealModel(view) as NonNullable<ReturnType<typeof buildRevealModel>>;
@@ -641,7 +643,7 @@ describe('continue control [fake-DOM, real engine]', () => {
   });
 
   it('in ENDED the screen shows the reveal and the final column but no continue control', () => {
-    const g = endedGame(ONE_PLUS_THREE);
+    const g = endedGameWithReveal(ONE_PLUS_THREE);
     const r = rig(g);
     const handle = r.mount('P0');
     const view = viewOf(g, 'P0');

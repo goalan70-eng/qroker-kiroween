@@ -116,6 +116,7 @@ describe('placement DOM contracts (fake-DOM)', () => {
       expect(cell.textContent).toBe(rotated ? '180°' : '');
       expect(attrs(face)).toEqual({
         class: `card-face card-face--cell card-face--down${rotated ? ' is-rotated' : ''}`, role: 'img',
+        style: expect.stringMatching(/^--card-marks: url\(".+\.svg"\)$/),
         'data-owner': publicCard.owner, 'data-orientation': String(publicCard.orientation), 'data-face': 'down', 'aria-label': name,
       });
       expect(face.textContent).toBe(rotated ? '180°' : '');

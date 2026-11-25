@@ -74,7 +74,7 @@ describe('Task 21.3 privacy, accessibility, language and persistence (fake-DOM)'
         const field = label(app, 'guess.input.label', { key: view!.pendingQuadKeys[0]!, min: 4, max: 52 });
         typeInto(app, field, '3');
         clickByLabel(app, label(app, 'guess.submit'));
-        expect(app.root.querySelector('.guess-error')?.textContent).toBe(label(app, 'error.GUESS_OUT_OF_RANGE'));
+        expect(app.root.querySelector('.guess-error')?.textContent).toBe(label(app, 'guess.error.range', { min: 4, max: 52 }));
         expect(app.controller.getModel().actionCount).toBe(before);
         for (const key of view!.pendingQuadKeys) typeInto(app, label(app, 'guess.input.label', { key, min: 4, max: 52 }), '17');
         clickByLabel(app, label(app, 'guess.submit'));

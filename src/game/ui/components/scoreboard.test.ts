@@ -121,7 +121,7 @@ describe('buildScoreboardModel [pure, real views]', () => {
 describe('renderScoreboard [fake-DOM]', () => {
   it('is an accessible table: caption, three column headers, a row header per Seat, values from the view', () => {
     const { view } = playTo(5, atPhase('PLACEMENT', 28));
-    const { doc, root } = mount(view);
+    const { doc } = mount(view);
     const table = tagged(doc, 'table')[0] as FakeEl;
     expect(table.children[0]?.tagName).toBe('caption');
     expect(table.children[0]?.textContent).toBe('Scoreboard');
@@ -139,8 +139,7 @@ describe('renderScoreboard [fake-DOM]', () => {
       expect(score.textContent).toBe(String(view.scores[id]));
       expect(hand.textContent).toBe(String(view.handCounts[id]));
     });
-    const deck = root.children[root.children.length - 1] as FakeEl;
-    expect(deck.children[deck.children.length - 1]?.textContent).toBe(`Cards left in the deck: ${view.deckCount}`);
+    expect(doc.all().find(el => classOf(el).includes('deck-count'))?.textContent).toBe(`Cards left in the deck: ${view.deckCount}`);
   });
 
   it('shows the Seat kind from the rules for people and AI', () => {
@@ -213,7 +212,7 @@ describe('renderScoreboard [fake-DOM]', () => {
     expect(tagged(doc, 'th').filter((th) => th.getAttribute('scope') === 'col').map((th) => th.textContent)).toEqual(['플레이어', '점수', '손패 수']);
     const rows = tagged(doc, 'tr').filter((tr) => tr.getAttribute('data-seat') !== null);
     rows.forEach((tr, i) => expect(tr.children[1]?.textContent).toBe(String(later.scores[SEAT_IDS[i] as PlayerId])));
-    expect(doc.all().find((el) => classOf(el).includes('scoreboard-deck'))?.textContent).toBe(`남은 덱 카드: ${later.deckCount}장`);
+    expect(doc.all().find((el) => classOf(el).includes('deck-count'))?.textContent).toBe(`남은 덱 카드: ${later.deckCount}장`);
     expect(doc.all().find((el) => classOf(el).includes('scoreboard-banner'))?.textContent).toBe('임시 점수 규칙');
     expect(rows.some((tr) => tr.textContent.includes('현재 차례'))).toBe(true);
     handle.dispose();
@@ -222,13 +221,32 @@ describe('renderScoreboard [fake-DOM]', () => {
     expect(root.children).toHaveLength(0);
   });
 
-  it('shows no private data: no Guess word, no card identity, no board, no ids or data-* beyond the Seat id', () => {
+  it('shows no private data: no Guess word, no card identity, no board, only public seat and score labels', () => {
     const { view } = playTo(5, atPhase('GUESS_COLLECT'));
     const { doc } = mount(view);
-    const text = doc.all().map((el) => `${[...el.attributes].map(([k, v]) => `${k}=${v}`).join(' ')} ${el.children.length === 0 ? el.textContent : ''}`).join('\n');
+    const text = doc.all().map((el) => `${[...el.attributes].filter(([k, v]) => k !== 'aria-hidden' || v !== 'true').map(([k, v]) => `${k}=${v}`).join(' ')} ${el.children.length === 0 ? el.textContent : ''}`).join('\n');
     expect(text).not.toMatch(/guess|예측|hidden|pending/i);
     expect(text).not.toMatch(/\b[HDCS]-(?:A|10|[2-9JQK])\b/);
-    for (const el of doc.all()) for (const name of el.attributes.keys()) if (name.startsWith('data-')) expect(name).toBe('data-seat');
+    for (const el of doc.all()) {
+      for (const [name, value] of el.attributes) {
+        if (name === 'data-label') expect(value).toBe('Score');
+        else if (name.startsWith('data-')) expect(name).toBe('data-seat');
+      }
+    }
+  });
+
+  it('draws one anonymous back per held card and removes the top card when the deck runs out', () => {
+    const { view } = playTo(5, atPhase('PLACEMENT', 28));
+    const { doc, handle } = mount(view);
+    for (const count of [4, 3, 1, 0]) {
+      handle.update({ ...view, deckCount: count, handCounts: { ...view.handCounts, P0: count } });
+      const backs = doc.all().filter(el => classOf(el).includes('seat-card-back'));
+      expect(backs).toHaveLength(count + view.handCounts.P1 + view.handCounts.P2 + view.handCounts.P3);
+      const stack = doc.all().find(el => classOf(el).includes('deck-stack'))!;
+      expect(stack.getAttribute('style')).toBe(`--deck-count: ${count}`);
+      expect(stack.children.some(el => classOf(el).includes('table-card-back'))).toBe(count > 0);
+      expect(doc.all().find(el => classOf(el).includes('deck-number'))?.textContent).toBe(String(count));
+    }
   });
 
   it('every string key it uses exists in both languages', () => {

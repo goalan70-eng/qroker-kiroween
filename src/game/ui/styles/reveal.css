@@ -56,12 +56,13 @@
   grid-area: cards;
   display: grid;
   grid-template-columns: repeat(2, max-content);
-  gap: 2px;
+  gap: 0;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 .reveal-card .card-face--hand {
+  border-radius: 0;
   --card-unit: clamp(2.75rem, 5vw, 3.4rem);
   display: block;
 }
@@ -125,7 +126,29 @@
 }
 .scoreboard-row.is-active {
   font-weight: 700;
-  box-shadow: inset var(--stroke-strong) 0 0 var(--color-ink);
+  background: #e8eddd;
+  box-shadow: inset var(--stroke-strong) 0 0 var(--felt);
+}
+.scoreboard {
+  padding: .65rem .85rem;
+  border: 1px solid #c0b796;
+  border-radius: .6rem;
+  background: var(--color-paper);
+}
+.scoreboard-table { display: table; width: 100%; overflow-wrap: anywhere; }
+.scoreboard-table th, .scoreboard-table td { padding: .35rem .48rem; }
+.scoreboard-kind { font-size: .82em; font-weight: 400; }
+.scoreboard-deck { margin: .6rem 0 0; font-size: .875rem; color: var(--felt); }
+.scoreboard-deck::before {
+  content: "";
+  display: inline-block;
+  vertical-align: -.1em;
+  width: .72em;
+  height: 1em;
+  margin-inline: .1em .5em;
+  border-radius: 2px;
+  background: var(--print-red);
+  box-shadow: -2px 2px var(--color-paper), -3px 3px var(--print-red);
 }
 .scoreboard-active {
   margin-inline-start: var(--space-2);

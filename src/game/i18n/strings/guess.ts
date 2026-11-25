@@ -4,9 +4,7 @@
 //   `{name}` a public Seat name, `{key}` a public Quad_Key such as "D4", `{cells}` the public cell notations of the
 //   2x2 region of a code, `{min}` and `{max}` the Guess range (the screen passes `GUESS_MIN` and `GUESS_MAX`; the
 //   numbers are not written into the texts, so the range stays in core/score only).
-// No string names a card, a Guess value or a Hidden_Sum. The messages of an invalid Guess are the engine's own
-// `error.GUESS_NOT_INTEGER` and `error.GUESS_OUT_OF_RANGE` texts (area `errors`); only the "nothing entered" case
-// has its own text here.
+// No string names a card, a Guess value or a Hidden_Sum. Missing and out-of-range entries have field-specific messages.
 //
 // Korean text status: every Korean string here is new text and carries `// REVIEW: new text, needs native-speaker
 // check`.
@@ -20,9 +18,9 @@ export const en = Object.freeze({
 
   // Guess form.
   'guess.form.label': 'Your Guesses',
-  'guess.form.intro': 'Enter a whole number from {min} to {max} for each code. Keep your numbers hidden from the other players.',
-  'guess.input.label': 'Guess for code {key} (whole number from {min} to {max})',
+  'guess.input.label': 'Code {key}',
   'guess.input.region': 'Code {key}: the 2×2 region of the board with the cells {cells}.',
+  'guess.error.range': 'Try again with a whole number from {min} to {max}.',
   'guess.error.missing': 'Enter a whole number from {min} to {max}',
   'guess.submit': 'Submit Guesses',
 
@@ -47,12 +45,11 @@ export const ko: Record<keyof typeof en, string> = Object.freeze({
   // REVIEW: new text, needs native-speaker check
   'guess.form.label': '내 예측값',
   // REVIEW: new text, needs native-speaker check
-  'guess.form.intro': '각 조합마다 {min}에서 {max} 사이의 정수를 입력하세요. 다른 플레이어에게 숫자가 보이지 않게 하세요.',
-  // REVIEW: new text, needs native-speaker check
-  'guess.input.label': '{key} 조합의 예측값 ({min}에서 {max} 사이의 정수)',
+  'guess.input.label': '{key} 조합',
   // REVIEW: new text, needs native-speaker check
   'guess.input.region': '{key} 조합: 보드에서 {cells} 칸으로 이루어진 2×2 영역입니다.',
   // REVIEW: new text, needs native-speaker check
+  'guess.error.range': '{min}~{max} 사이의 정수로 다시 입력해 주세요.',
   'guess.error.missing': '{min}에서 {max} 사이의 정수를 입력하세요',
   // REVIEW: new text, needs native-speaker check
   'guess.submit': '예측값 제출',

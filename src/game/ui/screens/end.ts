@@ -381,7 +381,8 @@ export function renderEnd(doc: EndDocument, root: HTMLElement, input: EndInput, 
   // ---- rendering ------------------------------------------------------------------------------------------
 
   function paintCard(card: CardId): HTMLElement {
-    return h('li', { class: 'end-card' }, revealCardFace(h, card, t));
+    const cell = current.view?.board.find(cell => cell?.card === card);
+    return h('li', { class: 'end-card' }, revealCardFace(h, card, t, cell?.orientation));
   }
 
   function paintRanking(model: EndViewModel): HTMLElement {

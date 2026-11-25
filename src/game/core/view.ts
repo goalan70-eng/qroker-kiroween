@@ -55,6 +55,7 @@
  */
 
 import { isBlindMode } from './types';
+import { FRAGMENT_LAYOUT } from './fragment-layout';
 import { ALL_CARDS } from './cards';
 import { BOARD_SIZE, orthogonalNeighbors } from './geometry';
 import { rankPlayers } from './ranking';
@@ -64,6 +65,8 @@ import type { GamePhase, GameState, RevealRecord } from './state';
 import { SEATS, isPlayerId } from './turn';
 import type {
   CardId,
+  Corner,
+  Suit,
   GameConfig,
   GridPosition,
   IdentityVisibility,
@@ -76,6 +79,11 @@ import type {
 } from './types';
 
 export type { GamePhase, RankEntry, RevealRecord };
+
+/** Printed corners of a face whose suit is visible to the viewer. */
+export function visibleFragmentCorners(suit: Suit, orientation: Orientation): readonly Corner[] {
+  return [...FRAGMENT_LAYOUT[suit][orientation]];
+}
 
 /** One occupied board cell as a viewer sees it. `card: null` means the identity is hidden from this viewer. */
 export interface CellView {

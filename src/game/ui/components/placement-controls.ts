@@ -10,10 +10,10 @@
 //   * `renderPlacementControls(h | doc, model, t, handlers)`: builds the buttons with `h`.
 //
 // Rules (checked in placement-controls.test.ts)
-//   * Rotation control: present ONLY while the draft has a card of the viewer's own Hand for which
+//   * Rotation control: present ONLY while previewing a card of the viewer's own Hand for which
 //     `rotationInfo[card].rotationChangesCorners === true` (clubs and spades), and only on the viewer's placement
 //     turn. It is absent from the DOM for hearts, diamonds, a missing or unknown card, no card, another Seat's card
-//     (the view has none) and any committed card (it is part of this panel, never of a Board cell). It is a
+//     (the view has none) and any committed card. It is a
 //     `<button aria-pressed>`; pressing it sends `draftEvent({ type: 'toggleRotation' })` and nothing else.
 //   * Confirm ("Confirm placement"): enabled only in the PREVIEW state (card and target) on the viewer's turn. It is
 //     the only control that calls `confirmPlacement()`, which is the only path that sends `PLACE`.
@@ -114,7 +114,7 @@ export function controlsModel(
   }
   const card = draft.card;
   // A card that is not in the viewer's own Hand never gets a control (the draft is cleared by the controller then).
-  const showRotation = card !== null && view.myHand.includes(card) && rotationInfo[card]?.rotationChangesCorners === true;
+  const showRotation = state === 'PREVIEW' && card !== null && view.myHand.includes(card) && rotationInfo[card]?.rotationChangesCorners === true;
   return {
     state,
     active,
@@ -145,13 +145,14 @@ export interface ControlsHandlers {
 
 /**
  * Builds the control group from `model`. `target` is an `h` function or a document. The rotation button exists only
- * when `model.showRotation`; the confirm and cancel buttons always exist (disabled when they cannot be used).
+ * while previewing a rotatable card. The optional board group holds the preview actions beside the target.
  */
 export function renderPlacementControls(
   target: HFunction | CreateDoc,
   model: ControlsModel,
   t: Translate,
   handlers: ControlsHandlers,
+  actionsRoot?: HTMLElement,
 ): HTMLElement {
   const h: HFunction = typeof target === 'function' ? target : createH(target);
   const buttons: HTMLElement[] = [];
@@ -170,8 +171,7 @@ export function renderPlacementControls(
             },
           },
         },
-        h('span', { class: 'placement-button__label' }, t('hand.rotate')),
-        h('span', { class: 'placement-button__state', aria: { hidden: 'true' } }, t(model.rotated ? 'hand.rotation.state.180' : 'hand.rotation.state.0')),
+        t(model.rotated ? 'hand.restoreOrientation' : 'hand.rotate'),
       ),
     );
   }
@@ -181,7 +181,7 @@ export function renderPlacementControls(
       {
         class: 'placement-button placement-button--confirm',
         focusKey: 'placement-confirm',
-        attrs: { type: 'button', disabled: !model.canConfirm },
+        attrs: { type: 'button', hidden: !model.canConfirm, disabled: !model.canConfirm },
         on: {
           click: () => {
             if (model.canConfirm) handlers.confirmPlacement();
@@ -190,6 +190,10 @@ export function renderPlacementControls(
       },
       t('hand.confirm'),
     ),
+  );
+  const group = h('div', { class: 'placement-controls', attrs: { role: 'group' }, aria: { label: t('hand.controls.label') } });
+  for (const button of buttons) (actionsRoot ?? group).appendChild(button);
+  group.appendChild(
     h(
       'button',
       {
@@ -205,7 +209,7 @@ export function renderPlacementControls(
       t('hand.cancel'),
     ),
   );
-  return h('div', { class: 'placement-controls', attrs: { role: 'group' }, aria: { label: t('hand.controls.label') } }, ...buttons);
+  return group;
 }
 
 /** Every string key this module passes to `t` (the status texts are keyed by `PlacementStatusKey`). */
@@ -214,8 +218,7 @@ export const CONTROLS_STRING_KEYS = [
   'hand.confirm',
   'hand.cancel',
   'hand.rotate',
-  'hand.rotation.state.0',
-  'hand.rotation.state.180',
+  'hand.restoreOrientation',
   'hand.hint.idle',
   'hand.hint.target',
   'hand.hint.card',

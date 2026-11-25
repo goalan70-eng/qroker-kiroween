@@ -38,3 +38,46 @@ test('keyboard placement: roving Board focus, rotation, Escape and explicit conf
   await expect(page.locator('.board-cell--occupied')).toHaveCount(5);
   await expect(page.locator('.hand-card.is-selected')).toHaveCount(0);
 });
+
+test('landscape board keeps A1 at bottom left and preserves a rotated draft across view changes', async ({ page }) => {
+  await page.goto('/');
+  const toggle = page.locator('#game-board-view');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await toggle.click();
+  await page.locator('#setup-seed').fill('7');
+  await page.locator('#setup-start').click();
+
+  const board = page.locator('.board-frame');
+  const cell = (row: number, col: number) => page.locator(`.board-cell[data-row="${row}"][data-col="${col}"]`);
+  await expect(board).toHaveAttribute('data-board-view', 'landscape');
+  const a1 = cell(0, 0);
+  const bounds = (await a1.boundingBox())!;
+  const grid = (await page.locator('.board').boundingBox())!;
+  expect(bounds.x).toBeCloseTo(grid.x, 1);
+  expect(bounds.y + bounds.height).toBeCloseTo(grid.y + grid.height, 1);
+  expect(bounds.width / bounds.height).toBeCloseTo(7 / 5, 3);
+  await expect(board.locator('.board-col-labels')).toHaveText('12345678');
+  await expect(board.locator('.board-row-labels')).toHaveText('HGFEDCBA');
+  await a1.focus();
+  await page.keyboard.press('ArrowUp');
+  await expect(cell(0, 1)).toBeFocused();
+  await page.keyboard.press('ArrowRight');
+  await expect(cell(1, 1)).toBeFocused();
+  await cell(1, 1).hover();
+  await expect(page.locator('.lens-coordinate')).toHaveText('B2');
+
+  const legal = page.locator('.board-cell.is-legal').first();
+  const target = cell(Number(await legal.getAttribute('data-row')), Number(await legal.getAttribute('data-col')));
+  const card = page.locator('.hand-card[aria-label*="Clubs"], .hand-card[aria-label*="Spades"]').first();
+  await card.click();
+  await target.click();
+  await page.locator('.placement-button--rotate').click();
+  for (const view of ['portrait', 'landscape']) {
+    await toggle.click();
+    await expect(board).toHaveAttribute('data-board-view', view);
+    await expect(target.locator('.board-ghost .card-face')).toHaveAttribute('data-orientation', '180');
+    await expect(page.locator('.placement-button--confirm')).toBeInViewport();
+  }
+  await page.locator('.placement-button--confirm').click();
+  await expect(target.locator('.card-face--cell')).toHaveAttribute('data-orientation', '180');
+});

@@ -94,7 +94,7 @@ describe('rotation visibility [model]', () => {
 
   it('is offered while only the card is chosen, and after a target is chosen too', () => {
     const view = withHand(CLUB, HEART);
-    expect(model(view, draftOf(CLUB, null)).showRotation).toBe(true);
+    expect(model(view, draftOf(CLUB, null)).showRotation).toBe(false);
     expect(model(view, draftOf(CLUB, CELL)).showRotation).toBe(true);
     expect(model(view, draftOf(CLUB, CELL, 180)).rotated).toBe(true);
     expect(model(view, draftOf(CLUB, CELL, 0)).rotated).toBe(false);
@@ -294,7 +294,7 @@ describe('which controls exist [fake-DOM]', () => {
   });
 
   it('shows the rotation control for every club and spade', () => {
-    for (const card of ALL_CARDS.filter(TURNS)) expect(kinds(mount(withHand(card), draftOf(card, null))), card).toEqual(['rotate', 'confirm', 'cancel']);
+    for (const card of ALL_CARDS.filter(TURNS)) expect(kinds(mount(withHand(card), draftOf(card, CELL))), card).toEqual(['rotate', 'confirm', 'cancel']);
   });
 
   it('is a labelled group of real type="button" buttons with non-empty localized names, in English and Korean', () => {
@@ -309,7 +309,7 @@ describe('which controls exist [fake-DOM]', () => {
         expect(b.textContent).not.toMatch(/\{|\}|hand\./);
         if (lang === 'ko') expect(HANGUL.test(b.textContent)).toBe(true);
       }
-      expect((byKind(m, 'rotate').children[0] as FakeEl).textContent).toBe(lang === 'en' ? 'Rotate 180°' : '180° 회전');
+      expect(byKind(m, 'rotate').textContent).toBe(lang === 'en' ? 'Rotate 180°' : '180° 회전');
       expect(byKind(m, 'confirm').textContent).toBe(lang === 'en' ? 'Confirm placement' : '배치 확정');
       expect(byKind(m, 'cancel').textContent).toBe(lang === 'en' ? 'Cancel' : '취소');
     }
@@ -329,18 +329,16 @@ describe('what the controls send [fake-DOM]', () => {
     const rotated = mount(withHand(CLUB), draftOf(CLUB, CELL, 180));
     expect(byKind(upright, 'rotate').getAttribute('aria-pressed')).toBe('false');
     expect(byKind(rotated, 'rotate').getAttribute('aria-pressed')).toBe('true');
-    expect(byKind(upright, 'rotate').children[1]?.textContent).toBe('0° (upright)');
-    expect(byKind(rotated, 'rotate').children[1]?.textContent).toBe('180° (rotated)');
+    expect(byKind(upright, 'rotate').textContent).toBe('Rotate 180°');
+    expect(byKind(rotated, 'rotate').textContent).toBe('Return upright');
     byKind(upright, 'rotate').fire('click');
     expect(upright.spy.events).toEqual([{ type: 'toggleRotation' }]);
     byKind(upright, 'rotate').fire('click');
     expect(upright.spy.events).toHaveLength(2); // one event per activation
     expect(upright.spy.confirm + upright.spy.dispatch).toBe(0);
-    // a rotation before a target exists is also allowed
     const cardOnly = mount(withHand(SPADE), draftOf(SPADE, null));
-    byKind(cardOnly, 'rotate').fire('click');
-    expect(cardOnly.spy.events).toEqual([{ type: 'toggleRotation' }]);
-    expect(cardOnly.spy.confirm).toBe(0);
+    expect(kinds(cardOnly)).not.toContain('rotate');
+    expect(byKind(cardOnly, 'confirm').hasAttribute('hidden')).toBe(true);
   });
 
   it('confirm calls confirmPlacement() once per activation, with no argument, and only in PREVIEW', () => {
@@ -442,7 +440,7 @@ describe('placement.css [source]', () => {
   });
 
   it('declares every custom property that it reads, and has no url(), @import, http or font', () => {
-    const defined = new Set([...stripComments(readFileSync(join(STYLES_DIR, 'tokens.css'), 'utf8')).matchAll(/(--[a-z0-9-]+)\s*:/g)].map((m) => m[1]));
+    const defined = new Set([...stripComments(['tokens.css', 'board.css', 'placement.css'].map(file => readFileSync(join(STYLES_DIR, file), 'utf8')).join('\n')).matchAll(/(--[a-z0-9-]+)\s*:/g)].map((m) => m[1]));
     for (const m of stripComments(placementCss).matchAll(/var\(\s*(--[a-z0-9-]+)/g)) expect(defined.has(m[1] as string), m[1]).toBe(true);
     expect(placementCss).not.toMatch(/url\(/i);
     expect(placementCss).not.toMatch(/@import/i);
@@ -461,7 +459,6 @@ describe('placement.css [source]', () => {
       'placement-controls',
       'placement-button',
       'placement-button--confirm',
-      'placement-button__state',
       'placement-error',
       'placement-live',
       'placement-overlay',

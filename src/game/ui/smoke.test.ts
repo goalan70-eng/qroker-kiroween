@@ -112,8 +112,8 @@ function probeInvalidGuesses(app: MountedApp, ctx: Ctx, keys: readonly string[])
   const range = { min: GUESS_MIN, max: GUESS_MAX };
   const field = label(app, 'guess.input.label', { key: first, ...range });
   const cases: readonly (readonly [string, string])[] = [
-    ['3', label(app, 'error.GUESS_OUT_OF_RANGE')],
-    [String(GUESS_MAX + 1), label(app, 'error.GUESS_OUT_OF_RANGE')],
+    ['3', label(app, 'guess.error.range', range)],
+    [String(GUESS_MAX + 1), label(app, 'guess.error.range', range)],
     ['4.5', label(app, 'error.GUESS_NOT_INTEGER')],
     ['', label(app, 'guess.error.missing', range)],
   ];

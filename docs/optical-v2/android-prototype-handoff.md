@@ -14,7 +14,7 @@
 | 항목 | 내용 |
 |---|---|
 | 로컬 판독기와 실험 | **Codex** 작업으로 귀속(소유자 지시). 보고서 본문에는 작성자 표기가 없다. |
-| 입력 보고서(저장소 밖, 로컬) | `D:/Project/QRoker/local-optical-previews/mosaic-camera-print/full-joker/` 아래 `marker-size-comparison.md`, `illustrated-recognition-report.md`, `small-marker-audit/report.md` |
+| 입력 보고서(체크아웃 기준, 로컬) | `local-optical-previews/mosaic-camera-print/full-joker/` 아래 `marker-size-comparison.md`, `illustrated-recognition-report.md`, `small-marker-audit/report.md` |
 | 이 문서 | Kiro가 위 세 보고서와 V2 스펙을 읽고 정리했다. 보고서의 실험을 Kiro가 다시 실행하지 않았다. 아래 수치는 모두 보고서 값이다. |
 | 재현 파일 | 같은 폴더의 `test-marker-size-options.py`(시드 168411), `test-illustrated-card-recognition.py`(시드 830415), 상위 폴더의 `test-small-marker-focus.py`. 판독기와 마커의 SHA-256은 `small-marker-audit`의 `stills.json`, `video.json`, `negative.json`에 있다. |
 
@@ -181,7 +181,7 @@
 - 제출 전에 정답 합계를 숨기며, 한 장이 빠진 프레임에서는 제출을 막는다. 제출 후에는 7.2절의 임시 점수표로 정답과 획득 점수를 표시한다.
 - 앱의 내부 저장소에 순서와 무관한 카드 조합 키, 추측값, 정답을 저장한다. 기록 순서와 점수표로 라운드 번호, 획득 점수, 누적 합계를 복원한다. 조합 키는 재실행 후 중복 채점을 막기 위한 시제품 구현이며 D-3의 정식 결정은 열려 있다. 사용자는 `기록 삭제`에서 확인한 뒤 초기화할 수 있다.
 - 판독과 채점은 기기에서 처리한다. 카메라 권한만 요청하며 영상은 저장하지 않는다.
-- 로컬 산출물은 `D:/Project/QRoker/local-optical-previews/android-offline-companion/` 아래에 있다. `dist/QRoker-Offline.apk`는 설치 파일이고, `README.md`와 `build.ps1`에는 사용 및 재빌드 방법이 있다. 검증한 APK의 SHA-256은 `9a6284fd0fc7d108b6233b59582916959c27f895a1afc364b1190019906f1cd6`이다.
+- 로컬 산출물은 체크아웃의 `local-optical-previews/android-offline-companion/` 아래에 있다. `dist/QRoker-Offline.apk`는 설치 파일이고, `README.md`와 `build.ps1`에는 사용 및 재빌드 방법이 있다. 검증한 APK의 SHA-256은 `9a6284fd0fc7d108b6233b59582916959c27f895a1afc364b1190019906f1cd6`이다.
 
 ### 검증 결과와 남은 실물 시험
 

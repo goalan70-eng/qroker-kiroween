@@ -244,14 +244,15 @@ describe('renderHand [fake-DOM]', () => {
     expect(m.buttons.filter((b) => classesOf(b).includes('is-selected'))).toHaveLength(1);
   });
 
-  it('puts no CardId, no data-card, no title and no draggable attribute in the DOM (only the own accessible names say the card)', () => {
+  it('puts no CardId, no data-card, no title and no native drag source in the DOM (only the own accessible names say the card)', () => {
     for (const draft of [EMPTY_DRAFT, { target: { row: 3, col: 2 }, card: handCard(INITIAL, 0), orientation: 0 } as PlacementDraft]) {
       for (const view of [INITIAL, OTHER_SEAT]) {
         const m = mount(view, { draft });
         for (const e of elementsOf(m.root)) {
           for (const [name, value] of e.attributes) {
             expect(value, `${name}=${value}`).not.toMatch(CARD_ID_TOKEN);
-            expect(['data-card', 'title', 'draggable'], name).not.toContain(name);
+            expect(['data-card', 'title'], name).not.toContain(name);
+            if (name === 'draggable') expect([e.tagName, value]).toEqual(['img', 'false']);
             if (name !== 'aria-label') expect(value, `${name}=${value}`).not.toMatch(/[♥♦♣♠]|Hearts|Diamonds|Clubs|Spades|Ace|Jack|Queen|King/);
           }
           expect(e.textContent).not.toMatch(CARD_ID_TOKEN);

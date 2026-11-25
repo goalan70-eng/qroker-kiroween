@@ -485,12 +485,13 @@ describe('what a renderer receives', () => {
     expect(phases).toEqual(new Set(['PLACEMENT', 'GUESS_COLLECT', 'REVEAL', 'ENDED']));
     expect(stub.calls.length).toBeGreaterThan(30);
     for (const call of stub.calls) {
-      expect(Object.keys(call).sort()).toEqual(['displayError', 'handlers', 'model', 'publicView', 'rotationInfo', 'seed', 'view']);
+      expect(Object.keys(call).sort()).toEqual(['backs', 'displayError', 'handlers', 'model', 'publicView', 'rotationInfo', 'seed', 'view']);
       // seed is the public Seed field of RenderInput (requirement 15.2); every other path must be free of sealed keys
       expect(bannedKeyPaths(call).filter((path) => path !== '$.seed')).toEqual([]);
       expect(call.seed === null || typeof call.seed === 'number').toBe(true);
       expect(Object.isFrozen(call.model)).toBe(true);
       if (call.view !== null) expect(Object.isFrozen(call.view)).toBe(true);
+      if (call.backs) expect(Object.isFrozen(call.backs.seatMarks)).toBe(true);
       // task 17.4: `select` (16.2) is replaced by the draft API
       expect(Object.keys(call.handlers).sort()).toEqual([
         'abandon', 'acknowledgeGate', 'confirmPlacement', 'continueSaved', 'discardSaved', 'dismissNotice', 'dispatch', 'draftEvent', 'explainTarget', 'replaySameSeed', 'restart', 'setLanguage', 'setSetupPrefs', 'startFromSetup', 'startGame',
@@ -1596,7 +1597,7 @@ describe('task 17.4: acceptance 9, hidden information is absent from the draft, 
       expect(Object.keys(call.rotationInfo).sort()).toEqual([...call.view.myHand].sort());
       // nothing the viewer may not see: every card of the unseen pool is absent from the model, the error and the metadata
       const hidden = unseenCards(call.view);
-      const text = JSON.stringify({ model: call.model, error: call.displayError, rotationInfo: call.rotationInfo });
+      const text = JSON.stringify({ model: call.model, error: call.displayError, rotationInfo: call.rotationInfo, backs: call.backs });
       for (const card of hidden) expect(text.includes(`"${card}"`), `hidden ${card}`).toBe(false);
       // the draft card, when present, is a card of the viewer's own Hand
       if (call.model.draft.card !== null) expect(call.view.myHand).toContain(call.model.draft.card);

@@ -29,7 +29,6 @@ if (art.size !== 52) throw new Error('Screen playtest requires exactly 52 card f
 import supportingArt from './inputs/cards/support.png?url';
 
 type VisibleCard = { readonly name: string; readonly rotation: Orientation };
-const suits: Record<string, string> = { '♥': 'H', '♦': 'D', '♣': 'C', '♠': 'S' };
 const sample: readonly VisibleCard[] = ['5H', '9D', 'JC', '2S'].map(name => ({ name, rotation: 0 }));
 
 function element<T extends HTMLElement = HTMLElement>(selector: string): T {
@@ -112,18 +111,6 @@ remove.addEventListener('click', () => { missing = !missing; renderPhoto(); });
 dialog.addEventListener('cancel', event => { event.preventDefault(); closePhoto(); });
 window.addEventListener('resize', sizeBoard);
 
-function withFaceArt(): void {
-  for (const face of root.querySelectorAll<HTMLElement>('.card-face--up')) {
-    const rank = face.querySelector('.card-face__rank')?.textContent ?? '';
-    const suit = suits[face.querySelector('.card-face__suit')?.textContent ?? ''];
-    const name = rank + (suit ?? '');
-    if (!art.has(name) || face.querySelector('.screen-card-art')) continue;
-    const photo = makeImage(name, face.dataset.orientation === '180' ? 180 : 0);
-    photo.classList.add('screen-card-art');
-    face.prepend(photo);
-  }
-}
-
 function releasedCards(view: PlayerView, quad: string, allowed: readonly string[]): VisibleCard[] | null {
   const corner = fromNotation(quad);
   if (!corner.ok || corner.value.row >= BOARD_SIZE - 1 || corner.value.col >= BOARD_SIZE - 1 ||
@@ -196,6 +183,6 @@ mountApp(root, {
     removeItem: key => stored.removeItem('screen-playtest:' + key),
   },
   nowIso: () => new Date().toISOString(),
-  renderer: input => { host.render(input); withFaceArt(); renderRevealTools(input); },
+  renderer: input => { host.render(input); renderRevealTools(input); },
 });
 root.querySelector('.shell__language')?.before(tools);

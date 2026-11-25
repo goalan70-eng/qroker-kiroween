@@ -431,8 +431,9 @@ export function listInvariantViolations(state: GameState, previous?: GameState):
 
   // Bonus applied exactly once, at ENDED.
   const emptyHand = SEATS.find((seat) => state.hands[seat]?.length === 0);
-  if (state.phase === 'ENDED' && !emptyHand && state.scoredGroups.length < COMPLETED_CODE_LIMIT) {
-    add('PHASE_SHAPE', 'ENDED without an empty hand or five codes');
+  if (state.deck.length === 0 && state.phase !== 'ENDED') add('PHASE_SHAPE', 'empty deck before ENDED');
+  if (state.phase === 'ENDED' && !emptyHand && state.deck.length > 0 && state.scoredGroups.length < COMPLETED_CODE_LIMIT) {
+    add('PHASE_SHAPE', 'ENDED without an empty hand, an empty deck or five codes');
   }
   if (state.bonusAwarded !== (state.phase === 'ENDED' ? emptyHand ?? null : null)) {
     add('BONUS', `phase ${state.phase} with bonusAwarded ${String(state.bonusAwarded)}`);

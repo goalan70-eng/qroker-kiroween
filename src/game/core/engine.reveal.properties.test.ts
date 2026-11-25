@@ -964,6 +964,8 @@ function simulate(r: Reachable, table: readonly number[], bonus: number): Simula
         scores[seat] += bonus;
         bonusSeat = seat;
         endedBy = "PLACE";
+      } else if (deck === 0) {
+        endedBy = "PLACE";
       }
     } else if (action.type === "SUBMIT_GUESSES") {
       if (open === null) return fail(`a submission without a batch at index ${i}`);
@@ -1087,7 +1089,7 @@ describe("Property 19: hand-empty bonus and game end ordering", () => {
                 expect(final.hands[final.bonusAwarded], "the bonus seat's hand is empty (state)").toHaveLength(0);
                 expect(sim.lastPlacer, "bonus goes to the seat of the last placement").toBe(final.bonusAwarded);
               } else {
-                expect(final.scoredGroups.length).toBeGreaterThanOrEqual(5);
+                expect(final.deck.length === 0 || final.scoredGroups.length >= 5).toBe(true);
               }
               expect(SEAT_IDS.filter((seat) => final.hands[seat].length === 0)).toEqual(final.bonusAwarded ? [final.bonusAwarded] : []);
               expect(sim.deck).toBe(final.deck.length);
@@ -1138,8 +1140,9 @@ describe("Property 19: hand-empty bonus and game end ordering", () => {
                 expect(sim.endedBy).toBe("PLACE");
                 expect(lastAction.type).toBe("PLACE");
                 expect(sim.lastPlaceCodes, "an ending placement without a batch forms no code").toHaveLength(0);
-                // The draw rule leaves the hand without a card only when the deck is empty.
-                expect(final.deck, "a hand-emptying placement without a code needs an empty deck").toHaveLength(0);
+                expect((r.states[n - 1] as GameState).deck).toHaveLength(1);
+                expect(final.bonusAwarded).toBeNull();
+                expect(final.deck, "the last draw exhausts the deck").toHaveLength(0);
                 if (final.deck.length === 0) cov.endedByNonCodeWithEmptyDeck++;
                 expect((r.states[n - 1] as GameState).phase).toBe("PLACEMENT");
               }
@@ -1183,12 +1186,12 @@ describe("Property 19: hand-empty bonus and game end ordering", () => {
 
       if (LOG_COVERAGE) console.info("P19 coverage", JSON.stringify(cov));
       expect(cov.endedByLastGuess, "games ended directly after the last guess").toBeGreaterThanOrEqual(30);
-      expect(cov.endedByNonCodePlacement, "games ended by a hand-emptying placement without a code").toBeGreaterThanOrEqual(80);
+      expect(cov.endedByNonCodePlacement, "games ended by drawing the last card").toBeGreaterThanOrEqual(80);
       expect(cov.gamesWithoutAnyCode, "games in which no code was ever formed").toBeGreaterThanOrEqual(1);
       expect(cov.endedWithCardsInDeck, "games that end by a code placement while the deck still has cards").toBeGreaterThanOrEqual(10);
       expect(cov.endedByNonCodeWithEmptyDeck).toBe(cov.endedByNonCodePlacement);
       expect(cov.batchesTotal, "batches scored in total").toBeGreaterThanOrEqual(cov.runs * 2.5);
-      for (const seat of SEAT_IDS) expect(cov.bonusSeat[seat], `games where ${seat} got the bonus`).toBeGreaterThanOrEqual(15);
+      for (const seat of SEAT_IDS) expect(cov.bonusSeat[seat], `games where ${seat} got the bonus`).toBeGreaterThan(0);
       expect(cov.fractionalBonus, "games with a fractional bonus").toBeGreaterThanOrEqual(30);
     },
   );

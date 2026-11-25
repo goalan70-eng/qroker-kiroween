@@ -24,6 +24,8 @@
 
 import type { PlayerId, SeatConfig } from '../../core/types';
 import type { PlayerView } from '../../core/view';
+import { backStyle } from '../back-art';
+import type { TableBacks } from '../back-art';
 import { createH } from '../dom';
 import type { CreateDoc } from '../dom';
 import type { Translate } from './card-face';
@@ -55,6 +57,7 @@ export const SCOREBOARD_STRING_KEYS = [
   'scoreboard.kind.AI',
   'scoreboard.deck',
   'common.provisionalScoring',
+  'common.seat.human',
 ] as const;
 
 /** The glyph in front of the active marker text. It is decoration (`aria-hidden`); the text carries the meaning. */
@@ -82,7 +85,7 @@ export function buildScoreboardModel(view: PlayerView): ScoreboardModel {
 export interface ScoreboardHandle {
   readonly element: HTMLElement;
   /** Renders the latest view into the same element. After `dispose` it does nothing. */
-  update(view: PlayerView): void;
+  update(view: PlayerView, options?: ScoreboardOptions): void;
   /** Removes the element. Idempotent. */
   dispose(): void;
 }
@@ -90,6 +93,9 @@ export interface ScoreboardHandle {
 export interface ScoreboardOptions {
   /** Draw the provisional banner inside the scoreboard. Default `true`; a host that mounts components/banner.ts passes `false`. */
   readonly banner?: boolean;
+  /** A private placement panel displays this seat’s playable hand. */
+  readonly openHandSeat?: PlayerId;
+  readonly backs?: TableBacks;
 }
 
 /** Mounts the scoreboard of `view` into `root`. */
@@ -98,10 +104,12 @@ export function renderScoreboard(doc: CreateDoc, root: HTMLElement, view: Player
   const slot = h('section', { class: 'scoreboard' });
   let disposed = false;
 
-  function paint(next: PlayerView): void {
+  function paint(next: PlayerView, settings: ScoreboardOptions): void {
     const model = buildScoreboardModel(next);
+    const seated = next.phase !== 'ENDED';
+    slot.setAttribute('class', seated ? 'scoreboard scoreboard--seated' : 'scoreboard');
     while (slot.firstChild !== null) slot.removeChild(slot.firstChild);
-    if (model.provisional && options.banner !== false) {
+    if (model.provisional && settings.banner !== false) {
       slot.appendChild(h('p', { class: 'scoreboard-banner', attrs: { role: 'note' } }, t('common.provisionalScoring')));
     }
     const head = h(
@@ -111,6 +119,8 @@ export function renderScoreboard(doc: CreateDoc, root: HTMLElement, view: Player
       h('th', { attrs: { scope: 'col' } }, t('scoreboard.col.score')),
       h('th', { attrs: { scope: 'col' } }, t('scoreboard.col.hand')),
     );
+    const humans = model.rows.filter(row => row.kind === 'HUMAN');
+    const defaultSoloSeat = humans.length === 1 && humans[0]?.id === 'P0' && humans[0].name === 'You' ? 'P0' : null;
     const body = model.rows.map((row) =>
       h(
         'tr',
@@ -118,7 +128,11 @@ export function renderScoreboard(doc: CreateDoc, root: HTMLElement, view: Player
         h(
           'th',
           { attrs: { scope: 'row' } },
-          h('span', { class: 'scoreboard-name' }, row.name),
+          seated ? h('span', { class: 'seat-cards', aria: { hidden: 'true' } },
+            ...Array.from({ length: row.id === settings.openHandSeat ? 0 : row.handCount },
+              (_, i) => h('span', { class: 'table-card-back seat-card-back', attrs: backStyle(settings.backs?.seatMarks[row.id][i]) })),
+          ) : null,
+          h('span', { class: 'scoreboard-name' }, row.id === defaultSoloSeat ? t('common.seat.human') : row.name),
           h('span', { class: 'scoreboard-kind' }, ` (${t(row.kind === 'HUMAN' ? 'scoreboard.kind.HUMAN' : 'scoreboard.kind.AI')})`),
           row.active
             ? h(
@@ -129,7 +143,7 @@ export function renderScoreboard(doc: CreateDoc, root: HTMLElement, view: Player
               )
             : null,
         ),
-        h('td', { class: 'scoreboard-score' }, row.score),
+        h('td', { class: 'scoreboard-score', attrs: { 'data-label': t('scoreboard.col.score') } }, row.score),
         h('td', { class: 'scoreboard-hand' }, row.handCount),
       ),
     );
@@ -142,15 +156,24 @@ export function renderScoreboard(doc: CreateDoc, root: HTMLElement, view: Player
         h('tbody', null, ...body),
       ),
     );
-    slot.appendChild(h('p', { class: 'scoreboard-deck' }, t('scoreboard.deck', { count: model.deckCount })));
+    slot.appendChild(h('p', { class: 'scoreboard-deck' },
+      seated ? h('span', {
+        class: 'deck-stack', aria: { hidden: 'true' },
+        attrs: { style: `--deck-count: ${model.deckCount}` },
+      },
+        model.deckCount > 0 ? h('span', { class: 'table-card-back', attrs: backStyle(settings.backs?.deckTop) }) : null,
+        h('span', { class: 'deck-number' }, model.deckCount),
+      ) : null,
+      h('span', { class: 'deck-count' }, t('scoreboard.deck', { count: model.deckCount })),
+    ));
   }
 
-  paint(view);
+  paint(view, options);
   root.appendChild(slot);
   return {
     element: slot,
-    update(next) {
-      if (!disposed) paint(next);
+    update(next, settings = options) {
+      if (!disposed) paint(next, settings);
     },
     dispose() {
       if (disposed) return;

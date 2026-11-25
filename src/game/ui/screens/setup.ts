@@ -99,6 +99,7 @@ export interface SetupHandle {
 /** Every string key this module passes to `t`, apart from the engine's `error.<code>` messages. */
 export const SETUP_STRING_KEYS = [
   'setup.title',
+  'setup.goal',
   'setup.seed.label',
   'setup.seed.hint',
   'setup.seed.random',
@@ -107,6 +108,8 @@ export const SETUP_STRING_KEYS = [
   'setup.humans.hint',
   'setup.ai.legend',
   'setup.ai.label',
+  'setup.ai.beginnerHint',
+  'setup.ai.advancedHint',
   'setup.ai.none',
   'setup.visibility.legend',
   'setup.visibility.OWNER_ONLY',
@@ -116,6 +119,7 @@ export const SETUP_STRING_KEYS = [
   'setup.blind.score',
   'setup.visibility.default',
   'setup.visibility.hint',
+  'setup.visibility.blindHint',
   'setup.start',
   'common.language.label',
   'common.languageName.ko',
@@ -174,6 +178,7 @@ const setDisabled = (el: HTMLElement, disabled: boolean): void => {
 interface AiRow {
   readonly index: number;
   readonly label: HTMLElement;
+  readonly hint: HTMLElement;
   readonly select: HTMLElement;
   readonly options: readonly { readonly el: HTMLElement; readonly tier: string }[];
 }
@@ -210,6 +215,7 @@ export function renderSetup(
   // ---- controls -------------------------------------------------------------------------------------------
 
   const titleEl = h('h2', { id: 'setup-title', class: 'setup-title' });
+  const goalEl = h('p', { class: 'setup-goal' });
 
   const seedLabel = h('label', { class: 'setup-label', attrs: { for: 'setup-seed' } });
   const seedInput = h('input', {
@@ -304,6 +310,7 @@ export function renderSetup(
       const index = SEATS.indexOf(seat);
       const id = `setup-difficulty-${seat}`;
       const label = h('label', { class: 'setup-label', attrs: { for: id } });
+      const hint = h('p', { id: `${id}-hint`, class: 'setup-ai-hint' });
       const optionEls = SETUP_DIFFICULTIES.map((tier) => ({ tier, el: h('option', { attrs: { value: tier } }) }));
       const select = h(
         'select',
@@ -311,6 +318,7 @@ export function renderSetup(
           id,
           focusKey: id,
           class: 'setup-select',
+          aria: { describedby: `${id}-hint` },
           on: {
             change: () => {
               if (inert || disposed) return;
@@ -324,8 +332,8 @@ export function renderSetup(
         ...optionEls.map((o) => o.el),
       );
       setValue(select, typeof difficulties[index] === 'string' ? (difficulties[index] as string) : '');
-      aiSlot.appendChild(h('div', { class: 'setup-ai-row', attrs: { 'data-seat': seat } }, label, select));
-      return { index, label, select, options: optionEls.map((o) => ({ el: o.el, tier: o.tier })) };
+      aiSlot.appendChild(h('div', { class: 'setup-ai-row', attrs: { 'data-seat': seat } }, label, select, hint));
+      return { index, label, select, hint, options: optionEls.map((o) => ({ el: o.el, tier: o.tier })) };
     });
     if (aiRows.length === 0) aiSlot.appendChild(h('p', { class: 'setup-hint setup-ai-none' }));
   }
@@ -426,17 +434,14 @@ export function renderSetup(
         },
       },
     },
-    seedField,
-    humansSet,
-    aiSet,
-    visibilitySet,
-    languageField,
-    generalError,
-    startButton,
+    h('div', { class: 'setup-fields' }, seedField, humansSet, aiSet, visibilitySet),
+    h('div', { class: 'setup-footer' }, languageField, generalError, startButton),
   );
   const frontispiece = h('header', { class: 'setup-cover' },
-    h('span', { class: 'setup-engraving', aria: { hidden: 'true' } }),
-    titleEl,
+    h('div', { class: 'setup-intro' }, titleEl, goalEl),
+    h('div', { class: 'setup-deck', aria: { hidden: 'true' } },
+      h('span', { class: 'setup-engraving' }),
+    ),
   );
   const panel = h('section', { class: 'setup' }, frontispiece, form);
 
@@ -445,6 +450,7 @@ export function renderSetup(
   /** Writes every localized text and state attribute from the closure state. Never rebuilds a control. */
   function paint(): void {
     setText(titleEl, t('setup.title'));
+    setText(goalEl, t('setup.goal'));
     setText(seedLabel, t('setup.seed.label'));
     setText(seedHint, t('setup.seed.hint'));
     setText(seedError, seedErrorCode === null ? '' : t(errorMessageKey(seedErrorCode)));
@@ -458,6 +464,7 @@ export function renderSetup(
     setText(aiLegend, t('setup.ai.legend'));
     for (const row of aiRows) {
       setText(row.label, t('setup.ai.label', { n: row.index - shownHumans + 1 }));
+      setText(row.hint, t(valueOf(row.select) === 'ADVANCED' ? 'setup.ai.advancedHint' : 'setup.ai.beginnerHint'));
       for (const option of row.options) setText(option.el, t(DIFFICULTY_KEYS[option.tier] as StringKey));
     }
     const none = aiSlot.firstChild;
@@ -468,7 +475,8 @@ export function renderSetup(
       const text = t(VISIBILITY_KEYS[item.value] as StringKey);
       setText(item.label, item.value === SETUP_VISIBILITIES[0] ? `${text} ${t('setup.visibility.default')}` : text);
     }
-    setText(visibilityHint, t('setup.visibility.hint'));
+    setText(visibilityHint, t(visibilityRaw === 'BLIND' || visibilityRaw === 'BLIND_SCORE_ONLY'
+      ? 'setup.visibility.blindHint' : 'setup.visibility.hint'));
     setText(feedbackLabel, t('setup.blind.feedback'));
     setText(sumOption, t('setup.blind.sum'));
     setText(scoreOption, t('setup.blind.score'));

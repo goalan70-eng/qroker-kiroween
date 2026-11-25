@@ -53,7 +53,7 @@ import { renderBanner } from '../components/banner';
 import type { BannerHandle } from '../components/banner';
 import { renderNotices } from '../components/notices';
 import type { NoticesHandle } from '../components/notices';
-import { boardModel, renderBoard, viewerOwnerLabel, defaultOwnerLabel } from '../components/board';
+import { boardModel, renderBoard, viewerOwnerLabel, defaultOwnerLabel, type BoardView } from '../components/board';
 import type { Translate } from '../components/card-face';
 import { renderPlacementPanel } from '../components/placement-panel';
 import type { PlacementPanelDocument, PlacementPanelHandle } from '../components/placement-panel';
@@ -157,6 +157,7 @@ export function createGameScreen(options: GameScreenOptions): GameScreen {
   let mode: Mode = 'SETUP';
   let focusedRegion: QuadKey | null = null;
   let boardSig = '';
+  let boardView: BoardView = 'portrait';
 
   // ---- static DOM -----------------------------------------------------------------------------------------
 
@@ -166,6 +167,39 @@ export function createGameScreen(options: GameScreenOptions): GameScreen {
     class: 'game-bar__button',
     attrs: { type: 'button' },
     on: { click: () => openOverlay({ type: 'OPEN_HELP' }) },
+  });
+  const page = root.ownerDocument;
+  const canFullscreen = !!page?.fullscreenEnabled && typeof page.documentElement.requestFullscreen === 'function';
+  const fullscreenFeedback = h('span', { class: 'fullscreen-feedback', attrs: { role: 'status' } });
+  const fullscreenButton = h('button', {
+    id: 'game-fullscreen', class: 'game-bar__button', attrs: { type: 'button' },
+    on: { click: async () => {
+      if (!canFullscreen) return;
+      setText(fullscreenFeedback, '');
+      try {
+        if (page.fullscreenElement) await page.exitFullscreen();
+        else await page.documentElement.requestFullscreen();
+      } catch {
+        if (!disposed) setText(fullscreenFeedback, tr('game.fullscreen.failed'));
+      }
+    } },
+  });
+  function syncFullscreen(): void {
+    const active = !!page?.fullscreenElement;
+    const label = tr(active ? 'game.fullscreen.exit' : 'game.fullscreen.enter');
+    setText(fullscreenButton, label);
+    fullscreenButton.setAttribute('title', label);
+    fullscreenButton.setAttribute('data-active', String(active));
+  }
+  if (canFullscreen) page.addEventListener('fullscreenchange', syncFullscreen);
+
+  const boardViewButton = h('button', {
+    id: 'game-board-view', class: 'game-bar__button', attrs: { type: 'button' },
+    on: { click: () => {
+      if (disposed || latest === null) return;
+      boardView = boardView === 'portrait' ? 'landscape' : 'portrait';
+      render(latest);
+    } },
   });
   const abandonButton = h('button', {
     id: 'game-abandon-open',
@@ -183,7 +217,8 @@ export function createGameScreen(options: GameScreenOptions): GameScreen {
   });
   const bannerSlot = h('div', { class: 'game-banner-slot' });
   const noticesSlot = h('div', { class: 'game-notices-slot' });
-  const bar = h('div', { class: 'game-bar', attrs: { role: 'group' } }, helpButton, abandonButton, bannerSlot, noticesSlot);
+  const tools = h('div', { class: 'table-tools' }, helpButton, fullscreenButton, abandonButton, fullscreenFeedback);
+  const bar = h('div', { class: 'game-bar', attrs: { role: 'group' } }, boardViewButton, tools, bannerSlot, noticesSlot);
   const seedEl = h('p', { class: 'game-seed' });
   const liveEl = h('div', { class: 'game-live', aria: { live: 'polite', atomic: 'true' } });
   const setupSlot = h('div', { class: 'game-setup-slot' });
@@ -356,24 +391,30 @@ export function createGameScreen(options: GameScreenOptions): GameScreen {
 
   // ---- Board (read-only, with the pending-region highlight) ------------------------------------------------
 
-  function markRegion(board: HTMLElement, key: QuadKey): void {
+  function markRegion(board: HTMLElement, key: QuadKey, focused = true): void {
     for (const notation of regionCells(key)) {
       const match = /^([A-H])([1-8])$/.exec(notation);
       if (match === null) continue;
       const cell = findCell(board, Number(match[2]) - 1, (match[1] as string).charCodeAt(0) - 65);
-      if (cell !== null) cell.setAttribute('class', `${cell.getAttribute('class') ?? ''} is-focused-region`);
+      if (cell !== null) {
+        const classes = (cell.getAttribute('class') ?? '').split(' ').filter(name => name !== 'is-focused-region');
+        if (focused) classes.push('is-focused-region');
+        cell.setAttribute('class', classes.join(' '));
+        if (notation === key && focused) cell.setAttribute('data-focused-junction', '');
+        else if (notation === key) cell.removeAttribute('data-focused-junction');
+      }
     }
   }
 
   function paintBoard(input: RenderInput, data: PlayerView): void {
     const privateView = input.view !== null;
-    const sig = [input.model.actionCount, input.model.language, data.viewer, data.phase, privateView ? 'v' : 'p', focusedRegion ?? ''].join('|');
+    const sig = [input.model.actionCount, input.model.language, data.viewer, data.phase, privateView ? 'v' : 'p', boardView].join('|');
     if (sig === boardSig && boardSlot.firstChild !== null) return;
     boardSig = sig;
     const build = (): void => {
       clear(boardSlot);
       const ownerLabel = privateView ? viewerOwnerLabel(data.viewer, tr) : defaultOwnerLabel(tr);
-      const board = renderBoard(h, boardModel(data, EMPTY_DRAFT), tr, NOOP_BOARD_HANDLERS, { ownerLabel });
+      const board = renderBoard(h, boardModel(data, EMPTY_DRAFT), tr, NOOP_BOARD_HANDLERS, { ownerLabel, boardBacks: input.backs?.board, boardView, viewButton: boardViewButton });
       boardSlot.appendChild(board);
       if (focusedRegion !== null) markRegion(board, focusedRegion);
     };
@@ -471,6 +512,20 @@ export function createGameScreen(options: GameScreenOptions): GameScreen {
 
     // The bar, the Seed line and the texts.
     const inGame = input.model.screen !== 'SETUP' && mode !== 'GATE';
+    if (mode === 'SETUP' && boardViewButton.parentNode !== bar) {
+      boardViewButton.parentNode?.removeChild(boardViewButton);
+      bar.appendChild(boardViewButton);
+    }
+    const hasBoard = mode === 'PLACEMENT' || mode === 'WAIT' || mode === 'GUESS' || mode === 'REVEAL';
+    setHidden(fullscreenButton, !hasBoard || !canFullscreen);
+    if (!hasBoard) setText(fullscreenFeedback, '');
+    syncFullscreen();
+    setText(boardViewButton, tr('board.view.landscape'));
+    boardViewButton.setAttribute('title', tr('board.view.rotate'));
+    helpButton.setAttribute('title', tr('help.open'));
+    abandonButton.setAttribute('title', tr('abandon.open'));
+    boardViewButton.setAttribute('aria-pressed', String(boardView === 'landscape'));
+    setHidden(boardViewButton, mode === 'GATE' || mode === 'RESUME' || mode === 'END' || mode === 'EMPTY');
     setText(helpButton, tr('help.open'));
     setText(abandonButton, tr('abandon.open'));
     bar.setAttribute('aria-label', tr('game.bar.label'));
@@ -552,17 +607,18 @@ export function createGameScreen(options: GameScreenOptions): GameScreen {
 
   function showGame(input: RenderInput, data: PlayerView, previous: Mode): void {
     // Scoreboard: public numbers of the view that is shown (private view or `publicView`).
-    if (score === null) score = renderScoreboard(doc, scoreSlot, data, tr, { banner: false });
-    else score.update(data);
+    const scoreOptions = { banner: false, backs: input.backs, openHandSeat: mode === 'PLACEMENT' ? input.view?.viewer : undefined };
+    if (score === null) score = renderScoreboard(doc, scoreSlot, data, tr, scoreOptions);
+    else score.update(data, scoreOptions);
 
     // Placement panel (private view of the viewer).
     if (mode === 'PLACEMENT') {
       clearBoard();
       if (panel === null) {
-        panel = renderPlacementPanel(doc, panelSlot, input, tr);
+        panel = renderPlacementPanel(doc, panelSlot, { ...input, boardView, viewButton: boardViewButton }, tr);
         if (previous !== 'PLACEMENT') focusFirstCard();
       } else {
-        panel.update(input);
+        panel.update({ ...input, boardView, viewButton: boardViewButton });
       }
     } else {
       disposePanel();
@@ -581,11 +637,10 @@ export function createGameScreen(options: GameScreenOptions): GameScreen {
         const handle = renderGuessEntry(doc, mainSlot, input, tr, {
           onRegionFocus: (quadKey) => {
             if (disposed || quadKey === focusedRegion) return;
+            const board = boardSlot.firstChild as HTMLElement | null;
+            if (board && focusedRegion) markRegion(board, focusedRegion, false);
             focusedRegion = quadKey;
-            if (latest !== null && mode === 'GUESS') {
-              const shown = latest.view;
-              if (shown !== null) paintBoard(latest, shown);
-            }
+            if (board && quadKey) markRegion(board, quadKey);
           },
         });
         guess = { handle, key };
@@ -662,6 +717,7 @@ export function createGameScreen(options: GameScreenOptions): GameScreen {
     help.dispose();
     abandon.dispose();
     banner.dispose();
+    if (canFullscreen) page.removeEventListener('fullscreenchange', syncFullscreen);
     disposed = true;
     latest = null;
     overlayOpener = null;

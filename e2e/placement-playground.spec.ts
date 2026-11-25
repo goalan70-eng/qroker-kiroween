@@ -24,6 +24,7 @@ test('dev playground renders a seeded 8x8 board with no browser exceptions', asy
   await expect(page.locator('.board-cell--occupied')).toHaveCount(4);
   await expect(page.locator('.hand-card')).toHaveCount(3);
   await expect(page.locator('.placement-button--confirm')).toBeDisabled();
+  await expect(page.locator('.placement-button--confirm')).toBeHidden();
   await expect(page.locator('.dev-status')).toContainText('phase PLACEMENT');
   await expect(page.locator('.board-cell[tabindex="0"]')).toHaveCount(1);
   expect(errors).toEqual([]);
@@ -54,6 +55,7 @@ test('real mouse drag creates a preview without placing until confirmation', asy
   await page.goto(playground(1));
   const source = page.locator('.hand-card').first();
   const target = boardCell(page, 2, 3); // D3
+  await source.scrollIntoViewIfNeeded();
   const from = await source.boundingBox();
   const to = await target.boundingBox();
   expect(from).not.toBeNull();

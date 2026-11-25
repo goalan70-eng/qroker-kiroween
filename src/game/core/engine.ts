@@ -13,8 +13,8 @@
  * ends with a normalized copy of the action.
  *
  * Phase machine (design.md):
- *   PLACEMENT    --PLACE, no code, hand not empty-->        PLACEMENT (turn = nextSeat)
- *   PLACEMENT    --PLACE, no code, hand reaches 0-->        ENDED (bonus)
+ *   PLACEMENT    --PLACE, no code, deck still has cards-->        PLACEMENT (turn = nextSeat)
+ *   PLACEMENT    --PLACE, no code, final card drawn-->      ENDED (current scores)
  *   PLACEMENT    --PLACE, 1 or more new codes-->            GUESS_COLLECT (pending batch)
  *   GUESS_COLLECT--SUBMIT_GUESSES, not all 4 seats yet-->   GUESS_COLLECT
  *   GUESS_COLLECT--last SUBMIT_GUESSES, no end condition-->  REVEAL
@@ -160,6 +160,7 @@ function reducePlace(state: GameState, action: Extract<Action, { type: 'PLACE' }
       bonusAwarded: state.bonusAwarded ?? player,
     });
   }
+  if (drawn.deck.length === 0) return ok({ ...next, phase: 'ENDED' });
   // Step 9: the turn passes on.
   return ok({ ...next, turn: nextSeat(player) });
 }

@@ -31,15 +31,15 @@ export const en = Object.freeze({
 
   'help.s4.title': 'How to place a card',
   'help.s4.body':
-    'There are two ways. Drag a card from your hand onto a legal cell of the board. Or select a cell first and then select a card from your hand (selecting the card first also works). Either way a preview appears, and the card is placed only when you press the confirm button. The cancel button and the Escape key discard your choice.',
+    'Drag a card from your hand onto a legal cell, or click the card and the cell in either order. The card stays in preview until you press ✓ beside it. The cancel button and the Escape key discard your choice.',
 
   'help.s5.title': 'Rotating a card',
   'help.s5.body':
-    'A card can lie upright or be rotated by 180°. Rotation matters only for clubs and spades, where it changes which corners carry the fragments. Hearts and diamonds look the same when rotated, so they have no rotation control.',
+    'Press ↻ beside a previewed club or spade to turn it 180°. Press it again to turn the card back. Hearts and diamonds look the same when rotated, so they have no rotation control.',
 
   'help.s6.title': 'Codes',
   'help.s6.body':
-    'A code forms when the four cards around a 2×2 region of the board each show a fragment in the corner that points to the center of the region. Cards lying side by side are not enough on their own.',
+    'Place four cards in a 2×2 block so the four code fragments meet at the center. A gold border marks each code completed by a placement.',
 
   'help.s7.title': 'Guesses',
   'help.s7.body':
@@ -47,7 +47,7 @@ export const en = Object.freeze({
 
   'help.s8.title': 'Drawing cards',
   'help.s8.body':
-    'After you place a card that does not complete a new code, you draw one card from the deck. This applies from your first placement. A placement that completes a code draws nothing. When the deck is empty nothing is drawn and the game goes on.',
+    'After you place a card that does not complete a new code, you draw one card from the deck. This applies from your first placement. A placement that completes a code draws nothing. Drawing the last card ends the game immediately.',
 
   'help.s9.title': 'Reveal and points',
   'help.s9.body':
@@ -55,7 +55,7 @@ export const en = Object.freeze({
 
   'help.s10.title': 'End of the game and ranking',
   'help.s10.body':
-    'The game ends when a player has no cards left in hand or the players have completed at least five codes in total. Every code from the last placement is scored first. Only a player who empties their hand receives an end bonus. An empty deck does not end the game. Players are ranked by final score, highest first. Players with equal scores share the same rank, and there is no further tiebreak.',
+    'The game ends when a player has no cards left in hand or the players have completed at least five codes in total. Every code from the last placement is scored first. Only a player who empties their hand receives an end bonus. If the last card is drawn, the game ends immediately at the current scores. Players are ranked by final score, highest first. Players with equal scores share the same rank, and there is no further tiebreak.',
 
   'help.visibility.title': 'Card visibility option',
   'help.visibility.body':
@@ -94,19 +94,19 @@ export const ko: Record<keyof typeof en, string> = Object.freeze({
   'help.s4.title': '카드를 놓는 방법',
   // REVIEW: new text, needs native-speaker check
   'help.s4.body':
-    '방법은 두 가지입니다. 손패의 카드를 끌어서 보드의 놓을 수 있는 칸에 놓거나, 먼저 칸을 선택한 다음 손패의 카드를 선택합니다(카드를 먼저 선택해도 됩니다). 어느 쪽이든 미리보기가 나타나며, 배치 확정 버튼을 눌러야 카드가 놓입니다. 취소 버튼이나 Escape 키를 누르면 선택이 지워집니다.',
+    '손패에서 카드를 끌어 놓거나, 카드와 놓을 칸을 차례로 누르세요. 칸을 먼저 골라도 됩니다. 카드 옆의 ✓를 누르면 배치가 확정됩니다. 취소 버튼이나 Escape 키를 누르면 선택이 지워집니다.',
 
   // REVIEW: new text, needs native-speaker check
   'help.s5.title': '카드 회전',
   // REVIEW: new text, needs native-speaker check
   'help.s5.body':
-    '카드는 바르게 놓거나 180° 회전해서 놓을 수 있습니다. 회전은 클럽과 스페이드에서만 의미가 있으며, 조각이 있는 모서리가 바뀝니다. 하트와 다이아몬드는 회전해도 모양이 같으므로 회전 버튼이 없습니다.',
+    '클럽과 스페이드는 배치를 확정하기 전에 카드 옆의 ↻로 180° 돌릴 수 있습니다. 한 번 더 누르면 원래 방향으로 돌아옵니다. 하트와 다이아몬드는 회전해도 모양이 같으므로 회전 버튼이 없습니다.',
 
   // REVIEW: new text, needs native-speaker check
   'help.s6.title': '조합',
   // REVIEW: new text, needs native-speaker check
   'help.s6.body':
-    '보드의 2×2 영역을 이루는 네 장의 카드가 모두 영역의 중심을 향한 모서리에 조각을 가지고 있으면 조합이 만들어집니다. 카드가 나란히 놓였다는 것만으로는 조합이 되지 않습니다.',
+    '카드 네 장을 2×2로 놓아 가운데에 네 모서리의 코드 조각이 모이면 조합이 완성됩니다. 카드를 놓아 새로 완성한 자리에는 금색 테두리가 생깁니다.',
 
   // REVIEW: new text, needs native-speaker check
   'help.s7.title': '예측',
@@ -118,7 +118,7 @@ export const ko: Record<keyof typeof en, string> = Object.freeze({
   'help.s8.title': '카드 뽑기',
   // REVIEW: new text, needs native-speaker check
   'help.s8.body':
-    '새 조합을 완성하지 않는 카드를 놓으면 덱에서 카드 한 장을 뽑습니다. 첫 배치부터 이 규칙을 적용합니다. 조합을 완성하면 뽑지 않습니다. 덱이 비어 있으면 아무것도 뽑지 않고 게임은 계속됩니다.',
+    '새 조합을 완성하지 않는 카드를 놓으면 덱에서 카드 한 장을 뽑습니다. 첫 배치부터 이 규칙을 적용합니다. 조합을 완성하면 뽑지 않습니다. 덱의 마지막 카드를 뽑으면 즉시 게임이 끝납니다.',
 
   // REVIEW: new text, needs native-speaker check
   'help.s9.title': '공개와 점수',
@@ -130,7 +130,7 @@ export const ko: Record<keyof typeof en, string> = Object.freeze({
   'help.s10.title': '게임 종료와 순위',
   // REVIEW: new text, needs native-speaker check
   'help.s10.body':
-    '한 플레이어의 손패가 비거나 모두가 완성한 조합이 누적 다섯 개에 도달하면 게임이 끝납니다. 마지막 배치에서 생긴 모든 조합의 예측과 채점을 마친 뒤, 손패를 비운 플레이어만 종료 보너스를 받습니다. 덱이 비는 것만으로는 게임이 끝나지 않습니다. 최종 점수가 높은 순서대로 순위를 매기며, 점수가 같은 플레이어는 같은 순위를 공유합니다. 동점을 가르는 별도의 규칙은 없습니다.',
+    '한 플레이어의 손패가 비거나 모두가 완성한 조합이 누적 다섯 개에 도달하면 게임이 끝납니다. 마지막 배치에서 생긴 모든 조합의 예측과 채점을 마친 뒤, 손패를 비운 플레이어만 종료 보너스를 받습니다. 덱의 마지막 카드를 뽑으면 그때까지 얻은 점수로 즉시 게임을 끝냅니다. 최종 점수가 높은 순서대로 순위를 매기며, 점수가 같은 플레이어는 같은 순위를 공유합니다. 동점을 가르는 별도의 규칙은 없습니다.',
 
   // REVIEW: new text, needs native-speaker check
   'help.visibility.title': '카드 공개 방식 설정',

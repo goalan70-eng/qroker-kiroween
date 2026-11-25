@@ -624,29 +624,27 @@ describe("full game with BEGINNER on all four seats", () => {
     }
   });
 
-  it("awards the hand-empty bonus exactly once, and the final scores are the earned points plus that bonus", () => {
+  it("awards the bonus only for an empty hand, and the final scores are the earned points plus that bonus", () => {
     for (const { seed, result } of results) {
       const state = result.state;
-      expect(state.bonusAwarded, `seed ${seed}`).not.toBeNull();
+      expect(state.bonusAwarded, `seed ${seed}`).toBe(SEATS.find((seat) => state.hands[seat].length === 0) ?? null);
       const bonus = state.config.scoreConfig.config.handEmptyBonus;
       for (const seat of SEATS) {
         const earned = state.history.reduce((sum, record) => sum + (record.perPlayer.find((e) => e.player === seat)?.earned ?? 0), 0);
         expect(state.scores[seat], `seed ${seed} ${seat}`).toBe(earned + (state.bonusAwarded === seat ? bonus : 0));
       }
-      expect(state.hands[state.bonusAwarded as PlayerId], "the bonus seat emptied its hand").toHaveLength(0);
+      if (state.bonusAwarded === null) expect(state.deck.length === 0 || state.scoredGroups.length >= 5).toBe(true);
     }
   });
 
-  // OBSERVED (24 seeds 7000..7023, alternating visibility): 1049 placements (about 44 per game), 42 batches opened,
-  // 45 to 66 engine actions per game, and all four seats won the bonus at least once.
-  it("plays real games: placements, batches and several winners-of-the-bonus across the seeds", () => {
+  it("plays complete games with placements, scoring batches and deck exhaustion across the seeds", () => {
     const totalPlacements = results.reduce((n, r) => n + r.result.placements, 0);
     const totalBatches = results.reduce((n, r) => n + r.result.batches, 0);
-    const bonusSeats = new Set(results.map((r) => r.result.state.bonusAwarded));
+    const exhaustedDecks = results.filter((r) => r.result.state.deck.length === 0);
     expect(totalPlacements).toBeGreaterThan(SEEDS * 30);
     expect(totalBatches).toBeGreaterThan(0);
     expect(totalBatches).toBeGreaterThanOrEqual(20);
-    expect(bonusSeats.size).toBeGreaterThanOrEqual(2);
+    expect(exhaustedDecks.length).toBeGreaterThan(0);
     expect(new Set(results.map((r) => JSON.stringify(r.result.state.log))).size).toBe(SEEDS);
   });
 });

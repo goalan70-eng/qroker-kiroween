@@ -59,13 +59,13 @@
 //
 // Imports: ui/, i18n/, core/types and core/view only.
 
-import type { CardId, ErrorCode, PlayerId, QuadKey } from '../../core/types';
+import type { CardId, Orientation, ErrorCode, PlayerId, QuadKey } from '../../core/types';
 import type { PlayerView } from '../../core/view';
 import { errorMessageKey } from '../../i18n';
 import type { StringKey } from '../../i18n';
 import { createH, renderWithFocus } from '../dom';
 import type { CreateDoc, FocusDoc, HFunction } from '../dom';
-import { cardFaceModel } from '../components/card-face';
+import { cardFaceModel, renderFaceArt, renderFragments } from '../components/card-face';
 import type { Translate } from '../components/card-face';
 
 // ---------------------------------------------------------------------------------------------------------
@@ -216,20 +216,22 @@ function clear(el: HTMLElement): void {
 }
 
 /** A face for a publicly revealed card: rank and suit only. See the module comment for why not `renderCardFace`. */
-export function revealCardFace(h: HFunction, card: CardId, t: Translate): HTMLElement {
-  // The owner and the orientation are required by the model but never written: the record does not supply them.
-  const face = cardFaceModel({ card, owner: 'NEUTRAL', orientation: 0, size: 'hand', ownerLabel: '' });
+export function revealCardFace(h: HFunction, card: CardId, t: Translate, orientation?: Orientation): HTMLElement {
+  // The reveal record has no owner. Only reconstruct the corners when its public board face supplies the orientation.
+  const face = cardFaceModel({ card, owner: 'NEUTRAL', orientation: orientation ?? 0, size: 'hand', ownerLabel: '' });
   const rankKey = face.nameKeyParams.rank as StringKey | undefined;
   const rank = face.nameParams.rank ?? (rankKey === undefined ? '' : t(rankKey));
   const suit = t(face.nameKeyParams.suit as StringKey);
   return h(
     'span',
     { class: face.className, attrs: { role: 'img' }, aria: { label: t('reveal.card.name', { rank, suit }) } },
+    ...(orientation === undefined ? [] : renderFragments(h, face)),
     h(
       'span',
       { class: 'card-face__glyphs', aria: { hidden: 'true' } },
       h('span', { class: 'card-face__rank' }, face.rankText),
       h('span', { class: 'card-face__suit' }, face.suitGlyph),
+      renderFaceArt(h, face),
     ),
   );
 }
@@ -297,7 +299,10 @@ export function renderReveal(
           code.cards.length === 0 ? null : h(
             'ul',
             { class: 'reveal-cards', aria: { label: t('reveal.code.cards', { key: code.quadKey }) } },
-            ...code.cards.map((card) => h('li', { class: 'reveal-card' }, revealCardFace(h, card, t))),
+            ...code.cards.map(card => {
+              const cell = current.view?.board.find(cell => cell?.card === card);
+              return h('li', { class: 'reveal-card' }, revealCardFace(h, card, t, cell?.orientation));
+            }),
           ),
         ),
       );

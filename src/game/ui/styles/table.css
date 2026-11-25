@@ -1,0 +1,469 @@
+/* Public seat information shares the playing surface with the board. */
+.table-card-back {
+  display: block;
+  box-sizing: border-box;
+  aspect-ratio: 5 / 7;
+  border-radius: 5%;
+  box-shadow: 0 2px 3px #12282180;
+}
+.game-layout:has(.scoreboard--seated) .game-score-slot,
+.scoreboard--seated, .scoreboard--seated .scoreboard-table,
+.scoreboard--seated .scoreboard-table tbody, .scoreboard--seated .scoreboard-row th { display: contents; }
+.scoreboard--seated :is(caption, thead, .scoreboard-hand, .scoreboard-kind, .deck-count) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.scoreboard--seated .scoreboard-row {
+
+  position: relative;
+  display: grid;
+  grid-template: auto auto 1.25em / minmax(0, 1fr) auto;
+  gap: .15rem .7rem;
+  align-content: end;
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--seat-padding);
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #f9efd7;
+  font-family: var(--font-ui);
+}
+.game-layout:has(.board-frame) {
+  --seat-card-width: clamp(44px, 4.4cqw, 5rem);
+  --seat-gap: clamp(4px, .45cqw, 8px);
+  --seat-padding: .3rem .35rem;
+  --seat-hand-height: calc(var(--seat-card-width) * 1.4 + .65rem);
+}
+.seat-cards, .game-layout .placement-hand[data-seat] .hand {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--seat-gap);
+  box-sizing: border-box;
+  height: var(--seat-hand-height);
+}
+.seat-cards {
+  grid-area: 1 / 1 / 2 / -1;
+  border-bottom: 1px solid #8c9c7f;
+}
+.seat-card-back {
+  position: relative;
+  flex: 0 1 var(--seat-card-width);
+  min-width: 0;
+}
+.game-layout .placement-hand[data-seat] {
+  z-index: 1;
+  align-self: start;
+  box-sizing: border-box;
+  padding: var(--seat-padding);
+}
+.game-layout .placement-hand[data-seat] .hand {
+  flex-wrap: nowrap;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.game-layout .placement-hand[data-seat] .hand::before { content: none; }
+.game-layout .placement-hand .card-face--hand { --card-unit: var(--seat-card-width); }
+.scoreboard--seated .scoreboard-name {
+  grid-area: 2 / 1;
+  align-self: baseline;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  font: 700 clamp(.87rem, 1.35cqw, 1.45rem)/1.3 var(--font-display);
+}
+.scoreboard--seated .scoreboard-score {
+  grid-area: 2 / 2;
+  align-self: baseline;
+  padding: 0;
+  color: #fff0c9;
+  font: 700 clamp(.95rem, 1.45cqw, 1.45rem)/1.2 var(--font-ui);
+  font-variant-numeric: tabular-nums;
+}
+.scoreboard--seated .scoreboard-score::before {
+  content: attr(data-label) / "";
+  margin-right: .32em;
+  color: #dbdec9;
+  font: 500 .74rem var(--font-ui);
+}
+.scoreboard--seated .scoreboard-active {
+  grid-area: 3 / 1 / 4 / -1;
+  margin: 0;
+  color: #f8d38a;
+  text-align: left;
+  font: 600 .75rem/1.25 var(--font-ui);
+}
+.scoreboard--seated .is-active .seat-cards { border-color: #f8d38a; }
+.scoreboard--seated .scoreboard-deck {
+  display: grid;
+  justify-items: center;
+  gap: .5rem;
+  margin: 0;
+  color: #f3e6c9;
+  font: 600 clamp(.75rem, 1cqw, .94rem)/1.3 var(--font-ui);
+  text-align: center;
+}
+.scoreboard--seated .scoreboard-deck::before { display: none; }
+.deck-stack {
+  position: relative;
+  width: clamp(2.75rem, 4.8cqw, 6rem);
+  aspect-ratio: 5 / 7;
+  --deck-depth: max(0px, calc((var(--deck-count) - 1) * .045rem));
+  border-radius: 7%;
+}
+.deck-stack:not(:has(.table-card-back)) { outline: 1px dashed #afba9d; }
+.deck-stack:has(.table-card-back)::before {
+  content: "";
+  position: absolute;
+  inset: calc(2px - var(--deck-depth)) 0 0;
+  border: 1px solid #978c75;
+  border-radius: inherit;
+  background: repeating-linear-gradient(0deg, #f2e6cb 0 1px, #9c9179 1px 2px);
+  box-shadow: 2px 4px 5px #102d2470;
+}
+.deck-stack .table-card-back {
+  position: absolute;
+  inset: 0;
+  transform: translateY(calc(-1 * var(--deck-depth)));
+}
+.deck-number {
+  position: absolute;
+  left: 50%;
+  top: calc(50% - var(--deck-depth));
+  transform: translate(-50%, -50%);
+  min-width: 1.55em;
+  padding: .14em .12em;
+  border: 1px solid #dbc09e;
+  border-radius: .3em;
+  background: #262726;
+  color: #fff5d7;
+  font: 700 clamp(1.1rem, 2cqw, 2.2rem)/1.1 var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+.lens-idle { display: none; }
+.table-tools { display: contents; }
+.game-main:has(.board-frame) .table-tools {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+  margin-inline-start: auto;
+}
+.fullscreen-feedback:empty { display: none; }
+.fullscreen-feedback:not(:empty) {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 4;
+  width: max-content;
+  max-width: 16rem;
+  padding: .45rem .7rem;
+  color: #fff8e7;
+  background: #224f40;
+  border: 1px solid #afbd9c;
+  border-radius: .4rem;
+}
+
+/* Keep the original wordmark in the space opposite the table controls. */
+#app:has(.board-frame) { position: relative; }
+#app:has(.board-frame) > .shell {
+  position: absolute;
+  z-index: 2;
+  top: .5rem;
+  left: max(1rem, calc((100% - 70rem) / 2));
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  pointer-events: none;
+}
+#app:has(.board-frame) .shell__title {
+  font-size: clamp(1.4rem, 2.3vw, 2rem);
+}
+#app:has(.board-frame) .shell__language,
+.game-banner-slot, .game-notices-slot .notice-status,
+.game-main:has(.board-frame) .game-notices-slot:not(:has(.notice)) { display: none; }
+
+.game-layout:has(.board-frame) { --label-size: 44px; }
+.board-frame .board-label { font-size: clamp(.8rem, 1.1cqw, 1.12rem); }
+.game-main:has(.board-frame) :is(#game-help-open, #game-fullscreen, #game-abandon-open),
+.board-frame #game-board-view {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 0;
+  color: #fff8e7;
+  box-shadow: none;
+}
+.game-main:has(.board-frame) :is(#game-help-open, #game-fullscreen, #game-abandon-open)::before,
+.board-frame #game-board-view::before {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #afbd9c;
+  border-radius: 50%;
+  background: #224f40;
+  font: 700 1.18rem/1 system-ui, sans-serif;
+}
+.game-main:has(.board-frame) #game-help-open::before { content: "?" / ""; }
+.game-main:has(.board-frame) #game-fullscreen::before {
+  content: "";
+  border-radius: .4rem;
+  background: #224f40 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M9 4H4v5m11-5h5v5M4 15v5h5m11-5v5h-5'/%3E%3C/svg%3E") center / 19px no-repeat;
+}
+.game-main:has(.board-frame) #game-fullscreen[data-active="true"]::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M4 9h5V4m6 0v5h5M9 20v-5H4m16 0h-5v5'/%3E%3C/svg%3E");
+}
+.game-main:has(.board-frame) #game-abandon-open::before {
+  content: "";
+  border-color: #e8a99b;
+  border-radius: .48rem;
+  background: #a23435 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 4H4v16h6M9 12h11m-5-5 5 5-5 5'/%3E%3C/svg%3E") center / 19px no-repeat;
+}
+.board-frame #game-board-view {
+  position: static;
+  grid-area: 1 / 1;
+  align-self: center;
+  justify-self: center;
+}
+.board-frame[data-board-view="landscape"] #game-board-view { grid-row: 2; }
+.board-frame #game-board-view::before {
+  content: "";
+  border-radius: .4rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 4v6h6M3.5 10a8.5 8.5 0 1 1 .9 7'/%3E%3C/svg%3E");
+  background-position: center;
+  background-size: 19px;
+  background-repeat: no-repeat;
+}
+.game-main:has(.board-frame) .game-bar__button:hover::before { filter: brightness(1.18); }
+
+@media (min-width: 64rem) and (hover: hover) {
+  #app:has(.board-frame) { grid-template-rows: minmax(0, 1fr); }
+  #app:has(.board-frame) > .shell {
+    top: .25rem;
+    left: clamp(.85rem, 1.5cqw, 1.8rem);
+  }
+}
+
+/* A 5 × 7 pixel step keeps opposite edges on the same raster row after a half-turn. */
+@supports (width: round(down, 42px, 5px)) {
+  .game-layout { --available-cell: var(--cell); }
+  .game-layout > * { --cell: round(down, var(--available-cell), 5px); }
+}
+
+@container desktop (min-width: 42rem) {
+  .game-layout:has(.board-frame) {
+    --board-height: calc(56.25cqw - 12px);
+    --cell: calc((var(--board-height) - var(--label-size)) / 8 / var(--card-height-ratio));
+    --board-scale: 1;
+    --seat-card-width: clamp(48px, 5.8cqw, 8rem);
+    padding: 0 var(--edge);
+    --board-column-ratio: 1;
+    --tool-gap: clamp(.5rem, 1cqw, 1.3rem);
+    --seat-width: min(100%, calc(4 * var(--seat-card-width) + 3 * var(--seat-gap) + .8rem));
+    --seat-zone: calc(var(--seat-hand-height) + 4.7rem);
+    --tool-width: min(18cqw, 24rem, max(2rem, calc(56.25cqw - 2 * var(--seat-zone) - 4rem)));
+    --tool-center-offset: 1cqw;
+    position: relative;
+    grid-template-rows: calc(var(--seat-zone) + 44px) minmax(0, 1fr) var(--seat-zone);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 42%) minmax(0, 1fr);
+  }
+  .game-main:has(.board-frame) {
+    position: relative;
+    padding: 0;
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  }
+  .game-main:has(.board-frame) .table-tools {
+    position: absolute;
+    z-index: 3;
+    top: .25rem;
+    right: var(--edge);
+  }
+  .game-main:has(.board-frame) .table-tools .game-bar__button { position: static; }
+  .game-main:has(.board-frame) .game-seed {
+    position: absolute;
+    z-index: 1;
+    pointer-events: none;
+    bottom: .35rem;
+    right: var(--edge);
+    color: #bdcbb5;
+    margin: 0;
+    font-size: .72rem;
+  }
+  .game-main:has(.board-frame) .game-notices-slot:has(.notice) {
+    position: absolute;
+    z-index: 4;
+    bottom: 28%;
+    left: var(--edge);
+    max-width: 25%;
+    max-height: 22%;
+  }
+  /* Fit the entire board in one transform so the individual marks keep integral raster dimensions. */
+  @supports (transform: scale(calc(100px / 90px))) and (width: round(down, 42px, 5px)) {
+    .game-layout:has([data-board-view="portrait"]) {
+      --board-scale: calc(var(--board-height) / (var(--label-size) + 8 * round(down, var(--cell), 5px) * var(--card-height-ratio)));
+    }
+    .board-frame[data-board-view="portrait"] { transform: scale(var(--board-scale)); }
+  }
+  #game-board-view { inset-inline-end: 29rem; }
+  .game-layout:has([data-board-view="landscape"]) {
+    --cell: min(4.1cqw, calc((56.25cqw - var(--label-size) - 12px) / 8));
+    --board-column-ratio: var(--card-height-ratio);
+    grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr);
+  }
+  .game-layout:has([data-board-view="landscape"]) .deck-stack {
+    width: clamp(2.5rem, 4.1cqw, 5rem);
+  }
+  [data-board-view="landscape"] .lens-header {
+    padding: .32rem .4rem;
+    white-space: nowrap;
+    font-size: clamp(.65rem, .85cqw, .78rem);
+  }
+  [data-board-view="landscape"] .board-lens.is-open .lens-header > :first-child,
+  [data-board-view="landscape"] .board-lens:not(.is-open) .lens-coordinate {
+    display: none;
+  }
+  .game-layout .board-lens {
+    visibility: visible;
+    width: calc(var(--tool-width) / var(--board-scale));
+    left: calc(100% + var(--tool-gap) / var(--board-scale));
+    top: calc(50% + var(--tool-center-offset) / var(--board-scale));
+    transform: translateY(-50%);
+  }
+  .game-layout .board-lens:not(.is-open) .lens-idle {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: .7rem;
+    box-sizing: border-box;
+    padding: .5rem;
+    color: #d4dac5;
+    text-align: center;
+    font: 500 clamp(.72rem, .9cqw, .87rem)/1.35 var(--font-ui);
+    word-break: keep-all;
+  }
+  .lens-idle::before {
+    content: "";
+    width: 1.45rem;
+    aspect-ratio: 1;
+    border: 1px solid #96a58b;
+    border-radius: 50%;
+    background: radial-gradient(circle, #96a58b 0 2px, transparent 2.5px);
+  }
+  /* A seat's public row and its private controls share the same corner grid cell. */
+  .game-layout :is(.scoreboard--seated .scoreboard-row, .placement-hand)[data-seat] {
+    width: var(--seat-width);
+    align-self: start;
+  }
+  .game-layout [data-seat="P0"]:is(.scoreboard-row, .placement-hand) { grid-area: 3 / 1; }
+  .game-layout [data-seat="P1"]:is(.scoreboard-row, .placement-hand) { grid-area: 1 / 1; }
+  .game-layout [data-seat="P2"]:is(.scoreboard-row, .placement-hand) { grid-area: 1 / 3; justify-self: end; }
+  .game-layout [data-seat="P3"]:is(.scoreboard-row, .placement-hand) { grid-area: 3 / 3; justify-self: end; }
+  .game-layout :is([data-seat="P1"], [data-seat="P2"]):is(.scoreboard-row, .placement-hand) { margin-top: 48px; }
+  .game-layout .placement-controls-slot {
+    grid-area: 2 / 1;
+    justify-self: start;
+    align-self: end;
+    margin: 0 .35rem .5rem;
+  }
+  .scoreboard--seated .scoreboard-deck {
+    position: absolute;
+    left: calc(50% + (var(--label-size) + 8 * var(--cell) * var(--board-column-ratio)) * var(--board-scale) / 2 + var(--tool-width) + 2 * var(--tool-gap));
+    top: calc(50% + var(--tool-center-offset));
+    transform: translateY(-50%);
+    width: max-content;
+  }
+  .scoreboard-deck .deck-stack {
+    transform: translateY(calc(var(--deck-depth) / 2));
+  }
+  .game-layout:has(.board-frame) :is(.game-status, .placement-status, .game-main-slot:not(:empty)) {
+    grid-area: 2 / 1;
+    align-self: center;
+    max-height: 100%;
+    box-sizing: border-box;
+  }
+  .reveal-content:has(.reveal-code + .reveal-code) {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.4rem), 1fr));
+  }
+  .reveal-content:has(.reveal-code + .reveal-code) .reveal-card .card-face {
+    --card-unit: clamp(1.75rem, 2.4cqw, 2.5rem);
+    min-inline-size: 0;
+    min-block-size: 0;
+  }
+  .game-layout .reveal-sum strong { font-size: clamp(2rem, 3cqw, 3rem); }
+  .game-layout:has(.board-frame) .game-main-slot:has(.reveal) {
+    padding-inline: .65rem;
+    width: calc((100cqw - var(--label-size) - 8 * var(--cell) * var(--board-column-ratio)) / 2 - 3 * var(--edge));
+    height: 100%;
+  }
+  .game-layout:has(.board-frame) :is(.game-error, .placement-error) {
+    grid-area: 1 / 1 / -1 / 2;
+    margin-bottom: var(--seat-zone);
+  }
+
+}
+
+@media (max-width: 63.999rem), (hover: none) {
+  .game-layout:has(.board-frame) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto;
+    --cell: clamp(20px, calc((100vw - var(--label-size) - 2.25rem) / 8), 64px);
+    --seat-card-width: clamp(44px, 11vw, 70px);
+    --seat-gap: 4px;
+    --seat-padding: .25rem .1rem;
+    grid-template-areas: "nw ne" "status deck" "board board" "error error"
+                         "controls controls" "sw se" "phase phase";
+    align-items: center;
+    gap: .45rem;
+    padding: .45rem;
+    background: #214a3d;
+    border-radius: .65rem;
+    color: #fff3d8;
+  }
+  :is(.scoreboard-row, .placement-hand)[data-seat="P0"] { grid-area: sw; }
+  :is(.scoreboard-row, .placement-hand)[data-seat="P1"] { grid-area: nw; }
+  :is(.scoreboard-row, .placement-hand)[data-seat="P2"] { grid-area: ne; }
+  :is(.scoreboard-row, .placement-hand)[data-seat="P3"] { grid-area: se; }
+  .scoreboard--seated .scoreboard-row { align-self: start; }
+  .game-layout:has(.board-frame) :is(.game-board-slot, .placement-board) { grid-area: board; justify-self: center; }
+  .game-layout:has(.board-frame) :is(.game-status, .placement-status) { grid-area: status; font-size: .85rem; }
+  .game-layout:has(.board-frame) :is(.game-error, .placement-error) { grid-area: error; }
+
+  .game-layout:has(.board-frame) .placement-controls-slot { grid-area: controls; }
+  .game-layout:has(.board-frame) .game-main-slot { grid-area: phase; background: var(--stock); color: var(--color-ink); }
+  .scoreboard--seated .scoreboard-deck { grid-area: deck; grid-template-columns: auto auto; align-items: center; justify-content: end; }
+  .deck-stack { width: 2.5rem; }
+  .scoreboard--seated .scoreboard-deck { padding-top: 1.7rem; }
+}
+
+@media (max-width: 63.999rem), (hover: none) {
+  .game-layout:has([data-board-view="landscape"]) {
+    --cell: clamp(15px, calc((100vw - var(--label-size) - 2.5rem) / 8 / var(--card-height-ratio)), 64px);
+  }
+}
+#game-board-view[aria-pressed="true"] { box-shadow: inset 0 -3px currentColor; }
+
+@media (max-width: 30rem) {
+  /* Reserve four touch targets for the open hand. Closed cards can shrink. */
+  .game-layout:has(.placement-hand:is([data-seat="P0"], [data-seat="P1"])) {
+    grid-template-columns: minmax(12.1rem, 1fr) minmax(0, 1fr);
+  }
+  .game-layout:has(.placement-hand:is([data-seat="P2"], [data-seat="P3"])) {
+    grid-template-columns: minmax(0, 1fr) minmax(12.1rem, 1fr);
+  }
+}

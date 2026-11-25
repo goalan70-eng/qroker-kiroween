@@ -3,7 +3,7 @@
  *
  * Rules of this file (design.md, "Touching cells"; checked by board.test.ts):
  *   - Neighbouring cells touch: the grid has `gap: 0`, and a cell, its grid-cell wrapper and the card or ghost inside
- *     have no margin. Every cell is exactly `--cell` wide and high.
+ *     have no margin. Every cell is exactly `--cell` wide with a 5:7 portrait aspect ratio.
  *   - Borders, focus rings and selection marks are drawn INSIDE the cell box (inset box-shadow, an outline with a
  *     negative offset, absolutely positioned pseudo-elements with `inset: 0`), so none of them changes `--cell`.
  *     No `border` is set on a cell; the only border is on a pseudo-element that is taken out of the flow.
@@ -20,11 +20,14 @@
  */
 
 .board-frame {
-  --board-line: rgba(26, 26, 26, 0.28);
+  --cell-height: calc(var(--cell) * var(--card-height-ratio));
+  --tile-width: var(--cell);
+  --tile-height: var(--cell-height);
+  --board-line: rgb(210 223 187 / 24%);
   position: relative;
   display: grid;
-  grid-template-columns: var(--label-size) calc(8 * var(--cell));
-  grid-template-rows: var(--label-size) calc(8 * var(--cell));
+  grid-template-columns: var(--label-size) calc(8 * var(--tile-width));
+  grid-template-rows: var(--label-size) calc(8 * var(--tile-height));
   gap: 0;
   box-sizing: border-box;
   inline-size: max-content;
@@ -32,17 +35,18 @@
   padding: 0;
   color: var(--color-ink);
   font-family: var(--font-ui);
-  --color-cell-bg: var(--felt-light);
-  --color-board-bg: var(--felt-light);
-  background-color: var(--felt);
-  box-shadow: 0 0 0 3px var(--felt), 0 0 0 4px var(--rule);
+  --color-cell-bg: #275948;
+  --color-board-bg: #275948;
+  --color-legal: #f2d799;
+  background-color: #17392f;
+  box-shadow: 0 0 0 2px #b59c68, 0 0 0 4px #493d31, 0 4px 10px rgb(25 45 32 / 18%);
 }
 
 .board-col-labels {
   grid-column: 2;
   grid-row: 1;
   display: grid;
-  grid-template-columns: repeat(8, var(--cell));
+  grid-template-columns: repeat(8, var(--tile-width));
   gap: 0;
 }
 
@@ -50,7 +54,7 @@
   grid-column: 1;
   grid-row: 2;
   display: grid;
-  grid-template-rows: repeat(8, var(--cell));
+  grid-template-rows: repeat(8, var(--tile-height));
   gap: 0;
 }
 
@@ -65,13 +69,13 @@
   color: var(--stock);
 }
 
-/* The grid: 8 rows of 8 cells, each `--cell` square, no gap. */
+/* The grid: 8 rows of 8 cells, in playing-card proportions, no gap. */
 .board {
   grid-column: 2;
   grid-row: 2;
   display: grid;
-  grid-template-columns: calc(8 * var(--cell));
-  grid-template-rows: repeat(8, var(--cell));
+  grid-template-columns: calc(8 * var(--tile-width));
+  grid-template-rows: repeat(8, var(--tile-height));
   gap: 0;
   box-sizing: border-box;
   margin: 0;
@@ -81,7 +85,7 @@
 
 .board-row {
   display: grid;
-  grid-template-columns: repeat(8, var(--cell));
+  grid-template-columns: repeat(8, var(--tile-width));
   gap: 0;
   box-sizing: border-box;
   margin: 0;
@@ -89,13 +93,110 @@
 }
 
 .board-gridcell {
+  position: relative;
   box-sizing: border-box;
-  inline-size: var(--cell);
-  block-size: var(--cell);
+  inline-size: var(--tile-width);
+  block-size: var(--tile-height);
   min-width: 0;
   margin: 0;
   padding: 0;
 }
+
+/* The bottom-right vertex of this cell is the centre of its 2×2 group. */
+.board-code-junction, .lens-code {
+  position: absolute;
+  z-index: 3;
+  top: 100%;
+  left: 100%;
+  transform: translate(-50%, -50%);
+  width: calc(.42 * var(--cell));
+  aspect-ratio: 1;
+  box-sizing: border-box;
+  border: 2px solid #f3cb74;
+  outline: 1px solid #342c1d;
+  border-radius: 22%;
+  background: radial-gradient(circle, #ffe5a1 0 18%, #203d32 20% 42%, #edd097 45% 54%, #203d32 57%);
+  pointer-events: none;
+}
+
+.board-code-junction--open, .lens-code--open {
+  width: calc(.4725 * var(--cell) + 6px); /* Two 15 mm fragments span 30 mm of a 63.5 mm card. */
+  border-radius: 2px;
+  background: transparent;
+}
+
+/* The lens is outside the playing surface. Only the desktop layout reserves its space. */
+.game-board-slot, .placement-board {
+  --lens-width: clamp(5.5rem, 14.1cqw, 16rem);
+  --lens-gap: clamp(.5rem, 1cqw, 1.2rem);
+}
+.board-lens {
+  display: none;
+  visibility: hidden;
+  position: absolute;
+  left: calc(100% + var(--lens-gap));
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--lens-width);
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid #b59c68;
+  border-radius: .45rem;
+  background: #14382e;
+  color: #fff7e6;
+  box-shadow: 0 .25rem .8rem rgb(11 32 24 / 30%);
+  pointer-events: none;
+}
+.board-lens.is-open { visibility: visible; }
+.lens-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .25rem;
+  padding: .35rem .55rem;
+  font: 600 .78rem/1.2 var(--font-ui);
+}
+.lens-header { border-bottom: 1px solid #8d805b; }
+.lens-coordinate { font-variant-numeric: tabular-nums; color: #f3d48f; }
+.lens-viewport { position: relative; overflow: hidden; aspect-ratio: 1; background: #112b24; }
+.lens-detail {
+  display: grid;
+  grid-template: repeat(3, var(--tile-height)) / repeat(3, var(--tile-width));
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform-origin: 0 0;
+}
+.lens-tile { position: relative; background: var(--color-cell-bg); box-shadow: inset 0 0 0 1px var(--board-line); }
+.lens-tile--legal { outline: 1px dashed var(--color-legal); outline-offset: -2px; }
+.lens-tile--legal:empty::after {
+  content: '';
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 15%; aspect-ratio: 1; border-radius: 50%;
+  background: var(--color-legal);
+}
+.lens-tile--target { outline: 2px solid var(--color-focus); outline-offset: -2px; }
+
+/* A quarter-turn puts A1 at the bottom left. Labels, controls and the lens header stay upright. */
+.board-frame[data-board-view="landscape"] {
+  --tile-width: var(--cell-height);
+  --tile-height: var(--cell);
+  grid-template-rows: calc(8 * var(--tile-height)) var(--label-size);
+}
+[data-board-view="landscape"] .board-col-labels { grid-row: 2; }
+[data-board-view="landscape"] :is(.board-row-labels, .board, .placement-card-actions) { grid-row: 1; }
+[data-board-view="landscape"] :is(.board-cell, .lens-tile) .card-face {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  inline-size: var(--cell);
+  block-size: var(--cell-height);
+  transform-origin: top left;
+  transform: rotate(-90deg);
+}
+[data-board-view="landscape"] :is(.board-code-junction, .lens-code) { top: 0; }
 
 /* The cell button: a reset, then the hairline between cells as an inset shadow (not a border). */
 .board-cell {
@@ -113,6 +214,7 @@
   font: inherit;
   color: inherit;
   background-color: var(--color-cell-bg);
+  background-image: repeating-linear-gradient(35deg, transparent 0 3px, rgb(255 255 255 / 2%) 3px 4px);
   box-shadow: inset 0 0 0 1px var(--board-line);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
@@ -129,12 +231,12 @@
   position: absolute;
   inset-block-start: 50%;
   inset-inline-start: 50%;
-  inline-size: 26%;
-  block-size: 26%;
+  inline-size: 15%;
+  aspect-ratio: 1;
   box-sizing: border-box;
   border-radius: 50%;
   background-color: var(--color-legal);
-  box-shadow: 0 0 0 2px var(--color-paper);
+  box-shadow: 0 0 0 2px #254b3d;
   transform: translate(-50%, -50%);
   pointer-events: none;
 }
@@ -154,7 +256,6 @@
 
 .board-cell.is-drop-target::after {
   inline-size: 40%;
-  block-size: 40%;
 }
 
 /* Draft target: a thick solid double ring inside the cell. */
@@ -205,8 +306,13 @@
 
 .board-cell.is-revealed-region::before {
   border: var(--stroke-strong) double var(--color-ink);
-  background-image: radial-gradient(rgba(26, 26, 26, 0.22) 1px, transparent 1.5px);
+  background-image: radial-gradient(rgba(26, 26, 26, 0.10) 1px, transparent 1.5px);
   background-size: 6px 6px;
+}
+
+.board-cell:has(.card-face__art, .card-face--down[style]):is(.is-pending-region, .is-revealed-region)::before {
+  border: 0;
+  background: none;
 }
 
 /* Keyboard focus: an inner ring, solid and thick, on top of any state mark (so it comes after the state rules). */
@@ -214,6 +320,7 @@
   z-index: 2;
   outline: var(--stroke-strong) solid var(--color-focus);
   outline-offset: calc(-1 * var(--stroke-strong));
+  box-shadow: inset 0 0 0 5px var(--color-paper);
 }
 
 /* The description of the markers: read by screen readers, not shown. */

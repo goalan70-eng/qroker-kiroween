@@ -1,188 +1,251 @@
-/*
- * Setup screen styles (task 19.1). Uses the tokens of tokens.css; load tokens.css first.
- * Linked by index.html since task 19.4 (layout.css comes last).
- * Rules of this file:
- *   - Mobile first: one column; every control (inputs, selects, radio rows, buttons) is at least --touch-min (44 px).
- *   - The keyboard focus is always visible.
- *   - Error text is told by its text, not by colour alone (the message is written next to the field).
- *   - No font, image or network reference.
- */
+/* The opening spread pairs a felt table and a paper setup sheet. */
 .setup {
-  font-family: var(--font-ui);
-  color: var(--color-ink);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  max-inline-size: 70rem;
+  margin: .5rem auto 2rem;
+  background: var(--color-paper);
+  border: 1px solid #c7c9bb;
+  border-radius: 1rem;
+  box-shadow: 0 .6rem 2rem rgb(30 47 36 / 9%);
+}
+.setup-cover {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-radius: calc(1rem - 1px) calc(1rem - 1px) 0 0;
+  background: radial-gradient(ellipse at 74% 35%, #306454, var(--felt) 75%);
+  color: var(--stock);
+}
+.setup-cover::before {
+  content: "";
+  position: absolute;
+  inset: .55rem;
+  border: 1px solid rgb(232 214 163 / 33%);
+  border-radius: .55rem;
+  pointer-events: none;
+}
+.setup-intro { max-inline-size: 23rem; }
+.setup-title {
+  margin: 0;
+  font: bold clamp(2rem, 4vw, 3.8rem)/1.1 var(--font-display);
+  letter-spacing: -.045em;
+}
+.setup-goal {
+  margin: .7rem 0 0;
+  color: #e1e8d9;
+  line-height: 1.6;
+  word-break: keep-all;
+  text-wrap: pretty;
+}
+.setup-deck {
+  position: relative;
+  flex: none;
+  inline-size: 24%;
+  max-inline-size: 7rem;
+  aspect-ratio: 5 / 7;
+  transform: rotate(7deg);
+}
+.setup-deck::before,
+.setup-engraving {
+  position: absolute;
+  inset: 0;
+  border: 1px solid #d2c5a3;
+  border-radius: 6%;
+  box-shadow: 0 .6rem 1.4rem rgb(4 23 14 / 27%);
+}
+.setup-deck::before {
+  content: "";
+  transform: rotate(-16deg) translateX(-9%);
+  background: repeating-linear-gradient(45deg, transparent 0 5px, #b97a76 5px 6px),
+    repeating-linear-gradient(-45deg, #833c47 0 5px, #b97a76 5px 6px);
+  border: .28rem solid var(--stock);
+}
+.setup-engraving {
+  background: var(--stock) center / 86% 86% no-repeat url('./court-jester.webp?inline');
+  filter: saturate(.8);
 }
 .setup-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  max-inline-size: 32rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-content: center;
+  align-items: end;
+  gap: 1.05rem .9rem;
+  padding: clamp(1.1rem, 2.6vw, 2.3rem);
 }
-.setup-field,
-.setup-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+.setup-fields, .setup-footer { display: contents; }
+.setup-fields > *, .setup-footer > * { grid-column: 1 / -1; }
+.setup-field, .setup-group, .setup-ai-row {
+  display: grid;
+  min-inline-size: 0;
+  gap: .4rem;
   margin: 0;
   padding: 0;
   border: 0;
 }
-.setup-legend,
-.setup-label {
-  font-weight: 600;
-}
-.setup-input,
-.setup-select,
-.setup-button,
-.setup-start {
-  box-sizing: border-box;
-  min-block-size: var(--touch-min, 44px);
-  min-inline-size: var(--touch-min, 44px);
-  padding: var(--space-2) var(--space-3);
-  font: inherit;
-}
-.setup-choice {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-block-size: var(--touch-min, 44px);
-}
-.setup-radio {
-  inline-size: var(--touch-min, 44px);
-  block-size: var(--touch-min, 44px);
-  margin: 0;
-}
-.setup-radio-label {
-  flex: 1;
-  min-block-size: var(--touch-min, 44px);
-  display: flex;
-  align-items: center;
-}
-.setup-ai-row {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  margin-block-end: var(--space-2);
-}
-.setup-hint {
-  margin: 0;
-}
-.setup-error {
-  margin: 0;
-  font-weight: 600;
-}
-.setup-error:empty {
-  display: none;
-}
-.setup-input:focus-visible,
-.setup-select:focus-visible,
-.setup-radio:focus-visible,
-.setup-button:focus-visible,
-.setup-start:focus-visible {
-  outline: 3px solid currentColor;
-  outline-offset: 2px;
-}
-.setup-input[aria-invalid='true'] {
-  border-width: 3px;
-}
-.setup-start {
-  align-self: stretch;
+.setup-legend, .setup-label {
+  padding: 0;
+  color: var(--felt);
   font-weight: 700;
 }
-
-.setup {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  margin: .25rem auto 2rem;
-  max-width: 66rem;
-  border: 1px solid var(--rule);
+.setup-legend { margin-block-end: .4rem; }
+.setup-input, .setup-select, .setup-button, .setup-start {
+  min-inline-size: 0;
+  min-block-size: var(--touch-min);
+  padding: .5rem .75rem;
+  border: 1px solid #919989;
+  border-radius: .45rem;
   background: var(--color-paper);
-  box-shadow: 0 3px 0 #d1c7ae;
+  color: var(--color-ink);
+  font: inherit;
 }
-.setup-cover {
-  position: relative;
+.setup-button, .setup-start, .setup-select { cursor: pointer; }
+.setup-seed { grid-template-columns: minmax(0, 1fr) auto; }
+.setup-seed :is(label, p) { grid-column: 1 / -1; }
+.setup-input { font-variant-numeric: tabular-nums; }
+.setup-button {
+  color: var(--felt);
+  background: #ebefe6;
+  font-weight: 600;
+}
+.setup-humans { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.setup-visibility { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.setup-hint, .setup-visibility > .setup-field { grid-column: 1 / -1; }
+.setup-hint {
+  margin: 0;
+  color: #515c53;
+  font-size: .875rem;
+  line-height: 1.55;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.setup-hint:empty, .setup-error:empty { display: none; }
+.setup-choice { position: relative; min-inline-size: 0; }
+.setup-radio {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.setup-radio-label {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
-  padding: 1rem;
-  margin: 0;
-  background: var(--stock);
-  border: .5rem solid var(--felt);
-  outline: 3px double #9a885a;
-  outline-offset: -.95rem;
+  gap: .45rem;
+  min-block-size: var(--touch-min);
+  height: 100%;
+  padding: .4rem .25rem;
+  text-align: center;
+  border: 1px solid #a5ad9d;
+  border-radius: .45rem;
+  cursor: pointer;
 }
-.setup-engraving {
-  display: block;
-  width: 5rem;
-  height: 5rem;
-  background: center / contain no-repeat url('./court-jester.webp?inline');
-  filter: grayscale(1) contrast(1.2) brightness(1.06);
-  mix-blend-mode: multiply;
-}
-.setup-title {
-  margin: 0;
+.setup-radio:checked + label {
+  background: #e5eee2;
+  border-color: var(--felt);
+  box-shadow: inset 0 0 0 1px var(--felt);
   color: var(--felt);
-  font: bold clamp(1.75rem, 4vw, 3.35rem)/1.16 var(--font-display);
-  letter-spacing: -.04em;
+  font-weight: 700;
 }
-.setup-form {
-  max-inline-size: none;
-  padding: clamp(1rem, 3vw, 2.3rem);
-  gap: 1.1rem;
-}
-.setup-legend, .setup-label { color: var(--felt); }
-.setup-hint { color: #575749; font-size: .875rem; }
-.setup-input, .setup-select, .setup-button {
-  min-width: 0;
-  border: 1px solid #918d7a;
-  border-radius: .2rem;
-  color: var(--color-ink);
-  background: var(--color-paper);
-}
-.setup-seed {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-.setup-seed :is(label, p) { grid-column: 1 / -1; }
-.setup-button { background: var(--stock); font-weight: 600; }
-.setup-humans, .setup-visibility { display: block; min-width: 0; }
-.setup-choice {
-  display: inline-flex;
-  gap: 0;
-  padding-inline-end: .85rem;
-}
-.setup-radio {
-  appearance: none;
-  flex: none;
-  --radio-dot: transparent;
-  background: radial-gradient(circle, var(--radio-dot) 0 4px, transparent 5px 7px, var(--felt) 7px 8px, transparent 9px);
-}
-.setup-radio:checked { --radio-dot: var(--felt); }
-@media (forced-colors: active) {
-  .setup-radio { appearance: auto; }
+.setup-radio:checked + label::before {
+  content: "";
+  width: .4em;
+  height: .75em;
+  margin-top: -.25em;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
 }
 .setup-ai-rows {
   display: grid;
-  gap: .65rem;
-  grid-template-columns: repeat(auto-fit, minmax(min(7rem, 100%), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(8.4rem, 100%), 1fr));
+  gap: .5rem;
 }
-.setup-ai-row { min-width: 0; margin: 0; }
+.setup-ai-row {
+  position: relative;
+  align-content: start;
+  grid-template-columns: minmax(0, 1fr);
+  padding: .7rem;
+  border: 1px solid #b4ac96;
+  border-radius: .55rem;
+  background: #f9f5e9;
+  box-shadow: 0 2px 0 #dbd5c4;
+}
+.setup-ai-row::before {
+  content: "♧" / "";
+  justify-self: start;
+  font: bold 1.5rem/1 var(--font-display);
+  color: var(--felt);
+}
+.setup-ai-row:has(option[value="ADVANCED"]:checked) {
+  border-color: var(--print-red);
+  background: #fff5ee;
+}
+.setup-ai-row:has(option[value="ADVANCED"]:checked)::before {
+  content: "♦" / "";
+  color: var(--print-red);
+}
+.setup-ai-row .setup-label { font-size: .875rem; }
+.setup-ai-row .setup-select { width: 100%; font-weight: 700; }
+.setup-ai-hint {
+  margin: 0;
+  color: #50584e;
+  font-size: .8125rem;
+  line-height: 1.45;
+  word-break: keep-all;
+}
+@media (max-width: 36rem) {
+  .setup-ai-rows { grid-template-columns: minmax(0, 1fr); }
+  .setup-ai-row {
+    grid-template-columns: 1.5rem minmax(0, 1fr) minmax(6rem, 33%);
+    align-items: center;
+    gap: .18rem .45rem;
+  }
+  .setup-ai-row::before { grid-row: 1 / 3; }
+  .setup-ai-row .setup-select { grid-column: 3; grid-row: 1 / 3; padding-inline: .35rem; }
+  .setup-ai-hint { grid-column: 2; }
+}
+.setup-error { margin: 0; color: var(--color-red); font-weight: 600; }
+.setup-input[aria-invalid='true'] { border: 2px solid var(--color-red); }
 .setup-start {
-  color: var(--stock);
   background: var(--felt);
-  border: 3px double #b1ad86;
-  border-radius: .25rem;
-  min-height: 3rem;
-  cursor: pointer;
+  border-color: var(--felt);
+  color: var(--color-inverse);
+  font-weight: 700;
+}
+.setup-start:hover { background: var(--start-hover, #285848); }
+.setup-form :is(input:not(.setup-radio), select, button):focus-visible,
+.setup-radio:focus-visible + label {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+@media (min-width: 24rem) {
+  .setup-footer .setup-language { grid-column: 1; }
+  .setup-footer .setup-start { grid-column: 2; }
+  .setup-form:has(.setup-general-error:not(:empty)) .setup-start { grid-column: 1 / -1; }
 }
 @media (min-width: 48rem) {
-  .setup { grid-template-columns: minmax(16rem, 4fr) minmax(0, 6fr); }
+  .setup { grid-template-columns: minmax(0, 4fr) minmax(0, 6fr); }
   .setup-cover {
     flex-direction: column;
-    gap: 1.4rem;
-    padding: 2rem;
-    border-width: .85rem;
-    outline-offset: -1.4rem;
+    align-items: flex-start;
+    justify-content: center;
+    gap: clamp(2rem, 4vw, 3.5rem);
+    padding: clamp(2rem, 4vw, 3.5rem);
+    border-radius: calc(1rem - 1px) 0 0 calc(1rem - 1px);
   }
-  .setup-engraving { width: 100%; height: auto; aspect-ratio: 4 / 5; }
+  .setup-cover::before { inset: .85rem; }
+  .setup-goal { max-inline-size: 27ch; }
+  .setup-deck { align-self: center; inline-size: 74%; max-inline-size: 14rem; }
+}
+@media (forced-colors: active) {
+  .setup-radio:checked + label { border: 3px solid Highlight; }
 }
