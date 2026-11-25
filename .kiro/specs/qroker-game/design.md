@@ -270,7 +270,7 @@ interface DrawManagerOperations {
 ```
 
 **Rules:**
-- The same rule applies to every placement, including each player's first. If the draw pile is empty, a required draw is skipped.
+- The same rule applies to every placement, including each player's first. A draw that takes the last card of the draw pile ends the game at once (Deck_Exhaustion_End, Requirement 3.8).
 - The empty-hand check of the game end happens AFTER the draw is resolved: a player who places the last hand card without forming a code and draws a replacement still holds one card.
 - `completedCodes.length >= 1` → `shouldDraw = false`
 - Otherwise → `shouldDraw = true`
@@ -310,7 +310,7 @@ interface PlayerView {
 }
 ```
 
-**Game end condition (Requirements 3.7, 3.13 to 3.15):** The game ends after the batch of the last placement is fully scored (all four players' Guesses for every code of that placement are collected and revealed) when (a) the placer's hand is empty after the required draw, or (b) the shared Completed_Code_Count has reached five or more. The count grows by the number of new eligible codes of each placement, so a placement can take it from four to six, and the whole batch is scored. `ScoreConfig.handEmptyBonus` is awarded exactly once, to the player whose hand is empty, and only then: an ending by (b) alone awards no bonus, and an ending in which (a) and (b) both hold awards it once. Guess submissions and scoring batches do not change the count.
+**Game end condition (Requirements 3.7, 3.8, 3.13 to 3.16):** The game ends in one of three ways. (a) Hand_Empty_End: a code-completing placement leaves the placer's hand empty; the game ends after the batch of that placement is fully scored, and `ScoreConfig.handEmptyBonus` is awarded to that player. (b) Code_Limit_End: the shared Completed_Code_Count reaches five or more; the batch of that placement is fully scored, and no bonus is awarded unless (a) also holds. (c) Deck_Exhaustion_End: a draw takes the last card of the draw pile; the game ends at once at the current scores, with no bonus and no batch. The count grows by the number of new eligible codes of each placement, so a placement can take it from four to six, and the whole batch is scored. Guess submissions and scoring batches do not change the count.
 (Replaces the earlier wording "all Composite Codes scored and all Guess values collected → end declared → handEmptyBonus awarded", which assumed the hand-empty end was the only ending.)
 
 ---
@@ -862,8 +862,8 @@ When the print file of a face is produced, the Face_Local_Frame of the FRONT fac
 
 *For any* placement action, including each player's first placement:
 - If the action completes one or more new Composite Codes → no draw (the hand shrinks by 1)
-- If the action does not complete a Composite Code → one card is drawn if the draw pile is not empty, so the hand size is unchanged; if the pile is empty the draw is skipped and the hand shrinks by 1
-- A player who places the last hand card without a code and draws still holds one card, so no hand-empty ending follows; the hand-empty check happens after the draw
+- If the action does not complete a Composite Code → one card is drawn; if that draw takes the last card of the draw pile the game ends at once (Deck_Exhaustion_End), otherwise the hand size is unchanged
+- A player who places the last hand card without a code and draws still holds one card, so no hand-empty ending follows. Only a code-completing placement draws nothing, so only it can leave the placer with an empty hand (Hand_Empty_End)
 
 **Validates: Requirements 3.5, 3.6**
 
@@ -1065,9 +1065,9 @@ Every error is returned and distinguished by `OpticalDecodeResult.kind` (NOT_DET
 
 A target-vertex mismatch (the `vertex` of an IDENTIFIED result is not inside the intended Target_Region) is a Scoring Companion-level rejection, not a decoder result kind: the decoder has no knowledge of the target and reports no such kind. The Companion handles it as in the contract "Scoring Companion integration contract: target-group safety" (reposition, rescan, or manual entry), and does not apply the result to the intended group.
 
-### Deck exhaustion
+### Deck exhaustion (Deck_Exhaustion_End)
 
-When a draw is required while the deck is empty, `Deck.draw()` returns `null`. `DrawManager` detects this and skips the draw (hand unchanged).
+When a draw takes the last card of the draw pile, the drawn card goes to the drawing player and the game ends at once with the current scores. No bonus is awarded. A draw on an empty pile cannot occur, because the game has already ended.
 
 ### Game state recovery
 
@@ -1084,7 +1084,7 @@ Target modules and cases:
 - **`CardValue`**: exact value mapping for each of the 13 Ranks. Verify that jokers are not included.
 - **`CompositeCodeDetector`**: valid/invalid Quad_Group cases (fixtures based on the example table in 14.4).
 - **`ScoreEngine`**: configuration validation (reject negative values, increasing segments, empty tables), table boundaries (e = length − 1, length, length + 1), batch reveal of multiple codes placed together.
-- **`DrawManager`**: draw from the very first placement when no code is completed, no draw when a Composite Code is completed, skip when the draw pile is exhausted, and the hand-empty check after the draw. Game end: hand-empty bonus exactly once, no bonus for a code-limit-only ending, whole last batch scored.
+- **`DrawManager`**: draw from the very first placement when no code is completed, no draw when a Composite Code is completed, end the game at once when a draw takes the last card of the draw pile (Deck_Exhaustion_End), and the hand-empty check only for code-completing placements. Game end: hand-empty bonus exactly once, no bonus for a code-limit-only ending, whole last batch scored.
 - **`Deck`**: initializing twice with the same seed gives the same shuffle result.
 - **`OpticalDecoder`**: a rejection test for each of NOT_DETECTED, INCOMPLETE_GROUP, CORRUPTED_FRAGMENT, DUPLICATE_CARD, INVALID_ARRANGEMENT, REFERENCE_MISMATCH.
 

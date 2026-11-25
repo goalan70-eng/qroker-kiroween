@@ -17,6 +17,10 @@ Ground rules for every task:
 
 The owner approved the three-card rules after tasks 3 to 8 were ticked: 3-card Hands, 36-card deck, the same draw rule from the first placement, game end by an empty Hand after the draw or by five distinct codes in total, the whole last batch scored, and the hand-empty bonus only for the player who emptied their Hand. The specification text was updated by Kiro (requirements 2, 6, 7, 8, 9, 12, 16, OQ-4, OQ-10, OQ-16, IC-5 and design sections Deck, DrawManager, GameState, Reducer, Invariants, Properties 7, 12, 13, 19 and the new 19a). The implementation (`RULES_VERSION = 3`, `HAND_SIZE = 3`, `COMPLETED_CODE_LIMIT = 5`) and its tests were changed by Codex in the working tree. Kiro has not re-run those tests, so no task status and no recorded test result below was changed or re-attested. Where a task below still describes the earlier rules, an "Amended" note under it states the current rule; the original acceptance text and its historical evidence are kept as they were.
 
+### Amendment 2: deck-exhaustion ending (documentation only, no checkbox changed)
+
+The owner approved that a draw which takes the last card of the draw pile ends the game at once at the current scores, with no bonus (Deck_Exhaustion_End). Codex implemented it as `RULES_VERSION = 4` in the working tree. Kiro updated the specification text: qroker-game requirements 2.9, 3.7, 3.8, 3.15 and new 3.16, and playable requirements 6.6, 8.8, 9.1, 9.3, OQ-16 and 18.9, and the design sections Reducer, Invariants, Property 12, Property 19, Property 19a and Deck Exhaustion. Historical acceptance text in the tasks below is kept unchanged. Where a task names the old empty-deck scenario, its amended note in the three-card section supersedes it. Test results for this amendment are in `docs/validation/deck-exhaustion-rule-verification-ko.md`.
+
 ### Milestones
 
 | Milestone | Tasks | Purpose |

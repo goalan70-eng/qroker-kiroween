@@ -7,7 +7,7 @@ Short on purpose: it is loaded in every chat. Read the real specs and tests befo
 ## Sources of truth
 - Game and optical rules: `.kiro/specs/qroker-game/`. Browser game: `.kiro/specs/qroker-playable-game/`. Task status lives in each `tasks.md`; do not tick a task without evidence.
 - Optical V2 is a planning-only proposal in `.kiro/specs/qroker-optical-v2/` (not on every branch). Use `#optical-v2` only when working on it.
-- Approved rules (owner decision; spec text by Kiro, implementation by Codex, `RULES_VERSION = 3`): 3-card hands, 36-card draw pile, the same draw rule from the first placement, game end when a hand is empty after the draw or when five distinct codes exist in total (whole last batch scored first), hand-empty bonus only for the player who emptied their hand. PR #21 and #22 are earlier draw-rule experiments, kept as history.
+- Approved rules (owner decision; spec text by Kiro, implementation by Codex, `RULES_VERSION = 4`): 3-card hands, 36-card draw pile, the same draw rule from the first placement, game end when a code-completing placement empties a hand, when a draw takes the last pile card (at once, current scores, no bonus), or when five distinct codes exist in total (whole last batch scored first); hand-empty bonus only for the player who emptied their hand by a code placement. PR #21 and #22 are earlier draw-rule experiments, kept as history.
 - Proposals that are not approved specs: unmerged scoring (PR #13, branch-dependent), Steering/Hooks changes. Follow the branch's actual specs and `ScoreConfig`; scoring stays provisional.
 
 ## Game and architecture

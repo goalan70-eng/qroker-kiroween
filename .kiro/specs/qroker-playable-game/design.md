@@ -138,7 +138,7 @@ stateDiagram-v2
     [*] --> PLACEMENT : newGame
     PLACEMENT --> PLACEMENT : PLACE, no code, hand not empty after the draw (draw if due), turn advances
     PLACEMENT --> GUESS_COLLECT : PLACE completes 1 or more codes
-    PLACEMENT --> ENDED : PLACE, no code, hand still empty after the draw step (deck empty; bonus)
+    PLACEMENT --> ENDED : PLACE, no code, the draw takes the last card of the draw pile (Deck_Exhaustion_End; no bonus)
     GUESS_COLLECT --> GUESS_COLLECT : SUBMIT_GUESSES, not all 4 Seats yet
     GUESS_COLLECT --> REVEAL : last SUBMIT_GUESSES, neither end condition holds
     GUESS_COLLECT --> ENDED : last SUBMIT_GUESSES, placer hand is 0 (reveal, then bonus) or code count is 5 or more (reveal, no bonus unless the hand is also 0)
@@ -338,12 +338,12 @@ export function shouldDraw(newCodes: number): boolean;
 export function nextSeat(current: PlayerId): PlayerId;     // P0 -> P1 -> P2 -> P3 -> P0 (OQ-5)
 ```
 
-If `shouldDraw` is true and the deck is empty, `drawTop` returns `card: null` and the reducer leaves the hand unchanged (qroker-game 3.8).
+If `shouldDraw` is true, `drawTop` returns the top card. If that draw leaves the deck empty, the reducer ends the game at once at the current scores (Deck_Exhaustion_End, qroker-game 3.8), so `drawTop` is never called on an empty deck during play.
 
 ### ScoreEngine and Ranking (`core/score.ts`, `core/ranking.ts`)
 
 ```typescript
-export const RULES_VERSION = 3;   // three-card rules (3-card Hands, 36-card deck, draw from the first placement, five-code limit, bonus only for an empty Hand); implemented by Codex
+export const RULES_VERSION = 4;   // three-card rules (3-card Hands, 36-card deck, draw from the first placement, five-code limit, bonus only for an empty Hand) plus the deck-exhaustion ending; implemented by Codex. Version 3 is kept as history.
 export const DEV_PLACEHOLDER_SCORE_CONFIG: NamedScoreConfig = {
   id: 'DEV_PLACEHOLDER',
   provisional: true,
@@ -425,7 +425,7 @@ Processing of `PLACE` (all steps on a copy; the input is never mutated; any fail
 5. `codes = detect(board, pos, scoredGroups)`; add each `groupId` to `scoredGroups`.
 6. `draw = shouldDraw(codes.length)` (every placement, including each Seat's first); if `draw`, `drawTop` and append to the Hand when a card exists (a skipped draw on an empty deck leaves the Hand one card smaller). The Hand is evaluated for emptiness only AFTER this step.
 7. If `codes.length ≥ 1`: `phase = GUESS_COLLECT`, `pending = { placer, codes, guesses: {}, endsGame: hand.length === 0 || scoredGroups.length >= COMPLETED_CODE_LIMIT }`. `scoredGroups` already includes the groupIds of this placement's new codes, so the count is the shared Completed_Code_Count after this placement (the starting neutral group is not in it).
-8. Else if the Hand is empty after the draw step: add `handEmptyBonus` to the placer, set `bonusAwarded`, `phase = ENDED`. (A placer who placed the last card without a code and drew a replacement has one card and does not reach this step.)
+8. Else if the draw took the last card of the draw pile (`deck` empty): `phase = ENDED` at the current scores, no bonus (Deck_Exhaustion_End). A code-free placement cannot leave its placer's Hand empty, because the draw step gives that Hand a card while the deck has one.
 9. Else `turn = nextSeat(turn)`.
 10. Append the action to `log`.
 
@@ -433,7 +433,7 @@ Processing of `SUBMIT_GUESSES`: phase must be `GUESS_COLLECT`; every Guess is va
 
 Processing of `ACK_REVEAL`: phase must be `REVEAL`; set `phase = PLACEMENT`, `turn = nextSeat(placer)`.
 
-Termination argument: every accepted `PLACE` adds one card to a Board that holds at most 52 cards, and 4 are Neutral, so at most 48 `PLACE` Actions exist. The game ends at the latest when all non-Neutral cards are placed (the Hand of the Seat that places the last remaining cards empties once the deck is empty and no draw can refill it), and earlier when the shared code count reaches five. A legal cell always exists (see Board). Guess collection and reveal terminate because exactly 4 submissions are required and `ACK_REVEAL` is a single step.
+Termination argument: every accepted `PLACE` adds one card to a Board that holds at most 52 cards, and 4 are Neutral, so at most 48 `PLACE` Actions exist. The game ends at the latest when the draw pile is exhausted (a draw takes its last card, Deck_Exhaustion_End), and earlier when a code-completing placement empties a Hand or the shared code count reaches five. A legal cell always exists (see Board). Guess collection and reveal terminate because exactly 4 submissions are required and `ACK_REVEAL` is a single step.
 
 ### ViewProjector and PlayerView (`core/view.ts`)
 
@@ -551,7 +551,7 @@ export interface GameSimulator { run(c: SimulationConfig): SimulationResult; run
 
 ```typescript
 export interface KeyValueStore { getItem(k: string): string | null; setItem(k: string, v: string): void; removeItem(k: string): void }
-export const SAVE_KEY = 'qroker.practice.save.rules3';   // RULES_VERSION 3 slot. The earlier four-card build used 'qroker.practice.save'; the current build never reads, migrates, overwrites or deletes that slot (requirement 18 Criterion 9). saveVersion and rulesVersion stay separate.
+export const SAVE_KEY = 'qroker.practice.save.rules4';   // RULES_VERSION 4 slot. The RULES_VERSION 3 slot 'qroker.practice.save.rules3' is never read, migrated, overwritten or deleted. The earlier four-card build used 'qroker.practice.save'; the current build never reads, migrates, overwrites or deletes that slot (requirement 18 Criterion 9). saveVersion and rulesVersion stay separate.
 export const PREFS_KEY = 'qroker.practice.prefs';
 export const SAVE_FORMAT = 'qroker-save';
 export const SAVE_VERSION = 1;
@@ -1042,10 +1042,10 @@ Evidence class: real Chromium with an emulated viewport (class 2/3), recorded wi
 
 ```json
 {
-  "format": "qroker-save", "saveVersion": 1, "rulesVersion": 3,
+  "format": "qroker-save", "saveVersion": 1, "rulesVersion": 4,
   "savedAtIso": "2026-01-01T00:00:00.000Z",
   "seed": 123456789,
-  "config": { "rulesVersion": 3, "identityVisibility": "OWNER_ONLY",
+  "config": { "rulesVersion": 4, "identityVisibility": "OWNER_ONLY",
               "scoreConfig": { "id": "DEV_PLACEHOLDER", "provisional": true,
                                "config": { "rewardByError": [10, 5, 4, 3, 2, 1], "handEmptyBonus": 5 } },
               "seats": [ { "id": "P0", "kind": "HUMAN", "name": "You" }, { "id": "P1", "kind": "AI", "difficulty": "BEGINNER", "name": "AI 1" } ] },
@@ -1061,7 +1061,7 @@ Evidence class: real Chromium with an emulated viewport (class 2/3), recorded wi
 - `cardCount(board) = placements + 4`.
 - `scoredGroups` has no duplicates and `scoredGroups.length` equals the number of codes ever revealed or pending.
 - `phase = GUESS_COLLECT ⇔ pending ≠ null`.
-- `phase = ENDED` and some Seat has an empty Hand ⇒ `bonusAwarded` is that Seat. `phase = ENDED` with no empty Hand (a code-limit-only ending, `scoredGroups.length ≥ 5`) ⇒ `bonusAwarded = null`. `bonusAwarded ≠ null` ⇒ `phase = ENDED` and that Seat has an empty Hand. (The earlier invariant "every ended game has a bonus recipient" no longer holds.)
+- `phase = ENDED` and some Seat has an empty Hand ⇒ `bonusAwarded` is that Seat. `phase = ENDED` with no empty Hand (a code-limit-only ending, `scoredGroups.length ≥ 5`) or with an empty draw pile (Deck_Exhaustion_End) ⇒ `bonusAwarded = null`. `bonusAwarded ≠ null` ⇒ `phase = ENDED` and that Seat has an empty Hand. (The earlier invariant "every ended game has a bonus recipient" no longer holds.)
 - `scoredGroups.length ≥ 5` and `phase ≠ ENDED` is possible only in `GUESS_COLLECT` (the batch that reached the limit is still pending). `REVEAL` never has `scoredGroups.length ≥ 5`, and an `ENDED` state reached by the code limit has every code of the last batch in `history`.
 
 ### Deviations from the qroker-game Design
@@ -1152,7 +1152,7 @@ Testing by properties applies to the engine, the AI strategies, the persistence 
 
 ### Property 12: Draw rule
 
-*For any* reachable state and any accepted `PLACE`, including a Seat's first placement: if the placement forms at least one new code, the Hand size afterwards is the size before minus 1 (no draw); otherwise the Hand size afterwards equals the size before when the deck was non-empty (one card drawn from the top of the deck, including on the first placement) and equals the size before minus 1 when the deck was empty; and the phase is `GUESS_COLLECT` if and only if at least one new code was formed; when no code was formed and the Hand is empty after the draw step, the phase is `ENDED`. In particular, a Seat that places its last card without a code, with a non-empty deck, holds one card and the game does not end.
+*For any* reachable state and any accepted `PLACE`, including a Seat's first placement: if the placement forms at least one new code, the Hand size afterwards is the size before minus 1 (no draw); otherwise the Hand size afterwards equals the size before when the deck was non-empty (one card drawn from the top of the deck, including on the first placement) and, when the draw takes the last card of the draw pile, the phase is `ENDED` at once at the current scores; and the phase is `GUESS_COLLECT` if and only if at least one new code was formed. In particular, a Seat that places its last card without a code, with a non-empty deck, holds one card and the game does not end.
 
 **Validates: Requirements 6.3, 6.4, 6.5, 6.6, 7.9** (qroker-game Property 10)
 
@@ -1194,7 +1194,7 @@ Testing by properties applies to the engine, the AI strategies, the persistence 
 
 ### Property 19: Hand-empty bonus and game end ordering
 
-*For any* complete game reached by legal play, the phase is `ENDED` and every Guess of the last batch has been scored (the whole batch, never truncated at five codes). If a Seat's Hand is empty, `handEmptyBonus` has been added exactly once, to that Seat (`bonusAwarded`), after the last batch; if no Hand is empty (a code-limit-only ending, `scoredGroups.length ≥ 5`), no bonus was added and `bonusAwarded = null`; if both hold, the bonus was added once. Every Seat's final Score equals the sum of its prediction scores plus the bonus when awarded. A game with four previous codes and a placement that creates two more finishes with six codes in `history`.
+*For any* complete game reached by legal play, the phase is `ENDED` and every Guess of the last batch has been scored (the whole batch, never truncated at five codes). If a Seat's Hand is empty, `handEmptyBonus` has been added exactly once, to that Seat (`bonusAwarded`), after the last batch; if no Hand is empty (a code-limit-only ending, `scoredGroups.length ≥ 5`, or a Deck_Exhaustion_End), no bonus was added and `bonusAwarded = null`; if both hold, the bonus was added once. Every Seat's final Score equals the sum of its prediction scores plus the bonus when awarded. A game with four previous codes and a placement that creates two more finishes with six codes in `history`.
 
 **Validates: Requirements 8.8, 9.1, 9.3, 9.8, 9.9, 9.10**
 
@@ -1206,8 +1206,8 @@ Testing by properties applies to the engine, the AI strategies, the persistence 
 |---|---|
 | First placement creates no code, deck has cards | Draw one; the Seat still holds 3 cards |
 | Last Hand card creates no code, deck has cards | Draw one before the end check; the Seat holds 1 card; the game continues |
-| Last Hand card creates no code, deck is empty | Draw skipped; `ENDED` with the hand-empty bonus |
-| Non-last Hand card creates no code, deck is empty, code limit not reached | Draw skipped; the Seat's Hand is one card smaller and not empty; the game continues |
+| Non-code placement whose draw takes the last pile card | Drawn card kept; `ENDED` at once at the current scores, no bonus (Deck_Exhaustion_End) |
+| Code-completing placement with one card still in the pile | Batch scored normally; no draw; `GUESS_COLLECT`, then the game continues |
 | Fifth code reached, placer still has cards | All four Seats guess every code of the batch; batch scored; `ENDED`; `bonusAwarded = null` |
 | Four codes before, two new codes, placer empties the Hand | Both new codes scored, six codes, `ENDED`, bonus awarded once |
 
@@ -1325,9 +1325,9 @@ The Korean strings for the last 12 rows are new texts proposed by this design; t
 | Offline | Non-blocking notice "offline". |
 | AI strategy throws (a bug) | The controller logs to the console, the game screen shows a generic error notice, and the game is kept at the last valid state so that the user can save or abandon. The headless E2E test fails on any such throw. |
 
-### Deck Exhaustion
+### Deck Exhaustion (Deck_Exhaustion_End)
 
-`drawTop` returns `card: null`; the reducer skips the draw, so the Hand is one card smaller after the placement (qroker-game Requirement 3.8). The game continues until some Seat's Hand is empty after its draw step or the shared Completed_Code_Count reaches five (Requirement 9 Criteria 1 and 8).
+A draw that takes the last card of the draw pile gives that card to the drawing Seat, and the phase becomes `ENDED` at once at the current scores (qroker-game Requirement 3.8; playable Requirement 9 Criterion 3). No bonus is awarded. The game otherwise ends when a code-completing placement empties a Hand (Requirement 9 Criterion 1) or the shared Completed_Code_Count reaches five (Requirement 9 Criterion 8).
 
 ### Game State Recovery
 
@@ -1359,7 +1359,7 @@ Saves are replay logs (Requirement 18). A replay rejection or a version mismatch
 - Golden deal: seed `1` (and one more fixed seed) with the exact initial neutral cards, Hands and deck top, recorded when the implementation is first written.
 - Fragment table: 4 suits × 2 orientations against the table in this design; Inward_Corner table; parity test with `src/optical/fragments.ts` (test-only).
 - Detection fixtures: the valid and invalid examples of qroker-game Requirement 14.4 (♥ at TL valid, ♣ at TL valid, ♠ at BL at 0° invalid, ♦ at TL invalid).
-- Reducer scenarios: a first placement that completes a code (no draw, guess phase), a first placement without a code (draw from the first placement, Hand still 3), a later placement without a code (draw), a placement with two codes (one batch with two Quad_Keys), a placement that empties the Hand with a code (reveal then `ENDED` with bonus), a last-card placement without a code that draws (Hand 1, game continues), a last-card placement without a code on an empty deck (`ENDED` with bonus), a fifth code with a non-empty Hand (`ENDED`, no bonus), four codes plus a two-code placement that empties the Hand (six codes, bonus once), deck exhaustion. The table of Property 19a lists the expected results. Evidence status: these scenarios are specified here; the implementation and its tests were changed by Codex and have not been re-run by Kiro.
+- Reducer scenarios: a first placement that completes a code (no draw, guess phase), a first placement without a code (draw from the first placement, Hand still 3), a later placement without a code (draw), a placement with two codes (one batch with two Quad_Keys), a placement that empties the Hand with a code (reveal then `ENDED` with bonus), a placement without a code whose draw takes the last pile card (`ENDED` at once, no bonus; Deck_Exhaustion_End), a code-completing placement with one card still in the pile (scored normally, game continues), a fifth code with a non-empty Hand (`ENDED`, no bonus), four codes plus a two-code placement that empties the Hand (six codes, bonus once), deck exhaustion. The table of Property 19a lists the expected results. Evidence status: these scenarios are specified here; the implementation and its tests were changed by Codex and have not been re-run by Kiro.
 - Score fixtures: table boundaries e = length − 1, length, length + 1.
 - AI: registry has 3 ids, each with Korean and English labels; Work_Budget constants exist; recorded decision times per tier (fail above 3000 ms).
 - Boundary and scan tests (task 1.3): imports and banned globals, score-constant scan, network API scan. Extended by task 17.4: `ui/controller.ts` may import `core/fragment-layout`, every other `ui/` file may not; a fixture shows that a screen-class file importing `core/fragment-layout` fails.
