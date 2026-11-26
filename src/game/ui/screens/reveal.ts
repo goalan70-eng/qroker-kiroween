@@ -282,9 +282,6 @@ export function renderReveal(
     if (model.provisional && options.banner !== false) {
       contentSlot.appendChild(h('p', { class: 'reveal-banner', attrs: { role: 'note' } }, t('common.provisionalScoring')));
     }
-    contentSlot.appendChild(
-      h('p', { class: 'reveal-placer' }, t('reveal.placer', { n: model.batchIndex + 1, name: model.placer.name })),
-    );
     for (const code of model.codes) {
       const titleId = `reveal-code-${code.quadKey}-title`;
       contentSlot.appendChild(
@@ -295,14 +292,6 @@ export function renderReveal(
           code.hiddenSum === null ? null : h('p', { class: 'reveal-sum' },
             h('span', null, t('reveal.code.sum', { sum: '' })),
             h('strong', null, code.hiddenSum),
-          ),
-          code.cards.length === 0 ? null : h(
-            'ul',
-            { class: 'reveal-cards', aria: { label: t('reveal.code.cards', { key: code.quadKey }) } },
-            ...code.cards.map(card => {
-              const cell = current.view?.board.find(cell => cell?.card === card);
-              return h('li', { class: 'reveal-card' }, revealCardFace(h, card, t, cell?.orientation));
-            }),
           ),
         ),
       );
@@ -330,6 +319,25 @@ export function renderReveal(
           ),
         ),
       ),
+    );
+    for (const code of model.codes) {
+      if (code.cards.length === 0) continue;
+      contentSlot.appendChild(
+        h('div', { class: 'reveal-card-detail', attrs: { 'data-quad-key': code.quadKey } },
+          h('span', { class: 'reveal-detail-key' }, code.quadKey),
+          h(
+            'ul',
+            { class: 'reveal-cards', aria: { label: t('reveal.code.cards', { key: code.quadKey }) } },
+            ...code.cards.map(card => {
+              const cell = current.view?.board.find(cell => cell?.card === card);
+              return h('li', { class: 'reveal-card' }, revealCardFace(h, card, t, cell?.orientation));
+            }),
+          ),
+        ),
+      );
+    }
+    contentSlot.appendChild(
+      h('p', { class: 'reveal-placer' }, t('reveal.placer', { n: model.batchIndex + 1, name: model.placer.name })),
     );
   }
 

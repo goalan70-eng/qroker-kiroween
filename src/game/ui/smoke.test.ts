@@ -156,8 +156,9 @@ function checkRevealScreen(app: MountedApp, ctx: Ctx, view: PlayerView): void {
     const el = codes[i] as Element;
     ensure(ctx, el.getAttribute('data-quad-key') === code.quadKey, 'a reveal code is out of order');
     ensure(ctx, (code.hiddenSum === null) === (ctx.visibility === 'BLIND_SCORE_ONLY'), 'feedback setting must control sum visibility');
+    const rootFaces = app.root.querySelectorAll(`.reveal-card-detail[data-quad-key="${code.quadKey}"] .card-face`);
     const faceCount = ctx.visibility === 'OWNER_ONLY' ? 4 : 0;
-    ensure(ctx, el.querySelectorAll('.card-face').length === faceCount && code.cards.length === faceCount, 'revealed card visibility is wrong');
+    ensure(ctx, rootFaces.length === faceCount && code.cards.length === faceCount, 'revealed card visibility is wrong');
     ensure(ctx, code.hiddenSum === null ? el.querySelector('.reveal-sum') === null : textOf(el.querySelector('.reveal-sum')) === label(app, 'reveal.code.sum', { sum: code.hiddenSum }), 'the hidden sum of a code is wrong');
   });
 }

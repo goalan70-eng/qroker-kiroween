@@ -11,6 +11,11 @@ export const en = Object.freeze({
   'scoreboard.col.seat': 'Player',
   'scoreboard.col.score': 'Score',
   'scoreboard.col.hand': 'Cards in hand',
+  'scoreboard.timer.place': 'Placement',
+  'scoreboard.timer.guess': 'Prediction',
+  'scoreboard.timer.wait': 'Waiting',
+  'scoreboard.timer.expired': 'Time up',
+  'scoreboard.timer.seconds': '{count}s',
   'scoreboard.active': 'current turn',
   'scoreboard.kind.HUMAN': 'person',
   'scoreboard.kind.AI': 'AI',
@@ -26,6 +31,16 @@ export const ko: Record<keyof typeof en, string> = Object.freeze({
   'scoreboard.col.score': '점수',
   // REVIEW: new text, needs native-speaker check
   'scoreboard.col.hand': '손패 수',
+  // REVIEW: new text, needs native-speaker check
+  'scoreboard.timer.place': '배치',
+  // REVIEW: new text, needs native-speaker check
+  'scoreboard.timer.guess': '합계 입력',
+  // REVIEW: new text, needs native-speaker check
+  'scoreboard.timer.wait': '대기',
+  // REVIEW: new text, needs native-speaker check
+  'scoreboard.timer.expired': '시간 만료',
+  // REVIEW: new text, needs native-speaker check
+  'scoreboard.timer.seconds': '{count}초',
   // REVIEW: new text, needs native-speaker check
   'scoreboard.active': '현재 차례',
   // REVIEW: new text, needs native-speaker check

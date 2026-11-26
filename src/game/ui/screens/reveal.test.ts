@@ -395,11 +395,13 @@ describe('renderReveal structure [fake-DOM, real engine]', () => {
         expect(heading.tagName).toBe('h3');
         expect(heading.textContent).toBe(`Code ${code.quadKey}`);
         expect(withClass(r.doc, 'reveal-sum')[i]?.textContent).toBe(`Hidden sum: ${code.hiddenSum}`);
-        const faces = section.children.flatMap((c) => c.children).flatMap((c) => c.children).filter((el) => el.getAttribute('role') === 'img');
+        const detail = withClass(r.doc, 'reveal-card-detail')[i]!;
+        expect(detail.getAttribute('data-quad-key')).toBe(code.quadKey);
+        const faces = detail.children.flatMap((c) => c.children).flatMap((c) => c.children).filter((el) => el.getAttribute('role') === 'img');
         expect(faces).toHaveLength(code.cards.length);
         expect(faces).toHaveLength(4);
         faces.forEach((face) => expect(face.getAttribute('aria-label')).toMatch(/ of (Hearts|Diamonds|Clubs|Spades)$/));
-        const list = section.children.find((c) => c.tagName === 'ul') as FakeEl;
+        const list = detail.children.find((c) => c.tagName === 'ul') as FakeEl;
         expect(list.getAttribute('aria-label')).toBe(`Revealed cards of code ${code.quadKey}`);
       });
       expect(withClass(r.doc, 'reveal-placer')[0]?.textContent).toBe(

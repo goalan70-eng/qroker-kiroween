@@ -21,6 +21,10 @@ The owner approved the three-card rules after tasks 3 to 8 were ticked: 3-card H
 
 The owner approved that a draw which takes the last card of the draw pile ends the game at once at the current scores, with no bonus (Deck_Exhaustion_End). Codex implemented it as `RULES_VERSION = 4` in the working tree. Kiro updated the specification text: qroker-game requirements 2.9, 3.7, 3.8, 3.15 and new 3.16, and playable requirements 6.6, 8.8, 9.1, 9.3, OQ-16 and 18.9, and the design sections Reducer, Invariants, Property 12, Property 19, Property 19a and Deck Exhaustion. Historical acceptance text in the tasks below is kept unchanged. Where a task names the old empty-deck scenario, its amended note in the three-card section supersedes it. Test results for this amendment are in `docs/validation/deck-exhaustion-rule-verification-ko.md`.
 
+### Visibility amendment (Codex, based on commit `891a971`)
+
+Historical tasks and their evidence below refer to the modes available when written. For current acceptance, use requirements 10, 14 and 16 for setup, reveal and final history, including both Blind feedback settings.
+
 ### Milestones
 
 | Milestone | Tasks | Purpose |
@@ -36,7 +40,7 @@ The owner approved that a draw which takes the last card of the draw pile ends t
 Milestone P1 is reached when all of the following hold:
 
 1. One human Seat (`P0`) and three AI Seats (`P1` to `P3`, tiers `BEGINNER` and `ADVANCED`) play a complete game in the browser from the setup screen to the final ranking with `DEV_PLACEHOLDER_SCORE_CONFIG`, and every game screen shows the "provisional scoring" banner.
-2. Guess collection works with private entry and the Pass_Device_Gate (tested with 2 human Seats), AI Guesses are never displayed, and the reveal screen shows the Hidden_Sum, the revealed cards and per-Seat points.
+2. Guess collection works with private entry and the Pass_Device_Gate (tested with 2 human Seats), AI Guesses are never displayed, and the reveal screen shows per-Seat points and the code details permitted by the selected mode.
 3. A seed can be entered or generated, the seed is displayed, rematch and replay-same-seed work, and an interrupted game resumes after a reload from a versioned save.
 4. `npm run dev` starts the app, and `npm run build` followed by `npm run preview` (or any static server on `dist/`) serves it. The commands are documented in `docs/practice-mode.md`.
 5. A headless end-to-end test plays complete games of the engine against 3 AI Seats for at least 200 Seeds without a rejected Action or invariant violation, and every game terminates (Property 21).

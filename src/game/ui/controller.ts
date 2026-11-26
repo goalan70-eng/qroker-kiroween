@@ -236,7 +236,10 @@ export interface RenderInput {
 
 export type Renderer = (input: RenderInput) => void;
 
+export type GameSound = 'shuffle' | 'place' | 'place-draw' | 'place-code' | 'reveal';
+
 export interface AppDeps {
+  readonly playSound?: (sound: GameSound) => void;
   readonly schedule: Schedule;
   readonly renderer: Renderer;
   /** A Seed for a new game when `startGame` and `restart` get none: an integer in 0..4294967295. */
@@ -658,6 +661,20 @@ export function createController(deps: AppDeps): Controller {
     return mix32(state.seed, seatIndex * DECISION_SEED_SEAT_STRIDE + state.log.length);
   }
 
+  /** Only committed, publicly observable outcomes produce sound, including the final scoring batch. */
+  function acceptState(g: Game, next: GameState): void {
+    const previous = g.state;
+    g.state = next;
+    saveNow(next);
+    if (previous.phase === 'PLACEMENT') {
+      if (next.phase === 'GUESS_COLLECT') deps.playSound?.('place-code');
+      else if (next.deck.length < previous.deck.length) deps.playSound?.('place-draw');
+      else deps.playSound?.('place');
+    } else if (previous.phase === 'GUESS_COLLECT' && (next.phase === 'REVEAL' || next.phase === 'ENDED')) {
+      deps.playSound?.('reveal');
+    }
+  }
+
   /**
    * Plays one step. Returns false when the loop must stop (an AI could not play). The state of `g` is updated
    * after each accepted Action; the model is published once at the end.
@@ -675,8 +692,7 @@ export function createController(deps: AppDeps): Controller {
         outcome.stalled = 'NOT_YOUR_TURN'; // an accepted Action of another seat than the one asked: not applied
         return false;
       }
-      g.state = result.value;
-      saveNow(g.state); // every accepted AI Action individually, before the render and before the next step
+      acceptState(g, result.value);
       return true;
     };
     const decide = (seat: PlayerId): boolean => {
@@ -752,8 +768,7 @@ export function createController(deps: AppDeps): Controller {
       }
       const result = reduce(state, action);
       if (!result.ok) return rejectWith(result.error.code);
-      g.state = result.value;
-      saveNow(g.state); // before the render and before the next AI step; a failed save does not undo the Action
+      acceptState(g, result.value);
       lastAccepted = { action, logLength: result.value.log.length };
       setModel({ lastError: null }); // `actionCount` changed, so `setModel` also clears the draft
     } finally {
@@ -773,7 +788,7 @@ export function createController(deps: AppDeps): Controller {
     return dispatchHuman(action);
   }
 
-  function begin(config: GameConfig, seed: number): OpResult {
+  function begin(config: GameConfig, seed: number, setupPrefs?: SetupPrefs): OpResult {
     inFlight = true;
     try {
       const created = newGame({ seed, config });
@@ -787,7 +802,14 @@ export function createController(deps: AppDeps): Controller {
       acknowledgedSeat = null;
       pendingResume = null; // an offer is never kept for a different game; the save is overwritten below
       saveNow(created.value);
-      setModel({ lastError: null, aiStalled: false, resume: null }); // new epoch: draft cleared; viewer and gate are derived
+      deps.playSound?.('shuffle');
+      const currentPrefs = store.get().setupPrefs;
+      const displayPrefs = setupPrefs ? sanitizeSetupPrefs({
+        ...currentPrefs,
+        placementSeconds: setupPrefs.placementSeconds,
+        predictionSeconds: setupPrefs.predictionSeconds,
+      }) : currentPrefs;
+      setModel({ lastError: null, aiStalled: false, resume: null, setupPrefs: displayPrefs });
     } finally {
       inFlight = false;
     }
@@ -826,9 +848,10 @@ export function createController(deps: AppDeps): Controller {
       seats: seatsFor(checked.value),
       identityVisibility: checked.value.identityVisibility,
     };
-    const started = begin(config, seed.value);
-    // The setup preferences (never the seed text: `sanitizeSetupPrefs` keeps the three pref fields only) and the language.
-    if (started.ok) writePrefsNow(store.get().language, sanitizeSetupPrefs(checked.value));
+    const setupPrefs = sanitizeSetupPrefs(checked.value);
+    const started = begin(config, seed.value, setupPrefs);
+    // The setup preferences (never the seed text: `sanitizeSetupPrefs` keeps the supported preference fields only) and the language.
+    if (started.ok) writePrefsNow(store.get().language, setupPrefs);
     return started;
   }
 
@@ -936,7 +959,7 @@ export function createController(deps: AppDeps): Controller {
 
   function setSetupPrefs(prefs: SetupPrefs): void {
     if (disposed) return;
-    const clean = sanitizeSetupPrefs(prefs); // a stale or hostile caller cannot store anything but the three pref fields
+    const clean = sanitizeSetupPrefs(prefs); // a stale or hostile caller cannot store anything but the supported preference fields
     setModel({ setupPrefs: clean });
     writePrefsNow(store.get().language, clean);
   }
@@ -1108,6 +1131,7 @@ export function createController(deps: AppDeps): Controller {
 
 /** Dependencies of `mountApp`: the DOM objects and the injected services. Nothing is read from a global. */
 export interface MountDeps {
+  readonly playSound?: AppDeps['playSound'];
   readonly doc: Document;
   /** `navigator.languages` (or `navigator.language`); the start language is `detectLanguage(languages, null)`. */
   readonly languages: readonly string[] | string | null | undefined;
@@ -1141,6 +1165,7 @@ export function mountApp(root: HTMLElement, deps: MountDeps): AppHandle {
   const { doc } = deps;
   const shell = mountShell(root, { languages: deps.languages, doc });
   const controller = createController({
+    playSound: deps.playSound,
     schedule: deps.schedule,
     randomSeed: deps.randomSeed,
     ...(deps.strategyFor === undefined ? {} : { strategyFor: deps.strategyFor }),

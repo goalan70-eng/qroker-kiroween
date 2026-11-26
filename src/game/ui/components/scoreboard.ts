@@ -29,6 +29,7 @@ import type { TableBacks } from '../back-art';
 import { createH } from '../dom';
 import type { CreateDoc } from '../dom';
 import type { Translate } from './card-face';
+import { createSeatTimers, type SeatTiming, type TimerClock } from './seat-timers';
 
 export interface ScoreboardRow {
   readonly id: PlayerId;
@@ -91,6 +92,9 @@ export interface ScoreboardHandle {
 }
 
 export interface ScoreboardOptions {
+  readonly timing?: SeatTiming;
+  readonly formCountdown?: HTMLElement;
+  readonly clock?: TimerClock;
   /** Draw the provisional banner inside the scoreboard. Default `true`; a host that mounts components/banner.ts passes `false`. */
   readonly banner?: boolean;
   /** A private placement panel displays this seat’s playable hand. */
@@ -102,9 +106,11 @@ export interface ScoreboardOptions {
 export function renderScoreboard(doc: CreateDoc, root: HTMLElement, view: PlayerView, t: Translate, options: ScoreboardOptions = {}): ScoreboardHandle {
   const h = createH(doc);
   const slot = h('section', { class: 'scoreboard' });
+  const timers = createSeatTimers(h, t, options.clock);
   let disposed = false;
 
   function paint(next: PlayerView, settings: ScoreboardOptions): void {
+    timers.update(settings.timing, settings.formCountdown);
     const model = buildScoreboardModel(next);
     const seated = next.phase !== 'ENDED';
     slot.setAttribute('class', seated ? 'scoreboard scoreboard--seated' : 'scoreboard');
@@ -124,7 +130,8 @@ export function renderScoreboard(doc: CreateDoc, root: HTMLElement, view: Player
     const body = model.rows.map((row) =>
       h(
         'tr',
-        { class: row.active ? 'scoreboard-row is-active' : 'scoreboard-row', attrs: { 'data-seat': row.id } },
+        { class: ['scoreboard-row', row.active && 'is-active', row.active && row.id === settings.openHandSeat && 'has-open-hand']
+          .filter(Boolean).join(' '), attrs: { 'data-seat': row.id } },
         h(
           'th',
           { attrs: { scope: 'row' } },
@@ -142,6 +149,7 @@ export function renderScoreboard(doc: CreateDoc, root: HTMLElement, view: Player
                 h('span', { class: 'scoreboard-active-text' }, t('scoreboard.active')),
               )
             : null,
+          timers.row(row.id),
         ),
         h('td', { class: 'scoreboard-score', attrs: { 'data-label': t('scoreboard.col.score') } }, row.score),
         h('td', { class: 'scoreboard-hand' }, row.handCount),
@@ -166,6 +174,7 @@ export function renderScoreboard(doc: CreateDoc, root: HTMLElement, view: Player
       ) : null,
       h('span', { class: 'deck-count' }, t('scoreboard.deck', { count: model.deckCount })),
     ));
+    timers.startTicking();
   }
 
   paint(view, options);
@@ -177,6 +186,7 @@ export function renderScoreboard(doc: CreateDoc, root: HTMLElement, view: Player
     },
     dispose() {
       if (disposed) return;
+      timers.dispose();
       disposed = true;
       if (slot.parentNode !== null) slot.parentNode.removeChild(slot);
     },

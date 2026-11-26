@@ -73,6 +73,21 @@
   cursor: grab;
 }
 
+/* Scale the face inside the button; the hit area and neighbouring cards stay in place. */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .hand-card--draggable .hand-card__face {
+    transition: transform 150ms ease-out;
+  }
+
+  .hand-card--draggable:hover:not(:active) {
+    z-index: 2;
+  }
+
+  .hand-card--draggable:hover:not(:active) .hand-card__face {
+    transform: scale(1.07);
+  }
+}
+
 /* Selected: a solid ring inside the box and a bar at the bottom edge (shape cues, not colour alone). */
 .hand-card.is-selected {
   outline: var(--stroke-strong) solid var(--color-focus);

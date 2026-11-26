@@ -53,7 +53,7 @@ import type { Lang, StringKey } from '../../i18n';
 import type { Translate } from '../components/card-face';
 import { createH, renderWithFocus } from '../dom';
 import type { CreateDoc, FocusDoc } from '../dom';
-import { aiSeatIds, MAX_HUMANS, MIN_HUMANS, sanitizeSetupPrefs, SETUP_DIFFICULTIES, SETUP_VISIBILITIES } from '../setup-model';
+import { DEFAULT_PLACEMENT_SECONDS, DEFAULT_PREDICTION_SECONDS, MAX_TURN_SECONDS, validTurnSeconds, aiSeatIds, MAX_HUMANS, MIN_HUMANS, sanitizeSetupPrefs, SETUP_DIFFICULTIES, SETUP_VISIBILITIES } from '../setup-model';
 import type { SetupOptions, SetupPrefs } from '../setup-model';
 
 /** The part of the controller's `OpResult` the screen reads. */
@@ -120,6 +120,11 @@ export const SETUP_STRING_KEYS = [
   'setup.visibility.default',
   'setup.visibility.hint',
   'setup.visibility.blindHint',
+  'setup.advanced',
+  'setup.timer.placement',
+  'setup.timer.prediction',
+  'setup.timer.hint',
+  'setup.timer.invalid',
   'setup.start',
   'common.language.label',
   'common.languageName.ko',
@@ -209,7 +214,9 @@ export function renderSetup(
   let aiRows: AiRow[] = [];
 
   const notifyPrefs = (): void => {
-    options.onPrefsChange?.(sanitizeSetupPrefs({ humanCount: humansRaw, difficulties, identityVisibility: visibilityRaw }));
+    const times = timerValues();
+    if (!validTurnSeconds(times.placementSeconds) || !validTurnSeconds(times.predictionSeconds)) return;
+    options.onPrefsChange?.(sanitizeSetupPrefs({ humanCount: humansRaw, difficulties, identityVisibility: visibilityRaw, ...times }));
   };
 
   // ---- controls -------------------------------------------------------------------------------------------
@@ -383,6 +390,37 @@ export function renderSetup(
     visibilityHint,
   );
 
+  const advancedSummary = h('summary', { class: 'setup-advanced-summary' });
+  const timerHint = h('p', { id: 'setup-timer-hint', class: 'setup-hint' });
+  const timerError = h('p', { id: 'setup-timer-error', class: 'setup-error', attrs: { role: 'alert' } });
+  let timerInvalid = false;
+  function secondsField(id: string, seconds: number) {
+    const label = h('label', { class: 'setup-label', attrs: { for: id } });
+    const control = h('input', {
+      id, focusKey: id, class: 'setup-input',
+      attrs: { type: 'number', inputmode: 'numeric', min: 1, max: MAX_TURN_SECONDS, step: 1, required: true },
+      aria: { describedby: 'setup-timer-hint setup-timer-error' },
+      on: {
+        input: () => {
+          if (!timerInvalid || disposed || inert) return;
+          const times = timerValues();
+          timerInvalid = !validTurnSeconds(times.placementSeconds) || !validTurnSeconds(times.predictionSeconds);
+          paint();
+        },
+        change: () => { if (!disposed && !inert) notifyPrefs(); },
+      },
+    });
+    setValue(control, String(seconds));
+    return { label, control, field: h('div', { class: 'setup-field' }, label, control) };
+  }
+  const placementTime = secondsField('setup-placement-seconds', prefs.placementSeconds ?? DEFAULT_PLACEMENT_SECONDS);
+  const predictionTime = secondsField('setup-prediction-seconds', prefs.predictionSeconds ?? DEFAULT_PREDICTION_SECONDS);
+  function timerValues() {
+    return { placementSeconds: Number(valueOf(placementTime.control)), predictionSeconds: Number(valueOf(predictionTime.control)) };
+  }
+  const advanced = h('details', { class: 'setup-advanced' }, advancedSummary,
+    h('div', { class: 'setup-timer-fields' }, placementTime.field, predictionTime.field), timerHint, timerError);
+
   // Language.
   const languageLabel = h('label', { class: 'setup-label', attrs: { for: 'setup-language' } });
   const languageOptions = LANGUAGES.map((lang) => ({ lang, el: h('option', { attrs: { value: lang } }) }));
@@ -435,7 +473,7 @@ export function renderSetup(
       },
     },
     h('div', { class: 'setup-fields' }, seedField, humansSet, aiSet, visibilitySet),
-    h('div', { class: 'setup-footer' }, languageField, generalError, startButton),
+    h('div', { class: 'setup-footer' }, advanced, languageField, generalError, startButton),
   );
   const frontispiece = h('header', { class: 'setup-cover' },
     h('div', { class: 'setup-intro' }, titleEl, goalEl),
@@ -486,6 +524,14 @@ export function renderSetup(
       visibilitySet.removeChild(feedbackField);
     }
 
+    setText(advancedSummary, t('setup.advanced'));
+    setText(placementTime.label, t('setup.timer.placement'));
+    setText(predictionTime.label, t('setup.timer.prediction'));
+    setText(timerHint, t('setup.timer.hint'));
+    setText(timerError, timerInvalid ? t('setup.timer.invalid', { n: MAX_TURN_SECONDS }) : '');
+    for (const field of [placementTime, predictionTime]) {
+      field.control.setAttribute('aria-invalid', String(timerInvalid && !validTurnSeconds(Number(valueOf(field.control)))));
+    }
     setText(languageLabel, t('common.language.label'));
     for (const option of languageOptions) setText(option.el, t(LANGUAGE_KEYS[option.lang]));
     setValue(languageSelect, current.model.language);
@@ -507,7 +553,18 @@ export function renderSetup(
     for (const row of aiRows) difficulties[row.index] = valueOf(row.select); // tampering without a change event
     seedErrorCode = null;
     generalErrorCode = null;
+    const invalid = [placementTime, predictionTime].find(field => !validTurnSeconds(Number(valueOf(field.control))));
+    if (invalid) {
+      timerInvalid = true;
+      advanced.setAttribute('open', '');
+      paint();
+      invalid.control.focus();
+      return;
+    }
+    const times = timerValues();
     const request = {
+      ...(times.placementSeconds === DEFAULT_PLACEMENT_SECONDS ? {} : { placementSeconds: times.placementSeconds }),
+      ...(times.predictionSeconds === DEFAULT_PREDICTION_SECONDS ? {} : { predictionSeconds: times.predictionSeconds }),
       seedText: valueOf(seedInput),
       humanCount: humansRaw,
       difficulties: [...difficulties],

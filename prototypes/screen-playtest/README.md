@@ -26,7 +26,7 @@ $layoutDirectory = '../../local-optical-previews/mosaic-camera-print/full-joker'
 
 `deliverables/QRoker-Web.html`은 서버 없이 열 수 있다. 함께 빌드한 `deliverables/QRoker-ScreenCheck.apk`를 설치하고 카메라 권한을 허용한다. 이전 화면 검증 앱을 업데이트하려면 동일한 로컬 서명 키를 `-SigningKey`로 지정한다. 기존 점수 기록 앱과 화면 검증 앱은 서로 다른 앱 ID와 기록을 사용한다.
 
-1. 웹의 **카메라 판독 연습**에서 코드 전체를 휴대전화 미리보기 안에 넣는다.
+1. 웹의 **카메라 판독 연습**을 열고, 휴대전화 점수판에서 **코드 인식**을 눌러 코드 전체를 비춘다.
 2. 예측 27을 제출하면 정답 27과 10점이 표시된다.
 3. 확정 전에 웹의 **한 장 빼기**를 눌러 입력이 닫히는지 확인한다.
 

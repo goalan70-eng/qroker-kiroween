@@ -23,7 +23,7 @@ export const en = Object.freeze({
   'hand.restoreOrientation': 'Return upright',
 
   // Hints by draft state (position first or card first; dragging is the third way).
-  'hand.hint.idle': 'Select a card or a position on the board. You can also drag a card onto a legal cell.',
+  'hand.hint.idle': 'Select a card and a space to play it.',
   'hand.hint.target': 'Position chosen. Now select a card from your hand.',
   'hand.hint.card': 'Card chosen. Now select a legal position on the board.',
   'hand.hint.preview': 'Press ✓ beside the card to place it.',
@@ -59,7 +59,7 @@ export const ko: Record<keyof typeof en, string> = Object.freeze({
   'hand.restoreOrientation': '원래 방향으로',
 
   // REVIEW: new text, needs native-speaker check
-  'hand.hint.idle': '카드나 보드의 위치를 선택하세요. 카드를 놓을 수 있는 칸으로 끌어다 놓을 수도 있습니다.',
+  'hand.hint.idle': '손패와 놓을 칸을 선택하세요.',
   // REVIEW: new text, needs native-speaker check
   'hand.hint.target': '위치를 선택했습니다. 이제 손패에서 카드를 선택하세요.',
   // REVIEW: new text, needs native-speaker check

@@ -41,6 +41,11 @@ export const en = Object.freeze({
   'setup.visibility.hint': 'Four cards start face up. Each completed group is revealed after everyone predicts.',
   'setup.visibility.blindHint': 'Only your hand is visible. Board cards stay face down.',
 
+  'setup.advanced': 'Advanced settings',
+  'setup.timer.placement': 'Card placement (seconds)',
+  'setup.timer.prediction': 'Predictions per player (seconds)',
+  'setup.timer.hint': 'You can still place a card or submit predictions after time runs out.',
+  'setup.timer.invalid': 'Enter a whole number from 1 to {n} for each timer.',
   'setup.start': 'Start game',
 } as const);
 
@@ -94,6 +99,16 @@ export const ko: Record<keyof typeof en, string> = Object.freeze({
   // REVIEW: new text, needs native-speaker check
   'setup.visibility.blindHint': '내 손패만 볼 수 있고, 보드의 카드는 끝까지 뒷면입니다.',
 
+  // REVIEW: new text, needs native-speaker check
+  'setup.advanced': '상세 설정',
+  // REVIEW: new text, needs native-speaker check
+  'setup.timer.placement': '카드 배치 시간(초)',
+  // REVIEW: new text, needs native-speaker check
+  'setup.timer.prediction': '플레이어당 예측 시간(초)',
+  // REVIEW: new text, needs native-speaker check
+  'setup.timer.hint': '시간이 지나도 카드를 놓거나 예측을 제출할 수 있어요.',
+  // REVIEW: new text, needs native-speaker check
+  'setup.timer.invalid': '각 시간에 1부터 {n}까지의 정수를 입력하세요.',
   // REVIEW: new text, needs native-speaker check
   'setup.start': '게임 시작',
 });

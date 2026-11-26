@@ -732,6 +732,8 @@ describe('dispose and stale handles', () => {
       'setup-difficulty-P3',
       'setup-visibility-OWNER_ONLY',
       'setup-visibility-BLIND',
+      'setup-placement-seconds',
+      'setup-prediction-seconds',
       'setup-language',
       'setup-start',
     ]);

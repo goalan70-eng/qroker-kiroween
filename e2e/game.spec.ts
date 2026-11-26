@@ -64,11 +64,25 @@ const hasNumber = (markup: string, n: number): boolean => new RegExp(`(?<![0-9])
 // ---------------------------------------------------------------------------------------------------------------
 
 test('four marked backs complete D3 after rotating the second club', async ({ page }) => {
+  // Observe scheduled, decoded audio in Chromium while leaving real playback in place.
+  const played: number[] = [];
+  page.on('console', message => {
+    if (message.text().startsWith('sfx-cs=')) played.push(Number(message.text().slice(7)));
+  });
+  await page.addInitScript(() => {
+    const start = AudioBufferSourceNode.prototype.start;
+    AudioBufferSourceNode.prototype.start = function (...args) {
+      start.apply(this, args);
+      console.debug('sfx-cs=' + Math.round(this.buffer!.duration * 100));
+    };
+  });
   await page.goto('/');
   await page.locator('#setup-humans-4').check();
   await page.locator('#setup-visibility-BLIND').check();
   await page.locator('#setup-seed').fill('1');
   await page.locator('#setup-start').click();
+
+  await expect.poll(() => played).toEqual([78]); // centiseconds, tolerant of decoder padding
 
   const gate = page.locator('#privacy-gate-ack');
   const deck = page.locator('.deck-stack .table-card-back');
@@ -101,6 +115,9 @@ test('four marked backs complete D3 after rotating the second club', async ({ pa
     await expect(face).toHaveAttribute('style', new RegExp(backMarks[card]));
     if (card === 'C-4') await expect(face).toHaveAttribute('data-orientation', '180');
   }
+  // PLACE + DRAW, then PLACE + CODE. A privacy handoff and switching views are silent.
+  const beforeReveal = [78, 8, 46, 8, 60];
+  await expect.poll(() => played).toEqual(beforeReveal);
   const guess = page.locator('#guess-input-D3');
   const warning = page.locator('#guess-error-D3');
   await expect(page.locator('.guess-seats')).toBeHidden();
@@ -120,6 +137,34 @@ test('four marked backs complete D3 after rotating the second club', async ({ pa
   const junction = (await page.locator('.board-code-junction[data-quad-key="D3"]').boundingBox())!;
   expect(junction.x + junction.width / 2).toBeCloseTo(d3.x + d3.width, 1);
   expect(junction.y + junction.height / 2).toBeCloseTo(d3.y, 1);
+  for (let seat = 0; seat < 4; seat++) {
+    if (await gate.count()) await gate.click();
+    expect(played).toEqual(beforeReveal);
+    await submitGuesses(page, 28);
+  }
+  await expect(page.locator('#reveal-continue')).toBeVisible();
+  await expect.poll(() => played).toEqual([...beforeReveal, 88]);
+});
+
+test('mouse hover enlarges only the pointed hand card and restores it on exit', async ({ page }) => {
+  await startGame(page, { humans: 4, seedText: '1' });
+  const cards = page.locator('.hand-card');
+  const face = cards.first().locator('.card-face');
+  const width = () => face.evaluate(el => el.getBoundingClientRect().width);
+  const resting = await width();
+  const neighbor = await cards.nth(1).boundingBox();
+  await cards.first().hover();
+  await expect.poll(width).toBeGreaterThan(resting * 1.03);
+  expect(await cards.nth(1).boundingBox()).toEqual(neighbor);
+  await expect(cards.first()).toHaveAttribute('aria-pressed', 'false');
+  await page.mouse.move(0, 0);
+  await expect.poll(width).toBeCloseTo(resting, 1);
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await cards.first().hover();
+  expect(await width()).toBeCloseTo(resting, 1);
+  await cards.first().click();
+  await expect(cards.first()).toHaveAttribute('aria-pressed', 'true');
 });
 
 test.describe('1 full game', () => {
@@ -713,7 +758,7 @@ test.describe('8 two codes in one placement', () => {
     expect(codes).toEqual(scene.quadKeys.map((key) => ({ key, sum: scene.hiddenSums[key] })));
     for (const key of scene.quadKeys) {
       await expect(page.locator(`.board-code-junction--open[data-quad-key="${key}"]`)).toBeVisible();
-      const faces = page.locator(`.reveal-code[data-quad-key="${key}"] .reveal-card`);
+      const faces = page.locator(`.reveal-card-detail[data-quad-key="${key}"] .reveal-card`);
       for (const [slot, corner] of ['br', 'bl', 'tr', 'tl'].entries()) {
         if (hasLocalDeck) {
           const artwork = faces.nth(slot).locator('img.card-face__art');
@@ -726,6 +771,10 @@ test.describe('8 two codes in one placement', () => {
     }
     await expect(page.locator('#reveal-continue')).toBeInViewport();
     await expect(page.locator('.reveal-code').last()).toBeInViewport({ ratio: 1 });
+    const originalSize = page.viewportSize()!;
+    await page.setViewportSize({ width: 1024, height: 576 });
+    for (const gain of await page.locator('.reveal-earned').all()) await expect(gain).toBeInViewport({ ratio: 1 });
+    await page.setViewportSize(originalSize);
     const revealImage = testInfo.outputPath('reveal.png');
     await page.screenshot({ path: revealImage });
     await testInfo.attach('reveal', { path: revealImage, contentType: 'image/png' });

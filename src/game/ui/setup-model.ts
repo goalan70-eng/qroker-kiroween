@@ -28,8 +28,27 @@ const SEAT_IDS: readonly PlayerId[] = Object.freeze(['P0', 'P1', 'P2', 'P3'] as 
 /** One entry per seat P0..P3; only the entries of AI seats are used. */
 export type SetupDifficulties = readonly [Difficulty, Difficulty, Difficulty, Difficulty];
 
+export const DEFAULT_PLACEMENT_SECONDS = 20;
+export const DEFAULT_PREDICTION_SECONDS = 10;
+export const MAX_TURN_SECONDS = 600;
+
+export function validTurnSeconds(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= MAX_TURN_SECONDS;
+}
+
+/** Store only overrides; older preferences use the same defaults as a new installation. */
+function timerOverrides(source: Record<string, unknown>) {
+  const { placementSeconds, predictionSeconds } = source;
+  return {
+    ...(validTurnSeconds(placementSeconds) && placementSeconds !== DEFAULT_PLACEMENT_SECONDS ? { placementSeconds } : {}),
+    ...(validTurnSeconds(predictionSeconds) && predictionSeconds !== DEFAULT_PREDICTION_SECONDS ? { predictionSeconds } : {}),
+  };
+}
+
 /** Everything of the setup except the seed. Plain, JSON-serializable data. */
 export interface SetupPrefs {
+  readonly placementSeconds?: number;
+  readonly predictionSeconds?: number;
   /** Integer 1..4: seats P0..P(k-1) are human. */
   readonly humanCount: number;
   readonly difficulties: SetupDifficulties;
@@ -65,6 +84,7 @@ export function sanitizeSetupPrefs(raw: unknown): SetupPrefs {
     return isTier(entry) ? entry : DEFAULT_DIFFICULTY;
   }) as unknown as SetupDifficulties;
   return Object.freeze({
+    ...timerOverrides(source),
     humanCount: isHumanCount(source.humanCount) ? source.humanCount : DEFAULT_SETUP_PREFS.humanCount,
     difficulties: Object.freeze(tiers),
     identityVisibility: isVisibility(source.identityVisibility) ? source.identityVisibility : DEFAULT_VISIBILITY,
@@ -72,7 +92,7 @@ export function sanitizeSetupPrefs(raw: unknown): SetupPrefs {
 }
 
 export interface SetupProblem {
-  readonly field: 'seedText' | 'humanCount' | 'difficulties' | 'identityVisibility';
+  readonly field: 'seedText' | 'humanCount' | 'difficulties' | 'identityVisibility' | 'placementSeconds' | 'predictionSeconds';
   /** Engine-style code; the setup problems are all `INVALID_CONFIG`. */
   readonly code: ErrorCode;
   /** The AI seat of a `difficulties` problem. */
@@ -109,12 +129,16 @@ export function validateSetup(options: unknown): SetupValidation {
     }
   }
   if (!isVisibility(options.identityVisibility)) problems.push({ field: 'identityVisibility', code: 'INVALID_CONFIG' });
+  for (const field of ['placementSeconds', 'predictionSeconds'] as const) {
+    if (options[field] !== undefined && !validTurnSeconds(options[field])) problems.push({ field, code: 'INVALID_CONFIG' });
+  }
   if (problems.length > 0) return { ok: false, problems };
   const count = humans as number;
   const tiers = SEAT_IDS.map((_, i) => (i >= count ? (list as Difficulty[])[i] : DEFAULT_DIFFICULTY)) as unknown as SetupDifficulties;
   return {
     ok: true,
     value: Object.freeze({
+      ...timerOverrides(options),
       seedText: options.seedText as string,
       humanCount: count,
       difficulties: Object.freeze(tiers),

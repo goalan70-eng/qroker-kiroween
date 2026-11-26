@@ -59,6 +59,8 @@ import { renderPlacementPanel } from '../components/placement-panel';
 import type { PlacementPanelDocument, PlacementPanelHandle } from '../components/placement-panel';
 import { renderScoreboard } from '../components/scoreboard';
 import type { ScoreboardHandle } from '../components/scoreboard';
+import type { SeatTiming, TimerClock } from '../components/seat-timers';
+import { DEFAULT_PLACEMENT_SECONDS, DEFAULT_PREDICTION_SECONDS } from '../setup-model';
 import type { RenderInput } from '../controller';
 import { createH, renderWithFocus } from '../dom';
 import type { FocusDoc } from '../dom';
@@ -88,6 +90,7 @@ import type { SetupHandle } from './setup';
 export type GameScreenDocument = PlacementPanelDocument & ModalDocument & FocusDoc;
 
 export interface GameScreenOptions {
+  readonly timerClock?: TimerClock;
   readonly doc: GameScreenDocument;
   /** The page root. The host appends its element to it on the first render (after the shell). */
   readonly root: HTMLElement;
@@ -228,6 +231,7 @@ export function createGameScreen(options: GameScreenOptions): GameScreen {
   const boardSlot = h('div', { class: 'game-board-slot' });
   const panelSlot = h('div', { class: 'game-panel-slot' });
   const mainSlot = h('div', { class: 'game-main-slot' });
+  const formCountdown = h('span', { class: 'guess-countdown', attrs: { role: 'timer' } });
   const scoreSlot = h('div', { class: 'game-score-slot' });
   const layout = h('div', { class: 'game-layout' }, statusEl, errorEl, boardSlot, panelSlot, mainSlot, scoreSlot);
   const inertEl = h('main', { class: 'game-main', id: 'game-main' }, bar, seedEl, liveEl, setupSlot, gateSlot, layout);
@@ -607,7 +611,25 @@ export function createGameScreen(options: GameScreenOptions): GameScreen {
 
   function showGame(input: RenderInput, data: PlayerView, previous: Mode): void {
     // Scoreboard: public numbers of the view that is shown (private view or `publicView`).
-    const scoreOptions = { banner: false, backs: input.backs, openHandSeat: mode === 'PLACEMENT' ? input.view?.viewer : undefined };
+    let timing: SeatTiming | undefined;
+    const prefs = input.model.setupPrefs;
+    if (data.phase === 'PLACEMENT') {
+      timing = { phase: 'placement', seconds: prefs.placementSeconds ?? DEFAULT_PLACEMENT_SECONDS,
+        seats: [data.turn], actionCount: input.model.actionCount };
+    } else if (data.phase === 'GUESS_COLLECT') {
+      const seats = mode === 'GUESS' && input.view ? [input.view.viewer]
+        : data.rules.seats.filter(seat => seat.kind === 'AI' && !data.guessSubmitted[seat.id]).map(seat => seat.id);
+      timing = { phase: 'prediction', seconds: prefs.predictionSeconds ?? DEFAULT_PREDICTION_SECONDS,
+        seats, actionCount: input.model.actionCount };
+    }
+    const scoreOptions = {
+      timing,
+      formCountdown: mode === 'GUESS' ? formCountdown : undefined,
+      clock: options.timerClock,
+      banner: false,
+      backs: input.backs,
+      openHandSeat: mode === 'PLACEMENT' ? input.view?.viewer : undefined,
+    };
     if (score === null) score = renderScoreboard(doc, scoreSlot, data, tr, scoreOptions);
     else score.update(data, scoreOptions);
 
@@ -635,6 +657,7 @@ export function createGameScreen(options: GameScreenOptions): GameScreen {
       if (guess !== null && guess.key !== key) disposeGuess();
       if (guess === null) {
         const handle = renderGuessEntry(doc, mainSlot, input, tr, {
+          countdown: formCountdown,
           onRegionFocus: (quadKey) => {
             if (disposed || quadKey === focusedRegion) return;
             const board = boardSlot.firstChild as HTMLElement | null;

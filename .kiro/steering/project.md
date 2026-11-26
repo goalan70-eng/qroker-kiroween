@@ -12,7 +12,7 @@ Short on purpose: it is loaded in every chat. Read the real specs and tests befo
 
 ## Game and architecture
 - 52 cards, no Joker card, 8x8 board, four seats; neutral cards at D4/E4/D5/E5; placement must be edge-adjacent to a placed card; no swaps; cards are placed at 0 or 180 degrees. A new 2x2 Composite Code triggers private Guesses and a simultaneous reveal.
-- Layers: `src/game/core` (pure engine), `ai`, `sim`, `persistence`, `i18n`, `ui`; `src/optical` is the V1 reader. `boundaries.test.ts` enforces imports: screens never see `GameState` or the controller, only `PlayerView`; `src/game` must not import `src/optical`.
+- Layers: `src/game/core` (pure engine), `ai`, `sim`, `persistence`, `i18n`, `ui`; `src/optical` is the V1 reader. `boundaries.test.ts` enforces imports: screens never see `GameState` or the controller. They receive projected game data and presentation inputs, including marked backs for rendering. AI strategies receive no back-art assets; `src/game` must not import `src/optical`.
 - Human placement goes only through `confirmPlacement()`; `PLACE` through the screen dispatch is refused.
 
 ## Optical V1 preservation

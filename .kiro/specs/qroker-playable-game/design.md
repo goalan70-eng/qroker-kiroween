@@ -19,7 +19,7 @@ This design implements `requirements.md` of this spec: the QRoker game engine an
 
 | ID | Decision | Rationale | Alternative | Flag |
 |----|----------|-----------|-------------|------|
-| D1 | Engine is a pure reducer `reduce(state, action) → Result` over a sealed `GameState`. Consumers read a `PlayerView` projection only. | Testable headless in Node. Makes illegal information access a type-level impossibility instead of a convention. | Class with mutable state and getters. | none |
+| D1 | Engine is a pure reducer `reduce(state, action) → Result` over a sealed `GameState`. AI decisions use the seat's `PlayerView`. Screens receive projected game data and separate presentation inputs. | Testable headless in Node. Keeps sealed engine state out of strategies and screens. | Class with mutable state and getters. | none |
 | D2 | DOM and CSS Grid, not Canvas. | 64 cells and at most 52 cards. Buttons give focus, keyboard, accessible names and large touch targets for free. CSS handles responsive layout and text scaling. happy-dom has no Canvas, so DOM is testable headless. | Canvas for drawing; needs hand-built hit testing, accessibility tree and text rendering. | none |
 | D3 | Vite as an explicit devDependency, no UI framework. | Provides dev server, ES module bundling and hashed assets with little configuration. Vite 8.3.8 is already present in `node_modules` as a transitive dependency of Vitest 5.1.0 (observed in this workspace), so adding it explicitly aligns versions. Task 16.1 must pin a version range that satisfies the Vitest peer range and verify it with `npm ls vite`. | tsc plus static files without a bundler (no dev server, no hashing). A UI framework (extra dependency, no need at this size). | **User decision** (OQ-7) |
 | D4 | `happy-dom` as a devDependency for UI smoke tests, selected per test file by a `// @vitest-environment happy-dom` docblock. The global Vitest environment stays `node`. | Light, fast, no change to `vitest.config.ts`, and no effect on `src/optical` tests. | jsdom (heavier). Playwright (real browsers, large download, deferred). | **User decision** (OQ-11) |
@@ -28,7 +28,7 @@ This design implements `requirements.md` of this spec: the QRoker game engine an
 | D7 | Public structures identify codes by `Quad_Key` (top-left cell notation), never by the sorted card-id `groupId`. | A sorted card-id string reveals the Hidden_Sum (IC-4). | Use `groupId` publicly (leaks in `OWNER_ONLY`). | none |
 | D8 | A second `tsconfig.game.json` adds the DOM library for `ui/` and `pwa/`. The root `tsconfig.json` excludes those two folders. | Keeps `src/optical` type checking unchanged and keeps DOM types out of `core/` and `ai/` at compile time. | Add `DOM` to the root `lib` (affects optical). | none |
 | D9 | Hand-written `sw.js` plus `scripts/build-sw.ts` that injects the file list and a content hash after `vite build`. | No extra dependency, small, and fully testable. | Workbox or a Vite PWA plugin (dependency). | none |
-| D10 | Identity_Visibility is an engine option, default `OWNER_ONLY`. | Makes the Guess a real inference (OQ-1) while keeping the approved text valid in `FACE_UP`. | One fixed mode. | **User decision** (OQ-1) |
+| D10 | Setup offers Normal (`OWNER_ONLY`, default) and Blind with two feedback choices. `FACE_UP` remains an engine value for legacy configurations. | Separates Board identity visibility from post-guess sum disclosure. | One fixed mode. | See the visibility table and OQ-1. |
 | D11 | Human placement goes through one UI-only `PlacementDraft` that two input paths fill: drag and drop of an own-Hand card, and position first then card. Only the explicit confirm action dispatches `PLACE`. The human `Rotation_Control` is offered only when a 180° rotation changes the printed fragment corners (clubs and spades). | One draft, one validation and one confirmation keep the two paths equivalent and make "no state change before confirmation" a property of one module. Hearts and diamonds have the same corner set at 0° and 180° in `FRAGMENT_LAYOUT`, so a rotation control for them would change nothing. The engine, the `Orientation` type, the AI and replay logs are unchanged (IC-12). | Card-first selection with an orientation toggle on every card (the earlier wording of requirement 13.3 and 13.4). | **Owner-directed update** (IC-11); not claimed as approved earlier |
 | D12 | Drag input uses Pointer Events in one small module (`ui/pointer-gesture.ts`), with the drop cell found by hit-testing the pointer coordinates. No drag-and-drop dependency. | One code path for mouse, touch and pen, and a pure gesture state machine that is testable without a browser. | The HTML Drag and Drop API or a drag-and-drop library. Revisit only if a real-device check shows that Pointer Events are insufficient; adding a dependency then needs a user decision. | **Owner-directed update** (IC-11) |
 
@@ -206,7 +206,7 @@ export type ErrorCode =
 export interface ScoreConfig { readonly rewardByError: readonly number[]; readonly handEmptyBonus: number }
 export interface NamedScoreConfig { readonly id: string; readonly provisional: boolean; readonly config: ScoreConfig }
 
-export type IdentityVisibility = 'OWNER_ONLY' | 'FACE_UP';
+export type IdentityVisibility = 'OWNER_ONLY' | 'FACE_UP' | 'BLIND' | 'BLIND_SCORE_ONLY';
 export interface SeatConfig { readonly id: PlayerId; readonly kind: 'HUMAN' | 'AI'; readonly difficulty?: Difficulty; readonly name: string }
 export interface GameConfig {
   readonly rulesVersion: number;                // RULES_VERSION
@@ -376,10 +376,10 @@ export interface PendingBatch {
   readonly endsGame: boolean;                    // placer hand is empty after the draw step, OR scoredGroups.length >= COMPLETED_CODE_LIMIT (5) with this placement
 }
 
-export interface RevealRecord {                  // public once created
+export interface RevealRecord<Sum extends number | null = number> { // sealed records always have numeric sums
   readonly batchIndex: number;
   readonly placer: PlayerId;
-  readonly codes: readonly { quadKey: QuadKey; cards: readonly CardId[]; hiddenSum: number }[];
+  readonly codes: readonly { quadKey: QuadKey; cards: readonly CardId[]; hiddenSum: Sum }[];
   readonly perPlayer: readonly { player: PlayerId; earned: number; cumulative: number }[];   // no guess values
 }
 
@@ -454,8 +454,8 @@ export interface PlayerView {
   readonly pendingQuadKeys: readonly QuadKey[];                   // codes awaiting Guesses (positions only)
   readonly guessSubmitted: Readonly<Record<PlayerId, boolean>>;
   readonly myGuesses: Readonly<Record<QuadKey, number>> | null;  // the viewer's own submission only
-  readonly lastReveal: RevealRecord | null;
-  readonly history: readonly RevealRecord[];
+  readonly lastReveal: RevealRecord<number | null> | null;
+  readonly history: readonly RevealRecord<number | null>[];
   readonly ranking: readonly RankEntry[] | null;                  // set when phase is ENDED
 }
 // NOT in PlayerView: seed, deck contents/order, other Hands, other Seats' guesses, hiddenSum of a pending code,
@@ -466,14 +466,18 @@ export function unseenCards(view: PlayerView): CardId[];          // ALL_CARDS m
 export function legalCellsFor(view: PlayerView): GridPosition[];  // pure helper over the view's board occupancy
 ```
 
-Visibility rule for `CellView.card`:
+Visibility in `PlayerView` after projection by `core/view.ts`:
 
-| Cell | `OWNER_ONLY` | `FACE_UP` |
-|------|--------------|-----------|
-| Neutral_Card | visible to all | visible to all |
-| Card placed by the viewer | visible | visible |
-| Card of another Seat, code not yet revealed | `null` | visible |
-| Card of a revealed code (in `revealedCards`) | visible to all | visible to all |
+| Information | Normal (`OWNER_ONLY`) | `BLIND` | `BLIND_SCORE_ONLY` | Legacy `FACE_UP` |
+|---|---|---|---|---|
+| Central four / viewer's own placed cards | face up | hidden | hidden | face up |
+| Other seats' placed cards before reveal | hidden | hidden | hidden | face up |
+| Cards of each scored code on the board and in the reveal | all four | hidden | hidden | all four |
+| Sum of each scored code | shown | shown | hidden | shown |
+
+In all modes the viewer sees their own hand, occupied cells, owners and orientations. The view also supplies batch points and cumulative scores for every seat. `copyReveal` projects both `lastReveal` and each `history` entry, including at game end. It returns `cards: []` in Blind and `hiddenSum: null` in scores-only Blind. The sealed record retains all four cards and the numeric sum for scoring.
+
+On the game screen, outside a pass-device gate, the controller separately builds `TableBacks` from `backArt(card)` for occupied cells, seat hands and the top card of the deck. These card-specific asset URLs render the printed marks, so a human can inspect a back, including in the board magnifier. The artwork is not a secrecy guarantee. A hidden `CellView` contains no CardId or marker-corner mask. Production AI receives neither `TableBacks` nor its artwork mapping.
 
 The seed is not in the view because a Seed determines the whole deal. The UI keeps the Seed in its own application model for display.
 
@@ -494,7 +498,7 @@ export interface SchematicSlot { readonly slot: Slot; readonly card: CardId; rea
 export function schematicModel(cards: readonly [CardId, CardId, CardId, CardId], orientations: readonly [Orientation, Orientation, Orientation, Orientation]): readonly SchematicSlot[]; // order TL, TR, BL, BR
 ```
 
-The view component draws each slot as a small square with dots at `fragmentCorners` and a ring at `inward`. It is available for revealed codes and, in `OWNER_ONLY` mode, for codes whose four cards are all visible to the viewer. It does not draw optical pixel patterns (D6).
+The view component draws each slot as a small square with dots at `fragmentCorners` and a ring at `inward`. A schematic requiring card identities may be shown only when all four cards are visible to the viewer. It does not draw optical pixel patterns (D6).
 
 ### AI Strategies (`ai/`)
 
@@ -520,7 +524,7 @@ The three strategies. Each has a documented `WORK_BUDGET` constant (maximum cand
 | `ADVANCED` (HeuristicStrategy) | Scores each candidate by the quads that contain the cell: a complete quad whose members are known valid scores `W_COMPLETE`; a complete quad with hidden members scores `W_COMPLETE` times the product of the probabilities that each hidden member is valid for its slot and orientation (fraction of unseen cards whose suit is valid, from `validOrientations`); quads with 2 or 3 filled cells and a valid placed card score `W_PARTIAL[k]`. Picks the maximum. | Sum of the known cards of the code plus, for each hidden card, the mean Card_Value of the unseen cards whose suit is valid for the slot and orientation, rounded and clamped to 4..52. | P1 |
 | `EXPERT` (BayesianStrategy) | The `ADVANCED` evaluation with probabilities from the posterior, plus a penalty `W_GIVE` for placements that leave a 3-filled quad that the next Seats are likely to complete (tuning hooks in `params.ts`). | For each hidden card of the code, the candidates are the unseen cards whose suit is valid for the slot and orientation (the code is public, so validity is known). The posterior over the hidden sum is the distribution of sums over distinct assignments, enumerated exactly when the product of candidate counts is at most `MAX_ENUMERATION`, otherwise estimated from `POSTERIOR_SAMPLES` seeded samples. The Guess is the integer g in 4..52 that maximizes `Σ_s P(s)·score(g, s, scoreConfig)`; ties go to the g nearest the posterior mean, then the lower g. | P2 |
 
-Stated approximation of `EXPERT`: the posterior treats the hidden cards of one code as drawn without replacement from the unseen pool and ignores other hidden Board cards outside the code. This is a modeling simplification and no accuracy claim is made. Under `FACE_UP` every card is known and all tiers compute the exact sum.
+Stated approximation of `EXPERT`: the posterior treats the hidden cards of one code as drawn without replacement from the unseen pool and ignores other hidden Board cards outside the code. This is a modeling simplification and no accuracy claim is made. In legacy `FACE_UP` the four board identities are available to the strategy.
 
 Placement-time budgets: with at most about 8 Hand cards, at most 56 legal cells and 2 orientations, a full enumeration is a few hundred candidates, and the budget constant is set above that. The measured decision time is recorded by a test and checked against 3000 ms (requirement 11.5); no speed claim is made in this document.
 
@@ -620,8 +624,8 @@ Behavior:
 - Placement flow (owner-directed update, IC-11; supersedes the earlier card-first flow with an orientation toggle for every card): two input paths fill one `PlacementDraft`. Path A, drag and drop: drag an own-Hand card onto a legal cell. Path B, position first: select a legal empty cell, keep it selected, then select a Hand card (card-first selection stays allowed, not required). Both paths show the preview, the `Rotation_Control` only for clubs and spades, "Confirm placement" ("배치 확정") and "Cancel" ("취소"), and only the confirm action sends `PLACE`. Legality comes from `legalCellsFor(view)`; the message for an illegal cell comes from the engine through `controller.explainTarget` (see "Placement interaction"). Nothing in the draft changes the `GameState`.
 - Gate flow (only when 2 or more human Seats): when the Seat to show changes from one human Seat to another, the DOM of the previous Seat's private area is removed, the gate is shown, and the next Seat's content is rendered only after "I am ready". AI Seats never need a gate because their information is never rendered. Gate sequencing model and scope: see "Task 18 interaction contracts". Seat-to-show, the controller-owned gate and the composition host: see "Task 19.4 composition contracts".
 - Guess flow: AI Seats submit immediately in the controller. Each human Seat in seat order sees (gate) → one numeric input per code, labelled with the code's Quad_Key and a Board highlight → submit. No Hidden_Sum is on screen. After the last submission the reveal screen shows `lastReveal`. Input parsing, stale-form and privacy rules: see "Task 18 interaction contracts".
-- Reveal screen: per code the 4 cards face up, the Hidden_Sum, and optionally the Schematic_Code_View; a table of earned and cumulative scores per Seat; a continue button that sends `ACK_REVEAL` (or moves to the final screen when `phase = ENDED`). View model, scoreboard and the PLACE boundary of `handlers.dispatch`: see "Task 18 interaction contracts".
-- End screen: ranking with shared ranks, final scores, all `history` records with Hidden_Sum details, buttons "rematch" (new seed), "replay same seed", "new setup".
+- Reveal screen: per code the Quad_Key and the cards and sum allowed by the visibility table; a table of earned and cumulative scores per Seat; a continue button that sends `ACK_REVEAL` (or moves to the final screen when `phase = ENDED`). View model, scoreboard and the PLACE boundary of `handlers.dispatch`: see "Task 18 interaction contracts".
+- End screen: ranking with shared ranks, final scores, all `history` records with the same disclosure as the live reveal, buttons "rematch" (new seed), "replay same seed", "new setup".
 - Banner: shown on every game screen while `rules.scoreConfig.provisional` (model flag in "Task 18 interaction contracts").
 
 Accessibility and styling:
@@ -877,7 +881,7 @@ export interface GuessFormToken { readonly viewer: PlayerId; readonly actionCoun
 ```typescript
 export interface RevealViewModel {                                 // built from view.lastReveal and view.rules only; no guess field
   readonly batchIndex: number; readonly placer: { readonly id: PlayerId; readonly name: string };
-  readonly codes: readonly { readonly quadKey: QuadKey; readonly cards: readonly CardId[]; readonly hiddenSum: number }[];
+  readonly codes: readonly { readonly quadKey: QuadKey; readonly cards: readonly CardId[]; readonly hiddenSum: number | null }[];
   readonly seats: readonly { readonly id: PlayerId; readonly name: string; readonly earned: number; readonly cumulative: number }[];
   readonly canContinue: boolean;                                   // view.phase === 'REVEAL'
 }
@@ -889,7 +893,7 @@ export interface ScoreboardModel {
 export function buildScoreboardModel(view: PlayerView): ScoreboardModel;
 ```
 
-- Reveal: per code it shows the Quad_Key, the card identities the record currently supplies (the existing four-card contract is rendered as is; the one-card versus four-card product policy stays open and is not decided here), the Hidden_Sum, and the earned and cumulative points per Seat. The model has no Guess field in its type (type-level test on `keyof`) and no Guess in its value (a scan of the serialized model against the Guesses submitted in the test game).
+- Reveal: the model copies each Quad_Key, `cards` and `hiddenSum` from the projected record. The renderer skips an absent sum and draws only the supplied cards. It always shows earned and cumulative points per Seat. The model contains no Guess field.
 - Continue control: sends `ACK_REVEAL` through `handlers.dispatch` once. It captures `actionCount` and does nothing when it changed or after the first activation (double acknowledgement prevented). It is the public continuation. When `phase` is `ENDED` the screen offers no ACK; the final screen is task 19.2.
 - Scoreboard: an accessible table with a caption, column headers and row headers (`scope`), built from `PlayerView` only. Columns: Seat name, cumulative score, current Hand count, and the active Seat marked by a visually distinct, non-color-only marker (a text or glyph plus a class). The remaining deck count and the provisional-scoring banner (driven by `rules.scoreConfig.provisional`, with no point value in its text) are shown with it. Labels exist in Korean and English.
 
@@ -912,7 +916,7 @@ Contracts for task 19.4, which composes the screens of tasks 17 to 19.3 into the
 
 - The controller computes the gate with the existing pure `nextGate` (policy unchanged, in particular no gate when the next private Seat equals the last private Seat). `lastPrivateSeat` and `acknowledgedSeat` live in the controller closure; no second state system. A new additive allow-list entry in `boundaries.test.ts` lets `ui/controller.ts` (that file only) import `nextGate` and the `GateModel` type from `ui/screens/privacy-gate.ts`, the same pattern as the `core/fragment-layout` entry of task 17.4.
 - `AppModel` gets `gate: { forSeat: PlayerId; name: string; purpose: GatePurpose } | null`: public data only (the same fields as `GateModel`). It replaces the `gate: { forSeat; reason: 'GUESS' | 'TURN' }` of the earlier sketch. While `gate` is not null, `viewer` is null. The controller invalidates the draft and the Guess form under the existing invalidation rules whenever `viewer` changes.
-- `RenderInput.view` stays `viewFor(state, model.viewer)` and is null whenever `model.viewer` is null, so in a multi-human game a screen cannot render a private view during a gate or an AI turn by construction. Gap found while writing this section: the reveal, end and scoreboard components take a `PlayerView`, so they need one when `viewer` is null. `RenderInput.publicView: PlayerView | null` is non-null only in a multi-human game while a game runs and `viewer` is null. The controller builds it from the view of the first human Seat with `myHand` empty, `myGuesses` null, and every board cell identity cleared unless that identity is visible in the views of all four Seats (Neutral and revealed cards, or every card in `FACE_UP`). It contains no private data by construction; a test serializes it and searches for the Hands, Guesses and owner-only identities of the test game. The host passes it only to the scoreboard, banner, Seed line, status line, reveal and end components, and to a read-only Board (no draft, no legal-cell marks) while an AI Seat acts. It never passes it to the Hand or the Guess form.
+- `RenderInput.view` stays `viewFor(state, model.viewer)` and is null whenever `model.viewer` is null, so in a multi-human game a screen cannot render a private view during a gate or an AI turn by construction. Gap found while writing this section: the reveal, end and scoreboard components take a `PlayerView`, so they need one when `viewer` is null. `RenderInput.publicView: PlayerView | null` is non-null only in a multi-human game while a game runs and `viewer` is null. The controller builds it from the view of the first human Seat with `myHand` empty, `myGuesses` null, and every board cell identity cleared unless that identity is visible in the views of all four Seats (Neutral and revealed cards in Normal, all cards in legacy `FACE_UP`, no cards in Blind). It contains no private data by construction; a test serializes it and searches for the Hands, Guesses and owner-only identities of the test game. The host passes it only to the scoreboard, banner, Seed line, status line, reveal and end components, and to a read-only Board (no draft, no legal-cell marks) while an AI Seat acts. It never passes it to the Hand or the Guess form.
 - New handler `acknowledgeGate(ack: { forSeat: PlayerId; purpose: GatePurpose; actionCount: number }): OpResult`, with the new reason `'STALE_GATE'`. It is single use and guarded: it does nothing and returns `STALE_GATE` unless `model.gate` still equals `(forSeat, purpose)` and `model.actionCount` equals `ack.actionCount`; it returns `DISPOSED` or `BUSY` as the other handlers do and does nothing for a wrong Seat or an older game epoch. On success it sets `viewer` to the gate's Seat, sets `lastPrivateSeat`, `acknowledgedSeat` and `gate = null`, and clears the draft and the forms through the invalidation rules. `acknowledgedSeat` is cleared when another Seat's private view is rendered. The `PrivacyGate` component passes the same binding it already uses.
 - Guess forms and AI submissions: the existing `GuessFormToken` rule is kept (a changed `actionCount` makes a form stale). The host therefore mounts a Guess form only when every AI Seat of the batch already has `guessSubmitted` true (public flags), and shows the AI status text until then. No AI submission can then be accepted while a form is open, so AI submissions never invalidate an active human Guess form. This also applies with one human Seat, where the controller itself is unchanged.
 
@@ -1182,7 +1186,7 @@ Testing by properties applies to the engine, the AI strategies, the persistence 
 
 ### Property 17: Simultaneous reveal
 
-*For any* Prediction_Batch and any submission order of the 4 Seats, the resulting state (scores, `lastReveal`, `history`) is identical; the `RevealRecord` contains for each code the Hidden_Sum, the 4 card identities and its Quad_Key; each Seat's `earned` equals the sum over codes of `score(guess, hiddenSum, config)` and nothing else (no completion bonus); and the record contains no Guess value.
+*For any* Prediction_Batch and any submission order of the 4 Seats, the resulting state (scores, `lastReveal`, `history`) is identical; the sealed `RevealRecord` contains for each code the Hidden_Sum, the 4 card identities and its Quad_Key; each Seat's `earned` equals the sum over codes of `score(guess, hiddenSum, config)` and nothing else (no completion bonus); and the record contains no Guess value.
 
 **Validates: Requirements 7.6, 7.7, 8.6, 8.7** (qroker-game Property 6)
 
@@ -1348,7 +1352,7 @@ Saves are replay logs (Requirement 18). A replay rejection or a version mismatch
 
 - `arbSeed`: `fc.integer({ min: 0, max: 0xffffffff })`.
 - `arbCard`: `fc.constantFrom(...ALL_CARDS)`; `arbFourDistinctCards`: `fc.uniqueArray(arbCard, { minLength: 4, maxLength: 4 })`.
-- `arbConfig`: valid configurations with random AI difficulties and both Identity_Visibility values.
+- `arbConfig`: valid configurations with random AI difficulties and the supported Identity_Visibility values.
 - `arbReachableState`: derives a state by applying a generated number of steps of a random legal player (`randomLegalAction(state, rng)`) to `newGame`. This avoids hand-constructing states and keeps every generated state reachable.
 - `arbBoard`: boards produced by repeated legal placements from the starting 2×2.
 - `arbHiddenPerturbation(state, viewer)`: returns a state that agrees with `state` on everything visible to `viewer` and differs in other Hands, deck order, other Seats' pending Guesses and hidden identities (by permuting the unseen cards consistently across those zones).

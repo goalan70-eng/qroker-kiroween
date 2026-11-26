@@ -25,7 +25,7 @@ Scope, in priority order:
 ## Glossary
 
 - **Game_Engine**: The pure, DOM-independent TypeScript module under `src/game/core/` that holds all rules. Its main entry points are `newGame` and `reduce`.
-- **Game_State**: The complete, sealed state of one game, including hands, deck order, pending Guess values and Hidden_Sum values. It is never handed to AI_Player or to the UI.
+- **Game_State**: The complete, sealed state of one game, including hands, deck order, pending Guess values and Hidden_Sum values. It is never handed to AI_Player or to screen components.
 - **Action**: A request to change the Game_State. The kinds are `PLACE`, `SUBMIT_GUESSES` and `ACK_REVEAL`.
 - **Action_Log**: The ordered list of all accepted Actions of one game.
 - **Result**: The outcome of an engine operation, either `{ ok: true, value }` or `{ ok: false, error }`, where `error.code` is a member of the closed Error_Code set.
@@ -40,12 +40,12 @@ Scope, in priority order:
 - **Quad_Key**: The public identifier of a 2×2 group, equal to the notation of its top-left cell (for example `D4`). It contains no card identity.
 - **Group_Id**: The internal identifier of a Quad_Group, the sorted set of its 4 CardIds serialized as in qroker-game Requirement 4.3. It is sealed and never part of a Player_View while cards are hidden.
 - **Prediction_Batch**: The set of all Composite_Codes newly formed by one placement. All Seats submit a Guess for every code of the batch, and the batch is revealed once (qroker-game Requirement 6.5).
-- **Player_View**: The only data structure that AI_Player and the UI may read. It contains the viewer's own Hand and public information only.
+- **Player_View**: The per-Seat projection used for game decisions. It includes the viewer's Hand and the information permitted by the active visibility mode. The renderer also receives card-back artwork as described in 10.1.
 - **View_Projector**: The function `viewFor(state, viewer)` that derives a Player_View from a Game_State.
-- **Identity_Visibility**: A game option with the values `OWNER_ONLY` and `FACE_UP`. Under `OWNER_ONLY`, the identity of a placed card is visible only to the Seat that placed it until the Composite_Code containing it is revealed. Under `FACE_UP`, every placed card is public. See Open Question OQ-1.
+- **Identity_Visibility**: Normal (`OWNER_ONLY`) and Blind are the two setup modes. Blind offers `BLIND` (sum and scores) and `BLIND_SCORE_ONLY` (scores only). The engine also supports `FACE_UP` for compatibility.
 - **ScoreConfig**: The injected configuration `{ rewardByError: number[]; handEmptyBonus: number }` (qroker-game design, ScoreEngine).
 - **DEV_PLACEHOLDER_SCORE_CONFIG**: The single named constant holding the provisional development ScoreConfig. It carries the flag `provisional: true`. Its numeric values are not a balance claim.
-- **Reveal_Result**: The public outcome of one Prediction_Batch: Hidden_Sum and card identities of each code, plus earned score and cumulative score per Seat. It contains no Guess values.
+- **Reveal_Result**: The result of a scored Prediction_Batch as projected for display. Each code has a Quad_Key. Its visible cards and sum depend on Identity_Visibility (10.4–10.5). Earned and cumulative scores are public per Seat for the batch. Guess values are private.
 - **Pass_Device_Gate**: A full-screen interstitial shown before the screen of a human Seat is displayed to that Seat, so that the previous human Seat's private information is not visible.
 - **Browser_Practice_Mode**: The complete browser game defined by this spec (qroker-game Requirement 8).
 - **Practice_UI**: The DOM-based user interface layer under `src/game/ui/`.
@@ -179,7 +179,7 @@ Terms defined in qroker-game (Board, Card, Card_Value, Quad_Group, Composite_Cod
 3. IF a Seat submits a second `SUBMIT_GUESSES` Action for the same Prediction_Batch, THEN THE Game_Engine SHALL reject the second Action with the Error_Code `DUPLICATE_SUBMISSION` and SHALL keep the first submission.
 4. IF a `SUBMIT_GUESSES` Action does not contain exactly one Guess for each Quad_Key of the Prediction_Batch, THEN THE Game_Engine SHALL reject the Action with the Error_Code `GUESS_KEYS_MISMATCH`.
 5. WHILE a Prediction_Batch is not fully collected, THE View_Projector SHALL NOT include the Hidden_Sum of any code of the batch, and SHALL NOT include any Guess value of any Seat other than the viewer, in any Player_View (qroker-game Requirements 6.1 and 6.3).
-6. WHEN the last Seat's Guesses of a Prediction_Batch are accepted, THE Game_Engine SHALL reveal all codes of the batch at the same time as one Reveal_Result containing for each code the Hidden_Sum and the 4 card identities, and for each Seat the earned score and the cumulative Score, and SHALL NOT include any Guess value (qroker-game Requirements 2.7 and 6.2).
+6. WHEN the last Seat submits, THE Game_Engine SHALL score all codes in the batch together and record each Quad_Key, its four cards and Hidden_Sum internally. THE View_Projector SHALL publish the batch scores and only the code details permitted by 10.4–10.5, without Guess values.
 7. FOR ALL Prediction_Batches and ALL orders in which the 4 Seats submit, the resulting Reveal_Result SHALL be identical (confluence).
 8. THE Game_Engine SHALL NOT expose any Seat's Guess value to any other Seat during the game, and SHALL NOT expose any Guess value in any Player_View or Reveal_Result at any time, including after the game has ended (qroker-game Requirement 6.3; Open Question OQ-14).
 9. WHEN a placement completes no Composite_Code, THE Game_Engine SHALL NOT enter `GUESS_COLLECT` and SHALL move the turn to the next Seat.
@@ -215,7 +215,7 @@ Terms defined in qroker-game (Board, Card, Card_Value, Quad_Group, Composite_Cod
 4. WHEN the game ends, THE Ranking_Function SHALL rank Seats by descending final Score, assign the same rank to Seats with equal Scores, and apply no further tiebreak (qroker-game Requirement 3.9; Open Question OQ-6).
 5. FOR ALL final score distributions, Seats with equal Scores SHALL have equal ranks, a Seat with a higher Score SHALL have a lower rank number, and at least one Seat SHALL have rank 1 (qroker-game design Property 19).
 6. FOR ALL Seeds and ALL combinations of AI strategies, THE Game_Engine SHALL reach the phase `ENDED` after at most 48 accepted `PLACE` Actions (52 cards minus 4 Neutral_Cards), with every placement succeeding from a legal cell.
-7. WHEN the phase is `ENDED`, THE Game_Engine SHALL provide the full history of revealed Composite_Codes, each with its Quad_Key, card identities, Hidden_Sum and per-Seat earned score, for display on the final scoreboard (qroker-game Requirement 8.4).
+7. WHEN the phase is `ENDED`, THE View_Projector SHALL provide every scored batch in order, with its Quad_Keys and per-Seat earned and cumulative scores. The same card and sum visibility rules apply to history and to the live reveal (10.4–10.5).
 8. WHEN a placement takes the Completed_Code_Count to five or more, THE Game_Engine SHALL collect the Guesses of all 4 Seats for EVERY code created by that placement, score and reveal the entire Prediction_Batch, and then set the phase to `ENDED` (qroker-game Requirement 3.13). The batch SHALL NOT be truncated at five. For example, with four previous codes and a placement that creates two more, both new codes are scored and the game ends with six codes. The code limit value is `COMPLETED_CODE_LIMIT = 5` in `src/game/core/rules.ts` (Open Question OQ-16).
 9. THE Game_Engine SHALL count each newly completed, eligible Composite_Code once toward the Completed_Code_Count, including two codes formed by the same placement, SHALL NOT count the starting neutral group, and SHALL NOT change the count on `SUBMIT_GUESSES`, `ACK_REVEAL` or scoring (qroker-game Requirement 3.14). The count is shared by all Seats and belongs to the shared game; it is not a limit on any personal score record of a Scoring_Companion.
 10. WHEN the game ends only because the Completed_Code_Count reached five and the placing Seat still holds cards, THE Game_Engine SHALL award no `handEmptyBonus`. WHEN the same placement both empties the placing Seat's Hand after the draw and reaches the code limit, THE Game_Engine SHALL score the entire batch and award `handEmptyBonus` once, to that Seat (qroker-game Requirement 3.15).
@@ -229,11 +229,11 @@ Terms defined in qroker-game (Board, Card, Card_Value, Quad_Group, Composite_Cod
 
 #### Acceptance Criteria
 
-1. THE Game_Engine SHALL expose the Game_State to consumers only through the View_Projector, and the AI_Player and Practice_UI modules SHALL read only Player_View values.
+1. THE AI_Player SHALL receive game information through Player_View. Screen components SHALL receive projected game data. For display the controller may also supply card-specific back artwork for the Board, seat hands and top of the deck. Artwork and its lookup table SHALL stay outside the AI decision input.
 2. THE Player_View SHALL contain the viewer's own Hand, the public Board, the Hand sizes of all Seats, the deck size, the cumulative Scores, the per-Seat flag whether a Guess was submitted, the viewer's own submitted Guesses, the phase, the active Seat, and the revealed history (qroker-game design PlayerView).
 3. THE Player_View SHALL NOT contain the Hand of any other Seat, the contents or order of the deck, any Guess of another Seat, any not-yet-revealed Hidden_Sum, or the identity of any card that is hidden from the viewer.
-4. WHERE Identity_Visibility is `OWNER_ONLY`, THE View_Projector SHALL show the identity of a placed card only to the Seat that placed it, SHALL show every Neutral_Card to all Seats, and SHALL show the 4 cards of a code to all Seats from the moment the code is revealed (Open Question OQ-1).
-5. WHERE Identity_Visibility is `FACE_UP`, THE View_Projector SHALL show the identity of every placed card to all Seats.
+4. WHERE Identity_Visibility is `OWNER_ONLY`, the four central Neutral_Cards SHALL start face up. A placed card SHALL be visible to its owner. After all Seats submit, all four cards of each scored code and its Hidden_Sum SHALL be public, and those cards SHALL remain visible on the Board.
+5. In either Blind setting, THE View_Projector SHALL expose the viewer's own Hand and each occupied cell's owner and orientation. Every Board identity SHALL remain hidden, including Neutral_Cards and the viewer's own placements. Live and historical reveals SHALL omit card identities in both settings. `BLIND` SHALL disclose each scored sum and `BLIND_SCORE_ONLY` SHALL withhold it. Legacy `FACE_UP` SHALL expose all placed cards and scored sums.
 6. FOR ALL pairs of Game_States that are identical in everything a given viewer is allowed to see and differ only in information hidden from that viewer, THE View_Projector SHALL return deeply equal Player_Views for that viewer (non-interference).
 7. FOR ALL AI strategies and ALL pairs of Game_States that give a viewer equal Player_Views and equal seeds, THE AI_Player SHALL return equal decisions.
 8. THE Practice_UI documentation SHALL state that hot-seat privacy is an honor-system protection on a shared screen, that `localStorage` content is readable through browser developer tools, and that no protection against a determined local user is claimed.
@@ -326,9 +326,9 @@ Terms defined in qroker-game (Board, Card, Card_Value, Quad_Group, Composite_Cod
     - e. THE Practice_UI SHALL keep scrolling and zooming of the page enabled and SHALL restrict touch-action handling to the draggable Hand cards (Requirement 17 Criterion 7).
 16. THE Practice_UI SHALL render the drag, draft and rotation features from PlayerView data and permitted UI metadata only, as follows:
     - a. THE Practice_UI SHALL NOT use an identity hidden from the viewer to preview, highlight or announce that a placement completes a Composite_Code.
-    - b. THE Practice_UI SHALL NOT place an identity hidden from the viewer (suit, rank, CardId or fragment layout) in any label, tooltip, attribute, CSS class or drag payload.
+    - b. THE Practice_UI SHALL use face-down labels for hidden cards and SHALL NOT put a hidden suit, rank or CardId into accessible names, tooltips, classes or drag payloads. A rendered back may display its card-specific printed marks (10.1).
     - c. THE Practice_UI SHALL show no Rotation_Control on the cards of other Seats and none on committed Board cards.
-    - d. THE Practice_UI SHALL leave the Identity_Visibility rules (`OWNER_ONLY`, `FACE_UP`), the reveal rules, the scoring rules and the initial-state rules unchanged by the placement interaction.
+    - d. THE Practice_UI SHALL leave the Identity_Visibility rules, the reveal rules, the scoring rules and the initial-state rules unchanged by the placement interaction.
 
 ---
 
@@ -343,7 +343,7 @@ Terms defined in qroker-game (Board, Card, Card_Value, Quad_Group, Composite_Cod
 3. WHILE the Pass_Device_Gate is shown, THE Practice_UI SHALL NOT render any Hand card, Guess value or owner-only card identity of any Seat.
 4. THE Practice_UI SHALL accept only integer Guess input from 4 to 52 and SHALL show the localized message for `GUESS_NOT_INTEGER` or `GUESS_OUT_OF_RANGE` otherwise (qroker-game Requirement 2.8).
 5. THE Practice_UI SHALL NOT display any AI Seat's Guess, and SHALL show only a submitted or waiting status per Seat during `GUESS_COLLECT` (qroker-game Requirement 6.3).
-6. WHEN the Reveal_Result is available, THE Practice_UI SHALL show, on one screen, the Hidden_Sum and the 4 revealed cards of each code, and the earned score and cumulative Score of each Seat, and SHALL NOT show any Guess value (qroker-game Requirements 2.7 and 6.2).
+6. WHEN the Reveal_Result is available, THE Practice_UI SHALL show each Quad_Key, any cards and sum permitted by 10.4–10.5, and each Seat's earned and cumulative scores for the batch. It SHALL omit all Guess values.
 7. THE Practice_UI SHALL show a scoreboard on every game screen with the cumulative Score, the Hand size and the Seat name of each Seat, and the deck size.
 8. WHILE the active ScoreConfig has `provisional: true`, THE Practice_UI SHALL display a banner on every game screen with the text "provisional scoring" (Korean "임시 점수 규칙").
 
@@ -355,9 +355,9 @@ Terms defined in qroker-game (Board, Card, Card_Value, Quad_Group, Composite_Cod
 
 #### Acceptance Criteria
 
-1. THE Practice_UI SHALL provide a setup screen with a seed field, the number of human Seats from 1 to 4 (default 1), the Difficulty_Label of each AI Seat, the Identity_Visibility option, and the language option.
+1. THE Practice_UI SHALL provide a setup screen with a seed field, the number of human Seats from 1 to 4 (default 1), the Difficulty_Label of each AI Seat, Normal (default) or Blind, with a sum-and-scores or scores-only choice under Blind, and the language option.
 2. WHEN the user starts a game from the setup screen, THE Practice_UI SHALL call `newGame` with the entered values and SHALL display the Seed on the game screen.
-3. WHEN the game ends, THE Practice_UI SHALL show the final ranking with shared ranks for ties, the final Scores, and the Hidden_Sum details of every revealed code (qroker-game Requirements 3.9 and 8.4).
+3. WHEN the game ends, THE Practice_UI SHALL show the final ranking with shared ranks for ties, the final Scores, and the history of all scored batches with code details filtered as in 9.7 (qroker-game Requirements 3.9 and 8.4).
 4. THE Practice_UI SHALL offer on the final screen a "rematch" that starts a new game with the same Seats and options and a new Seed, and a "replay same seed" that starts a new game with the same Seed and options.
 5. WHEN the user chooses to abandon a game in progress, THE Practice_UI SHALL ask for confirmation before discarding the game.
 6. FOR ALL games started with the same Seed and the same options, THE Practice_UI SHALL produce the same initial deal as the headless engine (shared `newGame`).
@@ -483,7 +483,7 @@ Each item has a provisional default that the design and tasks use. Changing a de
 
 | ID | Question | Source | Options | Provisional default |
 |----|----------|--------|---------|---------------------|
-| OQ-1 | Hidden-identity handling (docs/open-decisions.md #2). With every placed card visible, any Seat can add 4 visible values, the Guess is trivial, and ties dominate. qroker-game 6.1 and 7.4 imply visible Board cards, while 6.4 implies face-down cards flipped at reveal. | open-decisions #2; qroker-game 6.1, 6.4, 7.4 | (a) `FACE_UP`: all placed cards public. (b) `OWNER_ONLY`: only the placer sees a placed card until its code is revealed. (c) Both as an option. | (c) Implement both as the option Identity_Visibility, default `OWNER_ONLY` so that the Guess is a real inference. The setup screen shows the option. No rule is changed. |
+| OQ-1 | Hidden-identity handling (docs/open-decisions.md #2). With every placed card visible, any Seat can add 4 visible values, the Guess is trivial, and ties dominate. qroker-game 6.1 and 7.4 imply visible Board cards, while 6.4 implies face-down cards flipped at reveal. | open-decisions #2; qroker-game 6.1, 6.4, 7.4 | (a) `FACE_UP`: all placed cards public. (b) `OWNER_ONLY`: only the placer sees a placed card until its code is revealed. (c) Both as an option. | Historical alternatives at left. The shipped setup offers Normal and Blind (16.1). `FACE_UP` is retained for compatibility and is absent from setup. |
 | OQ-2 | Orientation of the 4 Neutral_Cards (not stated in qroker-game 3.1). It matters for ♣ and ♠ in later groups. | qroker-game 3.1, 3.11 | (a) all 0°. (b) seeded random per card. | (a) all 0°. |
 | OQ-3 | Valid starting four cards (open-decisions #3). | open-decisions #3; qroker-game 4.4b | (a) starting group never scored. (b) adjust orientation or arrangement until valid. (c) redeal until valid. | CLOSED by the owner for `RULES_VERSION = 3`: (a). The four central neutral cards are dealt once. Even if they form a valid code, the starting group earns no points, opens no guesses and counts zero toward the shared code count. There is no redeal and no adjustment. Later codes formed by a placement may include neutral cards and score normally. |
 | OQ-4 | First-round exemption scope (open-decisions #6). RESOLVED by the owner's three-card rules: there is no exemption and the draw rule applies from the very first placement (qroker-game 3.5, as amended; docs/open-decisions.md row 6 updated by Codex). The earlier options below are kept as history. | qroker-game 3.5; open-decisions #6 | (a) per-Seat first placement. (b) first N placements of the game. (c) no exemption (chosen). | (c), the owner's decision. Superseded: (a) per-Seat first placement. |

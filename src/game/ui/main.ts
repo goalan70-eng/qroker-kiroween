@@ -10,11 +10,22 @@
 // This file is the only place that uses `setTimeout`, `navigator`, `crypto`, `localStorage` and `Date`.
 import { browserStore } from '../persistence/storage';
 import { startApp } from './app';
+import { createGameAudio } from './game-audio';
 
 const root = document.getElementById('app');
 if (root === null) throw new Error('index.html has no #app element');
 
+const audio = createGameAudio();
+root.addEventListener('click', audio.activate, { capture: true });
 startApp(root, {
+  playSound: audio.play,
+  timerClock: {
+    now: () => performance.now(),
+    repeat: callback => {
+      const timer = window.setInterval(callback, 200);
+      return () => window.clearInterval(timer);
+    },
+  },
   doc: document,
   languages: navigator.languages,
   schedule: (fn, ms) => {

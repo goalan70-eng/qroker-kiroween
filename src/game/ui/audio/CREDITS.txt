@@ -1,0 +1,7 @@
+shuffle.wav and contact1.wav: Brian MacIntosh - Playing Card Sounds (CC0)
+https://opengameart.org/content/playing-card-sounds
+
+card-slide-4.ogg: Kenney - Casino Audio 1.1 (CC0)
+https://kenney.nl/assets/casino-audio
+
+code-complete.wav and reveal.wav were synthesized for QRoker without third-party audio samples.

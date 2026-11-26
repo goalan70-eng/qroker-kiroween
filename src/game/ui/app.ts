@@ -7,8 +7,11 @@ import { mountApp } from './controller';
 import type { AppHandle, MountDeps, Schedule } from './controller';
 import { createGameScreen } from './screens/game';
 import type { GameScreen } from './screens/game';
+import type { TimerClock } from './components/seat-timers';
 
 export interface StartAppDeps {
+  readonly timerClock?: TimerClock;
+  readonly playSound?: MountDeps['playSound'];
   readonly doc: Document;
   /** `navigator.languages` in production. */
   readonly languages: readonly string[] | string | null | undefined;
@@ -28,8 +31,9 @@ export interface StartedApp {
 
 /** Creates the host (before `mountApp`, as `main.ts` always did), mounts the app into `root` and returns the handles. */
 export function startApp(root: HTMLElement, deps: StartAppDeps): StartedApp {
-  const host = createGameScreen({ doc: deps.doc, root, randomSeedText: () => String(deps.randomSeed()) });
+  const host = createGameScreen({ timerClock: deps.timerClock, doc: deps.doc, root, randomSeedText: () => String(deps.randomSeed()) });
   const app = mountApp(root, {
+    playSound: deps.playSound,
     doc: deps.doc,
     languages: deps.languages,
     schedule: deps.schedule,

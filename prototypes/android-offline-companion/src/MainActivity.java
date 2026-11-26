@@ -7,7 +7,9 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.graphics.Canvas;
 import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.graphics.SurfaceTexture;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
@@ -19,14 +21,16 @@ import android.text.InputFilter;
 import android.text.InputType;
 import android.view.Gravity;
 import android.view.KeyEvent;
-import android.view.Surface;
+import android.view.WindowManager;
 import android.view.TextureView;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
+import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.HorizontalScrollView;
+import android.widget.PopupMenu;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -45,11 +49,14 @@ public final class MainActivity extends Activity {
     private GameScore game;
     private LiveCamera camera;
     private TextureView preview;
-    private TextView total, scanStatus, heading, result;
-    private LinearLayout history, form;
+    private TextView total, scanStatus, result;
+    private LinearLayout home, scanner, frames;
+    private HorizontalScrollView scoreStrip;
+    private Button scan, permission, menu;
+    private AlertDialog prediction;
     private EditText guess;
-    private Button permission, submit, reset;
-    private boolean resumed, canOpenCamera = true;
+    private boolean resumed, scanning;
+    private AimGuide guide;
     private int[] displayed;
     private long newestFrame;
     private final Runnable expiration = this::expire;
@@ -61,18 +68,49 @@ public final class MainActivity extends Activity {
         try {
             game = new GameScore(new File(getFilesDir(), "personal-game.csv"));
         } catch (IOException e) {
-            canOpenCamera = false;
+            // Keep the journal intact if it cannot be read.
         }
         createScreen();
         if (game == null) {
-            scanStatus.setText("저장된 기록을 읽을 수 없습니다");
-            reset.setEnabled(false);
+            result.setText("저장된 기록을 읽을 수 없습니다");
+            scan.setEnabled(false);
+            menu.setEnabled(false);
         } else {
             showHistory();
         }
     }
 
     private int dp(float value) { return Math.round(value * getResources().getDisplayMetrics().density); }
+
+    /** The corners are an aiming aid. They do not restrict the area the decoder reads. */
+    private final class AimGuide extends View {
+        private final Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+        AimGuide() {
+            super(MainActivity.this);
+            setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+            stroke.setStrokeCap(Paint.Cap.ROUND);
+        }
+
+        @Override protected void onDraw(Canvas canvas) {
+            float cx = getWidth() / 2f, cy = getHeight() / 2f;
+            float half = Math.min(cx, cy) * .53f;
+            float tip = Math.min(dp(17), half * .3f);
+            for (int layer = 0; layer < 2; layer++) {
+                stroke.setColor(layer == 0 ? 0xaa12231e : isActivated() ? ACCENT : Color.WHITE);
+                stroke.setStrokeWidth(dp(layer == 0 ? 4 : 2));
+                for (int x = -1; x <= 1; x += 2) for (int y = -1; y <= 1; y += 2) {
+                    float a = cx + x * half, b = cy + y * half;
+                    canvas.drawLine(a, b, a - x * tip, b, stroke);
+                    canvas.drawLine(a, b, a, b - y * tip, stroke);
+                }
+            }
+        }
+    }
+
+    private void setLabel(TextView label, String value) {
+        if (!android.text.TextUtils.equals(label.getText(), value)) label.setText(value);
+    }
 
     private TextView text(String value, int size, int color) {
         TextView label = new TextView(this);
@@ -111,15 +149,57 @@ public final class MainActivity extends Activity {
         page.addView(body);
         setContentView(page);
 
-        LinearLayout top = new LinearLayout(this);
-        top.setGravity(Gravity.CENTER_VERTICAL);
-        TextView title = text("QRoker", 28, INK);
+        home = column();
+        scanner = column();
+        scanner.setVisibility(View.GONE);
+        add(body, home, -2, 0);
+        add(body, scanner, -2, 0);
+
+        LinearLayout header = new LinearLayout(this);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        TextView title = text("내 점수판", 24, INK);
         title.setTypeface(Typeface.DEFAULT_BOLD);
-        top.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
-        total = text("총점 0점", 21, ACCENT);
-        total.setTypeface(Typeface.DEFAULT_BOLD);
-        top.addView(total);
-        add(body, top, -2, 0);
+        header.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
+        total = text("총점 0점", 20, ACCENT);
+        header.addView(total);
+        menu = new Button(this, null, android.R.attr.borderlessButtonStyle);
+        menu.setText("⋮");
+        menu.setTextSize(24);
+        menu.setContentDescription("점수판 메뉴");
+        header.addView(menu, new LinearLayout.LayoutParams(dp(48), dp(48)));
+        menu.setOnClickListener(v -> {
+            PopupMenu options = new PopupMenu(this, menu);
+            options.getMenu().add("새 게임").setEnabled(!game.history().isEmpty());
+            options.setOnMenuItemClickListener(item -> { confirmReset(); return true; });
+            options.show();
+        });
+        add(home, header, -2, 0);
+
+        LinearLayout board = new LinearLayout(this);
+        board.setBackground(background(PANEL, 12));
+        board.setPadding(dp(4), dp(8), dp(4), dp(8));
+        board.addView(scoreColumn("회차", "획득", "누계", false));
+        scoreStrip = new HorizontalScrollView(this);
+        frames = new LinearLayout(this);
+        scoreStrip.addView(frames);
+        board.addView(scoreStrip, new LinearLayout.LayoutParams(0, -2, 1));
+        add(home, board, -2, 8);
+        scan = new Button(this);
+        scan.setText("코드 인식");
+        scan.setTextColor(0xff10261b);
+        scan.setBackgroundTintList(ColorStateList.valueOf(ACCENT));
+        scan.setOnClickListener(v -> {
+            scanning = true;
+            home.setVisibility(View.GONE);
+            scanner.setVisibility(View.VISIBLE);
+            if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED && !askedPermission())
+                authorize();
+            else startCamera();
+        });
+        add(home, scan, 52, 14);
+        result = text("", 16, MUTED);
+        result.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
+        add(home, result, -2, 8);
 
         FrameLayout viewfinder = new FrameLayout(this);
         viewfinder.setBackground(background(PANEL, 16));
@@ -127,73 +207,22 @@ public final class MainActivity extends Activity {
         preview = new TextureView(this);
         preview.setContentDescription("카드 판독 카메라 미리보기");
         viewfinder.addView(preview, new FrameLayout.LayoutParams(-1, -1));
+        guide = new AimGuide();
+        guide.setVisibility(View.GONE);
+        viewfinder.addView(guide, new FrameLayout.LayoutParams(-1, -1));
         permission = new Button(this);
         permission.setText("카메라 권한 허용");
         permission.setOnClickListener(v -> authorize());
         permission.setVisibility(View.GONE);
         viewfinder.addView(permission, new FrameLayout.LayoutParams(-2, -2, Gravity.CENTER));
-        add(body, viewfinder, 275, 12);
-        page.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
-            int hidden = page.getRootView().getHeight() - page.getHeight();
-            int height = dp(hidden > dp(120) ? 145 : 275);
-            if (viewfinder.getLayoutParams().height == height) return;
-            viewfinder.getLayoutParams().height = height;
-            viewfinder.requestLayout();
-        });
-
-        scanStatus = text("카드 네 장의 모서리를 맞대세요", 15, MUTED);
+        add(scanner, viewfinder, 275, 0);
+        scanStatus = text("", 17, INK);
         scanStatus.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
-        add(body, scanStatus, -2, 9);
-
-        form = column();
-        form.setBackground(background(PANEL, 14));
-        form.setPadding(dp(14), dp(10), dp(14), dp(8));
-        heading = text("", 18, INK);
-        add(form, heading, -2, 0);
-        LinearLayout row = new LinearLayout(this);
-        row.setGravity(Gravity.CENTER_VERTICAL);
-        guess = new EditText(this);
-        guess.setSingleLine(true);
-        guess.setTextColor(INK);
-        guess.setHintTextColor(MUTED);
-        guess.setHint("예측한 합계 (4~52)");
-        guess.setInputType(InputType.TYPE_CLASS_NUMBER);
-        guess.setFilters(new InputFilter[]{new InputFilter.LengthFilter(2)});
-        guess.setImeOptions(android.view.inputmethod.EditorInfo.IME_ACTION_DONE);
-        guess.setOnEditorActionListener((v, id, event) -> {
-            boolean done = id == android.view.inputmethod.EditorInfo.IME_ACTION_DONE;
-            boolean enter = event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER;
-            if (!done && !enter) return false;
-            if (event == null || event.getAction() == KeyEvent.ACTION_UP) saveGuess();
-            return true;
-        });
-        row.addView(guess, new LinearLayout.LayoutParams(0, dp(48), 1));
-        submit = new Button(this);
-        submit.setText("확정");
-        submit.setTextColor(0xff10261b);
-        submit.setBackgroundTintList(ColorStateList.valueOf(ACCENT));
-        submit.setOnClickListener(v -> saveGuess());
-        row.addView(submit);
-        add(form, row, -2, 2);
-        form.setVisibility(View.GONE);
-        add(body, form, -2, 10);
-        result = text("", 17, ACCENT);
-        result.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
-        result.setVisibility(View.GONE);
-        add(body, result, -2, 8);
-
-        LinearLayout historyHeader = new LinearLayout(this);
-        historyHeader.setGravity(Gravity.CENTER_VERTICAL);
-        TextView historyTitle = text("개인 기록", 20, INK);
-        historyTitle.setTypeface(Typeface.DEFAULT_BOLD);
-        historyHeader.addView(historyTitle, new LinearLayout.LayoutParams(0, -2, 1));
-        reset = new Button(this);
-        reset.setText("기록 삭제");
-        reset.setOnClickListener(v -> confirmReset());
-        historyHeader.addView(reset);
-        add(body, historyHeader, -2, 14);
-        history = column();
-        add(body, history, -2, 2);
+        add(scanner, scanStatus, -2, 12);
+        Button cancelScan = new Button(this);
+        cancelScan.setText("점수판으로");
+        cancelScan.setOnClickListener(v -> finishScan());
+        add(scanner, cancelScan, 48, 12);
 
         preview.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override public void onSurfaceTextureAvailable(SurfaceTexture texture, int w, int h) { startCamera(); }
@@ -233,9 +262,11 @@ public final class MainActivity extends Activity {
     }
 
     private void startCamera() {
-        if (!resumed || !preview.isAvailable() || camera != null || !canOpenCamera) return;
+        if (!scanning || !resumed || !preview.isAvailable() || camera != null || game == null) return;
         if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             scanStatus.setText("카드 판독에 카메라 권한이 필요합니다");
+            permission.setText("카메라 권한 허용");
+            permission.setOnClickListener(v -> authorize());
             permission.setVisibility(View.VISIBLE);
             return;
         }
@@ -256,11 +287,7 @@ public final class MainActivity extends Activity {
         stopCamera();
         scanStatus.setText("카메라를 열 수 없습니다");
         permission.setText("다시 시도");
-        permission.setOnClickListener(v -> {
-            permission.setText("카메라 권한 허용");
-            permission.setOnClickListener(button -> authorize());
-            startCamera();
-        });
+        permission.setOnClickListener(v -> startCamera());
         permission.setVisibility(View.VISIBLE);
     }
 
@@ -285,23 +312,39 @@ public final class MainActivity extends Activity {
         preview.setTransform(matrix);
     }
 
+    @Override public void onBackPressed() {
+        if (scanning) finishScan();
+        else super.onBackPressed();
+    }
+
+    private void finishScan() {
+        scanning = false;
+        stopCamera();
+        scanner.setVisibility(View.GONE);
+        home.setVisibility(View.VISIBLE);
+    }
+
     private void stopCamera() {
         LiveCamera old = camera;
         camera = null;
         if (old != null) old.close();
         main.removeCallbacks(expiration);
-        if (game != null) showReading(null, SystemClock.elapsedRealtime());
+        newestFrame = 0;
+        displayed = null;
+        if (game != null) game.observe(null, SystemClock.elapsedRealtime());
+        closePrediction();
+        guide.setVisibility(View.GONE);
     }
 
     private void onReading(LiveCamera source, int[] ids, long time, long confirmation) {
-        if (source != camera) return;
+        if (source != camera || !scanning || time < newestFrame) return;
         long now = SystemClock.elapsedRealtime();
         boolean fresh = now - time < GameScore.FRESH_MS;
         newestFrame = time;
-        showReading(fresh ? ids : null, time);
         main.removeCallbacks(expiration);
         if (fresh && ids != null)
             main.postDelayed(expiration, GameScore.FRESH_MS + 1 - (now - time));
+        showReading(fresh ? ids : null, time);
         if (fresh && confirmation != 0) recordConfirmedGuess(confirmation);
     }
 
@@ -311,36 +354,63 @@ public final class MainActivity extends Activity {
     }
 
     private void showReading(int[] ids, long time) {
-        if (!Arrays.equals(displayed, ids)) {
-            guess.setText("");
-            result.setVisibility(View.GONE);
-            displayed = ids;
-        }
+        if (!Arrays.equals(displayed, ids)) closePrediction();
+        displayed = ids;
         game.observe(ids, time);
-        updateReading();
+        long now = SystemClock.elapsedRealtime();
+        guide.setVisibility(View.VISIBLE);
+        guide.setActivated(game.visible(now));
+        if (game.ready(now)) {
+            setLabel(scanStatus, "카드 네 장을 읽었습니다");
+            if (prediction == null) openPrediction();
+        } else {
+            closePrediction();
+            setLabel(scanStatus, game.visible(now) ? "이미 기록한 조합입니다. 다른 코드를 비춰 주세요."
+                    : "네 장이 만나는 가운데 무늬를 비춰 주세요.");
+        }
     }
 
-    private void updateReading() {
-        long now = SystemClock.elapsedRealtime();
-        boolean ready = game.ready(now);
-        boolean pending = game.awaitingConfirmation();
-        if (pending) scanStatus.setText("카드 네 장을 다시 확인하고 있습니다");
-        else if (ready) scanStatus.setText("카드 네 장을 읽었습니다");
-        else if (game.visible(now)) scanStatus.setText("이미 기록한 조합입니다");
-        else scanStatus.setText("카드 네 장의 모서리를 맞대세요");
-        form.setVisibility(ready ? View.VISIBLE : View.GONE);
-        submit.setEnabled(ready && !pending);
-        guess.setEnabled(!pending);
-        if (ready) heading.setText((game.history().size() + 1) + "번째 추측");
+    private void closePrediction() {
+        if (prediction != null) prediction.dismiss();
+        prediction = null;
+        guess = null;
+    }
+
+    private void openPrediction() {
+        LinearLayout field = column();
+        field.setPadding(dp(24), dp(4), dp(24), 0);
+        guess = new EditText(this);
+        guess.setSingleLine(true);
+        guess.setInputType(InputType.TYPE_CLASS_NUMBER);
+        guess.setFilters(new InputFilter[]{new InputFilter.LengthFilter(2)});
+        guess.setHint("예측 합계 (4~52)");
+        guess.setImeOptions(EditorInfo.IME_ACTION_DONE);
+        guess.setOnEditorActionListener((v, id, event) -> {
+            boolean enter = event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER;
+            if (id != EditorInfo.IME_ACTION_DONE && !enter) return false;
+            if (event == null || event.getAction() == KeyEvent.ACTION_UP) saveGuess();
+            return true;
+        });
+        add(field, guess, -2, 0);
+        prediction = new AlertDialog.Builder(this)
+                .setTitle((game.history().size() + 1) + "회차 예측")
+                .setMessage("같은 코드를 비춘 채 네 장의 합계를 입력하세요.")
+                .setView(field)
+                .setNegativeButton("취소", (dialog, which) -> finishScan())
+                .setPositiveButton("확정", null)
+                .create();
+        prediction.setOnCancelListener(dialog -> finishScan());
+        prediction.setCanceledOnTouchOutside(false);
+        prediction.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+        prediction.show();
+        prediction.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> saveGuess());
+        guess.requestFocus();
     }
 
     private void saveGuess() {
         long now = SystemClock.elapsedRealtime();
-        if (game.awaitingConfirmation()) return;
-        if (camera == null || !game.ready(now)) {
-            showReading(null, SystemClock.elapsedRealtime());
-            return;
-        }
+        if (prediction == null || camera == null || game.awaitingConfirmation()) return;
+        if (!game.ready(now)) { showReading(null, now); return; }
         int value;
         try {
             value = Integer.parseInt(guess.getText().toString());
@@ -350,56 +420,90 @@ public final class MainActivity extends Activity {
         if (!GameScore.validGuess(value)) { guess.setError("4~52 사이의 숫자를 입력하세요"); return; }
         long request = game.requestSubmission(value, now);
         if (request == 0) return;
-        updateReading();
+        prediction.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
+        guess.setEnabled(false);
+        prediction.setMessage("같은 조합인지 확인하고 있습니다.");
         camera.requestConfirmation(request);
         main.postDelayed(() -> {
-            if (game.cancelSubmission(request)) updateReading();
+            if (game.cancelSubmission(request)) allowRetry("코드를 비춘 채 다시 확정해 주세요.");
         }, GameScore.CONFIRM_MS);
+    }
+
+    private void allowRetry(String message) {
+        if (prediction == null) return;
+        guess.setEnabled(true);
+        prediction.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
+        prediction.setMessage(message);
     }
 
     private void recordConfirmedGuess(long request) {
         try {
+            boolean pending = game.awaitingConfirmation();
             GameScore.Round round = game.confirmSubmission(request, SystemClock.elapsedRealtime());
-            if (round == null) { updateReading(); return; }
-            ((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE))
-                    .hideSoftInputFromWindow(guess.getWindowToken(), 0);
-            result.setText("정답 " + round.actual + "   ·   +" + round.points + "점");
-            result.setVisibility(View.VISIBLE);
-            updateReading();
+            if (round == null) {
+                if (pending && !game.awaitingConfirmation()) allowRetry("코드를 비춘 채 다시 확정해 주세요.");
+                return;
+            }
+            finishScan();
             showHistory();
         } catch (IOException e) {
-            updateReading();
-            Toast.makeText(this, "기록을 저장하지 못했습니다. 다시 시도하세요.", Toast.LENGTH_LONG).show();
+            allowRetry("저장하지 못했습니다. 다시 확정해 주세요.");
         }
     }
 
+    private LinearLayout scoreColumn(String number, String earned, String cumulative, boolean latest) {
+        LinearLayout col = column();
+        col.setPadding(dp(2), 0, dp(2), 0);
+        int columnWidth = Math.max(dp(44), Math.min(dp(64),
+                (getResources().getDisplayMetrics().widthPixels - dp(44)) / 6));
+        if (latest) col.setBackground(background(0xff32483e, 6));
+        String[] values = {number, earned, cumulative};
+        for (int i = 0; i < values.length; i++) {
+            TextView cell = text(values[i], i == 2 ? 18 : 14, i == 2 ? INK : MUTED);
+            cell.setGravity(Gravity.CENTER);
+            if (i == 2) cell.setTypeface(Typeface.DEFAULT_BOLD);
+            col.addView(cell, new LinearLayout.LayoutParams(columnWidth - dp(4), -2));
+        }
+        return col;
+    }
+
     private void showHistory() {
-        total.setText("총점 " + game.total() + "점");
-        history.removeAllViews();
         List<GameScore.Round> rounds = game.history();
-        reset.setEnabled(!rounds.isEmpty());
-        if (rounds.isEmpty()) add(history, text("아직 점수 기록이 없습니다", 15, MUTED), -2, 4);
-        for (int i = rounds.size() - 1; i >= 0; i--) {
-            GameScore.Round round = rounds.get(i);
-            TextView line = text((i + 1) + "번째   예측 " + round.guess + "   정답 " + round.actual
-                    + "   +" + round.points + "점", 15, INK);
-            line.setPadding(dp(12), dp(10), dp(12), dp(10));
-            line.setBackground(background(PANEL, 10));
-            add(history, line, -2, 4);
+        total.setText("총점 " + game.total() + "점");
+        frames.removeAllViews();
+        int cumulative = 0;
+        for (int i = 0; i < Math.max(5, rounds.size()); i++) {
+            GameScore.Round round = i < rounds.size() ? rounds.get(i) : null;
+            if (round != null) cumulative += round.points;
+            LinearLayout col = scoreColumn((i + 1) + "", round == null ? "–" : "+" + round.points,
+                    round == null ? "–" : String.valueOf(cumulative), i == rounds.size() - 1);
+            if (round != null) {
+                String roundTitle = (i + 1) + "회차";
+                col.setContentDescription(roundTitle + ", 획득 " + round.points + "점, 누계 " + cumulative + "점");
+                col.setFocusable(true);
+                col.setOnClickListener(v -> new AlertDialog.Builder(this).setTitle(roundTitle)
+                        .setMessage("내 예측 " + round.guess + "   정답 " + round.actual + "   +" + round.points + "점")
+                        .setPositiveButton("닫기", null).show());
+            }
+            frames.addView(col);
+        }
+        if (!rounds.isEmpty()) {
+            GameScore.Round last = rounds.get(rounds.size() - 1);
+            result.setText(rounds.size() + "회차 · 내 예측 " + last.guess + "   정답 " + last.actual + "   +" + last.points + "점");
+            View latest = frames.getChildAt(rounds.size() - 1);
+            scoreStrip.post(() -> scoreStrip.scrollTo(Math.max(0, latest.getRight() - scoreStrip.getWidth()), 0));
+        } else {
+            result.setText("");
+            scoreStrip.scrollTo(0, 0);
         }
     }
 
     private void confirmReset() {
-        new AlertDialog.Builder(this).setTitle("개인 기록을 삭제할까요?")
-                .setMessage("이 기기의 추측 기록과 총점이 삭제됩니다.")
-                .setNegativeButton("취소", null).setPositiveButton("삭제", (dialog, which) -> {
-                    try {
-                        game.reset();
-                        showReading(null, SystemClock.elapsedRealtime());
-                        showHistory();
-                    } catch (IOException e) {
-                        Toast.makeText(this, "기록을 삭제하지 못했습니다.", Toast.LENGTH_LONG).show();
-                    }
+        new AlertDialog.Builder(this).setTitle("새 게임을 시작할까요?")
+                .setMessage("이번 게임의 점수와 인식한 코드 기록을 지웁니다.")
+                .setNegativeButton("취소", null).setPositiveButton("새 게임", (dialog, which) -> {
+                    try { game.reset(); showHistory(); }
+                    catch (IOException e) { Toast.makeText(this, "기록을 지우지 못했습니다.", Toast.LENGTH_LONG).show(); }
                 }).show();
     }
 }

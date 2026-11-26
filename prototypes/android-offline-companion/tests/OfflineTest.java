@@ -159,9 +159,15 @@ public class OfflineTest {
         reopened.observe(next, 3350);
         check(submitConfirmed(reopened, next, 31, 3350).points == 3 && reopened.total() == 13,
                 "next group adds points to prior total");
+        int[] equalSum = {5, 20, 36, 40};
+        reopened.observe(equalSum, 3400);
+        check(submitConfirmed(reopened, equalSum, 27, 3400).actual == 27 && reopened.total() == 23,
+                "a different four-card code with the same sum gets its own round");
         check(Arrays.equals(new int[]{10, 5, 4, 3, 2, 1, 0}, java.util.stream.IntStream.rangeClosed(0, 6)
                 .map(GameScore::points).toArray()), "all seven score thresholds match");
         reopened.reset();
+        reopened.observe(found, 3500);
+        check(reopened.ready(3500), "a new game allows codes from the previous scoreboard");
         check(new GameScore(path.toFile()).total() == 0, "explicit clearing persists");
         Files.delete(path);
         Files.delete(path.getParent());

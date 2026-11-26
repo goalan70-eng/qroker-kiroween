@@ -94,6 +94,7 @@ export interface GuessEntryInput {
 }
 
 export interface GuessEntryOptions {
+  readonly countdown?: HTMLElement;
   /** Move the focus to the first input when the form is shown. Default `true`. */
   readonly autoFocus?: boolean;
   /** Public hook for a per-code Board highlight: the Quad_Key of the focused input, or `null`. */
@@ -279,7 +280,7 @@ export function renderGuessEntry(
           },
         },
       },
-      titleEl,
+      h('div', { class: 'guess-heading' }, titleEl, options.countdown ?? null),
       ...built.map((b) => b.field),
       engineEl,
       submitEl,

@@ -24,7 +24,8 @@ function Mark([string]$Text) {
 }
 
 function Read-View {
-    Device @('shell','uiautomator','dump',$qrUi) | Out-Null
+    $dump = Device @('shell','uiautomator','dump',$qrUi)
+    if (($dump -join ' ') -notmatch 'dumped to:') { return [xml]'<hierarchy/>' }
     [xml]((Device @('shell','cat',$qrUi)) -join '')
 }
 
@@ -70,9 +71,11 @@ try {
     Device @('shell','am','force-stop',$qrPackage) | Out-Null
     $qrClock.Start()
     Device @('shell','am','start','-W','-n',$qrActivity) | Out-Host
-    $first = Wait-View '//node[@text="1번째 추측"]' 27
-    if (!$first.SelectSingleNode('//node[@text="총점 0점"]') -or
-        $first.SelectSingleNode('//node[contains(@text,"정답")]')) { throw 'First guess did not start with a hidden result and zero points' }
+    $homeView = Wait-View '//node[@text="코드 인식"]' 20
+    if (!$homeView.SelectSingleNode('//node[@text="총점 0점"]')) { throw 'Expected a fresh scoreboard' }
+    Tap-Node ($homeView.SelectSingleNode('//node[@text="코드 인식"]'))
+    $first = Wait-View '//node[@text="1회차 예측"]' 27
+    if ($first.SelectSingleNode('//node[contains(@text,"정답")]')) { throw 'Answer exposed in prediction' }
     Mark 'PASS first four-card group opens guessing with the answer hidden'
     Save-View $first 'first-ready'
     Submit-Guess $first 27
@@ -82,19 +85,19 @@ try {
     }
     Mark 'PASS four cards sum to 27 and award 10 points'
     Save-View $scored 'first-scored'
-    while ($qrClock.Elapsed.TotalSeconds -lt 47) { Start-Sleep -Milliseconds 300 }
-    $missing = Wait-View '//node[@text="카드 네 장의 모서리를 맞대세요"]' 22
+    Tap-Node ($scored.SelectSingleNode('//node[@text="코드 인식"]'))
+    Wait-View '//node[starts-with(@text,"이미 기록한 조합입니다")]' 30 | Out-Null
+    $missing = Wait-View '//node[@text="네 장이 만나는 가운데 무늬를 비춰 주세요."]' 68
     $missingAgain = Read-View
     foreach ($view in @($missing, $missingAgain)) {
-        if (!$view.SelectSingleNode('//node[@text="카드 네 장의 모서리를 맞대세요"]') -or
-            $view.SelectSingleNode('//node[@class="android.widget.EditText"]') -or
-            !$view.SelectSingleNode('//node[@text="총점 10점"]')) {
+        if (!$view.SelectSingleNode('//node[@text="네 장이 만나는 가운데 무늬를 비춰 주세요."]') -or
+            $view.SelectSingleNode('//node[@class="android.widget.EditText"]')) {
             throw 'Missing-card scene exposes a guess or alters the score'
         }
     }
     Mark 'PASS frame sequence with a card missing offers no guess and retains 10 recorded points'
     Save-View $missing 'missing-after-score'
-    $second = Wait-View '//node[@text="2번째 추측"]' 40
+    $second = Wait-View '//node[@text="2회차 예측"]' 40
     Save-View $second 'second-ready'
     Submit-Guess $second 49
     $combined = Wait-View '//node[@text="총점 13점"]' 15
@@ -106,8 +109,8 @@ try {
     Device @('shell','am','force-stop',$qrPackage) | Out-Null
     Device @('shell','am','start','-W','-n',$qrActivity) | Out-Host
     $restored = Wait-View '//node[@text="총점 13점"]' 14
-    if (!$restored.SelectSingleNode('//node[contains(@text,"예측 27") and contains(@text,"+10점")]') -or
-        !$restored.SelectSingleNode('//node[contains(@text,"예측 49") and contains(@text,"+3점")]')) {
+    if (!$restored.SelectSingleNode('//node[@content-desc="1회차, 획득 10점, 누계 10점"]') -or
+        !$restored.SelectSingleNode('//node[@content-desc="2회차, 획득 3점, 누계 13점"]')) {
         throw 'Round history was not restored'
     }
     Mark 'PASS process restart restores both rounds and 13 total points'

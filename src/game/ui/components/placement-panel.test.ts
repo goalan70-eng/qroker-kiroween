@@ -171,7 +171,7 @@ describe('renderPlacementPanel: structure [fake-DOM]', () => {
 
   it('shows the hint of the draft state in the status line and follows later renders', () => {
     const f = setup();
-    expect(status(f)).toBe('Select a card or a position on the board. You can also drag a card onto a legal cell.');
+    expect(status(f)).toBe('Select a card and a space to play it.');
     f.render(BASE, { target: LEGAL, card: null, orientation: 0 });
     expect(status(f)).toBe('Position chosen. Now select a card from your hand.');
     f.render(BASE, { target: null, card: hand0, orientation: 0 });
@@ -764,7 +764,7 @@ describe('integration with the real controller [model + fake-DOM]', () => {
     expect((g.ctl.getView('P0') as PlayerView).turn).toBe('P0');
     expect(g.ctl.getModel().draft).toEqual(EMPTY_DRAFT);
     expect(handButtons(g.f).every((b) => !b.hasAttribute('disabled'))).toBe(true);
-    expect(status(g.f)).toBe('Select a card or a position on the board. You can also drag a card onto a legal cell.');
+    expect(status(g.f)).toBe('Select a card and a space to play it.');
   });
 
   it('card first, then position, then confirm reaches the same game state as position first', () => {
