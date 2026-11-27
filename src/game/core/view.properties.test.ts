@@ -104,6 +104,7 @@ import {
 } from "./testing/state-generators";
 import type { Choice, PlayStyle, Reachable } from "./testing/state-generators";
 import type { Action, CardId, GameConfig, IdentityVisibility, PlayerId, Slot } from "./types";
+import { expectedReveal } from "./testing/expected-reveal";
 import { viewFor } from "./view";
 import type { PlayerView } from "./view";
 
@@ -113,8 +114,8 @@ import type { PlayerView } from "./view";
 
 const SEED_P22 = 20260922;
 const SEED_P23 = 20260923;
-const NUM_RUNS_P22 = 200;
-const NUM_RUNS_P23 = 300;
+const NUM_RUNS_P22 = 400;
+const NUM_RUNS_P23 = 600;
 const TIMEOUT_MS = 180_000;
 const LOG_COVERAGE = process.env.QROKER_COVERAGE_LOG === "1";
 
@@ -154,6 +155,7 @@ function oracleRevealed(state: GameState): Set<string> {
 /** The card of `cell` that `viewer` may see, or null (the visibility table of design.md, written independently). */
 function oracleCard(state: GameState, viewer: PlayerId, cell: NonNullable<Cell>, revealed: ReadonlySet<string>): string | null {
   if (state.config.identityVisibility === "FACE_UP") return cell.card;
+  if (state.config.identityVisibility !== "OWNER_ONLY") return null;
   return cell.owner === "NEUTRAL" || cell.owner === viewer || revealed.has(cell.card) ? cell.card : null;
 }
 
@@ -542,8 +544,8 @@ function checkView(state: GameState, viewer: PlayerId, stateObjects: ReadonlySet
   // (e) pending keys and public records.
   const expectedKeys = pending === null ? [] : pending.codes.map((code) => code.quadKey).sort();
   expect(view.pendingQuadKeys, "pendingQuadKeys").toStrictEqual(expectedKeys);
-  expect(view.history, "history equals the public records").toStrictEqual(state.history);
-  expect(view.lastReveal, "lastReveal equals the public record").toStrictEqual(state.lastReveal);
+  expect(view.history, "history equals the public records").toStrictEqual(state.history.map(record => expectedReveal(record, mode)));
+  expect(view.lastReveal, "lastReveal equals the public record").toStrictEqual(state.lastReveal && expectedReveal(state.lastReveal, mode));
   const recordCodes = state.history.reduce((sum, record) => sum + record.codes.length, 0) + (state.lastReveal?.codes.length ?? 0);
   const noRules = JSON.stringify({ ...view, rules: null });
   must((noRules.match(/"hiddenSum"/g) ?? []).length === recordCodes, () => "the number of hiddenSum fields differs from the number of revealed codes");
@@ -676,6 +678,7 @@ describe("Property 22: no leakage of pending or hidden information in views", ()
       expect(cov.byCategory.ENDED, "ENDED states").toBeGreaterThanOrEqual(50);
       expect(cov.byMode.OWNER_ONLY, "OWNER_ONLY states").toBeGreaterThanOrEqual(300);
       expect(cov.byMode.FACE_UP, "FACE_UP states").toBeGreaterThanOrEqual(200);
+      for (const blind of ["BLIND", "BLIND_SCORE_ONLY"] as const) expect(cov.byMode[blind], blind + " states").toBeGreaterThan(0);
       for (const seat of SEAT_IDS) expect(cov.byViewer[seat], `views of ${seat}`).toBe(cov.states);
       expect(cov.gcBatchOfTwo, "GUESS_COLLECT states with a batch of two codes").toBeGreaterThanOrEqual(100);
       expect(cov.gcBatchOfOne, "GUESS_COLLECT states with a batch of one code").toBeGreaterThanOrEqual(200);
@@ -844,6 +847,7 @@ describe("Property 23: view non-interference", () => {
       for (const kind of PERTURBATION_KINDS) expect(cov.byKind[kind], `effective perturbations of kind ${kind}`).toBeGreaterThanOrEqual(kind === "BOARD_SWAP" ? 200 : 250);
       expect(cov.byMode.OWNER_ONLY, "OWNER_ONLY pairs").toBeGreaterThanOrEqual(500);
       expect(cov.byMode.FACE_UP, "FACE_UP pairs").toBeGreaterThanOrEqual(400);
+      for (const blind of ["BLIND", "BLIND_SCORE_ONLY"] as const) expect(cov.byMode[blind], blind + " pairs").toBeGreaterThan(0);
       for (const seat of SEAT_IDS) expect(cov.byViewer[seat], `pairs of viewer ${seat}`).toBe(cov.runs);
       for (const category of CATEGORIES) expect(cov.byCategory[category], `base states in ${category}`).toBeGreaterThanOrEqual(category === "ENDED" ? 8 : 15);
       expect(cov.multiKindPairs, "pairs with two or more effective kinds").toBeGreaterThanOrEqual(500);

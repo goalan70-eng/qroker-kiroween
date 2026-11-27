@@ -62,6 +62,7 @@ export async function stubSeeds(page: Page, seeds: readonly number[]): Promise<v
 }
 
 export interface StartOptions {
+  readonly language?: 'en' | 'ko';
   readonly humans?: 1 | 2 | 3 | 4;
   /** Seed text typed into the setup field; omit to keep the stubbed random default. */
   readonly seedText?: string;
@@ -71,6 +72,7 @@ export interface StartOptions {
 export async function startGame(page: Page, options: StartOptions = {}): Promise<void> {
   await page.goto('/');
   await expect(page.locator('#setup-start')).toBeVisible();
+  if (options.language) await page.locator('#setup-language').selectOption(options.language);
   const humans = options.humans ?? 1;
   await page.locator(`#setup-humans-${humans}`).check();
   for (const select of await page.locator('.setup-ai-row select').all()) await select.selectOption('BEGINNER');

@@ -1,13 +1,20 @@
 """Extract only sampling geometry and card identities from the 30 mm prototype."""
+import argparse
 import hashlib
 import json
 from pathlib import Path
-import sys
-
-source, output = map(Path, sys.argv[1:])
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("source", type=Path)
+parser.add_argument("output", type=Path)
+parser.add_argument("--current-only", action="store_true", help="exclude legacy cards in ScreenCheck")
+args = parser.parse_args()
+source, output = args.source, args.output
 layout_bytes = (source / "joker-uniform-bars-30mm-layout.json").read_bytes()
 layout = json.loads(layout_bytes)
 cards_bytes = (source / "uniform-bars-retest-input.json").read_bytes()
+if (hashlib.sha256(layout_bytes).hexdigest() != "2c3db6c925c50c6b3b7e85e3e735061d0540a42bc903bf3a7d45171059fdda52"
+        or hashlib.sha256(cards_bytes).hexdigest() != "3a1ee58f7292674b30b3604feed1194be779b0eb0f9dc3deb56941a26288d2bb"):
+    parser.error("The layout and codebook must match the 30 mm geometry used by the current marker.")
 cards = json.loads(cards_bytes.decode("utf-8-sig"))
 width = layout["width"]
 pitch = width / 16
@@ -83,6 +90,7 @@ output.write_text(
     f"// Layout SHA-256 {hashlib.sha256(layout_bytes).hexdigest()}\n"
     f"// Codebook SHA-256 {hashlib.sha256(cards_bytes).hexdigest()}\n"
     "final class Layout30 {\n"
+    f"    static final boolean ACCEPT_LEGACY = {str(not args.current_only).lower()};\n"
     f"    static final int DATA = {len(layout['data'])};\n"
     f"    static final int[] MIRRORS = {{{', '.join(map(str, mirrors))}}};\n"
     f"    static final int[] KEYS = {{{', '.join(map(str, keys))}}};\n"

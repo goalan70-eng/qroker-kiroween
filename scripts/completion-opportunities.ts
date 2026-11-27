@@ -66,7 +66,9 @@ function prepare(): void {
     const target = join(EXP, dir);
     rmSync(target, { recursive: true, force: true });
     cpSync(join(SAVED_ROOT, dir, 'src/game'), join(target, 'src/game'), { recursive: true });
-    cpSync(join('scripts/completion/intermediate-ai.ts'), join(target, 'src/game/ai/intermediate.ts'));
+    const strategyPath = 'scripts/completion/intermediate-ai.ts';
+    cpSync(strategyPath, join(target, strategyPath));
+    writeFileSync(join(target, 'src/game/ai/intermediate.ts'), "export * from '../../../scripts/completion/intermediate-ai';\n");
     patchOnce(join(target, 'src/game/ai/registry.ts'), [
       ["import { BEGINNER_STRATEGY } from './random';", "import { BEGINNER_STRATEGY } from './random';\nimport { INTERMEDIATE_STRATEGY } from './intermediate';"],
       [
@@ -152,6 +154,7 @@ async function generateGame(eng: Engine, board: BoardName, mode: Mode, tier: Tie
       action = { type: 'ACK_REVEAL' };
     } else {
       const seat = eng.actingSeats(state)[0];
+      if (seat === undefined) throw new Error(`No acting seat in ${state.phase} for seed ${seed}`);
       const isFull = state.board.every((c: unknown) => c !== null);
       if (state.phase === 'PLACEMENT' && isFull) throw new Error('driver asked for placement after a full board');
       const ctx = Object.freeze({ decisionSeed: eng.decisionSeed(state.seed, seat, state.log.length) });
@@ -262,16 +265,17 @@ function measureTurn(eng: Engine, board: BoardName, state: any, seat: string, ac
   const maxCodes = Math.max(0, ...actualKeys.map((k) => k.length));
   const nCertain = classified.filter((x) => x.cls === 'certain').length;
   const nPlausible = classified.filter((x) => x.cls === 'plausible').length;
-  const certainIdx = classified.map((x, i) => (x.cls === 'certain' ? i : -1)).filter((i) => i >= 0);
+
   let certainSucceeded = 0;
-  for (const i of certainIdx) {
-    const quads: string[] = classified[i].certainQuads;
-    if (actualKeys[i].some((k) => quads.includes(k))) certainSucceeded++;
+  for (const [i, keys] of actualKeys.entries()) {
+    const classification = classified[i];
+    if (classification.cls === 'certain' && keys.some(key => classification.certainQuads.includes(key))) certainSucceeded++;
   }
   const problems: string[] = [];
   const chosenIdx = candidates.findIndex((c) => sameCandidate(c, { card: action.card, pos: action.pos, orientation: action.orientation }));
   if (chosenIdx < 0) problems.push('chosen move is not among the legal candidates of the view');
-  const chosen = chosenIdx >= 0 ? classified[chosenIdx] : null;
+  const chosen = classified[chosenIdx];
+  const chosenKeys = actualKeys[chosenIdx] ?? [];
   return {
     board,
     mode: meta.mode,
@@ -285,11 +289,11 @@ function measureTurn(eng: Engine, board: BoardName, state: any, seat: string, ac
     nCertain,
     nPlausible,
     chosenCls: chosen ? chosen.cls : 'illegal',
-    chosenCodes: chosenIdx >= 0 ? actualKeys[chosenIdx].length : 0,
-    chosenKeys: chosenIdx >= 0 ? actualKeys[chosenIdx] : [],
+    chosenCodes: chosenKeys.length,
+    chosenKeys,
     chosenPlausibleQuads: chosen ? chosen.plausibleQuads : [],
     chosenCertainQuads: chosen ? chosen.certainQuads : [],
-    certainCands: certainIdx.length,
+    certainCands: nCertain,
     certainSucceeded,
     failedTruthPlacements,
     problems,

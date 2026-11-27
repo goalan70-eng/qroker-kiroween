@@ -13,7 +13,11 @@ $priorDeckPath = (Resolve-Path -LiteralPath $PriorDeck).Path
 $priorClassesPath = (Resolve-Path -LiteralPath $PriorClasses).Path
 $currentDeckPath = (Resolve-Path -LiteralPath $CurrentDeck).Path
 $currentClasses = (Resolve-Path "$root/android-build/jvm").Path
-if (!$BrowserEvidence) { $BrowserEvidence = "$root/evidence" }
+# The archived capture deliberately contains different cards with the same sum of 27.
+if (!$BrowserEvidence) {
+    $archived = "$root/../../local-optical-previews/web-game/screen-playtest/evidence"
+    $BrowserEvidence = if (Test-Path -LiteralPath "$archived/web-game.png") { $archived } else { "$root/evidence" }
+}
 if (!$IsolationEvidence) { $IsolationEvidence = "$root/evidence/marker-isolation" }
 $browserEvidencePath = (Resolve-Path -LiteralPath $BrowserEvidence).Path
 $isolationEvidencePath = (Resolve-Path -LiteralPath $IsolationEvidence).Path

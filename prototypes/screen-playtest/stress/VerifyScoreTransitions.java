@@ -22,7 +22,7 @@ public final class VerifyScoreTransitions {
 
     private static void rejectsChange(Path file, int[] first, int[] changed, String name) throws Exception {
         var score = new GameScore(file.toFile());
-        var camera = new ConfirmationFrame<int[]>();
+        var camera = new ConfirmationFrame<int[]>(cards -> score.observe(cards, 115));
         score.observe(first, 100);
         long request = score.requestSubmission(27, 110);
         check(request != 0, "Original group should accept input");
@@ -44,7 +44,7 @@ public final class VerifyScoreTransitions {
 
     private static void rejectsDroppedCapture(Path file, int[] first) throws Exception {
         var score = new GameScore(file.toFile());
-        var camera = new ConfirmationFrame<int[]>();
+        var camera = new ConfirmationFrame<int[]>(cards -> score.observe(cards, 115));
         score.observe(first, 100);
         long request = score.requestSubmission(27, 110);
         check(request != 0, "Original group should accept input");
@@ -53,7 +53,7 @@ public final class VerifyScoreTransitions {
         check(camera.arrived(10_001, first) == null, "A later frame cannot replace a dropped capture");
         score.observe(first, 120);
         check(score.cancelSubmission(request), "Dropped capture must time out");
-        camera.cancel(request);
+        camera.cancel(request, () -> score.observe(null, 125));
         check(camera.arrived(10_000, first) == null, "A late image after timeout must be ignored");
         check(score.confirmSubmission(request, 2115) == null && !Files.exists(file), "Dropped capture wrote a score");
         System.out.println("PASS dropped confirmation and later return of the original group");

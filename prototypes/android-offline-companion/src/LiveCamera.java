@@ -11,6 +11,7 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureFailure;
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
@@ -24,7 +25,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 final class LiveCamera {
     interface Observer { void frame(LiveCamera camera, int[] cards, long acquiredAt, long confirmation); }
@@ -41,22 +42,23 @@ final class LiveCamera {
     private final Failure failure;
     private final HandlerThread cameraThread = new HandlerThread("qroker-camera");
     private final ExecutorService decode = Executors.newSingleThreadExecutor();
-    private final AtomicBoolean busy = new AtomicBoolean();
-    private final ConfirmationFrame<FrameSample> confirmation = new ConfirmationFrame<>();
+    private final AtomicInteger decodeJobs = new AtomicInteger();
+    private final ConfirmationFrame<Reading> confirmation = new ConfirmationFrame<>(reading -> publish(reading, 0));
     private Handler handler;
     private CameraDevice device;
     private CameraCaptureSession session;
     private CaptureRequest previewRequest;
+    private boolean previewReadInFlight;
     private ImageReader imageReader;
     private Surface preview;
     private volatile boolean closed;
 
-    private static final class FrameSample {
-        final OpticalReader.Frame frame;
+    private static final class Reading {
+        final int[] cards;
         final long acquiredAt;
 
-        FrameSample(OpticalReader.Frame frame, long acquiredAt) {
-            this.frame = frame;
+        Reading(int[] cards, long acquiredAt) {
+            this.cards = cards;
             this.acquiredAt = acquiredAt;
         }
     }
@@ -143,13 +145,19 @@ final class LiveCamera {
                             try {
                                 CaptureRequest.Builder request = device.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
                                 request.addTarget(preview);
-                                request.addTarget(imageReader.getSurface());
                                 request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
                                 if (continuousFocus)
                                     request.set(CaptureRequest.CONTROL_AF_MODE,
                                             CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+                                CaptureRequest display = request.build();
+                                request.addTarget(imageReader.getSurface());
                                 previewRequest = request.build();
-                                session.setRepeatingRequest(previewRequest, null, handler);
+                                session.setRepeatingRequest(display, new CameraCaptureSession.CaptureCallback() {
+                                    @Override public void onCaptureCompleted(CameraCaptureSession source,
+                                            CaptureRequest request, TotalCaptureResult result) {
+                                        schedulePreviewRead(source);
+                                    }
+                                }, handler);
                             } catch (CameraAccessException | IllegalStateException error) {
                                 fail();
                             }
@@ -157,6 +165,30 @@ final class LiveCamera {
 
                         @Override public void onConfigureFailed(CameraCaptureSession configured) { fail(); }
                     }, handler);
+        } catch (CameraAccessException | IllegalStateException | IllegalArgumentException error) {
+            fail();
+        }
+    }
+
+    private final CameraCaptureSession.CaptureCallback previewReadCallback =
+            new CameraCaptureSession.CaptureCallback() {
+                @Override public void onCaptureCompleted(CameraCaptureSession source, CaptureRequest request,
+                                                         TotalCaptureResult result) { previewReadInFlight = false; }
+                @Override public void onCaptureFailed(CameraCaptureSession source, CaptureRequest request,
+                                                      CaptureFailure failure) { previewReadInFlight = false; }
+                @Override public void onCaptureSequenceAborted(CameraCaptureSession source, int sequenceId) {
+                    previewReadInFlight = false;
+                }
+            };
+
+    @SuppressWarnings("deprecation")
+    private void schedulePreviewRead(CameraCaptureSession source) {
+        // Keep the display live without queuing analysis frames ahead of the confirmation exposure.
+        if (closed || source != session || previewReadInFlight || confirmation.waiting() || decodeJobs.get() != 0)
+            return;
+        try {
+            source.capture(previewRequest, previewReadCallback, handler);
+            previewReadInFlight = true;
         } catch (CameraAccessException | IllegalStateException | IllegalArgumentException error) {
             fail();
         }
@@ -171,56 +203,77 @@ final class LiveCamera {
                 session.capture(previewRequest, new CameraCaptureSession.CaptureCallback() {
                     @Override public void onCaptureStarted(CameraCaptureSession source, CaptureRequest request,
                                                            long timestamp, long frameNumber) {
-                        decodeConfirmation(confirmation.started(id, timestamp));
+                        publishConfirmation(confirmation.started(id, timestamp));
                     }
 
                     @Override public void onCaptureFailed(CameraCaptureSession source, CaptureRequest request,
                                                           CaptureFailure failure) {
-                        confirmation.cancel(id);
+                        abortConfirmation(id);
+                    }
+
+                    @Override public void onCaptureCompleted(CameraCaptureSession source, CaptureRequest request,
+                                                             TotalCaptureResult result) {
+                        publishConfirmation(confirmation.completed(id));
+                    }
+
+                    @Override public void onCaptureSequenceAborted(CameraCaptureSession source, int sequenceId) {
+                        abortConfirmation(id);
                     }
                 }, handler);
-                handler.postDelayed(() -> confirmation.cancel(id), GameScore.CONFIRM_MS);
+                handler.postDelayed(() -> abortConfirmation(id), GameScore.CONFIRM_MS);
             } catch (CameraAccessException | IllegalStateException | IllegalArgumentException error) {
                 fail();
             }
         });
     }
 
+    private void abortConfirmation(long id) {
+        confirmation.cancel(id, () -> publish(new Reading(null, SystemClock.elapsedRealtime()), id));
+    }
+
     private void frameAvailable(ImageReader input) {
-        boolean previewSlot = false;
-        // Preserve the requested image even while the decoder is processing a preview.
-        try (Image image = confirmation.waiting() ? input.acquireNextImage() : input.acquireLatestImage()) {
+        boolean confirming = confirmation.waiting();
+        try (Image image = confirming ? input.acquireNextImage() : input.acquireLatestImage()) {
             if (image == null || closed) return;
             long timestamp = image.getTimestamp();
-            boolean candidate = confirmation.candidate(timestamp);
-            if (!candidate) {
-                previewSlot = busy.compareAndSet(false, true);
-                if (!previewSlot) return;
-            }
             long time = SystemClock.elapsedRealtime();
-            FrameSample sample = new FrameSample(luminance(image), time);
-            if (candidate) decodeConfirmation(confirmation.arrived(timestamp, sample));
-            else decodeFrame(sample, 0);
+            if (confirming && !confirmation.needsReading(timestamp)) return;
+            if (!confirming && decodeJobs.get() != 0) return;
+            if (confirming && decodeJobs.get() >= 6) {
+                // Do not confirm across an observation we cannot process in order.
+                abortConfirmation(confirmation.requestId());
+                return;
+            }
+            decodeFrame(luminance(image), time, timestamp, confirmation.requestId());
         } catch (RuntimeException error) {
-            if (previewSlot) busy.set(false);
             fail();
         }
     }
 
-    private void decodeConfirmation(ConfirmationFrame.Match<FrameSample> match) {
-        if (match != null && !closed) decodeFrame(match.image, match.id);
+    private void publishConfirmation(ConfirmationFrame.Match<Reading> match) {
+        if (match != null) publish(match.image, match.id);
     }
 
-    private void decodeFrame(FrameSample sample, long id) {
+    private void publish(Reading reading, long id) {
+        main.post(() -> { if (!closed) observer.frame(this, reading.cards, reading.acquiredAt, id); });
+    }
+
+    private void decodeFrame(OpticalReader.Frame frame, long acquiredAt, long timestamp, long requestId) {
+        decodeJobs.incrementAndGet();
         decode.execute(() -> {
             try {
                 if (closed) return;
-                int[] cards = reader.read(sample.frame);
-                main.post(() -> { if (!closed) observer.frame(this, cards, sample.acquiredAt, id); });
+                Reading reading = new Reading(reader.readAimed(frame), acquiredAt);
+                handler.post(() -> {
+                    if (closed) return;
+                    if (requestId == 0) publish(reading, 0);
+                    else if (requestId == confirmation.requestId())
+                        publishConfirmation(confirmation.arrived(timestamp, reading));
+                });
             } catch (RuntimeException error) {
                 fail();
             } finally {
-                if (id == 0) busy.set(false);
+                decodeJobs.decrementAndGet();
             }
         });
     }

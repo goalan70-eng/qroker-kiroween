@@ -26,6 +26,7 @@
     "test:game": "vitest --run src/game",
     "dev": "vite",
     "build": "tsc -p tsconfig.game.json --noEmit && vite build",
+    "build:standalone": "tsc -p tsconfig.game.json --noEmit && node scripts/build-standalone.mjs",
     "preview": "vite preview",
     "review:openai": "node scripts/openai-review.mjs",
     "test:e2e": "playwright test"

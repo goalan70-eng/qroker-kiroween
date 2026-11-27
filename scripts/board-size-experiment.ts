@@ -274,8 +274,8 @@ async function smoke(): Promise<void> {
   }
   console.log(`smoke 8x8 reproduction: ${matched}/${total} games identical in action log and scores`);
   const modules = await import(pathToFileURL(join(WORK, 'v6/src/game/core/geometry.ts')).href);
-  const accepted = [];
-  const rejected = [];
+  const accepted: string[] = [];
+  const rejected: string[] = [];
   for (const letter of 'ABCDEFGH') for (let r = 1; r <= 8; r++) {
     const text = `${letter}${r}`;
     const parsed = modules.fromNotation(text);

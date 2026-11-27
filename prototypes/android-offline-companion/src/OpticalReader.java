@@ -10,6 +10,9 @@ import java.util.Map;
 /** The 30 mm uniform-bar reader, using luminance only. */
 final class OpticalReader {
     private static final int SEARCH_SIDE = 640;
+    private static final double[] OFFSETS = {-.45, 0, .45};
+    private static final double[] SMALL_OFFSETS = {-.45, -.30, 0, .30, .45};
+    private static final double[] SMALL_AIMED_OFFSETS = {-.45, -.30, -.15, 0, .15, .30, .45};
     private final Map<Integer, Integer> codebook = new HashMap<>();
 
     OpticalReader() {
@@ -38,11 +41,11 @@ final class OpticalReader {
                     + b * ((1 - a) * pixel(i, j + 1) + a * pixel(i + 1, j + 1));
         }
 
-        Frame reduce() {
+        Frame reduce(int limit) {
             int side = Math.max(width, height);
-            if (side <= SEARCH_SIDE) return this;
-            int w = Math.max(1, (int) Math.round(SEARCH_SIDE * width / (double) side));
-            int h = Math.max(1, (int) Math.round(SEARCH_SIDE * height / (double) side));
+            if (side <= limit) return this;
+            int w = Math.max(1, (int) Math.round(limit * width / (double) side));
+            int h = Math.max(1, (int) Math.round(limit * height / (double) side));
             byte[] out = new byte[w * h];
             for (int y = 0; y < h; y++) {
                 int top = (y * height + h / 2) / h;
@@ -74,6 +77,16 @@ final class OpticalReader {
                 }
             }
             return new Frame(width, height, out);
+        }
+
+        Frame sharpened() {
+            Frame blurred = smooth(2);
+            for (int i = 0; i < data.length; i++) {
+                int raw = data[i] & 255;
+                int detail = raw - (blurred.data[i] & 255);
+                blurred.data[i] = (byte) Math.max(0, Math.min(255, raw + 2 * detail));
+            }
+            return blurred;
         }
 
         Frame brightenedEdges() {
@@ -352,6 +365,7 @@ final class OpticalReader {
 
     private static final class Region {
         final Frame frame;
+        final int left, top;
         final Point[] quad = new Point[4];
 
         Region(Frame source, Point[] corners, Frame reduced) {
@@ -364,8 +378,8 @@ final class OpticalReader {
                 maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y);
             }
             int margin = Math.max(12, (int) Math.ceil(.13 * maxSide(quad)));
-            int left = Math.max(0, (int) Math.floor(minX) - margin);
-            int top = Math.max(0, (int) Math.floor(minY) - margin);
+            left = Math.max(0, (int) Math.floor(minX) - margin);
+            top = Math.max(0, (int) Math.floor(minY) - margin);
             int width = Math.min(source.width, (int) Math.ceil(maxX) + margin) - left;
             int height = Math.min(source.height, (int) Math.ceil(maxY) + margin) - top;
             byte[] pixels = new byte[width * height];
@@ -392,7 +406,7 @@ final class OpticalReader {
         return frame.sample((h[0] * x + h[1] * y + h[2]) / w, (h[3] * x + h[4] * y + h[5]) / w);
     }
 
-    private int identify(Frame frame, double[] h, int slot) {
+    private int identify(Frame frame, double[] h, int slot, boolean legacy) {
         double[] edge = Layout30.FRAME[slot];
         int presence = 0;
         for (int i = 0; i < edge.length; i += 4) {
@@ -401,15 +415,27 @@ final class OpticalReader {
             if (paper - ink >= 25) presence++;
         }
         if (presence < 3) return -1;
-        double[] bars = Layout30.BARS[slot], contrast = new double[bars.length / 36];
+        double[] original = Layout30.BARS[slot], extra = ExtraBars.SAMPLE[slot];
+        int originalSites = original.length / 36;
+        double[] contrast = new double[originalSites + (legacy ? 0 : extra.length / 36)];
+        double[] highlights = legacy ? null : new double[contrast.length];
         for (int i = 0; i < contrast.length; i++) {
+            double[] bars = i < originalSites ? original : extra;
+            int offset = (i < originalSites ? i : i - originalSites) * 36;
             double first = 0, second = 0;
             for (int j = 0; j < 18; j += 2) {
-                first += project(frame, h, bars, i * 36 + j);
-                second += project(frame, h, bars, i * 36 + 18 + j);
+                first += project(frame, h, bars, offset + j);
+                second += project(frame, h, bars, offset + 18 + j);
             }
             contrast[i] = (first - second) / 9;
             if (!Double.isFinite(contrast[i])) return -1;
+            if (!legacy) highlights[i] = Math.max(first, second) / 9;
+        }
+        if (!legacy) {
+            // The central hat bar is evidence only when its ink is clearly visible.
+            int hat = contrast.length - 1;
+            if (contrast[hat] < 20) contrast[hat] = 0;
+            return ErasureDecoder.read(contrast, highlights, ExtraBars.BITS);
         }
         int start = Layout30.DATA, mirrors = start + 9, check = mirrors + Layout30.MIRRORS.length;
         int word = 0, aux = 0, crc = 0;
@@ -431,10 +457,25 @@ final class OpticalReader {
         int[] ids;
         boolean ambiguous;
 
+        int[] result() { return ambiguous ? null : ids; }
+
         void add(int[] cards) {
             if (ids == null) ids = cards;
             else if (!Arrays.equals(ids, cards)) ambiguous = true;
         }
+    }
+
+    private void readGroup(Frame frame, double[] h, boolean legacy, Readings readings) {
+        int[] cards = new int[4];
+        long seen = 0;
+        for (int slot = 0; slot < cards.length; slot++) {
+            int card = identify(frame, h, slot, legacy);
+            if (card < 0 || (seen & (1L << card)) != 0) return;
+            seen |= 1L << card;
+            cards[slot] = card;
+        }
+        Arrays.sort(cards);
+        readings.add(cards);
     }
 
     private void sampleOrientations(Frame frame, Point[] q, Readings readings) {
@@ -443,28 +484,23 @@ final class OpticalReader {
                 double[] h = homography(q[i], q[(i + direction) % 4], q[(i + 2 * direction) % 4],
                         q[(i + 3 * direction) % 4]);
                 if (h == null) continue;
-                int[] cards = new int[4];
-                long seen = 0;
-                for (int slot = 0; slot < 4; slot++) {
-                    int card = identify(frame, h, slot);
-                    if (card < 0 || (seen & (1L << card)) != 0) break;
-                    seen |= 1L << card;
-                    cards[slot] = card;
-                }
-                if (Long.bitCount(seen) == 4) {
-                    Arrays.sort(cards);
-                    readings.add(cards);
-                }
+                // Each code must contain four cards from the same marker generation.
+                readGroup(frame, h, false, readings);
+                if (Layout30.ACCEPT_LEGACY) readGroup(frame, h, true, readings);
             }
         }
     }
 
-    private Readings decode(Frame frame, Point[] quad) {
+    private Readings decode(Frame frame, Point[] quad, boolean aimed) {
         Readings readings = new Readings();
         sampleOrientations(frame, quad, readings);
-        if (readings.ids != null || maxSide(quad) > 104) return readings;
-        for (double x : new double[]{-.45, 0, .45}) {
-            for (double y : new double[]{-.45, 0, .45}) {
+        double side = maxSide(quad);
+        if (readings.ids != null || side > 104) return readings;
+        // At two pixels per marker cell or less, a fraction of a pixel can straddle two bars.
+        double[] offsets = OFFSETS;
+        if (side <= 32) offsets = aimed ? SMALL_AIMED_OFFSETS : SMALL_OFFSETS;
+        for (double x : offsets) {
+            for (double y : offsets) {
                 if (x == 0 && y == 0) continue;
                 Point[] q = new Point[4];
                 for (int i = 0; i < 4; i++) q[i] = new Point(quad[i].x + x, quad[i].y + y);
@@ -492,9 +528,33 @@ final class OpticalReader {
         return false;
     }
 
+    static int aimSide(int width, int height) {
+        return Math.round(Math.min(width, height) * .53f);
+    }
+
+    int[] readAimed(Frame source) {
+        int side = aimSide(source.width, source.height);
+        if (side < 20) return null;
+        int left = (source.width - side) / 2, top = (source.height - side) / 2;
+        byte[] pixels = new byte[side * side];
+        for (int y = 0; y < side; y++)
+            System.arraycopy(source.data, (top + y) * source.width + left, pixels, y * side, side);
+        Frame guide = new Frame(side, side, pixels);
+        Readings first = scan(guide, SEARCH_SIDE, true);
+        if (first.ids != null || first.ambiguous || side / 2 < 20) return first.result();
+        // Large, detailed outlines can merge with artwork at the native scale.
+        // Locate them at half scale, then refine and sample the original pixels.
+        return scan(guide, Math.min(SEARCH_SIDE, side) / 2, true).result();
+    }
+
     int[] read(Frame source) {
         if (Math.min(source.width, source.height) < 20) return null;
-        Frame reduced = source.reduce();
+        return scan(source, SEARCH_SIDE, false).result();
+    }
+
+    private Readings scan(Frame source, int limit, boolean aimed) {
+        Frame reduced = source.reduce(limit);
+        Point reticle = new Point(reduced.width * .5, reduced.height * .5);
         Frame smooth = reduced.smooth(5);
         Frame brightened = reduced.brightenedEdges();
         List<Point[]> checkedRaw = new ArrayList<>(), checkedEnhanced = new ArrayList<>();
@@ -508,6 +568,7 @@ final class OpticalReader {
                     if (enhanced && brightened == null) continue;
                     Point[] coarse = refine(enhanced ? brightened : reduced, rough);
                     if (coarse == null || checked(enhanced ? checkedEnhanced : checkedRaw, coarse)) continue;
+                    if (aimed && !contains(coarse, reticle)) continue;
                     Region region = new Region(source, coarse, reduced);
                     Point[] fine = region.quad;
                     if (reduced != source) {
@@ -515,17 +576,30 @@ final class OpticalReader {
                         fine = refine(edges != null ? edges : region.frame, fine);
                         if (fine == null) continue;
                     }
-                    Readings reading = decode(region.frame, fine);
-                    if (reading.ambiguous) return null;
+                    if (aimed && !contains(fine, new Point(source.width * .5 - region.left,
+                            source.height * .5 - region.top))) continue;
+                    Readings reading = decode(region.frame, fine, aimed);
+                    if (aimed && reading.ids == null && maxSide(fine) <= 70)
+                        reading = decode(region.frame.sharpened(), fine, true);
+                    if (reading.ambiguous) return reading;
                     if (reading.ids == null) continue;
                     Point center = center(coarse);
-                    if (acceptedCenter != null && acceptedCenter.distance(center) > 3) return null;
+                    if (acceptedCenter != null && acceptedCenter.distance(center) > 3) {
+                        accepted.ambiguous = true;
+                        return accepted;
+                    }
                     acceptedCenter = center;
                     accepted.add(reading.ids);
-                    if (accepted.ambiguous) return null;
+                    if (accepted.ambiguous) return accepted;
                 }
             }
         }
-        return accepted.ids;
+        return accepted;
+    }
+
+    private static boolean contains(Point[] quad, Point point) {
+        for (int i = 0; i < 4; i++)
+            if (cross(quad[i], quad[(i + 1) % 4], point) <= 0) return false;
+        return true;
     }
 }

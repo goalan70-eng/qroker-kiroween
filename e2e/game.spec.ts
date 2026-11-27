@@ -699,7 +699,7 @@ test.describe('8 two codes in one placement', () => {
   test('one placement completes E1 and E2: one reveal with both sums and each seat\'s points', async ({ page }, testInfo) => {
     test.setTimeout(LONG_TEST);
     const scene = SCENE_8_6;
-    await startGame(page, { seedText: String(scene.seed) });
+    await startGame(page, { language: 'ko', seedText: String(scene.seed) });
 
     const { stoppedAt } = await playUntil(page, {
       stopAt: async kind => kind === 'GUESS' && await page.locator('.guess-field').count() === 2,

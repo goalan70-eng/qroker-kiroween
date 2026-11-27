@@ -8,13 +8,13 @@
 // An ACCEPTANCE RUN, not a smoke test. The grid of configurations is
 //
 //     strategy mix  x  identity visibility
-//     { ALL_BEGINNER, ALL_ADVANCED, MIXED }  x  { OWNER_ONLY, FACE_UP }       = 6 configurations
+//     { ALL_BEGINNER, ALL_ADVANCED, MIXED }  x  { OWNER_ONLY, FACE_UP, BLIND, BLIND_SCORE_ONLY } = 12 configurations
 //
 //     ALL_BEGINNER  P0..P3 = BEGINNER, BEGINNER, BEGINNER, BEGINNER
 //     ALL_ADVANCED  P0..P3 = ADVANCED, ADVANCED, ADVANCED, ADVANCED
 //     MIXED         P0..P3 = ADVANCED, BEGINNER, ADVANCED, BEGINNER
 //
-// and EVERY Seed 0..N-1 is played in EVERY configuration: 6 x N complete games (1200 at the default N = 200). The
+// and EVERY Seed 0..N-1 is played in EVERY configuration: 12 x N complete games (2400 at the default N = 200). The
 // distribution is exhaustive over the grid and deterministic (no sampling, no random choice of seeds). One `it` per
 // configuration, so a failure names the configuration, and each failure message carries the Seed, the configuration,
 // the first problem and a `playGame` snippet that reproduces the game.
@@ -22,7 +22,7 @@
 // N: `E2E_SEEDS` (default 200). The value is validated by `parseSeedCount`: a positive integer in 1..4294967296. An
 // unset or blank variable gives the default; ANYTHING ELSE (text, a fraction, 0, a negative number, NaN, a seed range
 // beyond 32 bits) THROWS a RangeError when the file loads. It does not fall back silently: a typo such as
-// `E2E_SEEDS=2OO` must not turn a 1200-game acceptance run into a different run without anyone noticing.
+// `E2E_SEEDS=2OO` must not turn a 2400-game acceptance run into a different run without anyone noticing.
 //
 // Configuration: `defaultConfig()` with ONLY `identityVisibility` overridden. The seats stay as `defaultConfig` has
 // them (P0 HUMAN, P1..P3 AI); the driver ignores seat kinds and assigns an AI strategy to all four seats (all-seats-AI
@@ -63,7 +63,7 @@
 // No delay is inserted anywhere. Timing (`performance.now`) is measured in this test file only; sim/ code is clock-free.
 //
 // Diagnostics: while the games are played the test collects descriptive counts per configuration. With
-// `E2E_WRITE_DIAGNOSTICS=1` (and only then) the test writes `docs/game/headless-diagnostics.md` after all six
+// `E2E_WRITE_DIAGNOSTICS=1` (and only then) the test writes `docs/game/headless-diagnostics.md` after all
 // configurations finished with zero failures. Default runs write nothing. The file has no timestamps and no timings.
 // The numbers describe self-play under the PLACEHOLDER scoring; they are NOT a balance study and no constant may be
 // tuned from them.
@@ -81,7 +81,8 @@ import { registeredDifficulties } from "../ai/registry";
 import { ALL_CARDS } from "../core/cards";
 import { rankPlayers } from "../core/ranking";
 import { replay, stateEquals } from "../core/replay";
-import { startingScoredGroups } from "../core/rules";
+import { expectedReveal } from "../core/testing/expected-reveal";
+import { IDENTITY_VISIBILITIES, startingScoredGroups } from "../core/rules";
 import { defaultConfig } from "../core/state";
 import type { GameState } from "../core/state";
 import { arbSeed } from "../core/testing/card-generators";
@@ -132,7 +133,7 @@ const TIMEOUT_MS = Math.max(120_000, 600 * N);
 const DETERMINISM_STRIDE = 10;
 
 const SEED_P21 = 20261321;
-const NUM_RUNS_P21 = 150;
+const NUM_RUNS_P21 = 300;
 const TIMEOUT_P21_MS = 180_000;
 
 const DIAGNOSTICS_PATH = resolve(dirname(fileURLToPath(import.meta.url)), "../../../docs/game/headless-diagnostics.md");
@@ -154,7 +155,7 @@ const MIXES: readonly Mix[] = [
   { name: "MIXED", tiers: ["ADVANCED", "BEGINNER", "ADVANCED", "BEGINNER"] },
 ];
 
-const VISIBILITIES: readonly IdentityVisibility[] = ["OWNER_ONLY", "FACE_UP"];
+const VISIBILITIES = IDENTITY_VISIBILITIES;
 
 interface Configuration {
   readonly id: string;
@@ -393,13 +394,14 @@ function inspectGame(seed: number, config: GameConfig, result: PlayGameResult): 
   }
 
   // VIEWS.
+  const history = final.history.map(record => expectedReveal(record, config.identityVisibility));
   for (const seat of SEATS) {
     const view = viewFor(final, seat);
     const keys = collectKeys(view);
     check("VIEWS", view.viewer === seat && view.phase === "ENDED", () => `${seat}: viewer ${view.viewer}, phase ${view.phase}`);
     check("VIEWS", view.pendingQuadKeys.length === 0 && SEATS.every((s) => view.guessSubmitted[s] === false) && view.myGuesses === null, () => `${seat}: the final view shows pending information`);
     check("VIEWS", view.ranking !== null && canonical(view.ranking) === canonical(ranking), () => `${seat}: the ranking of the view differs from rankPlayers`);
-    check("VIEWS", canonical(view.lastReveal) === canonical(final.history[final.history.length - 1] ?? null) && view.history.length === final.history.length, () => `${seat}: the history of the view differs`);
+    check("VIEWS", canonical(view.lastReveal) === canonical(history.at(-1) ?? null) && canonical(view.history) === canonical(history), () => `${seat}: the history of the view differs`);
     check("VIEWS", canonical(view.scores) === canonical(final.scores), () => `${seat}: scores of the view differ`);
     const leaked = SEALED_KEYS.filter((key) => keys.has(key));
     check("VIEWS", leaked.length === 0, () => `${seat}: the view contains sealed keys ${leaked.join(",")}`);
@@ -459,7 +461,7 @@ interface Tally {
   sharedWins: Record<PlayerId, number>;
   tiesAtTop: number;
   elapsedMs: number;
-  /** Canonical action log per seed, to compare the two visibility modes of one mix (descriptive diagnostics only). */
+  /** Canonical action log per seed, to compare the visibility settings of one mix (descriptive diagnostics only). */
   readonly logs: Map<number, string>;
   /** Batches and multi-code batches per seed, to count each unique game once (descriptive diagnostics only). */
   readonly batchesBySeed: Map<number, { readonly batches: number; readonly multiCodeBatches: number }>;
@@ -528,27 +530,29 @@ function renderDiagnostics(tallies: readonly Tally[], seeds: number): string {
     "",
   );
   L.push("## How the numbers were produced", "");
-  L.push(`- Seeds: 0..${seeds - 1} (N = ${seeds}), every Seed in every configuration, so ${6 * seeds} complete configuration-specific games (see Counting conventions for the number of unique games).`);
-  L.push("- Configurations: strategy mix x identity visibility. ALL_BEGINNER = BEGINNER on P0..P3; ALL_ADVANCED = ADVANCED on P0..P3; MIXED = P0 ADVANCED, P1 BEGINNER, P2 ADVANCED, P3 BEGINNER. Visibility is OWNER_ONLY or FACE_UP.");
-  L.push("- Configuration of each game: `defaultConfig()` with `identityVisibility` overridden; the driver assigns an AI strategy to all four seats. The score table is the placeholder `rewardByError [6, 4, 3, 2, 1]`, `handEmptyBonus 3`.");
+  L.push(`- Seeds: 0..${seeds - 1} (N = ${seeds}), every Seed in every configuration, so ${CONFIGURATIONS.length * seeds} complete configuration-specific games (see Counting conventions for the number of unique games).`);
+  L.push("- Configurations: strategy mix x identity visibility. ALL_BEGINNER = BEGINNER on P0..P3; ALL_ADVANCED = ADVANCED on P0..P3; MIXED = P0 ADVANCED, P1 BEGINNER, P2 ADVANCED, P3 BEGINNER. Modes: " + VISIBILITIES.join(", ") + ".");
+  L.push("- Configuration of each game: `defaultConfig()` with `identityVisibility` overridden; the driver assigns an AI strategy to all four seats. Scoring uses the provisional configuration reported by defaultConfig().");
   L.push("- Every game ran with `checkInvariants: true` and was checked by the independent oracles of the test (see the header of the test file).");
   L.push("- Win means rank 1 of `rankPlayers` (competition ranking, no tiebreak). A game whose rank 1 is held by one seat is an outright win for that seat; a game whose rank 1 is shared counts a shared win for every seat at rank 1 and one tie at the top.");
   L.push("- Regenerate: `E2E_WRITE_DIAGNOSTICS=1 npx vitest --run src/game/sim/e2e.test.ts`.", "");
 
   // Counting conventions: configuration-specific games, unique games, games with a multi-code batch, multi-code batches.
-  // A FACE_UP game whose complete action log equals the OWNER_ONLY game of the same mix and seed duplicates that game.
+  // A seed and mix can produce the same action log under several visibility settings.
   let uniqueGames = 0, uniqueBatches = 0, uniqueMultiBatches = 0, uniqueGamesWithMulti = 0;
   let allBatches = 0, allMultiBatches = 0, allGamesWithMulti = 0, allGames = 0;
+  const seenLogs = new Map<string, Set<string>>();
   for (const t of tallies) {
     allGames += t.games;
     allBatches += t.batches;
     allMultiBatches += t.multiCodeBatches;
     allGamesWithMulti += t.gamesWithMultiCodeBatch;
-    const twin = t.configuration.visibility === "FACE_UP"
-      ? tallies.find((o) => o.configuration.mix === t.configuration.mix && o.configuration.visibility === "OWNER_ONLY")
-      : undefined;
     for (const [seed, log] of t.logs) {
-      if (twin !== undefined && twin.logs.get(seed) === log) continue;
+      const key = t.configuration.mix.name + "/" + seed;
+      const seen = seenLogs.get(key) ?? new Set<string>();
+      if (seen.has(log)) continue;
+      seen.add(log);
+      seenLogs.set(key, seen);
       const counts = t.batchesBySeed.get(seed);
       uniqueGames++;
       uniqueBatches += counts?.batches ?? 0;
@@ -563,7 +567,7 @@ function renderDiagnostics(tallies: readonly Tally[], seeds: number): string {
   };
   L.push("## Counting conventions", "");
   L.push("- **Configuration-specific game**: one complete game of one seed in one configuration (strategy mix x visibility). The run plays " + String(allGames) + " of them; every `Games played` cell in the tables below counts configuration-specific games.");
-  L.push("- **Unique game**: a configuration-specific game counted once. A FACE_UP game whose complete action log is identical to the OWNER_ONLY game of the same mix and seed is a duplicate of that game (see Visibility comparison) and is not counted again. The run contains " + String(uniqueGames) + " unique games. The two ALL_BEGINNER columns are therefore the same games, not two independent samples.");
+  L.push("- **Unique game**: a configuration-specific game counted once. Identical action logs for the same mix and seed count once across all visibility settings. The run contains " + String(uniqueGames) + " unique games. Repeated logs are not independent samples.");
   L.push("- **Game containing a multi-code batch**: a game with at least one batch that completes two or more Composite Codes at once.");
   L.push("- **Number of multi-code batches**: the count of such batches. A game with two multi-code batches adds 1 to the game count and 2 to the batch count.");
   L.push("- **Batch denominator**: the number of all prediction batches (one per placement that completes at least one Composite Code), counted over the same set of games as the numerator.", "");
@@ -630,23 +634,23 @@ function renderDiagnostics(tallies: readonly Tally[], seeds: number): string {
   table(tierRows, ["Configuration", "Tier", "Seats", "Mean final score per seat", "Outright wins", "Shared wins", "Rank-1 results per seat-game"]);
 
   L.push("## Visibility comparison", "");
-  L.push("For each strategy mix: the number of Seeds whose complete action log is identical in OWNER_ONLY and in FACE_UP. A strategy that does not read card identities plays the same game in both modes.", "");
+  L.push("For each mix and mode, count seeds with the same complete action log as Normal.", "");
   const visibilityRows: string[][] = [];
-  for (const mix of MIXES) {
-    const [owner, faceUp] = ["OWNER_ONLY", "FACE_UP"].map((v) => tallies.find((t) => t.configuration.mix === mix && t.configuration.visibility === v));
-    if (owner === undefined || faceUp === undefined) continue;
-    let same = 0;
-    for (const [seed, log] of owner.logs) if (faceUp.logs.get(seed) === log) same++;
-    visibilityRows.push([mix.name, share(same, owner.logs.size)]);
+  for (const baseline of tallies.filter(t => t.configuration.visibility === "OWNER_ONLY")) {
+    for (const other of tallies.filter(t => t.configuration.mix === baseline.configuration.mix && t !== baseline)) {
+      let same = 0;
+      for (const [seed, log] of baseline.logs) if (other.logs.get(seed) === log) same++;
+      visibilityRows.push([baseline.configuration.mix.name, other.configuration.visibility, share(same, baseline.logs.size)]);
+    }
   }
-  table(visibilityRows, ["Mix", "Seeds with identical action log in both modes"]);
+  table(visibilityRows, ["Mix", "Mode compared with Normal", "Seeds with identical action logs"]);
 
   L.push("## Limitations", "");
   L.push("- The scores come from the placeholder score table; a different table changes every score, win and tie number above.");
   L.push("- The games are synthetic self-play of two simple heuristic strategies, not human play.");
   L.push("- Seat P0 places first in every game; the tables above do not separate seat position from tier.");
   L.push("- Neither strategy aims at a placement that completes two codes at once, so the 2-code rows rest on few games; they say nothing about how often a human player would see such a batch.");
-  L.push("- The six configurations are not six independent samples: a strategy that does not read card identities plays identical games in both visibility modes (see Visibility comparison and Counting conventions).");
+  L.push("- Configurations share seeds and can produce identical games across visibility settings (see Visibility comparison and Counting conventions).");
   L.push("- The numbers describe these seeds only (0.." + String(seeds - 1) + "); no statistical test was made and none is claimed.");
   L.push("");
   return L.join("\n");
@@ -656,7 +660,7 @@ function renderDiagnostics(tallies: readonly Tally[], seeds: number): string {
 // The acceptance run
 // ---------------------------------------------------------------------------------------------------------
 
-describe(`end-to-end headless acceptance run: seeds 0..${N - 1} in each of the 6 configurations (${6 * N} games)`, () => {
+describe(`end-to-end headless acceptance run: seeds 0..${N - 1} in each of the ${CONFIGURATIONS.length} configurations (${CONFIGURATIONS.length * N} games)`, () => {
   it("validates E2E_SEEDS: positive integers only, default 200, invalid values throw", () => {
     expect(parseSeedCount(undefined)).toBe(200);
     expect(parseSeedCount("")).toBe(200);
@@ -761,11 +765,11 @@ describe(`end-to-end headless acceptance run: seeds 0..${N - 1} in each of the 6
     const ordered = CONFIGURATIONS.map((c) => TALLIES.get(c.id));
     const complete = ordered.every((t) => t !== undefined && t.games === N && t.failed === 0);
     // eslint-disable-next-line no-console
-    console.log(`[13.2 e2e] total ${ordered.reduce((sum, t) => sum + (t?.games ?? 0), 0)} games, ${Math.round(ordered.reduce((sum, t) => sum + (t?.elapsedMs ?? 0), 0))} ms in the six configurations`);
+    console.log(`[13.2 e2e] total ${ordered.reduce((sum, t) => sum + (t?.games ?? 0), 0)} games, ${Math.round(ordered.reduce((sum, t) => sum + (t?.elapsedMs ?? 0), 0))} ms in ${ordered.length} configurations`);
     if (!WRITE_DIAGNOSTICS) return;
     if (!complete) {
       // eslint-disable-next-line no-console
-      console.log("[13.2 e2e] diagnostics not written: not all six configurations ran to completion without failures");
+      console.log("[13.2 e2e] diagnostics not written: not all configurations ran to completion without failures");
       return;
     }
     mkdirSync(dirname(DIAGNOSTICS_PATH), { recursive: true });
@@ -800,7 +804,7 @@ interface Coverage21 {
 
 describe("Property 21: Termination and bounded length", () => {
   it(
-    "for any Seed, any assignment of the registered strategies to the 4 seats, either visibility and any seat kinds, playGame ends in ENDED within 48 PLACE actions with no rejected action, all invariants, exact replay and no pending information",
+    "for any Seed, any assignment of the registered strategies to the 4 seats, any visibility and any seat kinds, playGame ends in ENDED within 48 PLACE actions with no rejected action, all invariants, exact replay and no pending information",
     { timeout: TIMEOUT_P21_MS },
     () => {
       // Feature: qroker-playable-game, Property 21: Termination and bounded length
@@ -820,7 +824,7 @@ describe("Property 21: Termination and bounded length", () => {
           fc.record({
             seed: arbSeed,
             assignment: fc.tuple(arbTier, arbTier, arbTier, arbTier),
-            visibility: fc.constantFrom<IdentityVisibility>("OWNER_ONLY", "FACE_UP"),
+            visibility: fc.constantFrom(...VISIBILITIES),
             kinds: fc.tuple(arbKind, arbKind, arbKind, arbKind),
           }),
           ({ seed, assignment, visibility, kinds }) => {
@@ -897,8 +901,7 @@ describe("Property 21: Termination and bounded length", () => {
         for (const tier of tiers) expect(cov.seatTier[seat][tier] ?? 0, `${seat} plays ${tier}`).toBeGreaterThanOrEqual(15);
       }
       expect(cov.mixes.size, "distinct tier assignments").toBeGreaterThanOrEqual(Math.min(tiers.length ** 4, 12));
-      expect(cov.byVisibility.OWNER_ONLY, "OWNER_ONLY games").toBeGreaterThanOrEqual(50);
-      expect(cov.byVisibility.FACE_UP, "FACE_UP games").toBeGreaterThanOrEqual(50);
+      for (const mode of VISIBILITIES) expect(cov.byVisibility[mode], mode + " games").toBeGreaterThanOrEqual(50);
       expect(cov.humanSeats, "seats configured HUMAN").toBeGreaterThanOrEqual(150);
       expect(cov.aiSeats, "seats configured AI").toBeGreaterThanOrEqual(150);
       // No guard on `twoCodeBatches`: the AI strategies do not aim at a placement that completes two codes at once, and

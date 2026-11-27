@@ -103,8 +103,8 @@ npx playwright test
 `npm test` runs all Vitest tests, including synthetic optics. `test:ci` caps
 workers at four; use it on a busy machine. Do not increase test timeouts or
 skip assertions to disguise failures. A failure must be investigated and recorded.
-The headless acceptance test defaults to 200 seeds × three AI mixes × two
-identity modes = 1,200 complete engine games, plus determinism/property tests.
+The headless acceptance test defaults to 200 seeds × three AI mixes × four
+visibility settings (Normal, both Blind feedback settings, and legacy FACE_UP) = 2,400 complete engine games, plus determinism/property tests.
 To explicitly request that count in PowerShell:
 
 ```powershell

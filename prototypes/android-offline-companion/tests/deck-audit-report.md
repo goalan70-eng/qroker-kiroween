@@ -35,7 +35,8 @@ $qrJava = 'D:/Android/Android Studio1/jbr/bin'
 New-Item -ItemType Directory -Path build/deck-classes,build/generated -Force | Out-Null
 python generate-layout.py $qrSource build/generated/Layout30.java
 python tests/generate-deck-fixtures.py $qrSource build/deck-audit
-& "$qrJava/javac.exe" -encoding UTF-8 -d build/deck-classes src/OpticalReader.java build/generated/Layout30.java tests/DeckAudit.java
+$qrOptics = '../screen-playtest/optics'
+& "$qrJava/javac.exe" -encoding UTF-8 -d build/deck-classes src/OpticalReader.java build/generated/Layout30.java "$qrOptics/ExtraBars.java" "$qrOptics/ErasureDecoder.java" "$qrOptics/TrialWords.java" tests/DeckAudit.java
 & "$qrJava/java.exe" -Xmx512m -cp build/deck-classes com.qroker.offline.DeckAudit build/deck-audit
 & "$qrJava/java.exe" -cp build/deck-classes com.qroker.offline.DeckAudit build/deck-audit --emulator
 python tests/make-emulator-clip.py build/deck-audit

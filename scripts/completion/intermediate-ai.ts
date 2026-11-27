@@ -13,13 +13,13 @@
  * Guesses: for each pending Quad_Key, the sum of the visible card values plus 7 for each hidden member.
  * No lookahead, no unseen-card model.
  */
-import { cardValue } from '../core/cards';
-import { isValidMember } from '../core/fragment-layout';
-import { candidateQuads, fromNotation, quadCells, quadKey, slotOf } from '../core/geometry';
-import type { CellView, PlayerView } from '../core/view';
-import type { GridPosition, QuadKey } from '../core/types';
-import { chooseSeeded, decisionRng, enumeratePlacements, toPlaceAction } from './strategy';
-import type { AIStrategy, AiContext, PlaceAction, SubmitGuessesAction } from './strategy';
+import { cardValue } from '../../src/game/core/cards';
+import { isValidMember } from '../../src/game/core/fragment-layout';
+import { candidateQuads, fromNotation, quadCells, quadKey, slotOf } from '../../src/game/core/geometry';
+import type { CellView, PlayerView } from '../../src/game/core/view';
+import type { GridPosition, QuadKey } from '../../src/game/core/types';
+import { chooseSeeded, decisionRng, enumeratePlacements, toPlaceAction } from '../../src/game/ai/strategy';
+import type { AIStrategy, AiContext, PlaceAction, SubmitGuessesAction } from '../../src/game/ai/strategy';
 
 /** Value used for a hidden member when summing a Guess (the middle card value). */
 export const HIDDEN_MEMBER_VALUE = 7;

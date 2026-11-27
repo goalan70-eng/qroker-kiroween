@@ -14,22 +14,22 @@ src/game/
   persistence/     save envelope, migration, storage adapters
   i18n/            string tables and lookup (en, ko)
   ui/              DOM layer (Vite root): index.html, main.ts, components/, screens/,
-                   overlays/, styles/, public/ (manifest, icons, sw.js), testing/
+                   overlays/, styles/, audio/, back-marks/, testing/
   README.md        this file
-scripts/build-sw.ts, scripts/simulate.ts      (outside src/game; scanned by the boundary test)
-docs/practice-mode.md, docs/responsive-checklist.md, docs/offline-checklist.md
+scripts/build-standalone.mjs                  (packages the main offline HTML)
+docs/practice-mode.md
 ```
 
-The design lists no separate `pwa/` folder. The PWA files live in `ui/public/` and `ui/`.
+The main offline deliverable is `QRoker.html`. Installable PWA support and the service worker are planned.
 
 | Folder | Contents |
 |--------|----------|
-| `core/` | Types, cards, PRNG and seed, geometry, fragment layout, deck, board and placement validator, composite-code detector, draw and turn, score and ranking, rules, state, engine (reducer), view (`PlayerView` projector), replay, schematic view model. |
-| `ai/` | `strategy.ts`, `registry.ts`, and the strategies (`random`, `heuristic`, `unseen`, `bayesian`) with `params.ts`. |
-| `sim/` | `types.ts`, `play-game.ts`, `runner.ts`. |
+| `core/` | Types, cards, PRNG and seed, geometry, fragment layout, deck, board and placement validator, composite-code detector, draw and turn, score and ranking, rules, state, engine (reducer), view (`PlayerView` projector), replay. |
+| `ai/` | `strategy.ts`, `registry.ts`, `random.ts` (BEGINNER) and `heuristic.ts` (ADVANCED). Additional tiers are experimental or planned. |
+| `sim/` | `types.ts`, `play-game.ts` and the headless acceptance tests. |
 | `persistence/` | `save-format.ts`, `storage.ts`. Storage is injected by the caller. |
 | `i18n/` | `index.ts`, `types.ts`, `strings/<area>.ts` (each file exports `{ en, ko }`). |
-| `ui/` | Browser UI: `store.ts`, `controller.ts`, `dom.ts`, components, screens, overlays, styles, PWA assets. |
+| `ui/` | Browser UI: `store.ts`, `controller.ts`, `dom.ts`, components, screens, overlays, styles, audio and marked card backs. |
 
 ## Allowed imports per folder
 
@@ -57,7 +57,7 @@ Intended module graph (an arrow means "imports"):
 
 Other rules the boundary test checks (task 1.3):
 
-- `fetch`, `XMLHttpRequest`, `WebSocket` and `sendBeacon` appear nowhere except `ui/public/sw.js`.
+- `fetch`, `XMLHttpRequest`, `WebSocket` and `sendBeacon` are prohibited in game runtime modules. The boundary test reserves an exception for a future service worker.
 - `node:` imports are banned in `core/`, `ai/`, `persistence/` and `ui/`.
 - DOM globals (`window`, `document`, `localStorage`, `navigator`) are banned in `core/` and `ai/`.
 - Score tables (array literals assigned to `rewardByError`) exist only in `core/score.ts`.
@@ -85,7 +85,7 @@ Do not edit `src/optical`, `vitest.config.ts` or the frozen codebook as part of 
 
 ## Provisional scoring
 
-Score values exist only as `DEV_PLACEHOLDER_SCORE_CONFIG` in `core/score.ts`. This is a development placeholder with `provisional: true`. It makes no balance claim. No other file may contain a score table or score value. The UI shows a "provisional scoring" banner while `scoreConfig.provisional` is true. A human decides the final values after simulation experiments, and none has been run.
+Score values exist only as `DEV_PLACEHOLDER_SCORE_CONFIG` in `core/score.ts`. This is a development placeholder with `provisional: true`. It makes no balance claim. No other file may contain a score table or score value. The UI shows a "provisional scoring" banner while `scoreConfig.provisional` is true. The owner decides the final values. Completed self-play experiments are documented in `docs/game/`.
 
 ## Commands
 
@@ -100,6 +100,7 @@ Commands marked "added by task 1.2" or "added by task 16.1" were added to `packa
 | `npm run test:game` | Run only the game tests (`vitest --run src/game`) | added by task 1.2 |
 | `npm run dev` | Serve the app with Vite | exists (added by task 16.1) |
 | `npm run build` | Type-check the game and build to `dist/` | exists (added by task 16.1) |
+| `npm run build:standalone` | Package the marked faces, styles and sounds into `dist/QRoker.html` | requires the local deck |
 | `npm run preview` | Serve the built app | exists (added by task 16.1) |
 
-The full install, run, build, serve, test and type-check instructions will be in `docs/practice-mode.md` (requirement 21.6).
+The install, run, build, serve, test and type-check instructions are in `docs/practice-mode.md` (requirement 21.6).

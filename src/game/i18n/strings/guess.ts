@@ -50,6 +50,7 @@ export const ko: Record<keyof typeof en, string> = Object.freeze({
   'guess.input.region': '{key} 조합: 보드에서 {cells} 칸으로 이루어진 2×2 영역입니다.',
   // REVIEW: new text, needs native-speaker check
   'guess.error.range': '{min}~{max} 사이의 정수로 다시 입력해 주세요.',
+  // REVIEW: new text, needs native-speaker check
   'guess.error.missing': '{min}에서 {max} 사이의 정수를 입력하세요',
   // REVIEW: new text, needs native-speaker check
   'guess.submit': '예측값 제출',

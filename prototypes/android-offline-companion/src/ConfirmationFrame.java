@@ -1,8 +1,9 @@
 package com.qroker.offline;
 
 import java.util.ArrayDeque;
+import java.util.function.Consumer;
 
-/** Matches the exposure for the submission even if its image is delivered first. */
+/** Releases the matching exposure only after Camera2 reports successful capture. */
 final class ConfirmationFrame<T> {
     static final class Match<T> {
         final long id;
@@ -24,51 +25,68 @@ final class ConfirmationFrame<T> {
         }
     }
 
-    private static final int EARLY_IMAGE_LIMIT = 3;
+    // The camera retains only decoded card IDs here, for the duration of one timed request.
     private final ArrayDeque<TimedImage<T>> earlyImages = new ArrayDeque<>();
+    private final Consumer<T> preview;
     private long request;
     private long targetTimestamp = Long.MAX_VALUE;
+    private T targetImage;
+    private boolean captureCompleted;
+
+    ConfirmationFrame(Consumer<T> preview) { this.preview = preview; }
 
     void request(long id) {
         request = id;
         targetTimestamp = Long.MAX_VALUE;
+        targetImage = null;
+        captureCompleted = false;
         earlyImages.clear();
     }
 
     boolean waiting() { return request != 0; }
-
-    boolean candidate(long timestamp) {
-        return waiting() && (targetTimestamp == Long.MAX_VALUE || timestamp == targetTimestamp);
-    }
+    long requestId() { return request; }
+    boolean needsReading(long timestamp) { return timestamp <= targetTimestamp; }
 
     Match<T> started(long id, long timestamp) {
         if (!waiting() || id != request) return null;
         targetTimestamp = timestamp;
-        T match = null;
         for (TimedImage<T> image : earlyImages) {
-            if (image.timestamp == timestamp) {
-                match = image.image;
-                break;
-            }
+            if (image.timestamp < timestamp) preview.accept(image.image);
+            if (image.timestamp == timestamp) targetImage = image.image;
         }
         earlyImages.clear();
-        return match == null ? null : matched(match);
+        return takeCompletedMatch();
     }
 
     Match<T> arrived(long timestamp, T image) {
-        if (!candidate(timestamp)) return null;
-        if (targetTimestamp != Long.MAX_VALUE) return matched(image);
-        if (earlyImages.size() == EARLY_IMAGE_LIMIT) earlyImages.removeFirst();
+        if (!waiting()) return null;
+        if (timestamp == targetTimestamp) {
+            targetImage = image;
+            return takeCompletedMatch();
+        }
+        if (targetTimestamp != Long.MAX_VALUE) {
+            if (timestamp < targetTimestamp) preview.accept(image);
+            return null;
+        }
         earlyImages.addLast(new TimedImage<>(timestamp, image));
         return null;
     }
 
-    void cancel(long id) {
-        if (id == request) request(0);
+    void cancel(long id, Runnable onCancelled) {
+        if (!waiting() || id != request) return;
+        request(0);
+        onCancelled.run();
     }
 
-    private Match<T> matched(T image) {
-        Match<T> match = new Match<>(request, image);
+    Match<T> completed(long id) {
+        if (!waiting() || id != request) return null;
+        captureCompleted = true;
+        return takeCompletedMatch();
+    }
+
+    private Match<T> takeCompletedMatch() {
+        if (!captureCompleted || targetImage == null) return null;
+        Match<T> match = new Match<>(request, targetImage);
         request(0);
         return match;
     }

@@ -20,7 +20,7 @@ $clock = [System.Diagnostics.Stopwatch]::new()
 $evidence = [System.Collections.Generic.List[string]]::new()
 $edit = '//node[@class="android.widget.EditText"]'
 $ready = '//node[@text="1회차 예측"]'
-$waiting = '//node[@text="네 장이 만나는 가운데 무늬를 비춰 주세요."]'
+$waiting = '//node[starts-with(@text,"네 장의 접합부를 십자선에 맞춰 주세요.")]'
 $duplicate = '//node[starts-with(@text,"이미 기록한 조합입니다")]'
 $confirm = '//node[@text="확정"]'
 $scan = '//node[@text="코드 인식"]'
@@ -67,7 +67,9 @@ function Tap-Node($Node) {
 }
 
 function Enter-Draft([xml]$View, [int]$Value) {
-    Tap-Node ($View.SelectSingleNode($edit))
+    $enabled = '//node[@class="android.widget.EditText" and @enabled="true"]'
+    if (!$View.SelectSingleNode($enabled)) { $View = Wait-View $enabled 10 }
+    Tap-Node ($View.SelectSingleNode($enabled))
     Invoke-Device @('shell','input','text',[string]$Value) | Out-Null
     Wait-View "//node[@class='android.widget.EditText' and @text='$Value']" 10
 }
@@ -106,6 +108,13 @@ try {
     Mark ("APK SHA-256: " + (Get-FileHash -LiteralPath $Apk).Hash.ToLowerInvariant())
     Invoke-Device @('shell','am','start','-W','-n',$activity) | Out-Host
 
+    $homeView = Wait-View '//node[@content-desc="Scoreboard menu" or @content-desc="점수판 메뉴"]'
+    $englishMenu = $homeView.SelectSingleNode('//node[@content-desc="Scoreboard menu"]')
+    if ($englishMenu) {
+        Tap-Node $englishMenu
+        $menuView = Wait-View '//node[@text="한국어"]'
+        Tap-Node ($menuView.SelectSingleNode('//node[@text="한국어"]'))
+    }
     $homeView = Wait-View $scan
     Assert-InputClosed $homeView
     if ($homeView.SelectSingleNode('//node[contains(@content-desc,"카메라 미리보기")]')) { throw 'Camera visible on launch' }
@@ -116,6 +125,10 @@ try {
     Save-View $opening 'prediction-popup'
 
     if ($DuplicateOnly) {
+        $outsideRange = Enter-Draft $opening 53
+        Tap-Node ($outsideRange.SelectSingleNode($confirm))
+        $opening = Wait-View '//node[@class="android.widget.EditText" and @focused="true" and (@text="" or @text="예측 합계 (4~52)")]' 10
+        Assert-DraftCleared $opening
         $typed = Enter-Draft $opening 27
         Tap-Node ($typed.SelectSingleNode($confirm))
         $scored = Wait-View '//node[@text="총점 10점"]' 15

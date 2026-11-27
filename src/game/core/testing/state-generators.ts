@@ -34,7 +34,7 @@ import fc from "fast-check";
 import { legalCells, placeOnBoard } from "../board";
 import { detect } from "../composite-code";
 import { actingSeats, reduce } from "../engine";
-import { RULES_VERSION } from "../rules";
+import { IDENTITY_VISIBILITIES, RULES_VERSION } from "../rules";
 import { defaultConfig, newGame } from "../state";
 import type { GamePhase, GameState } from "../state";
 import { SEATS } from "../turn";
@@ -64,7 +64,7 @@ const arbRandomConfig: fc.Arbitrary<GameConfig> = fc
     arbSeatParts,
     arbSeatParts,
     arbSeatParts,
-    fc.constantFrom<GameConfig["identityVisibility"]>("OWNER_ONLY", "FACE_UP"),
+    fc.constantFrom(...IDENTITY_VISIBILITIES),
     fc.string({ maxLength: 10 }),
     fc.boolean(),
     arbValidScoreConfig,
@@ -85,7 +85,7 @@ const arbRandomConfig: fc.Arbitrary<GameConfig> = fc
   });
 
 /**
- * Valid game configurations: every seat HUMAN or AI (AI difficulty BEGINNER or ADVANCED), both Identity_Visibility
+ * Valid game configurations: every seat HUMAN or AI (AI difficulty BEGINNER or ADVANCED), all Identity_Visibility
  * values, a valid score configuration (arbitrary valid table and bonus, see score-generators.ts), and now and then
  * the default configuration.
  */

@@ -47,7 +47,9 @@ function Tap-Node($Node) {
 }
 
 function Submit-Guess([xml]$View, [int]$Value) {
-    Tap-Node ($View.SelectSingleNode('//node[@class="android.widget.EditText"]'))
+    $enabled = '//node[@class="android.widget.EditText" and @enabled="true"]'
+    if (!$View.SelectSingleNode($enabled)) { $View = Wait-View $enabled 10 }
+    Tap-Node ($View.SelectSingleNode($enabled))
     Wait-View '//node[@class="android.widget.EditText" and @focused="true"]' 10 | Out-Null
     Device @('shell','input','text',[string]$Value) | Out-Null
     $typed = Wait-View "//node[@class='android.widget.EditText' and @text='$Value']" 10
@@ -71,6 +73,13 @@ try {
     Device @('shell','am','force-stop',$qrPackage) | Out-Null
     $qrClock.Start()
     Device @('shell','am','start','-W','-n',$qrActivity) | Out-Host
+    $homeView = Wait-View '//node[@content-desc="Scoreboard menu" or @content-desc="점수판 메뉴"]'
+    $englishMenu = $homeView.SelectSingleNode('//node[@content-desc="Scoreboard menu"]')
+    if ($englishMenu) {
+        Tap-Node $englishMenu
+        $menuView = Wait-View '//node[@text="한국어"]'
+        Tap-Node ($menuView.SelectSingleNode('//node[@text="한국어"]'))
+    }
     $homeView = Wait-View '//node[@text="코드 인식"]' 20
     if (!$homeView.SelectSingleNode('//node[@text="총점 0점"]')) { throw 'Expected a fresh scoreboard' }
     Tap-Node ($homeView.SelectSingleNode('//node[@text="코드 인식"]'))
@@ -87,10 +96,10 @@ try {
     Save-View $scored 'first-scored'
     Tap-Node ($scored.SelectSingleNode('//node[@text="코드 인식"]'))
     Wait-View '//node[starts-with(@text,"이미 기록한 조합입니다")]' 30 | Out-Null
-    $missing = Wait-View '//node[@text="네 장이 만나는 가운데 무늬를 비춰 주세요."]' 68
+    $missing = Wait-View '//node[starts-with(@text,"네 장의 접합부를 십자선에 맞춰 주세요.")]' 68
     $missingAgain = Read-View
     foreach ($view in @($missing, $missingAgain)) {
-        if (!$view.SelectSingleNode('//node[@text="네 장이 만나는 가운데 무늬를 비춰 주세요."]') -or
+        if (!$view.SelectSingleNode('//node[starts-with(@text,"네 장의 접합부를 십자선에 맞춰 주세요.")]') -or
             $view.SelectSingleNode('//node[@class="android.widget.EditText"]')) {
             throw 'Missing-card scene exposes a guess or alters the score'
         }

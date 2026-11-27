@@ -85,8 +85,8 @@ import type { AIStrategy, AiContext } from "./strategy";
 
 const SEED_P24 = 20261224;
 const SEED_P25 = 20261225;
-const NUM_RUNS_P24 = 160;
-const NUM_RUNS_P25 = 200;
+const NUM_RUNS_P24 = 240;
+const NUM_RUNS_P25 = 400;
 const TIMEOUT_MS = 180_000;
 
 /** The specification's limit for one AI decision (requirement 11.5; design: "checked against 3000 ms"). */
@@ -511,6 +511,7 @@ describe("Property 24: AI action validity and determinism", () => {
       expect(cov.byPhase.GUESS_COLLECT, "GUESS_COLLECT decisions").toBeGreaterThanOrEqual(800);
       expect(cov.byMode.OWNER_ONLY, "OWNER_ONLY decisions").toBeGreaterThanOrEqual(500);
       expect(cov.byMode.FACE_UP, "FACE_UP decisions").toBeGreaterThanOrEqual(400);
+      for (const blind of ["BLIND", "BLIND_SCORE_ONLY"] as const) expect(cov.byMode[blind], blind + " decisions").toBeGreaterThan(0);
       for (const seat of SEATS) expect(cov.bySeat[seat], `decisions of ${seat}`).toBeGreaterThanOrEqual(200);
       for (const [k, count] of cov.byPriorSubmissions.entries()) expect(count, `GUESS_COLLECT decisions after ${k} submissions`).toBeGreaterThanOrEqual(100);
       expect(cov.batchOfOne, "decisions on a batch of one code").toBeGreaterThanOrEqual(300);
@@ -565,7 +566,8 @@ function oracleRevealed(state: GameState): Set<string> {
 function oracleVisibleBoard(state: GameState, viewer: PlayerId): (string | null)[] {
   const revealed = oracleRevealed(state);
   const visible = (cell: NonNullable<Cell>): boolean =>
-    state.config.identityVisibility === "FACE_UP" || cell.owner === "NEUTRAL" || cell.owner === viewer || revealed.has(cell.card);
+    state.config.identityVisibility === "FACE_UP" ||
+    (state.config.identityVisibility === "OWNER_ONLY" && (cell.owner === "NEUTRAL" || cell.owner === viewer || revealed.has(cell.card)));
   return state.board.map((cell) => (cell === null ? null : `${cell.owner}/${cell.orientation}/${visible(cell) ? cell.card : "?"}`));
 }
 
@@ -721,6 +723,7 @@ describe("Property 25: AI non-interference", () => {
       expect(cov.byPhase.GUESS_COLLECT, "GUESS_COLLECT pairs").toBeGreaterThanOrEqual(80);
       expect(cov.byMode.OWNER_ONLY, "OWNER_ONLY pairs").toBeGreaterThanOrEqual(80);
       expect(cov.byMode.FACE_UP, "FACE_UP pairs").toBeGreaterThanOrEqual(60);
+      for (const blind of ["BLIND", "BLIND_SCORE_ONLY"] as const) expect(cov.byMode[blind], blind + " pairs").toBeGreaterThan(0);
       for (const seat of SEATS) expect(cov.byViewer[seat], `pairs of viewer ${seat}`).toBeGreaterThanOrEqual(20);
       for (const category of ACTING_CATEGORIES) expect(cov.byCategory[category], `base states in ${category}`).toBeGreaterThanOrEqual(category === "PLACEMENT" ? 40 : 15);
       for (const kind of ["DECK_ORDER", "HAND_EXCHANGE", "INTERNAL_FIELDS"] as const) {

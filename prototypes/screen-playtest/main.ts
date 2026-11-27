@@ -11,7 +11,10 @@ import '../../src/game/ui/styles/end.css';
 import '../../src/game/ui/styles/overlay.css';
 import '../../src/game/ui/styles/persistence.css';
 import '../../src/game/ui/styles/layout.css';
+import '../../src/game/ui/styles/table.css';
 import './screen.css';
+import { createGameAudio } from '../../src/game/ui/game-audio';
+import { DEFAULT_LANGUAGE, getLanguage } from '../../src/game/i18n';
 import { browserStore } from '../../src/game/persistence/storage';
 import { mountApp } from '../../src/game/ui/controller';
 import type { RenderInput } from '../../src/game/ui/controller';
@@ -43,6 +46,31 @@ const dialog = element<HTMLDialogElement>('#scan-dialog');
 const scanBoard = element('#scan-board');
 const scanTitle = element('#scan-title');
 const remove = element<HTMLButtonElement>('#scan-remove');
+const cameraText = {
+  en: {
+    practice: 'Practice scanning', instruction: 'Point the Android scanner at the entire center code.',
+    close: 'Close', board: 'Card layout for scanning', remove: 'Remove one card', restore: 'Put the card back',
+    view: 'View code for scanning', revealed: 'Revealed code',
+  },
+  ko: {
+    practice: '카메라 판독 연습', instruction: 'Android 화면 검증 앱의 카메라에 중앙 코드 전체를 넣으세요.',
+    close: '닫기', board: '카메라에 비출 카드 배치', remove: '한 장 빼기', restore: '한 장 다시 놓기',
+    view: '카메라로 코드 보기', revealed: '공개 코드',
+  },
+};
+const labels = () => cameraText[getLanguage()];
+let renderedLanguage: string | undefined;
+function renderCameraLabels(): void {
+  const lang = getLanguage();
+  if (lang === renderedLanguage) return;
+  renderedLanguage = lang;
+  const copy = labels();
+  element('#sample-open').textContent = copy.practice;
+  element('#scan-instruction').textContent = copy.instruction;
+  element('#scan-close').textContent = copy.close;
+  scanBoard.setAttribute('aria-label', copy.board);
+  remove.textContent = missing ? copy.restore : copy.remove;
+}
 let selected: readonly VisibleCard[] = [];
 let missing = false;
 let activeReveal = '';
@@ -79,7 +107,7 @@ function renderPhoto(): void {
     return cell;
   });
   scanBoard.replaceChildren(support, ...cards);
-  remove.textContent = missing ? '한 장 다시 놓기' : '한 장 빼기';
+  remove.textContent = missing ? labels().restore : labels().remove;
   remove.setAttribute('aria-pressed', String(missing));
 }
 
@@ -106,7 +134,7 @@ function closePhoto(): void {
 }
 
 element('#scan-close').addEventListener('click', closePhoto);
-element('#sample-open').addEventListener('click', () => show(sample, '카메라 판독 연습'));
+element('#sample-open').addEventListener('click', () => show(sample, labels().practice));
 remove.addEventListener('click', () => { missing = !missing; renderPhoto(); });
 dialog.addEventListener('cancel', event => { event.preventDefault(); closePhoto(); });
 window.addEventListener('resize', sizeBoard);
@@ -149,15 +177,15 @@ function renderRevealTools(input: RenderInput): void {
     if (activeReveal && dialog.open) closePhoto();
     return;
   }
-  const key = JSON.stringify(candidates);
+  const key = JSON.stringify([getLanguage(), candidates]);
   if (key !== buttonsKey) {
     if (activeReveal && dialog.open) closePhoto();
     buttonsKey = key;
     revealTools.replaceChildren(...candidates.map(({ quad, cards }) => {
       const button = document.createElement('button');
       button.type = 'button';
-      button.textContent = '카메라로 코드 보기 · ' + quad;
-      button.addEventListener('click', () => show(cards, '공개 코드 · ' + quad, key));
+      button.textContent = labels().view + ' · ' + quad;
+      button.addEventListener('click', () => show(cards, labels().revealed + ' · ' + quad, key));
       return button;
     }));
   }
@@ -166,11 +194,23 @@ function renderRevealTools(input: RenderInput): void {
 }
 
 const randomSeed = () => crypto.getRandomValues(new Uint32Array(1))[0] ?? 0;
-const host = createGameScreen({ doc: document, root, randomSeedText: () => String(randomSeed()) });
+const audio = createGameAudio();
+root.addEventListener('click', audio.activate, { capture: true });
+const host = createGameScreen({
+  doc: document, root, randomSeedText: () => String(randomSeed()),
+  timerClock: {
+    now: () => performance.now(),
+    repeat: callback => {
+      const timer = window.setInterval(callback, 200);
+      return () => window.clearInterval(timer);
+    },
+  },
+});
 const stored = browserStore();
 mountApp(root, {
+  playSound: audio.play,
   doc: document,
-  languages: ['ko', ...navigator.languages],
+  languages: DEFAULT_LANGUAGE,
   schedule: (fn, ms) => {
     const id = setTimeout(fn, ms);
     return { cancel: () => clearTimeout(id) };
@@ -183,6 +223,6 @@ mountApp(root, {
     removeItem: key => stored.removeItem('screen-playtest:' + key),
   },
   nowIso: () => new Date().toISOString(),
-  renderer: input => { host.render(input); renderRevealTools(input); },
+  renderer: input => { host.render(input); renderCameraLabels(); renderRevealTools(input); },
 });
 root.querySelector('.shell__language')?.before(tools);
