@@ -6,8 +6,8 @@ export default defineConfig({
   root: 'src/game/ui',
   base: './',
   build: {
-    outDir: '../../../dist',
-    // outDir is outside `root`, so Vite does not empty it by default; this makes a rebuild remove stale hashed files.
+    // Only the hosted game is cleaned on rebuild. The offline HTML lives alongside this directory.
+    outDir: '../../../dist/web',
     emptyOutDir: true,
     target: 'es2022',
   },

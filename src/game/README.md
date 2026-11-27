@@ -99,7 +99,7 @@ Commands marked "added by task 1.2" or "added by task 16.1" were added to `packa
 | `npm run typecheck:game` | Type-check the game including DOM code (`tsc -p tsconfig.game.json`) | added by task 1.2 |
 | `npm run test:game` | Run only the game tests (`vitest --run src/game`) | added by task 1.2 |
 | `npm run dev` | Serve the app with Vite | exists (added by task 16.1) |
-| `npm run build` | Type-check the game and build to `dist/` | exists (added by task 16.1) |
+| `npm run build` | Type-check the game and build the hosted version to `dist/web/` | run `npm run preview` to serve it |
 | `npm run build:standalone` | Package the marked faces, styles and sounds into `dist/QRoker.html` | requires the local deck |
 | `npm run preview` | Serve the built app | exists (added by task 16.1) |
 

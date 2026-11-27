@@ -601,10 +601,10 @@ describe('source of screens/game.ts and strings/game.ts', () => {
     for (const file of files.slice(0, 2)) expect(strip(readFileSync(file, 'utf8')), file).not.toMatch(forbidden);
     expect(strip(readFileSync(files[0] as string, 'utf8'))).not.toMatch(/\bsetTimeout\b|\bnavigator\b|\bcrypto\b|\bdocument\b/);
   });
-  it('keeps timers, navigator and crypto in main.ts only, which holds no logic beyond composition', () => {
+  it('wires the scheduler, default language and seed source in main.ts', () => {
     const main = strip(readFileSync(files[2] as string, 'utf8'));
     expect(main).toMatch(/setTimeout/);
-    expect(main).toMatch(/navigator\.languages/);
+    expect(main).toMatch(/languages:\s*DEFAULT_LANGUAGE\b/);
     expect(main).toMatch(/crypto\.getRandomValues/);
     expect(main).not.toMatch(/\bfor\s*\(|\bwhile\s*\(|\bswitch\s*\(/);
   });

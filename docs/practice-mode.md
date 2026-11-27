@@ -82,10 +82,10 @@ npm run preview -- --host 127.0.0.1
 ```
 
 Open the printed preview URL (normally `http://127.0.0.1:4173/`). Alternatively,
-serve the generated `dist/` directory with any static HTTP server; copy the
+serve the generated `dist/web/` directory with any static HTTP server; copy the
 entire directory including `assets/`. Opening `index.html` directly as a
 `file:` URL is not the supported serving path. Preview is local verification,
-not a public deployment. The developer placement playground is not in `dist/`.
+not a public deployment. The developer placement playground is not in `dist/web/`.
 
 ## Verification commands
 

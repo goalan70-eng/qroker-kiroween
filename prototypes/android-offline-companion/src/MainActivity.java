@@ -51,7 +51,7 @@ public final class MainActivity extends Activity {
     private LiveCamera camera;
     private TextureView preview;
     private TextView total, scanStatus, result;
-    private LinearLayout home, scanner, frames;
+    private LinearLayout scanner, frames;
     private HorizontalScrollView scoreStrip;
     private Button scan, permission, permissionSettings, menu;
     private AlertDialog prediction;
@@ -174,11 +174,8 @@ public final class MainActivity extends Activity {
         page.addView(body);
         setContentView(page);
 
-        home = column();
         scanner = column();
         scanner.setVisibility(View.GONE);
-        add(body, home, -2, 0);
-        add(body, scanner, -2, 0);
 
         LinearLayout header = new LinearLayout(this);
         header.setGravity(Gravity.CENTER_VERTICAL);
@@ -187,12 +184,25 @@ public final class MainActivity extends Activity {
         header.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
         total = text(getString(R.string.total_score, 0), 20, ACCENT);
         header.addView(total);
+        Button help = new Button(this, null, android.R.attr.borderlessButtonStyle);
+        help.setText("?");
+        help.setTextSize(22);
+        help.setContentDescription(getString(R.string.game_help_title));
+        header.addView(help, new LinearLayout.LayoutParams(dp(48), dp(48)));
+        help.setOnClickListener(v -> {
+            if (scanning) finishScan();
+            new AlertDialog.Builder(this)
+                    .setTitle(R.string.game_help_title)
+                    .setMessage(R.string.game_help_body)
+                    .setPositiveButton(R.string.close, null).show();
+        });
         menu = new Button(this, null, android.R.attr.borderlessButtonStyle);
         menu.setText("⋮");
         menu.setTextSize(24);
         menu.setContentDescription(getString(R.string.score_menu));
         header.addView(menu, new LinearLayout.LayoutParams(dp(48), dp(48)));
         menu.setOnClickListener(v -> {
+            if (scanning) finishScan();
             PopupMenu options = new PopupMenu(this, menu);
             options.getMenu().add(getString(R.string.new_game)).setEnabled(game != null && !game.history().isEmpty())
                     .setOnMenuItemClickListener(item -> { confirmReset(); return true; });
@@ -204,7 +214,7 @@ public final class MainActivity extends Activity {
             });
             options.show();
         });
-        add(home, header, -2, 0);
+        add(body, header, -2, 0);
 
         LinearLayout board = new LinearLayout(this);
         board.setBackground(background(PANEL, 12));
@@ -214,23 +224,28 @@ public final class MainActivity extends Activity {
         frames = new LinearLayout(this);
         scoreStrip.addView(frames);
         board.addView(scoreStrip, new LinearLayout.LayoutParams(0, -2, 1));
-        add(home, board, -2, 8);
+        add(body, board, -2, 8);
         scan = new Button(this);
         scan.setText(getString(R.string.scan));
         scan.setTextColor(0xff10261b);
         scan.setBackgroundTintList(ColorStateList.valueOf(ACCENT));
         scan.setOnClickListener(v -> {
+            if (scanning) {
+                finishScan();
+                return;
+            }
             scanning = true;
-            home.setVisibility(View.GONE);
+            scan.setText(R.string.close_camera);
             scanner.setVisibility(View.VISIBLE);
             if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED && !offerPermissionSettings)
                 authorize();
             else startCamera();
         });
-        add(home, scan, 52, 14);
+        add(body, scan, 52, 14);
+        add(body, scanner, -2, 8);
         result = text("", 16, MUTED);
         result.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
-        add(home, result, -2, 8);
+        add(body, result, -2, 8);
 
         FrameLayout viewfinder = new FrameLayout(this);
         viewfinder.setBackground(background(PANEL, 16));
@@ -255,10 +270,6 @@ public final class MainActivity extends Activity {
                 android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                 android.net.Uri.parse("package:" + getPackageName()))));
         add(scanner, permissionSettings, 48, 8);
-        Button cancelScan = new Button(this);
-        cancelScan.setText(getString(R.string.back));
-        cancelScan.setOnClickListener(v -> finishScan());
-        add(scanner, cancelScan, 48, 12);
 
         preview.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override public void onSurfaceTextureAvailable(SurfaceTexture texture, int w, int h) { startCamera(); }
@@ -284,7 +295,7 @@ public final class MainActivity extends Activity {
         super.onResume();
         resumed = true;
         if (game == null) openScoreboard();
-        if (!scanning && game != null) showHistory();
+        if (game != null) showHistory();
         startCamera();
     }
 
@@ -359,7 +370,7 @@ public final class MainActivity extends Activity {
         scanning = false;
         stopCamera();
         scanner.setVisibility(View.GONE);
-        home.setVisibility(View.VISIBLE);
+        scan.setText(R.string.scan);
         showHistory();
     }
 
@@ -549,9 +560,12 @@ public final class MainActivity extends Activity {
                 String roundTitle = getString(R.string.round_title, i + 1);
                 col.setContentDescription(getString(R.string.round_description, roundTitle, round.points, cumulative));
                 col.setFocusable(true);
-                col.setOnClickListener(v -> new AlertDialog.Builder(this).setTitle(roundTitle)
+                col.setOnClickListener(v -> {
+                    if (scanning) finishScan();
+                    new AlertDialog.Builder(this).setTitle(roundTitle)
                         .setMessage(getString(R.string.round_detail, round.guess, round.actual, round.points))
-                        .setPositiveButton(getString(R.string.close), null).show());
+                        .setPositiveButton(getString(R.string.close), null).show();
+                });
             }
             frames.addView(col);
         }

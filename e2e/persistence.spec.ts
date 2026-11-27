@@ -48,6 +48,21 @@ const statusLine = (page: Page) => page.locator('.notice-status');
 const notice = (page: Page, kind: string) => page.locator(`.notices [data-notice="${kind}"]`);
 const bodyText = (page: Page): Promise<string> => page.evaluate(() => document.body.innerText);
 
+test.describe('setup language preference', () => {
+  test.use({ locale: 'ko-KR' });
+
+  test('starts in English on a Korean browser and restores the chosen language after reload', async ({ page }) => {
+    await page.goto('/');
+    const language = page.locator('#setup-language');
+    await expect(language).toHaveValue('en');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await language.selectOption('ko');
+    await page.reload();
+    await expect(language).toHaveValue('ko');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'ko');
+  });
+});
+
 /** Plays `n` human placements (each followed by the AI turns up to the next human turn). */
 async function placeCards(page: Page, n: number): Promise<void> {
   for (let i = 0; i < n; i++) {

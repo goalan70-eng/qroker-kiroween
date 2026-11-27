@@ -13,7 +13,7 @@ export interface StartAppDeps {
   readonly timerClock?: TimerClock;
   readonly playSound?: MountDeps['playSound'];
   readonly doc: Document;
-  /** `navigator.languages` in production. */
+  /** Initial language candidates. The main game supplies the English default. */
   readonly languages: readonly string[] | string | null | undefined;
   readonly schedule: Schedule;
   readonly randomSeed: () => number;

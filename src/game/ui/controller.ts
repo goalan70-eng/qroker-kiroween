@@ -1133,7 +1133,7 @@ export function createController(deps: AppDeps): Controller {
 export interface MountDeps {
   readonly playSound?: AppDeps['playSound'];
   readonly doc: Document;
-  /** `navigator.languages` (or `navigator.language`); the start language is `detectLanguage(languages, null)`. */
+  /** Initial language candidates used when there is no saved language preference. */
   readonly languages: readonly string[] | string | null | undefined;
   readonly schedule: Schedule;
   readonly randomSeed: () => number;

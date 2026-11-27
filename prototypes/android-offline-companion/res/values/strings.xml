@@ -6,6 +6,8 @@
     <string name="recovered">Scores recovered</string>
     <string name="scoreboard">My scores</string>
     <string name="score_menu">Scoreboard menu</string>
+    <string name="game_help_title">How to play QRoker</string>
+    <string name="game_help_body"><b>Goal</b>\nEarn points by guessing the sum of four cards. The highest final score wins.\n\n<b>On your turn</b>\nStart with three cards each and four neutral cards in the middle of the board. Place one card edge to edge with a card on the board. A new code forms when four fragments meet in the center of a 2×2 square. If you complete no code, draw one card, even on your first turn.\n\n<b>Guess and score</b>\nEveryone privately guesses the sum for each new code. Aces count as 1, jacks as 11, queens as 12 and kings as 13. An exact guess earns 10 points. Miss by 1, 2, 3, 4 or 5 to earn 5, 4, 3, 2 or 1 point respectively. A larger miss earns 0.\n\n<b>When the game ends</b>\nIf a player empties their hand or the group reaches five codes, score every code from that placement. A player who empties their hand earns 5 extra points. Drawing the last card ends the game immediately at the current scores.\n\n<b>Using this scorekeeper</b>\nTap Scan code and aim at the center where the four cards meet. Keep them in view, enter your guess (4–52) and tap Confirm. Each set of four cards scores once per game on your scorecard.</string>
     <string name="new_game">New game</string>
     <string name="round">Round</string>
     <string name="earned">Earned</string>
@@ -14,7 +16,7 @@
     <string name="preview">Card scanner camera preview</string>
     <string name="allow_camera">Allow camera access</string>
     <string name="allow_settings">Allow camera in Settings</string>
-    <string name="back">Back to scores</string>
+    <string name="close_camera">Close camera</string>
     <string name="permission_needed">Allow camera access to scan cards.</string>
     <string name="starting">Starting camera…</string>
     <string name="camera_error">Could not open the camera.</string>

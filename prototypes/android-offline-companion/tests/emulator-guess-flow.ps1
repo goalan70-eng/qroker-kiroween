@@ -148,7 +148,8 @@ try {
         Tap-Node ($restored.SelectSingleNode($scan))
         $blocked = Wait-View $duplicate
         if ($blocked.SelectSingleNode($edit)) { throw 'Duplicate reopened after restart' }
-        Tap-Node ($blocked.SelectSingleNode('//node[@text="점수판으로"]'))
+        Assert-Score $blocked 10 1
+        Tap-Node ($blocked.SelectSingleNode('//node[@text="카메라 닫기"]'))
         $homeView = Wait-View $scan
         Assert-InputClosed $homeView 10 1
         Tap-Node ($homeView.SelectSingleNode('//node[@content-desc="점수판 메뉴"]'))

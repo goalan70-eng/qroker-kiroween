@@ -9,6 +9,7 @@ const baseURL = `http://127.0.0.1:${port}`;
 // Separate from Vitest; only the real-browser tests in e2e/ use this config.
 export default defineConfig({
   testDir: './e2e',
+  outputDir: './test-results/playwright',
   testMatch: '**/*.spec.ts',
   timeout: 30_000,
   expect: { timeout: 5_000 },

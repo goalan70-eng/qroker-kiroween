@@ -59,6 +59,6 @@ jobs:
           name: playwright-browser-failure
           path: |
             playwright-report/
-            test-results/
+            test-results/playwright/
           if-no-files-found: ignore
           retention-days: 7

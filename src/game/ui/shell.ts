@@ -14,7 +14,7 @@ import { detectLanguage, getLanguage, isLang, LANGUAGES, setLanguage, t } from '
 import type { Lang } from '../i18n';
 
 export interface ShellDeps {
-  /** `navigator.languages` (or `navigator.language`). Persistence of the choice is task 20; no saved value is read. */
+  /** Initial language candidates. The controller applies the saved preference when available. */
   readonly languages: readonly string[] | string | null | undefined;
   readonly doc: Document;
 }
