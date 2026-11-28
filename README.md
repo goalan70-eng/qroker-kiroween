@@ -1,16 +1,26 @@
 # QRoker
 
-[Play QRoker in your browser](https://goalan70-eng.github.io/qroker-kiroween/) · [Download the offline game or Android scorekeeper](https://github.com/goalan70-eng/qroker-kiroween/releases/tag/kiroween-2026-beta)
+Place a playing card so its corner meets three others. If the four corners form a code, everyone predicts the sum of the cards in secret. The closest predictions earn the most points.
 
-## Play your first turn
+**[Play QRoker in your browser](https://goalan70-eng.github.io/qroker-kiroween/)** · [한국어 안내](README.ko.md) · [Rules and scoring](PROJECT_BRIEF.md)
 
-Open the game in Chrome or Edge and press **Start game**. The default table has one human and three AI players. Choose a card from your hand, select a marked square that shares an edge with a card on the board, then press the check mark beside it. A placement that completes no code draws one card. When four marked corners meet, enter your private prediction for the sum of those four cards. In Normal mode everyone sees the cards and points after the last prediction.
+| Choose how to play | What you need |
+| --- | --- |
+| [Play online](https://goalan70-eng.github.io/qroker-kiroween/) | A browser. Play solo against three local AI opponents, or up to four people can share one device. |
+| [Download the offline web game](https://github.com/goalan70-eng/qroker-kiroween/releases/download/kiroween-2026-beta/QRoker.html) | Open `QRoker.html` in Chrome or Edge. The game, artwork and sound are in the file. |
+| [Install the Android scorekeeper 0.2.27](https://github.com/goalan70-eng/qroker-kiroween/releases/download/kiroween-2026-beta/QRoker-Offline.apk) | Android 8 or later and a four-card QRoker marker. If updating an archive-signed installation, use the [archive update APK](https://github.com/goalan70-eng/qroker-kiroween/releases/download/kiroween-2026-beta/QRoker-Offline-ArchiveUpdate.apk) to keep your scores. |
 
-The browser game needs no account, API key, phone or printed cards. For offline play, download `QRoker.html` and open it in your browser. The companion APK is optional. English and Korean are available in both applications.
+## Your first turn
 
-## Build the judging version
+1. Select **Start game** for the default table with three AI opponents. Look at your three cards and the four face-up cards in the center.
+2. Select a card and a marked square next to an existing card. Clubs and spades can turn 180°. Press the check mark to place it. If it makes no new code, you draw a card.
+3. When four corners complete a code, each player predicts a sum from **4 to 52**. In **Normal**, the four cards and their sum appear after the last prediction. In **Blind**, the board stays face down. Choose whether to show the correct sum with the points or just the points.
 
-Use Node.js 24 and npm. From a fresh checkout of the judging tag, run:
+The web game runs without an account or a phone. At a physical table, the Android app keeps one player's scores. Tap **Scan code**, center the four-card marker, then tap **Lock code**. You can lower the phone before entering your guess. [Android guide](https://github.com/goalan70-eng/qroker-kiroween/blob/codex/android-offline-companion/prototypes/android-offline-companion/README.md)
+
+## Build the version judges play
+
+The [judging source](https://github.com/goalan70-eng/qroker-kiroween/tree/kiroween-2026-beta) is pinned to `kiroween-2026-beta`. Use that tag for the same game as the live site and [release downloads](https://github.com/goalan70-eng/qroker-kiroween/releases/tag/kiroween-2026-beta). The default branch carries the project introduction and earlier development history.
 
 ```sh
 git clone --branch kiroween-2026-beta https://github.com/goalan70-eng/qroker-kiroween.git
@@ -19,20 +29,10 @@ npm ci
 npm run build:standalone
 ```
 
-Open `dist/QRoker.html`. For a static host, run `npm run build` and serve `dist/web/`. The 52 marked card faces used by the main game are included in the source. The separate screen-playtest prototype uses additional lab materials.
+Use Node.js 24 and npm. Open `dist/QRoker.html`, or run `npm run build` to generate the static site in `dist/web/`. The public source includes the game's 52 marked card faces. [Running and testing the game](docs/practice-mode.md)
 
-**Android:** Install `QRoker-Offline.apk` on Android 8 or later. Choose **Scan code**, aim at the middle of a four-card code, press **Lock code**, then enter a prediction from 4 to 52. An exact guess earns 10 points. If you installed the historical archive-signed build, select `QRoker-Offline-ArchiveUpdate.apk` to preserve your scores. To build your own test APK from this checkout on Windows, run `prototypes/android-offline-companion/build.ps1` with `-Sdk` (Android SDK with Platform 36.1 and Build Tools 36.1.0) and `-Jdk` (JDK 21) as needed. Python 3 is required. A clean build creates its own signing key and uses the included optical sampling geometry. That APK has a different signature from the downloadable update.
+## Development and credits
 
-[Artwork and sound credits](docs/submission/credits.md) · [Kiro verification record](docs/validation/kiro-private-guess-reveal.md) · [Project license](LICENSE)
+Kiro checked the handoff between players and the timing of the reveal, including all 24 prediction orders at the engine level. The verification record identifies the browser cases separately. Codex worked on implementation and release packaging. [Kiro verification record](https://github.com/goalan70-eng/qroker-kiroween/blob/kiroween-2026-beta/docs/validation/kiro-private-guess-reveal.md) · [Development log](https://github.com/goalan70-eng/qroker-kiroween/blob/kiroween-2026-beta/docs/kiroween-development-log.md)
 
-## 한국어 실행 안내
-
-메인 웹게임은 프로젝트 루트의 `QRoker.html`이다. 이 파일을 브라우저에서 열면 서버 없이 게임과 효과음을 사용할 수 있다.
-
-메인 HTML을 다시 만들려면 저장소에서 `npm ci`로 의존성을 설치하고 `npm run build:standalone`을 실행한다. 결과는 `dist/QRoker.html`에 생성된다. 서버에 올릴 때는 `npm run build`로 만든 `dist/web/` 폴더를 사용한다. `QRoker-Web.html`은 카메라 시험용 샘플과 카드 제거 기능이 들어 있는 별도 시험판이다.
-
-Android용 인식기는 `prototypes/android-offline-companion/dist/QRoker-Offline.apk`이다. 네 장이 만나는 마커를 카메라 십자선에 맞추면 판독한다. 화면에서 무늬가 작으면 웹게임 돋보기로 확대한다. 예전 보관본에서 설치한 사용자는 점수 기록을 유지할 수 있도록 보관본용 업데이트 APK를 사용한다. [설치 파일 선택과 사용법](prototypes/android-offline-companion/README.md)
-
-[Run and test Practice Mode](docs/practice-mode.md) · [P1 verification evidence](docs/practice-mode-p1-report.md) · [Development provenance](docs/kiroween-development-log.md)
-
-[Android 인식기 실물 카드 시험지](docs/validation/offline-reader-real-device-ko.md)
+The software is licensed under the GNU AGPL-3.0-only. Card illustrations, help artwork and sounds have their own credits. [Software license](LICENSE) · [Artwork and sound credits](https://github.com/goalan70-eng/qroker-kiroween/blob/kiroween-2026-beta/docs/submission/credits.md)

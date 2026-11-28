@@ -4,7 +4,10 @@
 
 [설치 파일 선택 안내](../../prototypes/android-offline-companion/README.md)에 따라 APK를 고른다. 기존 기록이 있으면 아래 두 조합을 아직 채점하지 않은 시험 기기나 별도 Android 사용자 프로필을 사용한다.
 
-[1.5 mm 양면 카드 PDF](../../prototypes/screen-playtest/deliverables/black-white-registered-15mm/QRoker-1.5mm-duplex-A4.pdf)에서 앞면 시험에 필요한 페이지만 실제 크기(100%)로 출력한다. 5♥·9♥는 1쪽, 5♦는 3쪽, 9♦는 5쪽, J♣·2♠는 9쪽이다. 모서리를 재단하고 네 장 아래 중앙에 [도안 ZIP](../../prototypes/screen-playtest/deliverables/black-white-registered-15mm/QRoker-1.5mm-duplex-SVG.zip)의 받침(`support.png`)을 가로 15 mm로 출력해 둔다. 모자 무늬가 완성되도록 [A 배치 예시](../../prototypes/screen-playtest/evidence/kiro-registered-15mm-release-retest-20261125-2026/0-250-0.png)와 방향을 맞춘다.
+이 시험은 별도로 보관하는 1.5 mm 양면 카드 도안과 받침을 사용한다. 공개 APK는 [심사판 배포 페이지](https://github.com/goalan70-eng/qroker-kiroween/releases/tag/kiroween-2026-beta)에서 받을 수 있다.
+
+- 로컬 도안 폴더 `prototypes/screen-playtest/deliverables/black-white-registered-15mm/`에서 `QRoker-1.5mm-duplex-A4.pdf`를 실제 크기(100%)로 출력한다. 5♥·9♥는 1쪽, 5♦는 3쪽, 9♦는 5쪽, J♣·2♠는 9쪽이다.
+- 같은 폴더의 `QRoker-1.5mm-duplex-SVG.zip`에 있는 `support.png`를 가로 15 mm로 출력해 재단한 네 장의 접합부 아래에 둔다. 아래 표의 위·아랫줄 순서로 놓고 중앙 모자 무늬를 맞춘다.
 
 | 앞면 배치 | 윗줄 (왼쪽 → 오른쪽) | 아랫줄 (왼쪽 → 오른쪽) | 정답 합 |
 |---|---|---|---:|
