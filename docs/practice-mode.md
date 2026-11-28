@@ -10,6 +10,14 @@ Select a hand card and a legal square in either order, or drag the card onto the
 
 When sharing a device, pass it to the named player before opening the private hand or prediction screen. The game saves accepted actions when browser storage is available. Reload in the same browser and choose **Continue** to resume. Keep playing if a storage warning appears, but the latest turn might not survive a reload. Private game data can be read by someone who has access to the browser's saved data.
 
+## Make your first code in two moves
+
+Start a new game in **Normal**, choose **4 human players**, and enter seed `1` (expand **Advanced settings** if the seed field is hidden). You can take all four seats yourself.
+
+1. Place the **6♣ on D3** upright and confirm. No code forms, so the first player draws one card.
+2. Acknowledge the handoff. Place the **4♣ on E3**, rotate it **180°** and confirm. Those two cards now form a code with D4 and E4.
+3. Enter **28, 25, 27 and 30** in the order the game requests the four predictions. Acknowledge each handoff. After the fourth submission the reveal shows the answer **28** under **Hidden sum** (6♣ + 4♣ + Q♦ + 6♠). The four predictions earn **10, 3, 5 and 4** points respectively.
+
 ## Rebuild the published game
 
 Use Node.js 24 and npm. These commands check out the [source used for the Kiroween release](https://github.com/goalan70-eng/qroker-kiroween/tree/kiroween-2026-beta).
@@ -35,6 +43,6 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Vitest covers the engine, AI simulations and synthetic optics. Playwright exercises the browser UI. For a production-page run, build the site, set `PLAYWRIGHT_PREVIEW=1` and run `npx playwright test game.spec.ts persistence.spec.ts keyboard.spec.ts`. The [browser testing guide](https://github.com/goalan70-eng/qroker-kiroween/blob/kiroween-2026-beta/docs/browser-testing.md) describes the preview setup and scope.
+Vitest covers the engine, AI simulations and synthetic optics. Playwright exercises the browser UI. For a production-page run, first run `npm run build`. In PowerShell, set `$env:PLAYWRIGHT_PREVIEW = '1'`, run `npx playwright test game.spec.ts persistence.spec.ts keyboard.spec.ts`, then clear it with `Remove-Item Env:PLAYWRIGHT_PREVIEW`. In a POSIX shell, run `PLAYWRIGHT_PREVIEW=1 npx playwright test game.spec.ts persistence.spec.ts keyboard.spec.ts`. The [browser testing guide](https://github.com/goalan70-eng/qroker-kiroween/blob/kiroween-2026-beta/docs/browser-testing.md) describes the preview setup and scope.
 
 The [Kiro verification record](https://github.com/goalan70-eng/qroker-kiroween/blob/kiroween-2026-beta/docs/validation/kiro-private-guess-reveal.md) documents how the team tested private predictions and reveal timing. The [physical-card checklist](https://github.com/goalan70-eng/qroker-kiroween/blob/codex/android-offline-companion/docs/validation/offline-reader-real-device-ko.md) covers capture, duplicate detection and persistence with the Android app and printed cards.

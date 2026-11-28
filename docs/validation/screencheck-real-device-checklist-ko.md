@@ -1,8 +1,10 @@
-# ScreenCheck 실기기 시험지 (A4 1쪽)
+# ScreenCheck 시제품 실기기 시험지 (A4)
 
 시험자 ______ 날짜 ______ 휴대전화 기종 ______ 시작 누적 점수 ______ 시작 라운드 ______
 
-준비물: [웹게임](../../prototypes/screen-playtest/deliverables/QRoker-Web.html) · [ScreenCheck APK](../../prototypes/screen-playtest/deliverables/QRoker-ScreenCheck.apk) (카메라 권한 허용) · [9장 시험 인쇄 A4 PDF](../../prototypes/screen-playtest/deliverables/QRoker-ScreenCheck-pilot-A4.pdf)
+화면 판독 시제품용 시험지. 현재 배포 APK의 버튼 고정·채점 절차는 [QRoker Offline 0.2.27 실물 카드 시험표](offline-reader-real-device-ko.md)를 사용한다.
+
+준비물은 로컬 `prototypes/screen-playtest/deliverables/`의 `QRoker-Web.html`, `QRoker-ScreenCheck.apk`(카메라 권한 허용), `QRoker-ScreenCheck-pilot-A4.pdf`(9장 시험 인쇄본)이다.
 
 **기존 기록** — `기존 사용자 확인`: 휴대전화로 모니터 화면 판독 성공(소유자 보고). 합성 시험(1,204/1,394 일치, 틀린 식별 0건)은 사례 선택용 참고이며 실기기 증거가 아니다. 아래 모든 새 시험은 **미시험**에서 시작한다. 기존 기록은 지우지 않는다.
 

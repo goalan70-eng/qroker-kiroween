@@ -1,8 +1,8 @@
 # QRoker
 
-Place a playing card so its corner meets three others. If the four corners form a code, everyone predicts the sum of the cards in secret. The closest predictions earn the most points.
+Each QRoker card has two marked corners. Place a card so that four marked corners meet in the middle of a 2×2 square. Everyone privately predicts the sum of the four ranks. Each prediction earns points independently, so two exact guesses earn 10 points each.
 
-**[Play QRoker in your browser](https://goalan70-eng.github.io/qroker-kiroween/)** · [한국어 안내](README.ko.md) · [Rules and scoring](PROJECT_BRIEF.md)
+**[Play QRoker in your browser](https://goalan70-eng.github.io/qroker-kiroween/)** · [한국어 안내](README.ko.md) · [Rules and scoring](PROJECT_BRIEF.md) · [Try a code in two moves](docs/practice-mode.md#make-your-first-code-in-two-moves)
 
 | Choose how to play | What you need |
 | --- | --- |

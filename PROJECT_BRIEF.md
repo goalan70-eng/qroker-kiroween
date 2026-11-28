@@ -24,6 +24,8 @@ Each of the four players privately predicts the sum of each completed group. Ran
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | Points earned | 10 | 5 | 4 | 3 | 2 | 1 | 0 |
 
+For example, with a correct sum of 27, a guess of 25 and a guess of 29 each earn 4 points. Each player uses the same table, including the one who completed the code.
+
 - Drawing the last card ends the game immediately with the points already earned.
 - A hand that is empty after the applicable draw earns its player a **5-point bonus** and ends the game.
 - Reaching five scored groups across the table also ends the game. Score **every** group created by the final placement. For example, going from four groups to six scores both new groups. If that player also emptied their hand, award the bonus once.
