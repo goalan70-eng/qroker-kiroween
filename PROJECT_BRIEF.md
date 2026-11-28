@@ -33,4 +33,4 @@ For example, with a correct sum of 27, a guess of 25 and a guess of 29 each earn
 
 ## At a physical table
 
-The [Android scorekeeper](https://github.com/goalan70-eng/qroker-kiroween/releases/tag/kiroween-2026-beta) locks the identities of four marked cards, takes one player's prediction and records the points locally. The app identifies rank and suit. The same four cards can score once per game on that scorecard. Different sets can score even when their sums match. Players manage the shared board, turns and end of the game themselves.
+The [Android scorekeeper](https://github.com/goalan70-eng/qroker-kiroween/releases/tag/kiroween-2026-final) locks the identities of four marked cards, takes one player's prediction and records the points locally. The app identifies rank and suit. The same four cards can score once per game on that scorecard. Different sets can score even when their sums match. Players manage the shared board, turns and end of the game themselves.
