@@ -325,6 +325,7 @@
   body:has(> #app) {
     min-block-size: 100dvh;
     display: grid;
+    grid-template-rows: 100dvh auto;
     place-items: center;
     background: #101f1c;
   }
