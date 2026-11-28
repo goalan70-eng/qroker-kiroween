@@ -43,6 +43,9 @@ if (Test-Path -LiteralPath "$qrScreenFixtures/expected.tsv") {
     Run-Tool "$qrBin/java.exe" @('-cp','build/tests','com.qroker.offline.VerifyScreen',$qrScreenFixtures)
 }
 & "$PSScriptRoot/link-resources.ps1" -Tool "$qrTool/aapt2.exe" -AndroidJar $qrAndroidJar -Build 'build' -Manifest 'AndroidManifest.xml'
+# Do not package old anonymous classes left by earlier camera implementations.
+Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'build/classes') -Recurse -File -Filter '*.class' |
+    ForEach-Object { Remove-Item -LiteralPath $_.FullName }
 Run-Tool "$qrBin/javac.exe" (@('-encoding','UTF-8','--release','8','-cp',$qrAndroidJar,'-d','build/classes') +
     $qrCore + @('build/generated/com/qroker/offline/R.java','src/LiveCamera.java','src/MainActivity.java'))
 $qrClasses = @(Get-ChildItem -LiteralPath 'build/classes' -Recurse -Filter '*.class' |
