@@ -8,8 +8,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
-if (!$Source) { throw 'Specify -Source with the local 30 mm layout, codebook and small-marker-audit fixtures.' }
-$Source = (Resolve-Path -LiteralPath $Source).Path
+if ($Source) { $Source = (Resolve-Path -LiteralPath $Source).Path }
 $defaultKey = !$SigningKey
 if ($defaultKey) { $SigningKey = Join-Path $PSScriptRoot 'build/local-prototype.p12' }
 $qrTool = Join-Path $Sdk 'build-tools/36.1.0'
@@ -22,14 +21,22 @@ function Run-Tool([string]$Program, [string[]]$Arguments) {
 }
 
 New-Item -ItemType Directory -Path build/generated,build/tests,build/classes,build/dex,dist -Force | Out-Null
-Run-Tool python @('generate-layout.py', $Source, 'build/generated/Layout30.java')
+if ($Source) {
+    Run-Tool python @('generate-layout.py', $Source, 'build/generated/Layout30.java')
+} else {
+    Copy-Item -LiteralPath 'geometry/Layout30.java' -Destination 'build/generated/Layout30.java' -Force
+}
 $qrScreen = '../screen-playtest'
 $qrOptics = "$qrScreen/optics"
 $qrCore = @('src/OpticalReader.java','src/GameScore.java','src/ScoreJournal.java','src/ConfirmationFrame.java','build/generated/Layout30.java',
     "$qrOptics/ExtraBars.java","$qrOptics/TrialWords.java","$qrOptics/ErasureDecoder.java")
 Run-Tool "$qrBin/javac.exe" (@('-encoding','UTF-8','-d','build/tests') + $qrCore +
     @('tests/OfflineTest.java',"$qrOptics/VerifyErasureDecoder.java","$qrScreen/VerifyScreen.java"))
-Run-Tool "$qrBin/java.exe" @('-cp','build/tests','com.qroker.offline.OfflineTest',"$Source/small-marker-audit")
+if ($Source) {
+    Run-Tool "$qrBin/java.exe" @('-cp','build/tests','com.qroker.offline.OfflineTest',"$Source/small-marker-audit")
+} else {
+    Write-Host 'The private camera fixtures are absent. Skipping the fixture-based OfflineTest suite.'
+}
 Run-Tool "$qrBin/java.exe" @('-cp','build/tests','com.qroker.offline.VerifyErasureDecoder')
 $qrScreenFixtures = "$qrScreen/evidence/marker-isolation"
 if (Test-Path -LiteralPath "$qrScreenFixtures/expected.tsv") {
