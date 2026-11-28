@@ -69,7 +69,9 @@ export const NOTICES_STRING_KEYS = [
   'persistence.notice.dismiss',
   'persistence.notice.STORAGE_NOT_DURABLE',
   'persistence.notice.STORAGE_WRITE_FAILED',
+  'persistence.notice.SAVE_CHANGED',
   'persistence.notice.STORAGE_READ_FAILED',
+  'persistence.notice.REMOVAL_FAILED',
   ...Object.values(REASON_KEYS),
   'persistence.status.durable',
   'persistence.status.notSecret',
@@ -82,9 +84,12 @@ function textKeyOf(notice: Notice): StringKey {
       return 'persistence.notice.STORAGE_NOT_DURABLE';
     case 'STORAGE_WRITE_FAILED':
       return 'persistence.notice.STORAGE_WRITE_FAILED';
+    case 'SAVE_CHANGED':
+      return 'persistence.notice.SAVE_CHANGED';
     case 'STORAGE_READ_FAILED':
       return 'persistence.notice.STORAGE_READ_FAILED';
     case 'SAVE_DISCARDED': {
+      if (notice.removalFailed) return 'persistence.notice.REMOVAL_FAILED';
       const reason: unknown = notice.reason;
       return typeof reason === 'string' && Object.prototype.hasOwnProperty.call(REASON_KEYS, reason)
         ? REASON_KEYS[reason as keyof typeof REASON_KEYS]

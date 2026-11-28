@@ -997,7 +997,7 @@ describe('mountApp composes the existing shell with the controller (fake Documen
   it('renders the shell in Korean and in English, with title and selector, and no button', () => {
     const ko = mount(['ko-KR']);
     expect(ko.title.textContent).toBe('QRoker');
-    expect(ko.label.textContent).toBe('언어');
+    expect(ko.label.textContent).toBe('언어:');
     expect(ko.doc.documentElement.lang).toBe('ko');
     expect(ko.handle.controller.getModel()).toMatchObject({ language: 'ko', screen: 'SETUP' });
     resetLanguage();
@@ -1011,11 +1011,11 @@ describe('mountApp composes the existing shell with the controller (fake Documen
     const created = m.doc.created.length;
     m.select.value = 'ko';
     m.select.dispatch('change');
-    expect(m.label.textContent).toBe('언어');
+    expect(m.label.textContent).toBe('언어:');
     expect(m.doc.documentElement.lang).toBe('ko');
     expect(m.handle.controller.getModel().language).toBe('ko');
     m.handle.controller.setLanguage('en');
-    expect(m.label.textContent).toBe('Language');
+    expect(m.label.textContent).toBe('Language:');
     expect(m.doc.documentElement.lang).toBe('en');
     expect(m.select.value).toBe('en');
     expect(m.doc.created.length).toBe(created); // the selector and every other element survive a switch
@@ -1025,9 +1025,9 @@ describe('mountApp composes the existing shell with the controller (fake Documen
     const m = mount(['en-US']);
     expect(m.handle.controller.startGame({ config: config(ALL_AI), seed: 3 })).toEqual({ ok: true });
     expect(m.handle.controller.getModel().screen).toBe('END');
-    expect(m.label.textContent).toBe('Language');
+    expect(m.label.textContent).toBe('Language:');
     m.handle.controller.abandon();
-    expect(m.label.textContent).toBe('Language');
+    expect(m.label.textContent).toBe('Language:');
   });
 
   it('adds nothing to globalThis and stops rendering after dispose', () => {

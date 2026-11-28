@@ -49,7 +49,21 @@ final class ScoreJournal {
         List<GameScore.Round> loaded = new ArrayList<>();
         HashMap<Integer, Integer> reconstructed = new HashMap<>();
         // The journal contains only ASCII numbers. A damaged byte must affect only its own row.
+        boolean firstLine = true;
         for (String line : Files.readAllLines(file.toPath(), StandardCharsets.ISO_8859_1)) {
+            if (firstLine && line.startsWith("#game,")) {
+                try {
+                    generation = Long.parseLong(line.substring(6));
+                    if (generation <= 0) throw new NumberFormatException();
+                } catch (NumberFormatException invalid) {
+                    // Keep readable rounds, but invalidate drafts from the damaged journal.
+                    generation = java.util.concurrent.ThreadLocalRandom.current().nextLong(1, Long.MAX_VALUE);
+                    recoveredRows++;
+                }
+                firstLine = false;
+                continue;
+            }
+            firstLine = false;
             String[] fields = line.split(",", -1);
             try {
                 if (fields.length != 3) throw new NumberFormatException();
@@ -63,7 +77,7 @@ final class ScoreJournal {
                 GameScore.Round round = new GameScore.Round(key, guess, sum);
                 boolean intact = Integer.toString(sum).equals(fields[2]);
                 if (!keys.add(key)) {
-                    // Prefer an intact entry to one reconstructed from an unreadable sum.
+                    // Prefer an intact entry to one reconstructed from a damaged sum.
                     Integer index = intact ? reconstructed.remove(key) : null;
                     if (index != null) loaded.set(index, round);
                     else recoveredRows++;
@@ -71,8 +85,7 @@ final class ScoreJournal {
                 }
                 if (!intact) {
                     recoveredRows++;
-                    try { Integer.parseInt(fields[2]); }
-                    catch (NumberFormatException unreadable) { reconstructed.put(key, loaded.size()); }
+                    reconstructed.put(key, loaded.size());
                 }
                 loaded.add(round);
             } catch (NumberFormatException incomplete) {
@@ -86,7 +99,7 @@ final class ScoreJournal {
 
     private synchronized void retryRepair() {
         if (!repairPending) return;
-        try { write(rounds); }
+        try { write(rounds, generation); }
         catch (IOException unavailable) { /* Keep the readable rounds and retry on the next open or write. */ }
     }
 
@@ -107,7 +120,7 @@ final class ScoreJournal {
         if (generation != expectedGeneration || keys.contains(round.key)) return false;
         List<GameScore.Round> updated = new ArrayList<>(rounds);
         updated.add(round);
-        write(updated);
+        write(updated, generation);
         rounds = Collections.unmodifiableList(updated);
         keys.add(round.key);
         total += round.points;
@@ -122,17 +135,18 @@ final class ScoreJournal {
     }
 
     synchronized void reset() throws IOException {
-        write(Collections.emptyList());
+        write(Collections.emptyList(), generation + 1);
         rounds = Collections.emptyList();
         keys.clear();
         total = 0;
         generation++;
     }
 
-    private void write(List<GameScore.Round> updated) throws IOException {
+    private void write(List<GameScore.Round> updated, long nextGeneration) throws IOException {
         if (repairPending) preserveOriginal();
         File temporary = new File(file.getParentFile(), file.getName() + ".pending");
         StringBuilder lines = new StringBuilder();
+        if (nextGeneration != 0) lines.append("#game,").append(nextGeneration).append('\n');
         for (GameScore.Round round : updated)
             lines.append(round.key).append(',').append(round.guess).append(',').append(round.actual).append('\n');
         try (FileOutputStream output = new FileOutputStream(temporary)) {

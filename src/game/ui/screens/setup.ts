@@ -24,7 +24,6 @@
 //       fieldset.setup-ai: legend + one `div.setup-ai-row` per AI seat with label[for=setup-difficulty-<seat>] and
 //         select#setup-difficulty-<seat> (BEGINNER, ADVANCED), or a text when no seat is AI
 //       fieldset.setup-visibility: legend + radios #setup-visibility-OWNER_ONLY / -BLIND, hint and blind feedback selector
-//       div.setup-field.setup-language: label[for=setup-language] + select#setup-language (ko, en)
 //       p.setup-general-error[role=alert]
 //       button#setup-start[type=submit]
 // Tab order is the DOM order. Enter in the seed field starts. Every control has `id` and `data-focus-key`, so
@@ -41,14 +40,14 @@
 //   * Difficulties are remembered per seat index, so lowering and raising the human count restores the earlier choices.
 //   * `options.onPrefsChange` gets sanitized, frozen `SetupPrefs` (no seed) when the human count, a difficulty or the
 //     visibility changes and after a successful start. It is the hook for the prefs storage of task 20.4; this module
-//     stores nothing. The language goes to `handlers.setLanguage` only.
+//     stores nothing. The shell owns the language selector.
 //   * Nothing is written to a console, a storage, a global, the URL or a data attribute.
 //
 // Imports: ui/, i18n/, core/view and core/types only (the screen import rule); the seed is never parsed here.
 
 import { isBlindMode } from '../../core/types';
 import type { ErrorCode, PlayerId } from '../../core/types';
-import { errorMessageKey, isLang, LANGUAGES } from '../../i18n';
+import { errorMessageKey } from '../../i18n';
 import type { Lang, StringKey } from '../../i18n';
 import type { Translate } from '../components/card-face';
 import { createH, renderWithFocus } from '../dom';
@@ -68,7 +67,6 @@ export interface SetupInput {
   readonly model: { readonly language: Lang };
   readonly handlers: {
     readonly startFromSetup: (options: SetupOptions) => SetupStartResult;
-    readonly setLanguage: (lang: Lang) => void;
   };
   /** The text the seed field starts with (the host draws it from `deps.randomSeed()`). Used at mount only. */
   readonly initialSeedText: string;
@@ -126,9 +124,6 @@ export const SETUP_STRING_KEYS = [
   'setup.timer.hint',
   'setup.timer.invalid',
   'setup.start',
-  'common.language.label',
-  'common.languageName.ko',
-  'common.languageName.en',
   'common.difficulty.BEGINNER',
   'common.difficulty.ADVANCED',
 ] as const satisfies readonly StringKey[];
@@ -143,11 +138,6 @@ const VISIBILITY_KEYS: Readonly<Record<string, StringKey>> = {
   OWNER_ONLY: 'setup.visibility.OWNER_ONLY',
   BLIND: 'setup.visibility.BLIND',
 };
-const LANGUAGE_KEYS: Readonly<Record<Lang, StringKey>> = {
-  en: 'common.languageName.en',
-  ko: 'common.languageName.ko',
-};
-
 function hasFocusApi(doc: SetupDocument): doc is SetupDocument & FocusDoc {
   return 'activeElement' in doc && typeof doc.getElementById === 'function' && typeof doc.querySelector === 'function';
 }
@@ -421,30 +411,6 @@ export function renderSetup(
   const advanced = h('details', { class: 'setup-advanced' }, advancedSummary,
     h('div', { class: 'setup-timer-fields' }, placementTime.field, predictionTime.field), timerHint, timerError);
 
-  // Language.
-  const languageLabel = h('label', { class: 'setup-label', attrs: { for: 'setup-language' } });
-  const languageOptions = LANGUAGES.map((lang) => ({ lang, el: h('option', { attrs: { value: lang } }) }));
-  const languageSelect = h(
-    'select',
-    {
-      id: 'setup-language',
-      focusKey: 'setup-language',
-      class: 'setup-select',
-      on: {
-        change: () => {
-          if (disposed) return;
-          const chosen = valueOf(languageSelect);
-          if (!isLang(chosen)) return;
-          current.handlers.setLanguage(chosen);
-          paint(); // the controller normally re-renders through `update`; painting again is harmless
-        },
-      },
-    },
-    ...languageOptions.map((o) => o.el),
-  );
-  setValue(languageSelect, input.model.language);
-  const languageField = h('div', { class: 'setup-field setup-language' }, languageLabel, languageSelect);
-
   const generalError = h('p', { class: 'setup-error setup-general-error', attrs: { role: 'alert' } });
   const startButton = h('button', {
     id: 'setup-start',
@@ -473,7 +439,7 @@ export function renderSetup(
       },
     },
     h('div', { class: 'setup-fields' }, seedField, humansSet, aiSet, visibilitySet),
-    h('div', { class: 'setup-footer' }, advanced, languageField, generalError, startButton),
+    h('div', { class: 'setup-footer' }, advanced, generalError, startButton),
   );
   const frontispiece = h('header', { class: 'setup-cover' },
     h('div', { class: 'setup-intro' }, titleEl, goalEl),
@@ -532,9 +498,6 @@ export function renderSetup(
     for (const field of [placementTime, predictionTime]) {
       field.control.setAttribute('aria-invalid', String(timerInvalid && !validTurnSeconds(Number(valueOf(field.control)))));
     }
-    setText(languageLabel, t('common.language.label'));
-    for (const option of languageOptions) setText(option.el, t(LANGUAGE_KEYS[option.lang]));
-    setValue(languageSelect, current.model.language);
 
     setText(generalError, generalErrorCode === null ? '' : t(errorMessageKey(generalErrorCode)));
     setText(startButton, t('setup.start'));

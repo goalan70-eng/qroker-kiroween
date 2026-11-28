@@ -96,7 +96,7 @@ import { viewFor } from '../core/view';
 import type { PlayerView } from '../core/view';
 import { DEFAULT_LANGUAGE, errorMessageKey, getLanguage, isLang, setLanguage, t } from '../i18n';
 import type { Lang } from '../i18n';
-import { clearSave, loadGame, readPrefs, saveGame, writePrefs } from '../persistence/storage';
+import { clearSave, loadGame, matchesObservedSave, readPrefs, saveGame, writePrefs } from '../persistence/storage';
 import type { DiscardReason, KeyValueStore, SaveResult } from '../persistence/storage';
 import { renderWithFocus } from './dom';
 import { nextGate } from './screens/privacy-gate';
@@ -162,7 +162,7 @@ export interface PracticeOptions {
 export type OpResult =
   | { readonly ok: true }
   | { readonly ok: false; readonly reason: 'ENGINE'; readonly code: ErrorCode }
-  | { readonly ok: false; readonly reason: 'BUSY' | 'NO_GAME' | 'DISPOSED' | 'PLACE_NOT_ALLOWED' | 'STALE_GATE' | 'NO_RESUME' }
+  | { readonly ok: false; readonly reason: 'BUSY' | 'NO_GAME' | 'DISPOSED' | 'PLACE_NOT_ALLOWED' | 'STALE_GATE' | 'NO_RESUME' | 'STORAGE_READ_FAILED' | 'DISCARD_FAILED' }
   | { readonly ok: false; readonly reason: 'DRAFT_INVALID'; readonly issue: DraftIssue };
 
 /** The functions a screen may call. Created once; they stay valid after dispose and then do nothing. */
@@ -196,7 +196,7 @@ export interface RenderHandlers {
   /** Task 20.4: installs the saved game offered at startup (`model.resume`) as the running game. Single use. */
   readonly continueSaved: () => OpResult;
   /** Task 20.4: removes the saved game and drops the offer; the preferences stay. Single use. */
-  readonly discardSaved: () => OpResult;
+  readonly discardSaved: () => OpResult | Promise<OpResult>;
   /** Task 20.4: removes a notice. Only `SAVE_DISCARDED` and `STORAGE_READ_FAILED` are dismissible; others are ignored. */
   readonly dismissNotice: (kind: Notice['kind']) => void;
   /** Task 20.4: sanitizes and stores the setup preferences (`model.setupPrefs`) and writes them to the preferences key. */
@@ -287,7 +287,7 @@ export interface Controller {
   /** Same as `RenderHandlers.continueSaved`. */
   continueSaved(): OpResult;
   /** Same as `RenderHandlers.discardSaved`. */
-  discardSaved(): OpResult;
+  discardSaved(): OpResult | Promise<OpResult>;
   /** Same as `RenderHandlers.dismissNotice`. */
   dismissNotice(kind: Notice['kind']): void;
   /** Same as `RenderHandlers.setSetupPrefs`. */
@@ -387,7 +387,7 @@ export function createController(deps: AppDeps): Controller {
         humanSeats: loaded.envelope.config.seats.filter((s) => s.kind === 'HUMAN').length,
       });
     } else {
-      startNotices.push(Object.freeze({ kind: 'SAVE_DISCARDED' as const, reason: loaded.reason }));
+      startNotices.push(Object.freeze({ kind: 'SAVE_DISCARDED' as const, reason: loaded.reason, ...(loaded.removed ? {} : { removalFailed: true }) }));
     }
   }
   const store = createStore<AppModel>(
@@ -507,41 +507,63 @@ export function createController(deps: AppDeps): Controller {
   // ---- saving (task 20.4) ---------------------------------------------------------------------------------
 
   /**
-   * Maps one storage result to `storage` and `notices` (held in `persistPatch` until the next `setModel`, which is
-   * always in the same synchronous flow). No saved text and no error object is kept: only the closed outcome.
+   * Maps a completed storage operation to the storage status and notices for the next model update. No saved text and no error object is kept: only the closed outcome.
    */
-  function recordStorage(result: { readonly ok: boolean; readonly durable?: boolean }): void {
+  function recordStorage(result: { readonly ok: boolean; readonly durable?: boolean; readonly reason?: string }): void {
     const base = persistPatch.notices ?? store.get().notices;
     const without = (kinds: readonly Notice['kind'][]): Notice[] => base.filter((n) => !kinds.includes(n.kind));
     const withKind = (list: readonly Notice[], kind: Notice['kind']): readonly Notice[] =>
       Object.freeze(list.some((n) => n.kind === kind) ? [...list] : [...list, Object.freeze({ kind })]);
     if (!result.ok) {
-      persistPatch = { storage: 'FAILED', notices: withKind(base, 'STORAGE_WRITE_FAILED') };
+      const kind = result.reason === 'SAVE_CHANGED' ? 'SAVE_CHANGED' : 'STORAGE_WRITE_FAILED';
+      if (store.get().storage === 'FAILED' && base.some(n => n.kind === kind)) return;
+      persistPatch = { storage: 'FAILED', notices: withKind(base, kind) };
     } else if (result.durable === true) {
-      persistPatch = { storage: 'DURABLE', notices: Object.freeze(without(['STORAGE_NOT_DURABLE', 'STORAGE_WRITE_FAILED'])) };
+      if (store.get().storage === 'DURABLE') return;
+      persistPatch = { storage: 'DURABLE', notices: Object.freeze(without(['STORAGE_NOT_DURABLE', 'STORAGE_WRITE_FAILED', 'SAVE_CHANGED'])) };
     } else {
       persistPatch = { storage: 'MEMORY_ONLY', notices: withKind(without(['STORAGE_WRITE_FAILED']), 'STORAGE_NOT_DURABLE') };
     }
   }
 
-  /**
-   * Saves `state` right after an accepted transition (or a new game). Synchronous, so it runs before the render and
-   * before the next AI step is scheduled. A failure never throws and never undoes the transition.
-   */
-  function saveNow(state: GameState): void {
-    if (persist === null) return;
-    let result: SaveResult;
-    try {
-      result = saveGame(persist.store, state, persist.nowIso());
-    } catch {
-      result = { ok: false, reason: 'INVALID_STATE' }; // an injected clock that throws
+  function mutateSave(target: KeyValueStore, change: () => void): void {
+    if (!target.withSaveLock) {
+      change();
+      return;
     }
-    recordStorage(result);
+    const publish = () => {
+      if (!disposed && persistPatch.storage !== undefined) setModel({});
+    };
+    void target.withSaveLock(() => {
+      change();
+      publish();
+    }).catch(() => {
+      if (!disposed) {
+        recordStorage({ ok: false });
+        publish();
+      }
+    });
   }
 
-  /** Removes the save. A failed removal is a failed storage: a stale save could resume an abandoned game. */
+  function saveNow(state: GameState): void {
+    if (persist === null) return;
+    mutateSave(persist.store, () => {
+      let result: SaveResult;
+      try {
+        result = saveGame(persist.store, state, persist.nowIso());
+      } catch {
+        result = { ok: false, reason: 'INVALID_STATE' };
+      }
+      if (!disposed) recordStorage(result);
+    });
+  }
+
   function clearNow(): void {
-    if (persist !== null && !clearSave(persist.store).ok) recordStorage({ ok: false });
+    if (persist === null) return;
+    mutateSave(persist.store, () => {
+      const cleared = clearSave(persist.store);
+      if (!cleared.ok && !disposed) recordStorage(cleared);
+    });
   }
 
   /** Preference write. A failure is silent. The Seed is never part of it. */
@@ -919,6 +941,20 @@ export function createController(deps: AppDeps): Controller {
     if (offer === null || !offerIsLive()) return { ok: false, reason: 'NO_RESUME' };
     inFlight = true;
     try {
+      if (persist !== null) {
+        try {
+          if (!matchesObservedSave(persist.store)) {
+            pendingResume = null;
+            recordStorage({ ok: false, reason: 'SAVE_CHANGED' });
+            setModel({ resume: null });
+            return { ok: false, reason: 'NO_RESUME' };
+          }
+        } catch {
+          const notices = store.get().notices.filter(n => n.kind !== 'STORAGE_READ_FAILED');
+          setModel({ notices: Object.freeze([...notices, { kind: 'STORAGE_READ_FAILED' as const }]) });
+          return { ok: false, reason: 'STORAGE_READ_FAILED' };
+        }
+      }
       invalidate();
       pendingResume = null;
       game = { state: offer.state, config: offer.config };
@@ -934,19 +970,32 @@ export function createController(deps: AppDeps): Controller {
   }
 
   /** Removes the saved game and the offer. The preferences are not touched. */
-  function discardSaved(): OpResult {
+  function discardSaved(): OpResult | Promise<OpResult> {
     if (disposed) return { ok: false, reason: 'DISPOSED' };
     if (inFlight) return { ok: false, reason: 'BUSY' };
-    if (!offerIsLive()) return { ok: false, reason: 'NO_RESUME' };
-    inFlight = true;
-    try {
+    if (!offerIsLive() || persist === null) return { ok: false, reason: 'NO_RESUME' };
+    const target = persist.store;
+    const remove = (): OpResult => {
+      if (disposed) return { ok: false, reason: 'DISPOSED' };
+      const result = clearSave(target);
+      if (!result.ok && result.reason !== 'SAVE_CHANGED') return { ok: false, reason: 'DISCARD_FAILED' };
+      if (!result.ok) recordStorage(result);
       pendingResume = null;
-      clearNow();
       setModel({ resume: null });
+      return result.ok ? { ok: true } : { ok: false, reason: 'NO_RESUME' };
+    };
+    inFlight = true;
+    if (target.withSaveLock) {
+      let result: OpResult = { ok: false, reason: 'DISCARD_FAILED' };
+      return target.withSaveLock(() => { result = remove(); })
+        .then(() => result, (): OpResult => ({ ok: false, reason: 'DISCARD_FAILED' }))
+        .finally(() => { inFlight = false; });
+    }
+    try {
+      return remove();
     } finally {
       inFlight = false;
     }
-    return { ok: true };
   }
 
   const DISMISSIBLE: readonly Notice['kind'][] = ['SAVE_DISCARDED', 'STORAGE_READ_FAILED'];

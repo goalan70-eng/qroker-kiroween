@@ -331,7 +331,7 @@ describe('ENDED games (requirement 18.8)', () => {
     writePrefs(rec, { language: 'en', setup: { humans: 2 } });
     rec.calls.length = 0;
     expect(saveGame(rec, ended, NOW)).toEqual({ ok: true, durable: true });
-    expect(rec.calls).toEqual([`remove ${SAVE_KEY}`]);
+    expect(rec.calls).toEqual([`get ${SAVE_KEY}`, `remove ${SAVE_KEY}`]);
     expect(rec.inner.getItem(SAVE_KEY)).toBeNull();
     expect(readPrefs(rec)).toEqual({ language: 'en', setup: { humans: 2 } });
   });
@@ -491,14 +491,31 @@ describe('browserStore', () => {
     }
   }
 
+  it('preserves the newer game on stale autosave, discard and game end', () => {
+    const storage = new FakeStorage();
+    const older = browserStore(() => storage);
+    const newer = browserStore(() => storage);
+    expect(saveGame(older, STATES[1] as GameState, NOW).ok).toBe(true);
+    expect(loadGame(newer).kind).toBe('RESUMABLE');
+    expect(clearSave(newer).ok).toBe(true);
+    expect(saveGame(newer, STATES[PARTIAL] as GameState, NOW).ok).toBe(true);
+    const latest = storage.getItem(SAVE_KEY);
+    const conflict = { ok: false, reason: 'SAVE_CHANGED' };
+    expect(saveGame(older, STATES[2] as GameState, NOW)).toEqual(conflict);
+    expect(clearSave(older)).toEqual(conflict);
+    expect(saveGame(older, GAME.final, NOW)).toEqual(conflict);
+    expect(storage.getItem(SAVE_KEY)).toBe(latest);
+    expect(loadGame(older).kind).toBe('RESUMABLE');
+    expect(clearSave(older).ok).toBe(true);
+  });
+
   const fallbackCases: [string, () => unknown][] = [
     ['provider throws', () => { throw new DOMException('denied', 'SecurityError'); }],
     ['undefined', () => undefined],
     ['null', () => null],
     ['no functions', () => ({})],
     ['one function missing', () => ({ getItem: () => null, setItem: () => undefined })],
-    ['probe quota', () => ({ getItem: () => null, setItem: quota, removeItem: () => undefined })],
-    ['probe remove throws', () => ({ getItem: () => null, setItem: () => undefined, removeItem: fail })],
+    ['read throws', () => ({ getItem: fail, setItem: () => undefined, removeItem: () => undefined })],
   ];
   for (const [name, provider] of fallbackCases) {
     it(`falls back to a working memory store: ${name}`, () => {

@@ -447,6 +447,7 @@ describe('Discard', () => {
     const h = boot(withSave(SAVES.placement1(), { init: { [PREFS_KEY]: prefsText }, language: 'en' }));
     expect(text(byId(h, 'resume-continue'))).toBe('이어하기'); // the stored language wins at startup
     click(byId(h, 'resume-discard'));
+    click(byId(h, 'resume-confirm'));
     expect(h.input().model.resume).toBeNull();
     expect(h.inner.getItem(SAVE_KEY)).toBeNull();
     expect(h.inner.getItem(PREFS_KEY)).toBe(prefsText);
@@ -798,7 +799,7 @@ describe('sources and styles', () => {
   });
   it('main.ts is the only ui file with browserStore(), the clock, setTimeout and crypto', () => {
     const main = read('main.ts');
-    expect(main).toMatch(/store: browserStore\(\)/);
+    expect(main).toMatch(/mountWithSaveLock\(browserStore\(\)/);
     expect(main).toMatch(/nowIso: \(\) => new Date\(\)\.toISOString\(\)/);
     expect(main).not.toMatch(/\bconsole\b|localStorage|Math\.random/);
     const others = ['controller.ts', 'store.ts', 'shell.ts', join('screens', 'game.ts'), join('screens', 'resume.ts'), join('components', 'notices.ts')];

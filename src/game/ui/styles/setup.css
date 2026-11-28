@@ -228,7 +228,6 @@
   outline-offset: 2px;
 }
 @media (min-width: 24rem) {
-  .setup-footer .setup-language { grid-column: 1; }
   .setup-footer .setup-start { grid-column: 2; }
   .setup-form:has(.setup-general-error:not(:empty)) .setup-start { grid-column: 1 / -1; }
 }

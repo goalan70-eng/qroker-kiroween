@@ -11,7 +11,7 @@
  * throw, whatever the store does. Results carry fixed codes only: no save text, no card, no Guess, no engine detail.
  *
  * DURABILITY. The design interface `KeyValueStore` cannot tell a durable browser store from a memory-only fallback.
- * This module adds ONE optional member, `durable`. A store without it counts as NOT durable. `memoryStore()` is
+ * This module uses the optional `durable` flag. A store without it counts as NOT durable. `memoryStore()` is
  * not durable; a working `browserStore()` is; its in-memory fallback is not. `saveGame` reports it, so the UI can
  * show "this game cannot be saved" when `ok === false` or `durable === false` (task 20.4).
  *
@@ -44,13 +44,16 @@ export interface KeyValueStore {
   getItem(k: string): string | null;
   setItem(k: string, v: string): void;
   removeItem(k: string): void;
+  /** Serializes browser save mutations across tabs sharing the slot. */
+  readonly withSaveLock?: (operation: () => void) => Promise<void>;
   /** True only for a store that really persists (a working browser storage). Absent means not durable. */
   readonly durable?: boolean;
 }
 
 export const SAVE_KEY = 'qroker.practice.save.rules4';
 export const PREFS_KEY = 'qroker.practice.prefs';
-const PROBE_KEY = 'qroker.practice.probe';
+// Each client owns the snapshot it loaded or successfully committed.
+const observedSaves = new WeakMap<KeyValueStore, string | null>();
 
 /** Longest stored preferences text, in UTF-16 code units. */
 export const MAX_PREFS_LENGTH = 4096;
@@ -82,7 +85,7 @@ export function memoryStore(initial?: Readonly<Record<string, string>>): KeyValu
 
 /**
  * A store over the browser's persistent storage, or a memory fallback. NEVER throws. The fallback is used when the
- * storage is missing, its access throws, it lacks the three functions, or a probe write fails (quota, private mode).
+ * storage is missing, its read access throws, or it lacks the three functions.
  * After creation the operations of the returned durable store may still throw; callers here catch that.
  */
 export function browserStore(getStorage?: () => unknown): KeyValueStore {
@@ -99,8 +102,7 @@ export function browserStore(getStorage?: () => unknown): KeyValueStore {
       return memoryStore();
     }
     const storage = s as unknown as { getItem(k: string): unknown; setItem(k: string, v: string): void; removeItem(k: string): void };
-    storage.setItem(PROBE_KEY, '1');
-    storage.removeItem(PROBE_KEY);
+    storage.getItem(SAVE_KEY); // Reading may still work when the origin is at its quota.
     return {
       durable: true,
       getItem: (k) => {
@@ -129,12 +131,19 @@ const isDurable = (store: KeyValueStore): boolean => {
 
 export type SaveResult =
   | { ok: true; durable: boolean }
-  | { ok: false; reason: 'STORAGE_ERROR' | 'INVALID_STATE' };
+  | { ok: false; reason: 'STORAGE_ERROR' | 'INVALID_STATE' | 'SAVE_CHANGED' };
+
+export function matchesObservedSave(store: KeyValueStore): boolean {
+  const expected = observedSaves.has(store) ? observedSaves.get(store) : null;
+  return store.getItem(SAVE_KEY) === expected;
+}
 
 /** Removes ONLY the in-progress save. Never throws; `ok` is false when the store refused. */
-export function clearSave(store: KeyValueStore): { ok: boolean } {
+export function clearSave(store: KeyValueStore): { ok: true } | { ok: false; reason?: 'SAVE_CHANGED' } {
   try {
+    if (!matchesObservedSave(store)) return { ok: false, reason: 'SAVE_CHANGED' };
     store.removeItem(SAVE_KEY);
+    observedSaves.set(store, null);
     return { ok: true };
   } catch {
     return { ok: false };
@@ -152,7 +161,8 @@ export function saveGame(store: KeyValueStore, state: GameState, nowIso: string)
   try {
     const durable = isDurable(store);
     if (state.phase === 'ENDED') {
-      return clearSave(store).ok ? { ok: true, durable } : { ok: false, reason: 'STORAGE_ERROR' };
+      const cleared = clearSave(store);
+      return cleared.ok ? { ok: true, durable } : { ok: false, reason: cleared.reason ?? 'STORAGE_ERROR' };
     }
     let text: string;
     try {
@@ -171,7 +181,9 @@ export function saveGame(store: KeyValueStore, state: GameState, nowIso: string)
       return { ok: false, reason: 'INVALID_STATE' };
     }
     try {
+      if (!matchesObservedSave(store)) return { ok: false, reason: 'SAVE_CHANGED' };
       store.setItem(SAVE_KEY, text);
+      observedSaves.set(store, text);
     } catch {
       return { ok: false, reason: 'STORAGE_ERROR' };
     }
@@ -203,9 +215,10 @@ function discard(store: KeyValueStore, reason: DiscardReason): LoadResult {
  */
 export function loadGame(store: KeyValueStore): LoadResult {
   try {
-    let raw: unknown;
+    let raw: string | null;
     try {
       raw = store.getItem(SAVE_KEY);
+      observedSaves.set(store, raw);
     } catch {
       return { kind: 'NONE', readFailed: true };
     }

@@ -46,7 +46,7 @@
 //
 // Imports: ui/, i18n/, core/types and core/view (screen-class module of boundaries.test.ts).
 
-import type { QuadKey } from '../../core/types';
+import type { PlayerId, QuadKey, SeatConfig } from '../../core/types';
 import type { PlayerView } from '../../core/view';
 import { t } from '../../i18n';
 import { renderBanner } from '../components/banner';
@@ -134,6 +134,21 @@ function findCell(el: Element, row: number, col: number): Element | null {
     if (found !== null) return found;
   }
   return null;
+}
+
+// Translate generated names at display time so old and resumed games follow the current language.
+function humanName(id: PlayerId, name: string): string {
+  if (name === 'You') return t('common.seat.human');
+  const n = Number(id.slice(1)) + 1;
+  return name === `Player ${n}` ? t('common.seat.player', { n }) : name;
+}
+
+function displayView(view: PlayerView | null): PlayerView | null {
+  if (view === null) return null;
+  const localize = (seat: SeatConfig): SeatConfig =>
+    seat.kind === 'HUMAN' ? { ...seat, name: humanName(seat.id, seat.name) } : seat;
+  const [a, b, c, d] = view.rules.seats;
+  return { ...view, rules: { ...view.rules, seats: [localize(a), localize(b), localize(c), localize(d)] } };
 }
 
 const seatName = (view: PlayerView, id: string): string => view.rules.seats.find((s) => s.id === id)?.name ?? id;
@@ -313,6 +328,7 @@ export function createGameScreen(options: GameScreenOptions): GameScreen {
 
   const newHelp = (): HelpHandle =>
     renderHelp(doc, overlaySlot, { model: { language: latest?.model.language ?? 'en' }, provisional: true }, tr, {
+      onLanguageChange: (language) => latest?.handlers.setLanguage(language),
       fallbackFocus: helpButton,
       onClose: () => applyOverlay({ type: 'CLOSE' }),
     });
@@ -497,7 +513,12 @@ export function createGameScreen(options: GameScreenOptions): GameScreen {
     gate = { handle, seat: wanted.forSeat, purpose: wanted.purpose };
   }
 
-  function reconcile(input: RenderInput): void {
+  function reconcile(raw: RenderInput): void {
+    const pendingGate = raw.model.gate;
+    const input: RenderInput = {
+      ...raw, view: displayView(raw.view), publicView: displayView(raw.publicView),
+      model: pendingGate ? { ...raw.model, gate: { ...pendingGate, name: humanName(pendingGate.forSeat, pendingGate.name) } } : raw.model,
+    };
     latest = input;
     const data = input.publicView ?? input.view;
     if (data !== null) lastRules = { rules: data.rules };

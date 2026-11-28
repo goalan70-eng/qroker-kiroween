@@ -885,12 +885,14 @@ describe('continueSaved and discardSaved guards', () => {
     expect(r.ctl.continueSaved()).toEqual({ ok: false, reason: 'NO_RESUME' });
   });
 
-  it('a failed removal in discardSaved gives FAILED and a notice, and the offer is still dropped', () => {
+  it('a failed removal keeps the save available to continue or delete again', () => {
     const r = offered({ durable: true });
     r.rec.failRemove = new Error('x');
+    expect(r.ctl.discardSaved()).toEqual({ ok: false, reason: 'DISCARD_FAILED' });
+    expect(r.ctl.getModel().resume).not.toBeNull();
+    expect(r.rec.inner.getItem(SAVE_KEY)).toBe(savedText());
+    r.rec.failRemove = null;
     expect(r.ctl.discardSaved()).toEqual({ ok: true });
-    expect(r.ctl.getModel().storage).toBe('FAILED');
-    expect(noticeKinds(r)).toEqual(['STORAGE_WRITE_FAILED']);
     expect(r.ctl.getModel().resume).toBeNull();
   });
 

@@ -53,7 +53,7 @@ test.describe('setup language preference', () => {
 
   test('starts in English on a Korean browser and restores the chosen language after reload', async ({ page }) => {
     await page.goto('/');
-    const language = page.locator('#setup-language');
+    const language = page.locator('#shell-language');
     await expect(language).toHaveValue('en');
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await language.selectOption('ko');
@@ -142,7 +142,14 @@ test.describe('A reload during placement', () => {
 
     await reloadToPrompt(page);
     await expect(page.locator('#resume-continue')).toHaveText(ko['persistence.resume.continue']);
+    const beforeCancel = await readStored(page, SAVE_KEY);
     await page.locator('#resume-discard').click();
+    await expect(page.locator('#resume-cancel')).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#resume-discard')).toBeFocused();
+    expect(await readStored(page, SAVE_KEY)).toBe(beforeCancel);
+    await page.locator('#resume-discard').click();
+    await page.locator('#resume-confirm').click();
     await expect(page.locator('#setup-start')).toBeVisible();
     await expect(page.locator('.resume')).toHaveCount(0);
     expect(await readStored(page, SAVE_KEY)).toBeNull();
@@ -152,7 +159,7 @@ test.describe('A reload during placement', () => {
     await expect(page.locator('#setup-start')).toBeVisible();
     await expect(page.locator('.resume')).toHaveCount(0);
     expect(await readStored(page, SAVE_KEY)).toBeNull();
-    await expect(page.locator('#setup-language')).toHaveValue('ko');
+    await expect(page.locator('#shell-language')).toHaveValue('ko');
     await expect(page.locator('.setup-ai-row select').first()).toHaveValue('ADVANCED');
     await expect(page.locator('.setup-ai-row select').nth(1)).toHaveValue('BEGINNER');
     await expect(page.locator('.setup-ai-row select')).toHaveCount(3);
@@ -190,6 +197,7 @@ test.describe('A reload during placement', () => {
     // No game can be started while the prompt is pending (it replaces the setup): Discard first, then a new Seed.
     await expect(page.locator('#setup-start')).toHaveCount(0);
     await page.locator('#resume-discard').click();
+    await page.locator('#resume-confirm').click();
     await configureAndStart(page, { humans: 1, seedText: String(SEED_B) });
     expect(await seedLine(page)).toContain(String(SEED_B));
     await placeCards(page, 2);
@@ -494,7 +502,7 @@ test.describe('D corrupt storage', () => {
         // the bad save is removed, the prefs are kept and applied
         expect(await readStored(page, SAVE_KEY)).toBeNull();
         expect(await readStored(page, PREFS_KEY)).toBe(prefs);
-        await expect(page.locator('#setup-language')).toHaveValue(lang);
+        await expect(page.locator('#shell-language')).toHaveValue(lang);
         await expect(page.locator('#setup-humans-2')).toBeChecked();
         await expect(page.locator('.setup-ai-row select').first()).toHaveValue('ADVANCED');
         // no fragment of the stored text reaches the page
@@ -539,7 +547,7 @@ async function playWithCheck(page: Page, check: () => Promise<void>): Promise<vo
     for (const select of await page.locator('.setup-ai-row select').all()) await select.selectOption('BEGINNER');
     await page.locator('#setup-seed').fill(seedText);
     await page.locator('#setup-start').click();
-    await expect(page.locator('.game-seed')).toBeVisible();
+    await expect(page.locator('.placement-board')).toBeVisible();
     await check();
     const { stoppedAt } = await playUntil(page, {
       stopAt: (kind) => kind === 'GUESS',
@@ -564,22 +572,128 @@ test.describe('E storage unavailable', () => {
     await expect(notice(page, 'STORAGE_WRITE_FAILED')).toHaveCount(0);
   };
 
-  test('(1) setItem throws QuotaExceededError at load: memory fallback, playable, not-durable notice, no autosave line, no Continue after reload', async ({ page }) => {
-    test.setTimeout(LONG_TEST);
-    await stubSeeds(page, [SEED_A]);
-    await page.addInitScript(() => {
-      Storage.prototype.setItem = function () {
-        throw new DOMException('The quota has been exceeded.', 'QuotaExceededError');
-      };
+  for (const locking of ['Web Locks', 'IndexedDB'] as const) {
+    test(`simultaneous starts preserve one save and warn the other tab using ${locking}`, async ({ page, context }) => {
+      if (locking === 'IndexedDB') {
+        await context.addInitScript(() => Object.defineProperty(navigator, 'locks', { value: undefined }));
+      }
+      const other = await context.newPage();
+      const tabs = [page, other];
+      await Promise.all(tabs.map(tab => tab.goto('/')));
+      await Promise.all(tabs.map((tab, i) => tab.locator('#setup-seed').fill(String(400 + i))));
+      await Promise.all(tabs.map(tab => tab.locator('#setup-start').click()));
+      const warnings = () => Promise.all(tabs.map(tab => notice(tab, 'SAVE_CHANGED').count()));
+      await expect.poll(async () => (await warnings()).reduce((a, b) => a + b, 0)).toBe(1);
+      const [firstLost] = await warnings();
+      const saved = JSON.parse((await readStored(page, SAVE_KEY))!);
+      expect(saved.seed).toBe(firstLost ? 401 : 400);
     });
+  }
+
+  test('Continue rejects a replaced offer and reload offers the newer game', async ({ page, context }) => {
     await page.goto('/');
-    await expect(page.locator('#setup-start')).toBeVisible();
-    await expectNotDurableUi(page); // from startup, before any game
-    await playWithCheck(page, () => expectNotDurableUi(page));
+    await configureAndStart(page, { humans: 1, seedText: '101' });
+    await reloadToPrompt(page);
+    const other = await context.newPage();
+    await other.goto('/');
+    await other.locator('#resume-discard').click();
+    await other.locator('#resume-confirm').click();
+    await configureAndStart(other, { humans: 1, seedText: '202' });
+    await expect.poll(async () => JSON.parse((await readStored(other, SAVE_KEY)) ?? 'null')?.seed).toBe(202);
+    await page.locator('#resume-continue').click();
+    await expect(notice(page, 'SAVE_CHANGED')).toBeVisible();
+    await expect(page.locator('.placement-board')).toHaveCount(0);
+    await reloadToPrompt(page);
+    await page.locator('#resume-continue').click();
+    await expect(page.locator('.game-seed')).toContainText('202');
+  });
+
+  test('a failed corrupt-save removal is reported accurately', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('#shell-language').selectOption('ko');
+    await writeStored(page, SAVE_KEY, '{broken');
+    await page.addInitScript(() => {
+      Storage.prototype.removeItem = () => { throw new DOMException('denied', 'SecurityError'); };
+    });
     await page.reload();
-    await expect(page.locator('#setup-start')).toBeVisible();
-    await expect(page.locator('.resume')).toHaveCount(0);
-    await expectNotDurableUi(page);
+    await expect(notice(page, 'SAVE_DISCARDED')).toContainText(ko['persistence.notice.REMOVAL_FAILED']);
+    expect(await readStored(page, SAVE_KEY)).toBe('{broken');
+  });
+
+  test('a readable save can be resumed when the first write fails at quota', async ({ page }) => {
+    await stubSeeds(page, [SEED_A]);
+    await startFresh(page);
+    const original = await readStored(page, SAVE_KEY);
+    expect(original).not.toBeNull();
+    await page.addInitScript(() => {
+      Storage.prototype.setItem = () => { throw new DOMException('full', 'QuotaExceededError'); };
+    });
+    await reloadToPrompt(page);
+    await page.locator('#resume-continue').click();
+    await playHumanTurn(page);
+    await expect(notice(page, 'STORAGE_WRITE_FAILED')).toBeVisible();
+    expect(await readStored(page, SAVE_KEY)).toBe(original);
+    await reloadToPrompt(page);
+  });
+
+  test('a failed deletion keeps the save available to continue or retry', async ({ page }) => {
+    await startFresh(page);
+    const saved = await readStored(page, SAVE_KEY);
+    expect(saved).not.toBeNull();
+    for (const followUp of ['continue', 'retry']) {
+      await reloadToPrompt(page);
+      await page.evaluate((key) => {
+        const remove = Storage.prototype.removeItem;
+        Storage.prototype.removeItem = function (item) {
+          if (item === key) {
+            Storage.prototype.removeItem = remove;
+            throw new DOMException('Removal unavailable', 'SecurityError');
+          }
+          remove.call(this, item);
+        };
+      }, SAVE_KEY);
+      await page.locator('#resume-discard').click();
+      await page.locator('#resume-confirm').click();
+      await expect(page.locator('.resume-error')).toHaveText(en['persistence.resume.discardFailed']);
+      expect(await readStored(page, SAVE_KEY)).toBe(saved);
+      if (followUp === 'continue') {
+        await page.locator('#resume-continue').click();
+        await expect(page.locator('.hand-card').first()).toBeVisible();
+      } else {
+        await page.locator('#resume-discard').click();
+        await page.locator('#resume-confirm').click();
+        await expect(page.locator('#setup-start')).toBeVisible();
+        expect(await readStored(page, SAVE_KEY)).toBeNull();
+      }
+    }
+  });
+
+  test('an older tab cannot discard or overwrite a new game in another tab', async ({ page, context }) => {
+    await page.goto('/');
+    await configureAndStart(page, { humans: 1, seedText: '101' });
+    await reloadToPrompt(page);
+    const newer = await context.newPage();
+    await newer.goto('/');
+    await newer.locator('#resume-discard').click();
+    await newer.locator('#resume-confirm').click();
+    await configureAndStart(newer, { humans: 1, seedText: '202' });
+    const latest = await readStored(newer, SAVE_KEY);
+    expect(latest).not.toBeNull();
+    await page.locator('#resume-discard').click();
+    await page.locator('#resume-confirm').click();
+    await expect(notice(page, 'SAVE_CHANGED')).toBeVisible();
+    expect(await readStored(newer, SAVE_KEY)).toBe(latest);
+    await reloadToPrompt(page);
+    await page.locator('#resume-continue').click();
+    await reloadToPrompt(newer);
+    await newer.locator('#resume-discard').click();
+    await newer.locator('#resume-confirm').click();
+    await configureAndStart(newer, { humans: 1, seedText: '404' });
+    const replacement = await readStored(newer, SAVE_KEY);
+    expect(replacement).not.toBe(latest);
+    await playHumanTurn(page);
+    await expect(notice(page, 'SAVE_CHANGED')).toBeVisible();
+    expect(await readStored(newer, SAVE_KEY)).toBe(replacement);
   });
 
   test('(2) localStorage getter throws SecurityError: same expectations', async ({ page }) => {
@@ -664,7 +778,7 @@ test.describe('F game completion', () => {
     await expect(page.locator('#setup-start')).toBeVisible();
     await expect(page.locator('.resume')).toHaveCount(0);
     expect(await readStored(page, SAVE_KEY)).toBeNull();
-    await expect(page.locator('#setup-language')).toHaveValue('ko');
+    await expect(page.locator('#shell-language')).toHaveValue('ko');
     await expect(page.locator('#setup-humans-2')).toBeChecked();
     await expect(page.locator('.setup-ai-row select')).toHaveCount(2);
     await expect(page.locator('.setup-ai-row select').first()).toHaveValue('ADVANCED');

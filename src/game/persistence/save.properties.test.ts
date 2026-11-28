@@ -904,7 +904,10 @@ describe('Property 27: save round trip (task 20.3)', () => {
     // The format and replay round trip still holds for an ENDED log.
     const parsed = parseSave(text);
     expect(parsed.kind).toBe('OK');
-    const store = memoryStore({ [SAVE_KEY]: text, [PREFS_KEY]: '{"prefsVersion":1,"language":null,"setup":null}' });
+    const store = memoryStore({ [PREFS_KEY]: '{"prefsVersion":1,"language":null,"setup":null}' });
+    const active = replay(ended.seed, ended.config, []);
+    if (!active.ok) throw new Error('invalid test fixture');
+    expect(saveGame(store, active.value, NOW).ok).toBe(true);
     expect(saveGame(store, ended, NOW)).toEqual({ ok: true, durable: false });
     expect(store.getItem(SAVE_KEY)).toBeNull();
     expect(store.getItem(PREFS_KEY)).not.toBeNull();

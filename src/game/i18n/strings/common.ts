@@ -17,7 +17,7 @@ export const en = Object.freeze({
     'The playable game screens are not connected yet. This page only shows the application shell.',
 
   // Language selector. The language names are shown in their own language in both tables.
-  'common.language.label': 'Language',
+  'common.language.label': 'Language:',
   'common.languageName.en': 'English',
   'common.languageName.ko': '한국어',
 
@@ -47,7 +47,7 @@ export const ko: Record<keyof typeof en, string> = Object.freeze({
   'common.shellNotice': '플레이 가능한 게임 화면은 아직 연결되지 않았습니다. 이 페이지는 애플리케이션 셸만 보여 줍니다.',
 
   // REVIEW: new text, needs native-speaker check
-  'common.language.label': '언어',
+  'common.language.label': '언어:',
   'common.languageName.en': 'English',
   'common.languageName.ko': '한국어',
 

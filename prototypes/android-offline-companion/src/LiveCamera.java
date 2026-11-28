@@ -17,7 +17,6 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.SystemClock;
 import android.util.Size;
 import android.view.Surface;
 
@@ -25,10 +24,12 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 
 final class LiveCamera {
-    interface Observer { void frame(LiveCamera camera, int[] cards, long acquiredAt, long confirmation); }
+    interface Observer {
+        void ready(LiveCamera camera);
+        void captured(LiveCamera camera, long requestId, int[] cards);
+    }
     interface Failure { void error(LiveCamera camera); }
 
     final int width, height, sensorRotation;
@@ -42,25 +43,18 @@ final class LiveCamera {
     private final Failure failure;
     private final HandlerThread cameraThread = new HandlerThread("qroker-camera");
     private final ExecutorService decode = Executors.newSingleThreadExecutor();
-    private final AtomicInteger decodeJobs = new AtomicInteger();
-    private final ConfirmationFrame<Reading> confirmation = new ConfirmationFrame<>(reading -> publish(reading, 0));
+    private final ConfirmationFrame<Reading> confirmation = new ConfirmationFrame<>(ignored -> {});
     private Handler handler;
     private CameraDevice device;
     private CameraCaptureSession session;
     private CaptureRequest previewRequest;
-    private boolean previewReadInFlight;
     private ImageReader imageReader;
     private Surface preview;
     private volatile boolean closed;
 
     private static final class Reading {
         final int[] cards;
-        final long acquiredAt;
-
-        Reading(int[] cards, long acquiredAt) {
-            this.cards = cards;
-            this.acquiredAt = acquiredAt;
-        }
+        Reading(int[] cards) { this.cards = cards; }
     }
 
     LiveCamera(Context context, SurfaceTexture texture, OpticalReader reader, Handler main,
@@ -152,12 +146,8 @@ final class LiveCamera {
                                 CaptureRequest display = request.build();
                                 request.addTarget(imageReader.getSurface());
                                 previewRequest = request.build();
-                                session.setRepeatingRequest(display, new CameraCaptureSession.CaptureCallback() {
-                                    @Override public void onCaptureCompleted(CameraCaptureSession source,
-                                            CaptureRequest request, TotalCaptureResult result) {
-                                        schedulePreviewRead(source);
-                                    }
-                                }, handler);
+                                session.setRepeatingRequest(display, null, handler);
+                                main.post(() -> { if (!closed) observer.ready(LiveCamera.this); });
                             } catch (CameraAccessException | IllegalStateException error) {
                                 fail();
                             }
@@ -170,32 +160,8 @@ final class LiveCamera {
         }
     }
 
-    private final CameraCaptureSession.CaptureCallback previewReadCallback =
-            new CameraCaptureSession.CaptureCallback() {
-                @Override public void onCaptureCompleted(CameraCaptureSession source, CaptureRequest request,
-                                                         TotalCaptureResult result) { previewReadInFlight = false; }
-                @Override public void onCaptureFailed(CameraCaptureSession source, CaptureRequest request,
-                                                      CaptureFailure failure) { previewReadInFlight = false; }
-                @Override public void onCaptureSequenceAborted(CameraCaptureSession source, int sequenceId) {
-                    previewReadInFlight = false;
-                }
-            };
-
     @SuppressWarnings("deprecation")
-    private void schedulePreviewRead(CameraCaptureSession source) {
-        // Keep the display live without queuing analysis frames ahead of the confirmation exposure.
-        if (closed || source != session || previewReadInFlight || confirmation.waiting() || decodeJobs.get() != 0)
-            return;
-        try {
-            source.capture(previewRequest, previewReadCallback, handler);
-            previewReadInFlight = true;
-        } catch (CameraAccessException | IllegalStateException | IllegalArgumentException error) {
-            fail();
-        }
-    }
-
-    @SuppressWarnings("deprecation")
-    void requestConfirmation(long id) {
+    void captureCode(long id) {
         handler.post(() -> {
             if (closed || session == null || previewRequest == null) return;
             confirmation.request(id);
@@ -228,26 +194,27 @@ final class LiveCamera {
     }
 
     private void abortConfirmation(long id) {
-        confirmation.cancel(id, () -> publish(new Reading(null, SystemClock.elapsedRealtime()), id));
+        confirmation.cancel(id, () -> publish(new Reading(null), id));
     }
 
     private void frameAvailable(ImageReader input) {
-        boolean confirming = confirmation.waiting();
-        try (Image image = confirming ? input.acquireNextImage() : input.acquireLatestImage()) {
-            if (image == null || closed) return;
+        try (Image image = input.acquireNextImage()) {
+            if (image == null || closed || !confirmation.waiting()) return;
+            long id = confirmation.requestId();
             long timestamp = image.getTimestamp();
-            long time = SystemClock.elapsedRealtime();
-            if (confirming && !confirmation.needsReading(timestamp)) return;
-            if (!confirming && decodeJobs.get() != 0) return;
-            if (confirming && decodeJobs.get() >= 6) {
-                // Do not confirm across an observation we cannot process in order.
-                abortConfirmation(confirmation.requestId());
-                return;
-            }
-            decodeFrame(luminance(image), time, timestamp, confirmation.requestId());
-        } catch (RuntimeException error) {
-            fail();
-        }
+            if (!confirmation.needsReading(timestamp)) return;
+            OpticalReader.Frame frame = luminance(image);
+            decode.execute(() -> {
+                if (closed) return;
+                try {
+                    Reading reading = new Reading(reader.readAimed(frame));
+                    handler.post(() -> {
+                        if (!closed && confirmation.requestId() == id)
+                            publishConfirmation(confirmation.arrived(timestamp, reading));
+                    });
+                } catch (RuntimeException error) { handler.post(() -> abortConfirmation(id)); }
+            });
+        } catch (RuntimeException error) { fail(); }
     }
 
     private void publishConfirmation(ConfirmationFrame.Match<Reading> match) {
@@ -255,27 +222,7 @@ final class LiveCamera {
     }
 
     private void publish(Reading reading, long id) {
-        main.post(() -> { if (!closed) observer.frame(this, reading.cards, reading.acquiredAt, id); });
-    }
-
-    private void decodeFrame(OpticalReader.Frame frame, long acquiredAt, long timestamp, long requestId) {
-        decodeJobs.incrementAndGet();
-        decode.execute(() -> {
-            try {
-                if (closed) return;
-                Reading reading = new Reading(reader.readAimed(frame), acquiredAt);
-                handler.post(() -> {
-                    if (closed) return;
-                    if (requestId == 0) publish(reading, 0);
-                    else if (requestId == confirmation.requestId())
-                        publishConfirmation(confirmation.arrived(timestamp, reading));
-                });
-            } catch (RuntimeException error) {
-                fail();
-            } finally {
-                decodeJobs.decrementAndGet();
-            }
-        });
+        main.post(() -> { if (!closed) observer.captured(this, id, reading.cards); });
     }
 
     private static OpticalReader.Frame luminance(Image image) {

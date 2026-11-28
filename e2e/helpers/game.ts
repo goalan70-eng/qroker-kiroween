@@ -72,7 +72,7 @@ export interface StartOptions {
 export async function startGame(page: Page, options: StartOptions = {}): Promise<void> {
   await page.goto('/');
   await expect(page.locator('#setup-start')).toBeVisible();
-  if (options.language) await page.locator('#setup-language').selectOption(options.language);
+  if (options.language) await page.locator('#shell-language').selectOption(options.language);
   const humans = options.humans ?? 1;
   await page.locator(`#setup-humans-${humans}`).check();
   for (const select of await page.locator('.setup-ai-row select').all()) await select.selectOption('BEGINNER');

@@ -13,6 +13,10 @@
 // check`.
 
 export const en = Object.freeze({
+  'help.figure.hand': 'Choose one of the three cards in your hand.',
+  'help.figure.placement': 'The dots mark legal spaces. Select one beside an existing card, then confirm.',
+  'help.figure.code': 'The four corner fragments meet in the center. Aim the scanner at the complete square.',
+
   'help.open': 'Rules and help',
   'help.title': 'Rules and help',
   'help.intro': 'A short summary of the rules of this game.',
@@ -43,7 +47,7 @@ export const en = Object.freeze({
 
   'help.s7.title': 'Guesses',
   'help.s7.body':
-    'Every player, including the one who placed the card, privately guesses the hidden sum of each new code: the sum of the values of its four cards. A guess is a whole number from 4 to 52. Nobody sees another player\'s guess, and no hidden sum is shown before the reveal.',
+    'Every player, including the one who placed the card, privately guesses the hidden sum of each new code: the sum of the values of its four cards. A counts as 1, J as 11, Q as 12 and K as 13. A guess is a whole number from 4 to 52. Nobody sees another player\'s guess, and no hidden sum is shown before the reveal.',
 
   'help.s8.title': 'Drawing cards',
   'help.s8.body':
@@ -65,6 +69,12 @@ export const en = Object.freeze({
 } as const);
 
 export const ko: Record<keyof typeof en, string> = Object.freeze({
+  // REVIEW: new text, needs native-speaker check
+  'help.figure.hand': '손패 세 장 중 놓을 카드 한 장을 고르세요.',
+  // REVIEW: new text, needs native-speaker check
+  'help.figure.placement': '점이 찍힌 칸에 놓을 수 있습니다. 기존 카드 옆의 칸을 고른 뒤 배치를 확정하세요.',
+  // REVIEW: new text, needs native-speaker check
+  'help.figure.code': '네 모서리의 조각이 가운데에서 정사각형을 이룹니다. 앱으로 읽을 때는 이곳에 조준하세요.',
   // REVIEW: new text, needs native-speaker check
   'help.open': '규칙과 도움말',
   // REVIEW: new text, needs native-speaker check
@@ -112,7 +122,7 @@ export const ko: Record<keyof typeof en, string> = Object.freeze({
   'help.s7.title': '예측',
   // REVIEW: new text, needs native-speaker check
   'help.s7.body':
-    '카드를 놓은 플레이어를 포함한 모든 플레이어가 새 조합마다 숨겨진 합, 즉 네 카드 값의 합을 비공개로 예측합니다. 예측값은 4에서 52 사이의 정수입니다. 다른 플레이어의 예측값은 볼 수 없고, 공개 전에는 어떤 숨겨진 합도 표시되지 않습니다.',
+    '카드를 놓은 플레이어를 포함한 모든 플레이어가 새 조합마다 숨겨진 합, 즉 네 카드 값의 합을 비공개로 예측합니다. A는 1, J는 11, Q는 12, K는 13으로 셉니다. 예측값은 4에서 52 사이의 정수입니다. 다른 플레이어의 예측값은 볼 수 없고, 공개 전에는 어떤 숨겨진 합도 표시되지 않습니다.',
 
   // REVIEW: new text, needs native-speaker check
   'help.s8.title': '카드 뽑기',

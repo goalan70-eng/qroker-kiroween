@@ -421,10 +421,14 @@ describe('content', () => {
     }
   });
 
-  it('contains no digit except the rule numbers 8×8, 2×2, 180°, 4 to 52 and "4 neutral cards"', () => {
+  it('shows only public rule numbers, including the face-card values', () => {
     // Allowed numbers are rule constants of the spec: the 8×8 board (3.1), the 2×2 region (5.2), the 180° orientation
     // (4.1), the Guess range 4 to 52 (7.2) and the 4 neutral cards (2.2). Everything else, such as the placeholder
     // reward table and the end bonus would show up as a stray digit.
+    const rankValues = {
+      en: 'A counts as 1, J as 11, Q as 12 and K as 13',
+      ko: 'A는 1, J는 11, Q는 12, K는 13으로 셉니다',
+    };
     const ALLOWED: Record<Lang, readonly RegExp[]> = {
       en: [/8×8/g, /2×2/g, /180°/g, /4 to 52/g, /4 neutral cards/g],
       ko: [/8×8/g, /2×2/g, /180°/g, /4에서 52/g, /(?:중립 카드|중앙) 4장/g],
@@ -433,7 +437,8 @@ describe('content', () => {
       setLanguage(lang);
       const { handle } = setup(input(lang, true));
       handle.open();
-      let text = textOf(handle);
+      expect(textOf(handle)).toContain(rankValues[lang]);
+      let text = textOf(handle).replace(rankValues[lang], '');
       for (const phrase of ALLOWED[lang]) text = text.replace(phrase, '');
       expect(text, lang).not.toMatch(/\d/);
     }
@@ -445,7 +450,7 @@ describe('content', () => {
       setLanguage(lang);
       const { handle } = setup(input(lang, true));
       handle.open();
-      const tokens = textOf(handle).split(/\D+/);
+      const tokens = textOf(handle).replace(rankValues[lang], '').split(/\D+/);
       for (const n of stray) expect(tokens, `${lang} ${n}`).not.toContain(String(n));
     }
   });

@@ -1,6 +1,7 @@
 package com.qroker.offline;
 
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -263,8 +264,8 @@ public class OfflineTest {
         byte[] bytes = original.getBytes(java.nio.charset.StandardCharsets.UTF_8);
         Files.write(path, bytes);
         GameScore score = new GameScore(path.toFile());
-        check(score.history().size() == 2 && score.total() == 15 && score.history().get(0).actual == 27
-                && score.takeRecoveryCount() == 4 && score.takeRecoveryCount() == 0,
+        check(score.history().size() == 2 && score.total() == 20 && score.history().get(0).guess == 27
+                && score.takeRecoveryCount() == 3 && score.takeRecoveryCount() == 0,
                 "damaged rows are isolated and wrong sums are recomputed from the card IDs");
         Path backup;
         try (java.util.stream.Stream<Path> files = Files.list(folder)) {
@@ -274,8 +275,8 @@ public class OfflineTest {
         check(Arrays.equals(Files.readAllBytes(backup), bytes), "recovery keeps an exact copy of the original file");
         Path restart = Files.copy(path, folder.resolve("fresh-load"));
         GameScore loaded = new GameScore(restart.toFile());
-        check(loaded.takeRecoveryCount() == 0 && loaded.total() == 15
-                && Files.readString(path).equals("1136936,28,27\n1136937,28,28\n"),
+        check(loaded.takeRecoveryCount() == 0 && loaded.total() == 20
+                && Files.readString(path).equals("1136936,27,27\n1136937,28,28\n"),
                 "a fresh reader loads the repaired rounds from disk");
         for (Path entry : new Path[]{backup, path, restart}) Files.delete(entry);
         Path unreadable = folder.resolve("unreadable");
@@ -313,7 +314,7 @@ public class OfflineTest {
                 int recorded = (one.get() == null ? 0 : 1) + (two.get() == null ? 0 : 1);
                 int expected = same ? 1 : 2;
                 check(recorded == expected && left.total() == expected * 10 && right.total() == left.total()
-                                && Files.readAllLines(path).size() == expected,
+                                && Files.readAllLines(path).stream().filter(line -> !line.startsWith("#game,")).count() == expected,
                         "simultaneous submissions preserve all distinct rounds, same group = " + same);
             }
             right.observe(second, 150);
@@ -325,7 +326,7 @@ public class OfflineTest {
             long pending = right.requestSubmission(28, 155);
             left.reset();
             right.observe(second, 160);
-            check(pending != 0 && right.confirmSubmission(pending, 165) == null && Files.size(path) == 0
+            check(pending != 0 && right.confirmSubmission(pending, 165) == null && Files.readAllLines(path).equals(java.util.List.of("#game," + right.generation()))
                             && submitConfirmed(right, second, 28, 170).points == 10 && left.total() == 10,
                     "reset in another scoreboard cancels old guesses and permits new ones");
         } finally {
@@ -350,7 +351,7 @@ public class OfflineTest {
             check(!home.resetIfUnchanged(displayed) && home.total() == (replaced ? 10 : 20)
                             && Arrays.equals(saved, Files.readAllBytes(path)),
                     "old reset confirmation preserves newer scores, replacement game = " + replaced);
-            check(home.resetIfUnchanged(home.history()) && other.history().isEmpty() && Files.size(path) == 0,
+            check(home.resetIfUnchanged(home.history()) && other.history().isEmpty() && Files.readAllLines(path).equals(java.util.List.of("#game," + home.generation())),
                     "a newly reviewed scoreboard can still start a new game");
         }
         Files.delete(path);
@@ -373,6 +374,67 @@ public class OfflineTest {
                     "a new guess works after the interrupted reading at gap " + gap);
             Files.delete(path);
         }
+    }
+
+    private static void manualLock(Path file) throws Exception {
+        GameScore game = new GameScore(file.toFile());
+        GameScore other = new GameScore(file.toFile());
+        long generation = game.generation();
+        int[] a = {4, 21, 36, 40}, c = {8, 17, 36, 40};
+        game.observe(a, 10);
+        check(game.lockCaptured(null, generation) == GameScore.LockResult.UNREADABLE &&
+                game.scoreLocked(27) == null, "empty shutter frame never uses last preview");
+        check(game.lockCaptured(c, generation) == GameScore.LockResult.LOCKED &&
+                game.history().isEmpty(), "locking adds no score");
+        game.observe(null, 30_000);
+        game.observe(a, 40_000);
+        check(game.scoreLocked(53) == null && game.lockIsCurrent(), "invalid guess retains the capture");
+        Path blocked = Files.createDirectory(file.resolveSibling(file.getFileName() + ".pending"));
+        try {
+            game.scoreLocked(26);
+            throw new AssertionError("expected write failure");
+        } catch (IOException expected) {
+            check(game.history().isEmpty() && game.lockIsCurrent(), "write failure retains the capture");
+        }
+        Files.delete(blocked);
+        check(game.scoreLocked(26).points == 5 && game.scoreLocked(26) == null &&
+                game.lockCaptured(new int[]{40,36,17,8}, generation) == GameScore.LockResult.DUPLICATE,
+                "retry scores the captured group only once");
+        game.lockCaptured(a, generation);
+        game.discardLock();
+        check(game.scoreLocked(27) == null, "cancel leaves no draft to score");
+        game.lockCaptured(a, generation);
+        check(game.scoreLocked(27).points == 10 && game.total() == 15, "distinct same-sum groups both score");
+        other.reset();
+        check(game.lockCaptured(a, generation) == GameScore.LockResult.GAME_CHANGED, "reset invalidates in-flight capture");
+        game.lockCaptured(a, game.generation());
+        int draft = game.lockedKey();
+        long draftGame = game.lockedGeneration();
+        Path copy = Files.createTempFile("qroker-draft-reload", ".csv");
+        Files.copy(file, copy, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        GameScore restored = new GameScore(copy.toFile());
+        check(restored.restoreLock(draft, draftGame) == GameScore.LockResult.LOCKED
+                && restored.scoreLocked(26) != null
+                && restored.restoreLock(draft, draftGame) == GameScore.LockResult.DUPLICATE,
+                "reopened journal restores only an unscored group in the same game");
+        Path damaged = Files.createTempFile("qroker-draft-repair", ".csv");
+        Files.writeString(damaged, Files.readString(copy).replaceFirst("#game,[0-9]+", "#game,invalid"));
+        GameScore repaired = new GameScore(damaged.toFile());
+        check(repaired.total() == restored.total() && repaired.takeRecoveryCount() == 1
+                        && repaired.restoreLock(draft, draftGame) == GameScore.LockResult.GAME_CHANGED,
+                "repair keeps the scored rounds and invalidates drafts with an uncertain game");
+        try (java.nio.file.DirectoryStream<Path> backups = Files.newDirectoryStream(damaged.getParent(),
+                damaged.getFileName() + ".recovery-*.bak")) {
+            for (Path backup : backups) Files.delete(backup);
+        }
+        Files.delete(damaged);
+        Files.delete(copy);
+        other.reset();
+        check(other.restoreLock(draft, draftGame) == GameScore.LockResult.GAME_CHANGED
+                && other.restoreLock(-1, other.generation()) == GameScore.LockResult.UNREADABLE,
+                "a new game or invalid key cannot restore a draft");
+        check(game.scoreLocked(27) == null && game.history().isEmpty(), "reset invalidates locked capture");
+        Files.delete(file);
     }
 
     private static GameScore.Round submitConfirmed(GameScore score, int[] group, int guess, long time)
@@ -415,6 +477,7 @@ public class OfflineTest {
         journalRecovery(path.getParent());
         frameGaps(path.getParent(), found);
         sharedScoreboards(path.resolveSibling("shared"), found);
+        manualLock(path.resolveSibling("manual-lock.csv"));
         resetConfirmation(path.resolveSibling("dialog-reset"), found);
         GameScore score = new GameScore(path.toFile());
         score.observe(found, 100);

@@ -132,7 +132,7 @@ describe('mountShell against a fake Document (not a browser test)', () => {
     const m = mount(['ko-KR', 'en-US']);
     expect(getLanguage()).toBe('ko');
     expect(m.title.textContent).toBe('QRoker');
-    expect(m.label.textContent).toBe('언어');
+    expect(m.label.textContent).toBe('언어:');
     expect(m.label.attributes.get('for')).toBe(m.select.attributes.get('id'));
     expect(m.options.map((o) => o.textContent)).toEqual(['English', '한국어']);
     expect(m.select.value).toBe('ko');
@@ -145,7 +145,7 @@ describe('mountShell against a fake Document (not a browser test)', () => {
     for (const languages of [['en-US'], ['fr-FR'], []]) {
       const m = mount(languages);
       expect(getLanguage()).toBe('en');
-      expect(m.label.textContent).toBe('Language');
+      expect(m.label.textContent).toBe('Language:');
       expect(m.select.value).toBe('en');
       expect(m.doc.documentElement.lang).toBe('en');
       resetLanguage();
@@ -160,7 +160,7 @@ describe('mountShell against a fake Document (not a browser test)', () => {
 
     m.select.value = 'ko';
     m.select.dispatch('change');
-    expect(m.label.textContent).toBe('언어');
+    expect(m.label.textContent).toBe('언어:');
     expect(m.doc.documentElement.lang).toBe('ko');
     expect(m.doc.title).toBe('QRoker');
     expect(m.select.value).toBe('ko');

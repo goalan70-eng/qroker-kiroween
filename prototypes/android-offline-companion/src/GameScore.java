@@ -89,10 +89,52 @@ final class GameScore {
         return ordered;
     }
 
-    private int key() {
+    private int key() { return groupKey(cards); }
+
+    private static int groupKey(int[] cards) {
         int key = 0;
         for (int id : cards) key = (key << 6) | id;
         return key;
+    }
+
+    enum LockResult { LOCKED, UNREADABLE, DUPLICATE, GAME_CHANGED }
+
+    private int lockedKey = -1;
+    private long lockedGeneration;
+
+    long generation() { return journal.generation(); }
+
+    LockResult lockCaptured(int[] ids, long captureGeneration) {
+        int[] group = orderedGroup(ids);
+        return restoreLock(group == null ? -1 : groupKey(group), captureGeneration);
+    }
+
+    int lockedKey() { return lockedKey; }
+    long lockedGeneration() { return lockedGeneration; }
+
+    LockResult restoreLock(int key, long captureGeneration) {
+        discardLock();
+        if (captureGeneration != generation()) return LockResult.GAME_CHANGED;
+        if (sumFromKey(key) < 0) return LockResult.UNREADABLE;
+        if (journal.contains(key)) return LockResult.DUPLICATE;
+        lockedKey = key;
+        lockedGeneration = captureGeneration;
+        return LockResult.LOCKED;
+    }
+
+    boolean lockIsCurrent() {
+        return lockedKey >= 0 && lockedGeneration == generation() && !journal.contains(lockedKey);
+    }
+
+    void discardLock() { lockedKey = -1; }
+
+    Round scoreLocked(int guess) throws IOException {
+        if (!validGuess(guess) || !lockIsCurrent()) return null;
+        Round round = new Round(lockedKey, guess, sumFromKey(lockedKey));
+        boolean saved = journal.append(round, lockedGeneration);
+        // An IOException leaves the lock intact for a retry.
+        discardLock();
+        return saved ? round : null;
     }
 
     boolean ready(long now) { return visible(now) && !journal.contains(key()); }
@@ -135,12 +177,14 @@ final class GameScore {
 
     boolean resetIfUnchanged(List<Round> displayed) throws IOException {
         if (!journal.resetIfUnchanged(displayed)) return false;
+        discardLock();
         observe(null, 0);
         return true;
     }
 
     void reset() throws IOException {
         journal.reset();
+        discardLock();
         cards = null;
         pending = null;
     }

@@ -128,9 +128,9 @@ async function main() {
       if (request.url() !== base && !request.url().startsWith('data:')) external.push(request.url());
     });
     await page.goto(base);
-    assert.equal(await page.locator('#setup-language').inputValue(), 'en', 'English on a Korean browser');
+    assert.equal(await page.locator('#shell-language').inputValue(), 'en', 'English on a Korean browser');
     assert.equal(await page.locator('#sample-open').textContent(), 'Practice scanning');
-    await page.locator('#setup-language').selectOption('ko');
+    await page.locator('#shell-language').selectOption('ko');
     await page.reload();
     assert.equal(await page.locator('#sample-open').textContent(), '카메라 판독 연습');
     assert.equal(await page.locator('#setup-title').textContent(), '새 게임', 'Korean is intact in the standalone HTML');

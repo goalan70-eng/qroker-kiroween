@@ -17,9 +17,14 @@ export const en = Object.freeze({
     'Nothing of the game is shown until you continue. With several human players, a hand-over screen appears first.',
   'persistence.resume.continue': 'Continue',
   'persistence.resume.discard': 'Discard saved game',
+  'persistence.resume.discardFailed': 'Could not delete the saved game. You can continue it or try again.',
+  'persistence.resume.confirmTitle': 'Discard this game?',
+  'persistence.resume.confirmBody': 'This removes your saved progress. You cannot undo this.',
 
   // Notices (aria-live region).
   'persistence.notices.label': 'Saving',
+  'persistence.notice.SAVE_CHANGED': 'The saved game changed in another tab. Progress in this tab cannot be saved. Reload to use the latest save.',
+  'persistence.notice.REMOVAL_FAILED': 'The saved game could not be resumed or removed.',
   'persistence.notice.dismiss': 'Dismiss',
   'persistence.notice.STORAGE_NOT_DURABLE':
     'This browser cannot keep data after the page is closed. The game continues, but it will be lost if you reload or close the page.',
@@ -55,9 +60,17 @@ export const ko: Record<keyof typeof en, string> = Object.freeze({
   'persistence.resume.continue': '이어하기',
   // REVIEW: new text, needs native-speaker check
   'persistence.resume.discard': '저장된 게임 삭제',
+  // REVIEW: new text, needs native-speaker check
+  'persistence.resume.discardFailed': '저장된 게임을 삭제하지 못했습니다. 이어서 하거나 다시 삭제할 수 있습니다.',
+  // REVIEW: new text, needs native-speaker check
+  'persistence.resume.confirmTitle': '진행 중인 게임을 삭제할까요?',
+  // REVIEW: new text, needs native-speaker check
+  'persistence.resume.confirmBody': '삭제하면 이 판을 다시 이어갈 수 없습니다.',
 
   // REVIEW: new text, needs native-speaker check
   'persistence.notices.label': '저장',
+  // REVIEW: new text, needs native-speaker check
+  'persistence.notice.REMOVAL_FAILED': '저장된 게임을 이어갈 수 없고, 저장본도 삭제하지 못했습니다.',
   // REVIEW: new text, needs native-speaker check
   'persistence.notice.dismiss': '알림 닫기',
   // REVIEW: new text, needs native-speaker check
@@ -65,6 +78,8 @@ export const ko: Record<keyof typeof en, string> = Object.freeze({
     '이 브라우저는 페이지를 닫은 뒤에 데이터를 보관하지 못합니다. 게임은 계속되지만, 페이지를 새로 고치거나 닫으면 사라집니다.',
   // REVIEW: new text, needs native-speaker check
   'persistence.notice.STORAGE_WRITE_FAILED': '게임은 계속되지만 저장할 수 없습니다. 페이지를 새로 고치거나 닫으면 사라집니다.',
+  // REVIEW: new text, needs native-speaker check
+  'persistence.notice.SAVE_CHANGED': '다른 탭에서 저장 기록을 변경해 이 탭의 진행 상황을 저장할 수 없습니다. 최신 기록을 사용하려면 새로고침하세요.',
   // REVIEW: new text, needs native-speaker check
   'persistence.notice.STORAGE_READ_FAILED': '저장된 데이터를 읽을 수 없습니다. 새 게임은 그대로 할 수 있습니다.',
   // REVIEW: new text, needs native-speaker check

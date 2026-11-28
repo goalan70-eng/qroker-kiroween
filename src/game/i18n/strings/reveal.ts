@@ -39,7 +39,7 @@ export const ko: Record<keyof typeof en, string> = Object.freeze({
   // REVIEW: new text, needs native-speaker check
   'reveal.empty': '아직 공개할 결과가 없습니다.',
   // REVIEW: new text, needs native-speaker check
-  'reveal.placer': '공개 {n}: {name}이(가) 카드를 놓았습니다.',
+  'reveal.placer': '공개 {n} · 카드를 놓은 사람: {name}',
 
   // REVIEW: new text, needs native-speaker check
   'reveal.code.title': '{key} 조합',

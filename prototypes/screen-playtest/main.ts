@@ -13,6 +13,7 @@ import '../../src/game/ui/styles/persistence.css';
 import '../../src/game/ui/styles/layout.css';
 import '../../src/game/ui/styles/table.css';
 import './screen.css';
+import { mountWithSaveLock } from '../../src/game/ui/browser-save-lock';
 import { createGameAudio } from '../../src/game/ui/game-audio';
 import { DEFAULT_LANGUAGE, getLanguage } from '../../src/game/i18n';
 import { browserStore } from '../../src/game/persistence/storage';
@@ -206,23 +207,19 @@ const host = createGameScreen({
     },
   },
 });
-const stored = browserStore();
-mountApp(root, {
-  playSound: audio.play,
-  doc: document,
-  languages: DEFAULT_LANGUAGE,
-  schedule: (fn, ms) => {
-    const id = setTimeout(fn, ms);
-    return { cancel: () => clearTimeout(id) };
-  },
-  randomSeed,
-  store: {
-    durable: stored.durable,
-    getItem: key => stored.getItem('screen-playtest:' + key),
-    setItem: (key, value) => stored.setItem('screen-playtest:' + key, value),
-    removeItem: key => stored.removeItem('screen-playtest:' + key),
-  },
-  nowIso: () => new Date().toISOString(),
-  renderer: input => { host.render(input); renderCameraLabels(); renderRevealTools(input); },
+void mountWithSaveLock(browserStore(), 'screen-playtest:', store => {
+  mountApp(root, {
+    playSound: audio.play,
+    doc: document,
+    languages: DEFAULT_LANGUAGE,
+    schedule: (fn, ms) => {
+      const id = setTimeout(fn, ms);
+      return { cancel: () => clearTimeout(id) };
+    },
+    randomSeed,
+    store,
+    nowIso: () => new Date().toISOString(),
+    renderer: input => { host.render(input); renderCameraLabels(); renderRevealTools(input); },
+  });
+  root.querySelector('.shell__language')?.before(tools);
 });
-root.querySelector('.shell__language')?.before(tools);

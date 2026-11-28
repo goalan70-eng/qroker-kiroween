@@ -37,8 +37,9 @@ export type NoticeReason = 'CORRUPT' | 'SAVE_VERSION' | 'RULES_VERSION' | 'REPLA
 
 /** A persistence notice (task 20.4). Closed codes only: no saved text, card, Guess, Seed or engine detail. At most one per kind. */
 export interface Notice {
-  readonly kind: 'STORAGE_NOT_DURABLE' | 'STORAGE_WRITE_FAILED' | 'STORAGE_READ_FAILED' | 'SAVE_DISCARDED';
+  readonly kind: 'STORAGE_NOT_DURABLE' | 'STORAGE_WRITE_FAILED' | 'STORAGE_READ_FAILED' | 'SAVE_DISCARDED' | 'SAVE_CHANGED';
   readonly reason?: NoticeReason;
+  readonly removalFailed?: boolean;
 }
 
 /** What is known about saving: `UNKNOWN` until the first save result (or without persistence). */

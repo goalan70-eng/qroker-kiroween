@@ -497,6 +497,27 @@ test.describe('6 overlays', () => {
     }
   });
 
+  test('mobile help keeps Close visible and updates default seat names in place', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 568 });
+    await page.goto('/');
+    const picker = page.locator('select').filter({ has: page.locator('option[value="ko"]') });
+    await expect(picker).toHaveCount(1);
+    await picker.selectOption('ko');
+    await page.locator('#setup-start').click();
+    await expect(page.locator('.game-live')).toContainText('현재 차례: 나');
+    await page.locator('#game-help-open').click();
+    const dialog = page.locator('.overlay-dialog.help');
+    const close = dialog.locator('#help-close');
+    await expect(close).toBeInViewport({ ratio: 1 });
+    await dialog.evaluate(el => { el.scrollTop = el.scrollHeight; });
+    await expect(close).toBeInViewport({ ratio: 1 });
+    await close.click({ trial: true });
+    await dialog.locator('#help-language').selectOption('en');
+    await close.click();
+    await expect(page.locator('.game-live')).toContainText('Turn: You');
+    await expect(page.locator('.hand-card')).toHaveCount(3);
+  });
+
   test('Help and Abandon in a running game', async ({ page }) => {
     test.setTimeout(LONG_TEST);
     await stubSeeds(page, [SEED_A]);

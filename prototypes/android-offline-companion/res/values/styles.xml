@@ -1,0 +1,12 @@
+<resources>
+    <style name="Scorekeeper" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:colorAccent">#183d33</item>
+        <item name="android:colorBackgroundFloating">#fffdf7</item>
+        <item name="android:windowBackground">#f7f1df</item>
+        <item name="android:alertDialogTheme">@style/ScorekeeperDialog</item>
+    </style>
+    <style name="ScorekeeperDialog" parent="@android:style/Theme.Material.Light.Dialog.Alert">
+        <item name="android:colorAccent">#183d33</item>
+        <item name="android:colorBackgroundFloating">#fffdf7</item>
+    </style>
+</resources>

@@ -29,16 +29,16 @@
 //
 // DOM
 //   div.overlay-backdrop > div.overlay-dialog.help[role=dialog][aria-modal=true][aria-labelledby=help-title][aria-describedby=help-intro][lang]
-//     h2#help-title[tabindex=-1]
+//     div.help-header > h2#help-title[tabindex=-1] + button.help-close
 //     p#help-intro
 //     div.help-body                 rebuilt on every render
 //       p.help-provisional[role=note]   only while `provisional`
 //       section.help-section[aria-labelledby=help-<id>-title] > h3 + p     one per HELP_SECTIONS entry
-//     div.help-actions > button.help-close[type=button]
 //
 // Imports: ui/, i18n/ (types) only.
 
 import type { Lang, StringKey } from '../../i18n';
+import { isLang, LANGUAGES } from '../../i18n';
 import { createH } from '../dom';
 import { BANNER_GLYPH } from '../components/banner';
 import type { Translate } from '../components/card-face';
@@ -53,6 +53,7 @@ export interface HelpInput {
 }
 
 export interface HelpOptions {
+  readonly onLanguageChange?: (language: Lang) => void;
   /** Receives the focus when the opener is gone after closing. */
   readonly fallbackFocus?: Pick<HTMLElement, 'focus'> | null;
   /** Called when the person closes the dialog (Escape, Close button, backdrop). Not called by `close()` or `dispose()`. */
@@ -100,8 +101,15 @@ export const HELP_SECTIONS: readonly HelpSection[] = Object.freeze([
   { id: 'visibility', titleKey: 'help.visibility.title', bodyKey: 'help.visibility.body', requirements: ['10.4', '10.5', '15.1'] },
 ] as const satisfies readonly HelpSection[]);
 
-/** Every string key this module passes to `t`. */
+const figures: Partial<Record<string, { src: URL; caption: StringKey }>> = {
+  board: { src: new URL('../../../../assets/help/drawable-nodpi/help_hand.webp', import.meta.url), caption: 'help.figure.hand' },
+  howto: { src: new URL('../../../../assets/help/drawable-nodpi/help_placement.webp', import.meta.url), caption: 'help.figure.placement' },
+  codes: { src: new URL('../../../../assets/help/drawable-nodpi/help_code.webp', import.meta.url), caption: 'help.figure.code' },
+};
+
+/** Help text and illustrations available in both languages. */
 export const HELP_STRING_KEYS = [
+  'help.figure.hand', 'help.figure.placement', 'help.figure.code',
   'help.title',
   'help.intro',
   ...HELP_SECTIONS.flatMap((s) => [s.titleKey, s.bodyKey]),
@@ -134,15 +142,25 @@ export function renderHelp(doc: ModalDocument, root: HTMLElement, input: HelpInp
     backdropDismiss: true,
     dialogClass: 'help',
   });
-  modal.dialog.appendChild(titleEl);
+  modal.dialog.appendChild(h('div', { class: 'help-header' }, titleEl, closeBtn));
   modal.dialog.appendChild(introEl);
+  const languageLabel = h('label', { attrs: { for: 'help-language' } });
+  const languageSelect = h('select', { id: 'help-language', class: 'setup-select', on: {
+    change: () => {
+      if (isLang(languageSelect.value)) options.onLanguageChange?.(languageSelect.value);
+    },
+  } }, ...LANGUAGES.map(lang => h('option', { attrs: { value: lang } }, t(`common.languageName.${lang}`)))) as HTMLSelectElement;
+  if (options.onLanguageChange) {
+    modal.dialog.appendChild(h('div', { class: 'help-language' }, languageLabel, languageSelect));
+  }
   modal.dialog.appendChild(bodyEl);
-  modal.dialog.appendChild(h('div', { class: 'help-actions' }, closeBtn));
 
   function paint(): void {
     modal.dialog.setAttribute('lang', current.model.language);
     titleEl.textContent = t('help.title');
     introEl.textContent = t('help.intro');
+    languageLabel.textContent = t('common.language.label');
+    languageSelect.value = current.model.language;
     closeBtn.textContent = t('common.button.close');
     while (bodyEl.firstChild !== null) bodyEl.removeChild(bodyEl.firstChild);
     if (current.provisional) {
@@ -158,12 +176,16 @@ export function renderHelp(doc: ModalDocument, root: HTMLElement, input: HelpInp
     }
     for (const section of HELP_SECTIONS) {
       const titleId = `help-${section.id}-title`;
+      const figure = figures[section.id];
       bodyEl.appendChild(
         h(
           'section',
           { class: 'help-section', attrs: { 'data-section': section.id }, aria: { labelledby: titleId } },
           h('h3', { id: titleId, class: 'help-section__title' }, t(section.titleKey)),
           h('p', { class: 'help-section__body' }, t(section.bodyKey)),
+          figure && h('figure', { class: 'help-figure' },
+            h('img', { attrs: { src: figure.src.href, alt: '' } }),
+            h('figcaption', null, t(figure.caption))),
         ),
       );
     }

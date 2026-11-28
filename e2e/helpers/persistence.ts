@@ -49,7 +49,7 @@ export async function configureAndStart(
   options: { humans: 1 | 2 | 3 | 4; tiers?: readonly ('BEGINNER' | 'ADVANCED')[]; language?: 'en' | 'ko'; seedText?: string },
 ): Promise<void> {
   await expect(page.locator('#setup-start')).toBeVisible();
-  if (options.language !== undefined) await page.locator('#setup-language').selectOption(options.language);
+  if (options.language !== undefined) await page.locator('#shell-language').selectOption(options.language);
   await page.locator(`#setup-humans-${options.humans}`).check();
   const selects = await page.locator('.setup-ai-row select').all();
   for (let i = 0; i < selects.length; i++) await selects[i]!.selectOption(options.tiers?.[i] ?? 'BEGINNER');

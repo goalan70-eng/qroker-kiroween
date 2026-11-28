@@ -68,7 +68,7 @@ test('each seat gets its configured placement and prediction clock after handoff
 test('mobile setup accepts valid seconds and displays the countdown beside the score', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await page.locator('#setup-language').selectOption('ko');
+  await page.locator('#shell-language').selectOption('ko');
   await page.getByText('상세 설정', { exact: true }).click();
   const place = page.getByLabel('카드 배치 시간(초)', { exact: true });
   await place.fill('0');

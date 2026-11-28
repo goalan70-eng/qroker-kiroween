@@ -10,19 +10,20 @@ import android.graphics.Color;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.SystemClock;
 import android.text.InputType;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.WindowManager;
 import android.view.TextureView;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
@@ -30,6 +31,8 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.HorizontalScrollView;
+import android.widget.ImageView;
+import android.widget.ImageButton;
 import android.widget.PopupMenu;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -37,34 +40,32 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
-public final class MainActivity extends Activity {
+public final class MainActivity extends Activity implements LiveCamera.Observer {
     private static final int CAMERA_PERMISSION = 1;
-    private static final int BACKGROUND = 0xff12191a, PANEL = 0xff202a2b, INK = 0xfff0f5f2;
-    private static final int MUTED = 0xffa9beb7, ACCENT = 0xffa9e6c4;
+    private static final int FELT = 0xff183d33, PAPER = 0xfffffdf7, STOCK = 0xfff7f1df;
+    private static final int RULE = 0xffb7ad92, INK = 0xff1a1a1a, MUTED = 0xff57574e;
+    private static final int PRINT_RED = 0xff922c37, GOLD = 0xfff8d38a;
+    private static final Typeface DISPLAY = Typeface.create("serif", Typeface.BOLD);
     private final Handler main = new Handler(Looper.getMainLooper());
     private final OpticalReader recognizer = new OpticalReader();
     private GameScore game;
     private List<GameScore.Round> displayedRounds;
     private LiveCamera camera;
     private TextureView preview;
+    private FrameLayout viewfinder;
     private TextView total, scanStatus, result;
     private LinearLayout scanner, frames;
     private HorizontalScrollView scoreStrip;
-    private Button scan, permission, permissionSettings, menu;
+    private Button scan, lockButton, permission;
     private AlertDialog prediction;
-    private int predictionRound;
     private EditText guess;
-    private long waitingForInputSince = -1;
+    private Bundle predictionToRestore;
+    private long nextCapture, activeCapture, captureGeneration;
     private boolean resumed, scanning;
-    private boolean offerPermissionSettings;
+    private static final String CAMERA_SETTINGS = "cameraSettingsNeeded";
     private AimGuide guide;
-    private int[] displayed;
-    private long newestFrame;
-    private final Runnable expiration = this::expire;
-
     private static final String PREFS = "interface";
     private static final String LANGUAGE = "language";
 
@@ -77,9 +78,26 @@ public final class MainActivity extends Activity {
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
-        getWindow().setStatusBarColor(BACKGROUND);
-        getWindow().setNavigationBarColor(BACKGROUND);
+        getWindow().setStatusBarColor(FELT);
+        getWindow().setNavigationBarColor(FELT);
         createScreen();
+        if (state != null && state.containsKey("draftKey")) {
+            predictionToRestore = state;
+        } else if (state != null && state.getBoolean("aiming")) {
+            scan.post(() -> {
+                if (scan.isEnabled() && game != null && !scanning) openScanner(false);
+            });
+        }
+    }
+
+    @Override protected void onSaveInstanceState(Bundle state) {
+        super.onSaveInstanceState(state);
+        state.putBoolean("aiming", scanning && prediction == null);
+        if (prediction != null && game.lockIsCurrent()) {
+            state.putInt("draftKey", game.lockedKey());
+            state.putLong("draftGame", game.lockedGeneration());
+            state.putString("draftGuess", guess.getText().toString());
+        }
     }
 
     private void openScoreboard() {
@@ -120,7 +138,7 @@ public final class MainActivity extends Activity {
             float cx = getWidth() / 2f, cy = getHeight() / 2f;
             float tip = Math.min(dp(17), half * .3f);
             for (int layer = 0; layer < 2; layer++) {
-                stroke.setColor(layer == 0 ? 0xaa12231e : isActivated() ? ACCENT : Color.WHITE);
+                stroke.setColor(layer == 0 ? 0xcc12231e : isActivated() ? GOLD : Color.WHITE);
                 stroke.setStrokeWidth(dp(layer == 0 ? 4 : 2));
                 canvas.drawLine(cx - dp(4), cy, cx + dp(4), cy, stroke);
                 canvas.drawLine(cx, cy - dp(4), cx, cy + dp(4), stroke);
@@ -131,10 +149,6 @@ public final class MainActivity extends Activity {
                 }
             }
         }
-    }
-
-    private void setLabel(TextView label, String value) {
-        if (!android.text.TextUtils.equals(label.getText(), value)) label.setText(value);
     }
 
     private TextView text(String value, int size, int color) {
@@ -164,10 +178,58 @@ public final class MainActivity extends Activity {
         parent.addView(view, lp);
     }
 
+    private ImageButton headerAction(LinearLayout header, int icon, int label) {
+        ImageButton button = new ImageButton(this, null, android.R.attr.borderlessButtonStyle);
+        button.setImageResource(icon);
+        button.setContentDescription(getString(label));
+        button.setPadding(0, 0, 0, 0);
+        button.setScaleType(ImageView.ScaleType.CENTER);
+        header.addView(button, new LinearLayout.LayoutParams(dp(48), dp(48)));
+        return button;
+    }
+
+    private void helpSection(LinearLayout content, int title, int description) {
+        TextView heading = text(getString(title), 18, FELT);
+        heading.setTypeface(DISPLAY, Typeface.BOLD);
+        if (android.os.Build.VERSION.SDK_INT >= 28) heading.setAccessibilityHeading(true);
+        add(content, heading, -2, 12);
+        add(content, text(getString(description), 16, INK), -2, 4);
+    }
+
+    private void helpFigure(LinearLayout content, int illustration, int caption) {
+        ImageView image = new ImageView(this);
+        image.setImageResource(illustration);
+        image.setAdjustViewBounds(true);
+        image.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        image.setMaxHeight(dp(150));
+        image.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        add(content, image, -2, 10);
+        add(content, text(getString(caption), 14, FELT), -2, 4);
+    }
+
+    private void showGameHelp() {
+        ScrollView scroll = new ScrollView(this);
+        LinearLayout content = column();
+        content.setPadding(dp(22), 0, dp(22), dp(12));
+        scroll.addView(content);
+        helpSection(content, R.string.help_goal_title, R.string.help_goal_body);
+        helpFigure(content, R.drawable.help_hand, R.string.help_hand_caption);
+        helpSection(content, R.string.help_turn_title, R.string.help_turn_body);
+        helpFigure(content, R.drawable.help_placement, R.string.help_placement_caption);
+        helpFigure(content, R.drawable.help_code, R.string.help_code_caption);
+        helpSection(content, R.string.help_score_title, R.string.help_score_body);
+        helpSection(content, R.string.help_end_title, R.string.help_end_body);
+        helpSection(content, R.string.help_app_title, R.string.help_app_body);
+        new AlertDialog.Builder(this).setTitle(R.string.game_help_title).setView(scroll)
+                .setPositiveButton(R.string.close, null)
+                .setOnDismissListener(dialog -> showAimArea()).show();
+    }
+
     private void createScreen() {
         ScrollView page = new ScrollView(this);
         page.setFillViewport(true);
-        page.setBackgroundColor(BACKGROUND);
+        page.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{STOCK, 0xffdce4d4}));
         LinearLayout body = column();
         body.setPadding(dp(18), dp(14), dp(18), dp(20));
         body.setFocusableInTouchMode(true);
@@ -177,78 +239,100 @@ public final class MainActivity extends Activity {
         scanner = column();
         scanner.setVisibility(View.GONE);
 
+        LinearLayout cover = column();
+        GradientDrawable felt = new GradientDrawable(GradientDrawable.Orientation.TR_BL,
+                new int[]{0xff306454, FELT});
+        felt.setCornerRadius(dp(14));
+        felt.setStroke(dp(1), 0xff788875);
+        cover.setBackground(felt);
+        cover.setPadding(dp(16), dp(8), dp(8), dp(14));
+        add(body, cover, -2, 0);
         LinearLayout header = new LinearLayout(this);
         header.setGravity(Gravity.CENTER_VERTICAL);
-        TextView title = text(getString(R.string.scoreboard), 24, INK);
-        title.setTypeface(Typeface.DEFAULT_BOLD);
+        TextView title = text(getString(R.string.scoreboard), 30, STOCK);
+        title.setTypeface(DISPLAY);
         header.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
-        total = text(getString(R.string.total_score, 0), 20, ACCENT);
-        header.addView(total);
-        Button help = new Button(this, null, android.R.attr.borderlessButtonStyle);
-        help.setText("?");
-        help.setTextSize(22);
-        help.setContentDescription(getString(R.string.game_help_title));
-        header.addView(help, new LinearLayout.LayoutParams(dp(48), dp(48)));
+        ImageButton help = headerAction(header, R.drawable.ic_help, R.string.game_help_title);
         help.setOnClickListener(v -> {
-            if (scanning) finishScan();
-            new AlertDialog.Builder(this)
-                    .setTitle(R.string.game_help_title)
-                    .setMessage(R.string.game_help_body)
-                    .setPositiveButton(R.string.close, null).show();
+            cancelPendingCapture();
+            showGameHelp();
         });
-        menu = new Button(this, null, android.R.attr.borderlessButtonStyle);
-        menu.setText("⋮");
-        menu.setTextSize(24);
-        menu.setContentDescription(getString(R.string.score_menu));
-        header.addView(menu, new LinearLayout.LayoutParams(dp(48), dp(48)));
+        ImageButton menu = headerAction(header, R.drawable.ic_more, R.string.score_menu);
         menu.setOnClickListener(v -> {
-            if (scanning) finishScan();
+            cancelPendingCapture();
             PopupMenu options = new PopupMenu(this, menu);
             options.getMenu().add(getString(R.string.new_game)).setEnabled(game != null && !game.history().isEmpty())
                     .setOnMenuItemClickListener(item -> { confirmReset(); return true; });
             boolean korean = "ko".equals(getResources().getConfiguration().getLocales().get(0).getLanguage());
-            options.getMenu().add(korean ? "English" : "한국어").setOnMenuItemClickListener(item -> {
-                getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString(LANGUAGE, korean ? "en" : "ko").apply();
-                recreate();
+            String[] languages = {"English", "한국어"};
+            int selected = korean ? 1 : 0;
+            options.getMenu().add(getString(R.string.language_current, languages[selected])).setOnMenuItemClickListener(item -> {
+                new AlertDialog.Builder(this)
+                        .setTitle(R.string.language_title)
+                        .setSingleChoiceItems(languages, selected, (dialog, choice) -> {
+                            dialog.dismiss();
+                            if (choice == selected) return;
+                            getSharedPreferences(PREFS, MODE_PRIVATE).edit()
+                                    .putString(LANGUAGE, choice == 1 ? "ko" : "en").apply();
+                            recreate();
+                        })
+                        .setNegativeButton(R.string.cancel, null).show();
                 return true;
             });
+            options.setOnDismissListener(popup -> showAimArea());
             options.show();
         });
-        add(body, header, -2, 0);
+        add(cover, header, -2, 0);
+        LinearLayout summary = new LinearLayout(this);
+        summary.setGravity(Gravity.CENTER_VERTICAL);
+        total = text(getString(R.string.total_score, 0), 24, GOLD);
+        total.setTypeface(DISPLAY);
+        summary.addView(total, new LinearLayout.LayoutParams(0, -2, 1));
+        ImageView jester = new ImageView(this);
+        jester.setImageResource(R.drawable.jester_cards);
+        jester.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        jester.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        LinearLayout.LayoutParams card = new LinearLayout.LayoutParams(dp(69), dp(69));
+        card.rightMargin = dp(12);
+        summary.addView(jester, card);
+        add(cover, summary, -2, 2);
 
         LinearLayout board = new LinearLayout(this);
-        board.setBackground(background(PANEL, 12));
-        board.setPadding(dp(4), dp(8), dp(4), dp(8));
+        GradientDrawable sheet = background(PAPER, 10);
+        sheet.setStroke(dp(1), RULE);
+        board.setBackground(sheet);
+        board.setPadding(dp(5), dp(12), dp(5), dp(12));
+        board.setElevation(dp(2));
         board.addView(scoreColumn(getString(R.string.round), getString(R.string.earned), getString(R.string.total), false));
         scoreStrip = new HorizontalScrollView(this);
         frames = new LinearLayout(this);
         scoreStrip.addView(frames);
         board.addView(scoreStrip, new LinearLayout.LayoutParams(0, -2, 1));
-        add(body, board, -2, 8);
+        add(body, board, -2, 14);
         scan = new Button(this);
         scan.setText(getString(R.string.scan));
-        scan.setTextColor(0xff10261b);
-        scan.setBackgroundTintList(ColorStateList.valueOf(ACCENT));
+        scan.setTextColor(new ColorStateList(new int[][]{{-android.R.attr.state_enabled}, {}},
+                new int[]{0xff5f5f5f, PAPER}));
+        scan.setBackgroundTintList(new ColorStateList(new int[][]{{-android.R.attr.state_enabled}, {}},
+                new int[]{0xffe6e4dc, FELT}));
+        scan.setAllCaps(false);
+        scan.setTextSize(17);
+        viewfinder = new FrameLayout(this);
         scan.setOnClickListener(v -> {
             if (scanning) {
                 finishScan();
                 return;
             }
-            scanning = true;
-            scan.setText(R.string.close_camera);
-            scanner.setVisibility(View.VISIBLE);
-            if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED && !offerPermissionSettings)
-                authorize();
-            else startCamera();
+            openScanner(true);
         });
-        add(body, scan, 52, 14);
+        scan.setMinHeight(dp(52));
+        add(body, scan, -2, 14);
         add(body, scanner, -2, 8);
         result = text("", 16, MUTED);
         result.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
         add(body, result, -2, 8);
 
-        FrameLayout viewfinder = new FrameLayout(this);
-        viewfinder.setBackground(background(PANEL, 16));
+        viewfinder.setBackground(background(0xff101820, 12));
         viewfinder.setClipToOutline(true);
         preview = new TextureView(this);
         preview.setContentDescription(getString(R.string.preview));
@@ -257,26 +341,58 @@ public final class MainActivity extends Activity {
         guide.setVisibility(View.GONE);
         viewfinder.addView(guide, new FrameLayout.LayoutParams(-1, -1));
         permission = new Button(this);
+        permission.setMinHeight(dp(48));
         permission.setVisibility(View.GONE);
         viewfinder.addView(permission, new FrameLayout.LayoutParams(-2, -2, Gravity.CENTER));
+        lockButton = new Button(this);
+        lockButton.setText(R.string.lock_code);
+        lockButton.setAllCaps(false);
+        lockButton.setVisibility(View.GONE);
+        lockButton.setOnClickListener(v -> {
+            if (camera == null || activeCapture != 0) return;
+            activeCapture = ++nextCapture;
+            captureGeneration = game.generation();
+            lockButton.setEnabled(false);
+            scanStatus.setText(R.string.locking);
+            camera.captureCode(activeCapture);
+        });
+        viewfinder.addView(lockButton, new FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL));
         add(scanner, viewfinder, 275, 0);
         scanStatus = text("", 17, INK);
         scanStatus.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
         add(scanner, scanStatus, -2, 12);
-        permissionSettings = new Button(this);
-        permissionSettings.setText(getString(R.string.allow_settings));
-        permissionSettings.setVisibility(View.GONE);
-        permissionSettings.setOnClickListener(v -> startActivity(new android.content.Intent(
-                android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                android.net.Uri.parse("package:" + getPackageName()))));
-        add(scanner, permissionSettings, 48, 8);
-
         preview.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override public void onSurfaceTextureAvailable(SurfaceTexture texture, int w, int h) { startCamera(); }
             @Override public void onSurfaceTextureSizeChanged(SurfaceTexture texture, int w, int h) { transformPreview(); }
             @Override public boolean onSurfaceTextureDestroyed(SurfaceTexture texture) { stopCamera(); return true; }
             @Override public void onSurfaceTextureUpdated(SurfaceTexture texture) {}
         });
+    }
+
+    private void openScanner(boolean requestPermission) {
+        scanning = true;
+        scan.setText(R.string.close_camera);
+        int height = findViewById(android.R.id.content).getHeight();
+        if (height == 0) height = getResources().getDisplayMetrics().heightPixels;
+        viewfinder.getLayoutParams().height = Math.min(dp(275), height / 2);
+        scanner.setVisibility(View.VISIBLE);
+        // Wait for the inline panel to be laid out, then scroll just enough to show it.
+        viewfinder.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+            @Override public boolean onPreDraw() {
+                viewfinder.getViewTreeObserver().removeOnPreDrawListener(this);
+                showAimArea();
+                return true;
+            }
+        });
+        if (requestPermission && checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED && !needsCameraSettings())
+            authorize();
+        else startCamera();
+    }
+
+    private void showAimArea() {
+        if (scanning && scanner.getVisibility() == View.VISIBLE && viewfinder.getHeight() > 0) {
+            viewfinder.requestRectangleOnScreen(new Rect(0, 0, viewfinder.getWidth(), viewfinder.getHeight()), true);
+        }
     }
 
     private void authorize() {
@@ -286,8 +402,11 @@ public final class MainActivity extends Activity {
     @Override public void onRequestPermissionsResult(int request, String[] names, int[] grants) {
         super.onRequestPermissionsResult(request, names, grants);
         if (request != CAMERA_PERMISSION) return;
-        offerPermissionSettings = grants.length > 0 && grants[0] == PackageManager.PERMISSION_DENIED
-                && !shouldShowRequestPermissionRationale(Manifest.permission.CAMERA);
+        if (grants.length > 0) {
+            boolean useSettings = grants[0] == PackageManager.PERMISSION_DENIED
+                    && !shouldShowRequestPermissionRationale(Manifest.permission.CAMERA);
+            getSharedPreferences(PREFS, MODE_PRIVATE).edit().putBoolean(CAMERA_SETTINGS, useSettings).apply();
+        }
         startCamera();
     }
 
@@ -295,7 +414,23 @@ public final class MainActivity extends Activity {
         super.onResume();
         resumed = true;
         if (game == null) openScoreboard();
-        if (game != null) showHistory();
+        if (prediction != null && !game.lockIsCurrent()) {
+            finishScan();
+            Toast.makeText(this, R.string.lock_expired, Toast.LENGTH_LONG).show();
+        } else if (game != null) showHistory();
+        if (game != null && predictionToRestore != null) {
+            Bundle draft = predictionToRestore;
+            predictionToRestore = null;
+            if (game.restoreLock(draft.getInt("draftKey"), draft.getLong("draftGame", -1)) == GameScore.LockResult.LOCKED) {
+                scanning = true;
+                scan.setText(R.string.close_camera);
+                openPrediction();
+                guess.setText(draft.getString("draftGuess", ""));
+                guess.setSelection(guess.length());
+            } else {
+                Toast.makeText(this, R.string.lock_expired, Toast.LENGTH_LONG).show();
+            }
+        }
         startCamera();
     }
 
@@ -305,23 +440,34 @@ public final class MainActivity extends Activity {
         super.onPause();
     }
 
+    private boolean needsCameraSettings() {
+        return getSharedPreferences(PREFS, MODE_PRIVATE).getBoolean(CAMERA_SETTINGS, false)
+                && !shouldShowRequestPermissionRationale(Manifest.permission.CAMERA);
+    }
+
     private void startCamera() {
-        if (!scanning || !resumed || !preview.isAvailable() || camera != null || game == null) return;
+        if (!scanning || prediction != null || !resumed || !preview.isAvailable() || camera != null || game == null) return;
         if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             scanStatus.setText(getString(R.string.permission_needed));
-            permissionSettings.setVisibility(offerPermissionSettings ? View.VISIBLE : View.GONE);
-            permission.setText(R.string.allow_camera);
-            permission.setOnClickListener(v -> authorize());
-            permission.setVisibility(offerPermissionSettings ? View.GONE : View.VISIBLE);
+            boolean offerPermissionSettings = needsCameraSettings();
+            permission.setText(offerPermissionSettings ? R.string.allow_settings : R.string.allow_camera);
+            permission.setOnClickListener(v -> {
+                if (offerPermissionSettings) {
+                    startActivity(new android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            android.net.Uri.parse("package:" + getPackageName())));
+                } else authorize();
+            });
+            permission.setVisibility(View.VISIBLE);
             return;
         }
         permission.setVisibility(View.GONE);
-        permissionSettings.setVisibility(View.GONE);
-        offerPermissionSettings = false;
+        if (getSharedPreferences(PREFS, MODE_PRIVATE).getBoolean(CAMERA_SETTINGS, false)) {
+            getSharedPreferences(PREFS, MODE_PRIVATE).edit().remove(CAMERA_SETTINGS).apply();
+        }
         scanStatus.setText(getString(R.string.starting));
         try {
             camera = new LiveCamera(this, preview.getSurfaceTexture(), recognizer, main,
-                    this::onReading, this::cameraError);
+                    this, this::cameraError);
             transformPreview();
             camera.start();
         } catch (Exception error) {
@@ -341,21 +487,18 @@ public final class MainActivity extends Activity {
     private void transformPreview() {
         if (camera == null || preview.getWidth() == 0 || preview.getHeight() == 0) return;
         int w = preview.getWidth(), h = preview.getHeight();
-        int display = getWindowManager().getDefaultDisplay().getRotation() * 90;
-        int turn = ((camera.sensorRotation - display + 360) % 360) / 90;
-        int pw = (turn % 2 == 0) ? camera.width : camera.height;
-        int ph = (turn % 2 == 0) ? camera.height : camera.width;
-        float scale = Math.min((float) w / pw, (float) h / ph);
-        float x = (w - pw * scale) / 2, y = (h - ph * scale) / 2;
-        float[] from = {0, 0, w, 0, w, h, 0, h};
-        float[] corners = {x, y, w - x, y, w - x, h - y, x, h - y};
-        float[] to = new float[8];
-        for (int i = 0; i < 4; i++) {
-            to[2 * i] = corners[2 * ((i + turn) % 4)];
-            to[2 * i + 1] = corners[2 * ((i + turn) % 4) + 1];
-        }
+        int displayDegrees = preview.getDisplay().getRotation() * 90;
+        // TextureView already orients the sensor buffer, then stretches it to its own bounds.
+        boolean sensorSwapsAxes = camera.sensorRotation % 180 != 0;
+        int bufferWidth = sensorSwapsAxes ? camera.height : camera.width;
+        int bufferHeight = sensorSwapsAxes ? camera.width : camera.height;
+        boolean displaySwapsAxes = displayDegrees % 180 != 0;
+        int orientedWidth = displaySwapsAxes ? bufferHeight : bufferWidth;
+        int orientedHeight = displaySwapsAxes ? bufferWidth : bufferHeight;
+        float scale = Math.min((float) w / orientedWidth, (float) h / orientedHeight);
         Matrix matrix = new Matrix();
-        matrix.setPolyToPoly(from, 0, to, 0, 4);
+        matrix.setScale(bufferWidth * scale / w, bufferHeight * scale / h, w / 2f, h / 2f);
+        matrix.postRotate(-displayDegrees, w / 2f, h / 2f);
         preview.setTransform(matrix);
         guide.half = OpticalReader.aimSide(camera.width, camera.height) * scale / 2;
         guide.invalidate();
@@ -366,8 +509,17 @@ public final class MainActivity extends Activity {
         else super.onBackPressed();
     }
 
+    private void cancelPendingCapture() {
+        if (activeCapture == 0) return;
+        activeCapture = 0;
+        lockButton.setEnabled(true);
+        scanStatus.setText(R.string.aim);
+    }
+
     private void finishScan() {
         scanning = false;
+        game.discardLock();
+        closePrediction();
         stopCamera();
         scanner.setVisibility(View.GONE);
         scan.setText(R.string.scan);
@@ -378,63 +530,33 @@ public final class MainActivity extends Activity {
         LiveCamera old = camera;
         camera = null;
         if (old != null) old.close();
-        main.removeCallbacks(expiration);
-        newestFrame = 0;
-        displayed = null;
-        if (game != null) game.observe(null, SystemClock.elapsedRealtime());
-        closePrediction();
+        activeCapture = 0;
+        lockButton.setVisibility(View.GONE);
         guide.setVisibility(View.GONE);
     }
 
-    private void onReading(LiveCamera source, int[] ids, long time, long confirmation) {
-        if (source != camera || !scanning || time < newestFrame) return;
-        if (confirmation != 0 && ids == null && !game.cancelSubmission(confirmation)) return;
-        long now = SystemClock.elapsedRealtime();
-        boolean fresh = now - time < GameScore.FRESH_MS;
-        newestFrame = time;
-        main.removeCallbacks(expiration);
-        if (fresh && ids != null)
-            main.postDelayed(expiration, GameScore.FRESH_MS - (now - time));
-        showReading(fresh ? ids : null, time);
-        if (fresh && confirmation != 0) recordConfirmedGuess(confirmation);
-    }
-
-    private void expire() {
-        long now = SystemClock.elapsedRealtime();
-        if (now - newestFrame >= GameScore.FRESH_MS) showReading(null, now);
-    }
-
-    private void showReading(int[] ids, long time) {
-        boolean discardDraft = game.observeForDraft(ids, time);
-        if (discardDraft || !Arrays.equals(displayed, ids)) closePrediction();
-        displayed = ids;
-        long now = SystemClock.elapsedRealtime();
+    @Override public void ready(LiveCamera source) {
+        if (source != camera || !scanning) return;
         guide.setVisibility(View.VISIBLE);
-        guide.setActivated(game.visible(now));
-        if (game.ready(now)) {
-            setLabel(scanStatus, getString(R.string.found));
-            int nextRound = game.history().size() + 1;
-            if (prediction == null) {
-                openPrediction(nextRound);
-                return;
-            }
-            if (predictionRound != nextRound) {
-                predictionRound = nextRound;
-                prediction.setTitle(getString(R.string.guess_title, nextRound));
-            }
-            if (waitingForInputSince >= 0 && time > waitingForInputSince) {
-                // The first dialog and keyboard can take longer to open than a frame remains valid.
-                waitingForInputSince = -1;
-                prediction.setMessage(getString(R.string.guess_prompt));
-                guess.setEnabled(true);
-                prediction.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
-                guess.requestFocus();
-                getSystemService(InputMethodManager.class).showSoftInput(guess, InputMethodManager.SHOW_IMPLICIT);
-            }
+        lockButton.setEnabled(true);
+        lockButton.setVisibility(View.VISIBLE);
+        scanStatus.setText(R.string.aim);
+    }
+
+    @Override public void captured(LiveCamera source, long requestId, int[] ids) {
+        if (source != camera || requestId == 0 || requestId != activeCapture) return;
+        activeCapture = 0;
+        GameScore.LockResult result = game.lockCaptured(ids, captureGeneration);
+        if (result == GameScore.LockResult.LOCKED) {
+            stopCamera();
+            openPrediction();
+            scanner.setVisibility(View.GONE);
         } else {
-            closePrediction();
-            setLabel(scanStatus, game.visible(now) ? getString(R.string.duplicate)
-                    : getString(R.string.aim));
+            int message = result == GameScore.LockResult.DUPLICATE ? R.string.duplicate
+                    : result == GameScore.LockResult.GAME_CHANGED ? R.string.lock_expired : R.string.lock_failed;
+            scanStatus.setText(message);
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+            lockButton.setEnabled(true);
         }
     }
 
@@ -442,11 +564,14 @@ public final class MainActivity extends Activity {
         if (prediction != null) prediction.dismiss();
         prediction = null;
         guess = null;
-        waitingForInputSince = -1;
     }
 
-    private void openPrediction(int nextRound) {
-        predictionRound = nextRound;
+    @Override protected void onDestroy() {
+        closePrediction();
+        super.onDestroy();
+    }
+
+    private void openPrediction() {
         LinearLayout field = column();
         field.setPadding(dp(24), dp(4), dp(24), 0);
         guess = new EditText(this);
@@ -455,7 +580,6 @@ public final class MainActivity extends Activity {
         guess.setRawInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED
                 | InputType.TYPE_NUMBER_FLAG_DECIMAL);
         guess.setHint(getString(R.string.guess_hint));
-        guess.setEnabled(false);
         guess.setImeOptions(EditorInfo.IME_ACTION_DONE);
         guess.setOnEditorActionListener((v, id, event) -> {
             boolean enter = event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER;
@@ -465,10 +589,14 @@ public final class MainActivity extends Activity {
         });
         add(field, guess, -2, 0);
         prediction = new AlertDialog.Builder(this)
-                .setTitle(getString(R.string.guess_title, nextRound))
-                .setMessage(getString(R.string.preparing_guess))
+                .setTitle(R.string.guess_title)
+                .setMessage(getString(R.string.guess_prompt))
                 .setView(field)
                 .setNegativeButton(getString(R.string.cancel), (dialog, which) -> finishScan())
+                .setNeutralButton(R.string.rescan, (dialog, which) -> {
+                    finishScan();
+                    scan.performClick();
+                })
                 .setPositiveButton(getString(R.string.confirm), null)
                 .create();
         prediction.setOnCancelListener(dialog -> finishScan());
@@ -476,18 +604,15 @@ public final class MainActivity extends Activity {
         prediction.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
         prediction.show();
         Button confirm = prediction.getButton(AlertDialog.BUTTON_POSITIVE);
-        confirm.setEnabled(false);
+        guess.requestFocus();
         confirm.setOnClickListener(v -> saveGuess());
-        waitingForInputSince = SystemClock.elapsedRealtime();
     }
 
     private void saveGuess() {
-        long now = SystemClock.elapsedRealtime();
-        if (prediction == null || waitingForInputSince >= 0 || camera == null || game.awaitingConfirmation()) return;
-        if (!game.ready(now)) { showReading(null, now); return; }
+        if (prediction == null) return;
         int value;
         try {
-            value = Integer.parseInt(guess.getText().toString());
+            value = Integer.parseInt(guess.getText().toString().trim());
         } catch (NumberFormatException e) {
             value = -1;
         }
@@ -498,50 +623,37 @@ public final class MainActivity extends Activity {
             getSystemService(InputMethodManager.class).showSoftInput(guess, InputMethodManager.SHOW_IMPLICIT);
             return;
         }
-        long request = game.requestSubmission(value, now);
-        if (request == 0) return;
-        prediction.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
-        guess.setEnabled(false);
-        prediction.setMessage(getString(R.string.checking));
-        camera.requestConfirmation(request);
-        main.postDelayed(() -> {
-            if (game.cancelSubmission(request)) showReading(null, SystemClock.elapsedRealtime());
-        }, GameScore.CONFIRM_MS);
-    }
-
-    private void allowRetry(String message) {
-        if (prediction == null) return;
-        guess.setEnabled(true);
-        prediction.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
-        prediction.setMessage(message);
-    }
-
-    private void recordConfirmedGuess(long request) {
         try {
-            boolean pending = game.awaitingConfirmation();
-            GameScore.Round round = game.confirmSubmission(request, SystemClock.elapsedRealtime());
-            if (round == null) {
-                if (pending && !game.awaitingConfirmation()) showReading(null, SystemClock.elapsedRealtime());
-                return;
-            }
+            GameScore.Round round = game.scoreLocked(value);
             finishScan();
-        } catch (IOException e) {
-            allowRetry(getString(R.string.save_error));
+            if (round == null) Toast.makeText(this, R.string.lock_expired, Toast.LENGTH_LONG).show();
+        } catch (IOException error) {
+            prediction.setMessage(getString(R.string.save_error));
         }
     }
 
     private LinearLayout scoreColumn(String number, String earned, String cumulative, boolean latest) {
         LinearLayout col = column();
+        col.setGravity(Gravity.CENTER_HORIZONTAL);
         col.setPadding(dp(2), 0, dp(2), 0);
         int columnWidth = Math.max(dp(44), Math.min(dp(64),
                 (getResources().getDisplayMetrics().widthPixels - dp(44)) / 6));
-        if (latest) col.setBackground(background(0xff32483e, 6));
+        if (latest) col.setBackground(background(0xffe5eee2, 6));
         String[] values = {number, earned, cumulative};
         for (int i = 0; i < values.length; i++) {
-            TextView cell = text(values[i], i == 2 ? 18 : 14, i == 2 ? INK : MUTED);
+            if (i == 2) {
+                View rule = new View(this);
+                rule.setBackgroundColor(RULE);
+                col.addView(rule, new LinearLayout.LayoutParams(-1, dp(1)));
+            }
+            int cellColor = i == 2 ? FELT : MUTED;
+            if (i == 1 && latest) cellColor = PRINT_RED;
+            TextView cell = text(values[i], i == 2 ? 19 : 14, cellColor);
             cell.setGravity(Gravity.CENTER);
-            if (i == 2) cell.setTypeface(Typeface.DEFAULT_BOLD);
-            col.addView(cell, new LinearLayout.LayoutParams(columnWidth - dp(4), -2));
+            cell.setPadding(0, dp(4), 0, dp(4));
+            if (i == 2) cell.setTypeface(DISPLAY);
+            cell.setMinWidth(columnWidth - dp(4));
+            col.addView(cell, new LinearLayout.LayoutParams(-2, -2));
         }
         return col;
     }
@@ -561,10 +673,11 @@ public final class MainActivity extends Activity {
                 col.setContentDescription(getString(R.string.round_description, roundTitle, round.points, cumulative));
                 col.setFocusable(true);
                 col.setOnClickListener(v -> {
-                    if (scanning) finishScan();
+                    cancelPendingCapture();
                     new AlertDialog.Builder(this).setTitle(roundTitle)
-                        .setMessage(getString(R.string.round_detail, round.guess, round.actual, round.points))
-                        .setPositiveButton(getString(R.string.close), null).show();
+                        .setMessage(getString(R.string.round_detail, round.guess, round.points))
+                        .setPositiveButton(getString(R.string.close), null)
+                        .setOnDismissListener(dialog -> showAimArea()).show();
                 });
             }
             frames.addView(col);
@@ -572,7 +685,7 @@ public final class MainActivity extends Activity {
         total.setText(getString(R.string.total_score, cumulative));
         if (!rounds.isEmpty()) {
             GameScore.Round last = rounds.get(rounds.size() - 1);
-            result.setText(getString(R.string.last_round, rounds.size(), last.guess, last.actual, last.points));
+            result.setText(getString(R.string.last_round, rounds.size(), last.guess, last.points));
             View latest = frames.getChildAt(rounds.size() - 1);
             scoreStrip.post(() -> scoreStrip.scrollTo(Math.max(0, latest.getRight() - scoreStrip.getWidth()), 0));
         } else {
@@ -588,7 +701,8 @@ public final class MainActivity extends Activity {
                 .setNegativeButton(getString(R.string.cancel), null).setPositiveButton(getString(R.string.new_game), (dialog, which) -> {
                     try {
                         boolean cleared = game.resetIfUnchanged(reviewed);
-                        showHistory();
+                        if (cleared && scanning) finishScan();
+                        else showHistory();
                         if (!cleared) Toast.makeText(this, R.string.reset_changed, Toast.LENGTH_LONG).show();
                     }
                     catch (IOException e) { Toast.makeText(this, getString(R.string.reset_error), Toast.LENGTH_LONG).show(); }

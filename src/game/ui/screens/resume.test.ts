@@ -132,6 +132,12 @@ describe('renderResume: single flight and results', () => {
   it('Discard calls its handler once; afterwards Continue does nothing', () => {
     const r = rig();
     click(byId(r, 'resume-discard'));
+    expect(r.calls).toEqual([]);
+    expect(r.doc.activeElement).toBe(byId(r, 'resume-cancel'));
+    click(byId(r, 'resume-cancel'));
+    expect(r.calls).toEqual([]);
+    click(byId(r, 'resume-discard'));
+    click(byId(r, 'resume-confirm'));
     click(byId(r, 'resume-continue'));
     click(byId(r, 'resume-discard'));
     expect(r.calls).toEqual(['discard']);
@@ -262,6 +268,6 @@ describe('resume.ts source', () => {
     expect(source).not.toMatch(/\bconsole\b|localStorage|sessionStorage|\bDate\b|Math\.random|\bwindow\b|globalThis|\bdocument\b|setTimeout|innerHTML/);
     const imports = [...source.matchAll(/from '([^']+)'/g)].map((m) => m[1]);
     expect(imports.length).toBeGreaterThan(0);
-    for (const spec of imports) expect(spec, spec).toMatch(/^(?:\.\.\/\.\.\/i18n|\.\.\/components\/card-face|\.\.\/dom)$/);
+    for (const spec of imports) expect(spec, spec).toMatch(/^(?:\.\.\/\.\.\/i18n|\.\.\/components\/card-face|\.\.\/dom|\.\.\/overlays\/modal)$/);
   });
 });

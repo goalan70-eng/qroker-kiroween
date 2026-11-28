@@ -46,15 +46,11 @@ const SEAT_IDS: readonly PlayerId[] = ['P0', 'P1', 'P2', 'P3'];
 /** A stub of the two handlers: records the options of each start and answers with `reply`. */
 class StubHandlers {
   readonly starts: SetupOptions[] = [];
-  readonly languages: Lang[] = [];
   reply: (options: SetupOptions) => SetupStartResult = () => ({ ok: true });
   readonly handlers = {
     startFromSetup: (options: SetupOptions): SetupStartResult => {
       this.starts.push(options);
       return this.reply(options);
-    },
-    setLanguage: (lang: Lang): void => {
-      this.languages.push(lang);
     },
   };
 }
@@ -142,7 +138,7 @@ describe('structure and defaults', () => {
     const m = mount({}, { randomSeedText: () => '1' });
     const all = m.doc.all();
     const labelFor = new Set(all.filter((el) => el.tagName === 'label').map((el) => el.getAttribute('for')));
-    for (const id of ['setup-seed', 'setup-humans-1', 'setup-humans-4', 'setup-difficulty-P1', 'setup-difficulty-P3', 'setup-visibility-OWNER_ONLY', 'setup-visibility-BLIND', 'setup-language']) {
+    for (const id of ['setup-seed', 'setup-humans-1', 'setup-humans-4', 'setup-difficulty-P1', 'setup-difficulty-P3', 'setup-visibility-OWNER_ONLY', 'setup-visibility-BLIND']) {
       expect(labelFor.has(id), id).toBe(true);
       expect(m.doc.getElementById(id), id).not.toBeNull();
     }
@@ -152,7 +148,6 @@ describe('structure and defaults', () => {
     expect(get(m.doc, 'setup-seed').getAttribute('type')).toBe('text');
     expect(get(m.doc, 'setup-humans-1').getAttribute('type')).toBe('radio');
     expect(get(m.doc, 'setup-difficulty-P1').tagName).toBe('select');
-    expect(get(m.doc, 'setup-language').tagName).toBe('select');
     expect(get(m.doc, 'setup-start').getAttribute('type')).toBe('submit');
     expect(all.filter((el) => el.tagName === 'form')).toHaveLength(1);
   });
@@ -172,7 +167,6 @@ describe('structure and defaults', () => {
     expect(checkedOf(get(m.doc, 'setup-visibility-BLIND'))).toBe(false);
     expect(text(m.doc.all().find((el) => el.getAttribute('for') === 'setup-visibility-OWNER_ONLY') as FakeEl)).toContain(t('setup.visibility.default'));
     expect(text(m.doc.all().find((el) => el.getAttribute('for') === 'setup-visibility-BLIND') as FakeEl)).not.toContain(t('setup.visibility.default'));
-    expect(valOf(get(m.doc, 'setup-language'))).toBe('en');
     expect(tierSelects(m)).toEqual(['P1', 'P2', 'P3']);
     for (const seat of ['P1', 'P2', 'P3']) expect(valOf(get(m.doc, `setup-difficulty-${seat}`))).toBe('BEGINNER');
   });
@@ -442,11 +436,10 @@ describe('onPrefsChange', () => {
     }
   });
 
-  it('does not report a failed start or a language change, and sanitizes tampered values', () => {
+  it('does not report a failed start, and sanitizes tampered values', () => {
     const m = mount();
     m.stub.reply = () => ({ ok: false, reason: 'ENGINE', code: 'SEED_EMPTY' });
     clickStart(m);
-    get(m.doc, 'setup-language').fire('change');
     expect(m.prefs).toHaveLength(0);
     chooseTier(m, 'P1', 'EXPERT'); // tampered
     expect(m.prefs[0]).toEqual(DEFAULT_SETUP_PREFS);
@@ -458,17 +451,6 @@ describe('onPrefsChange', () => {
 // ---------------------------------------------------------------------------------------------------------
 
 describe('language', () => {
-  it('forwards a valid choice to handlers.setLanguage only, ignores an unknown one, and never calls the prefs hook', () => {
-    const m = mount();
-    const select = get(m.doc, 'setup-language');
-    setVal(select, 'ko');
-    select.fire('change');
-    setVal(select, 'fr');
-    select.fire('change');
-    expect(m.stub.languages).toEqual(['ko']);
-    expect(m.prefs).toHaveLength(0);
-  });
-
   it('with the real controller: switching ko <-> en changes the labels and keeps every entered value and the focus', () => {
     const doc = new FakeDocument();
     const root = doc.createElement('div');
@@ -491,30 +473,27 @@ describe('language', () => {
     chooseHumans(m, 3);
     chooseTier(m, 'P3', 'ADVANCED');
     chooseVisibility(m, 'BLIND');
-    const select = get(doc, 'setup-language');
-    select.focus();
+    const seedInput = get(doc, 'setup-seed');
+    seedInput.focus();
     expect(text(get(doc, 'setup-start'))).toBe('Start game');
 
-    setVal(select, 'ko');
-    select.fire('change');
+    ctl.setLanguage('ko');
     expect(getLanguage()).toBe('ko');
     expect(ctl.getModel().language).toBe('ko');
     expect(text(get(doc, 'setup-start'))).toBe(t('setup.start'));
     expect(text(get(doc, 'setup-start'))).toBe('게임 시작');
     expect(text(doc.all().find((el) => el.getAttribute('for') === 'setup-seed') as FakeEl)).toBe('시드');
-    expect(valOf(select)).toBe('ko');
     expect(valOf(get(doc, 'setup-seed'))).toBe('hello');
     expect(checkedOf(get(doc, 'setup-humans-3'))).toBe(true);
     expect(valOf(get(doc, 'setup-difficulty-P3'))).toBe('ADVANCED');
     expect(checkedOf(get(doc, 'setup-visibility-BLIND'))).toBe(true);
-    expect(doc.activeElement).toBe(select);
+    expect(doc.activeElement).toBe(seedInput);
     expect(text(doc.all().find((el) => el.getAttribute('for') === 'setup-humans-3') as FakeEl)).toBe('3명');
 
-    setVal(select, 'en');
-    select.fire('change');
+    ctl.setLanguage('en');
     expect(text(get(doc, 'setup-start'))).toBe('Start game');
     expect(valOf(get(doc, 'setup-seed'))).toBe('hello');
-    expect(doc.activeElement).toBe(select);
+    expect(doc.activeElement).toBe(seedInput);
     ctl.dispose();
   });
 
@@ -525,7 +504,6 @@ describe('language', () => {
     setLanguage('ko');
     m.handle.update({ ...m.input, model: { language: 'ko' } });
     expect(text(get(m.doc, 'setup-start'))).toBe('게임 시작');
-    expect(valOf(get(m.doc, 'setup-language'))).toBe('ko');
     expect(valOf(get(m.doc, 'setup-seed'))).toBe('abc');
     expect(checkedOf(get(m.doc, 'setup-humans-4'))).toBe(true);
     expect(alertText(m, 'setup-ai-none')).toBe('모든 자리가 사람 플레이어이므로 선택할 AI 난이도가 없습니다.');
@@ -561,7 +539,7 @@ function real(): Real {
     language: () => 'en',
   });
   const stub = new StubHandlers();
-  const m = mount({ handlers: { startFromSetup: ctl.startFromSetup, setLanguage: ctl.setLanguage } }, {}, stub);
+  const m = mount({ handlers: { startFromSetup: ctl.startFromSetup } }, {}, stub);
   return { m, ctl, renders };
 }
 
@@ -734,7 +712,6 @@ describe('dispose and stale handles', () => {
       'setup-visibility-BLIND',
       'setup-placement-seconds',
       'setup-prediction-seconds',
-      'setup-language',
       'setup-start',
     ]);
     for (const el of focusable) expect(el.getAttribute('tabindex'), el.getAttribute('id') ?? '').toBeNull();

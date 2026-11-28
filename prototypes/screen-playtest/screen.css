@@ -8,13 +8,10 @@
 }
 .screen-reveal-tools { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px }
 @media (max-width: 32rem) {
-  .shell:has(#screen-tools) { column-gap: .35rem; padding-inline: .5rem; }
+  .shell:has(#screen-tools) { column-gap: .35rem; padding-inline: .5rem; flex-wrap: wrap; }
   .shell:has(#screen-tools) .shell__title { font-size: 1.55rem; }
   .shell:has(#screen-tools) .shell__select,
   #screen-tools button { padding-inline: .45rem; font-size: .875rem; }
-  .shell:has(#screen-tools) .shell__language label {
-    position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%);
-  }
 }
 .scan-turned { transform: rotate(180deg) }
 #scan-dialog {
