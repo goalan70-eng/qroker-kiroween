@@ -132,3 +132,62 @@ published by this audit; the review PR is the only requested remote contribution
 
 Contribution provenance and commit/PR references are in
 [the development log](kiroween-development-log.md).
+
+---
+
+## Task 22.2 re-verification run (Kiro spec task, 2026-11-29)
+
+Update: the commands below were run a second time on 2026-11-29 from 02:03 (+09:00) on the same
+working tree. All exit codes were 0: typecheck, typecheck:game, `E2E_SEEDS=200 npm run test:ci`
+(110 files, 3,050 tests, 122.83 s), build, `npx playwright test` (59 passed, 7.1 min) and the
+`PLAYWRIGHT_PREVIEW=1` run (48 passed, 5.8 min). `git status --short src/optical` was empty.
+No optical test timed out. The first-run figures below are kept as recorded.
+
+After this second run, Kiro's automatic post-task hook recorded `spec-verification` with
+`passed: true` at 02:21:06 KST on November 29 (HEAD `226af239faae` with local changes).
+Both checks passed: `typecheck:game` in 2.208 s and `test:game` in 114.817 s.
+
+Date: 2026-11-29 01:26 to about 01:50 (+09:00), Windows, Node.js **24.20.0**,
+npm **11.19.0**, Playwright **1.65.1**, real headless **Chromium 159.0.8154.6**
+(one worker). This run repeats the commands above on the current working tree.
+The sections above are the earlier Codex audit and are left unchanged.
+
+| Command | Exit | Result |
+| --- | --- | --- |
+| `npm run typecheck` | 0 | Passed |
+| `npm run typecheck:game` | 0 | Passed |
+| `E2E_SEEDS=200 npm run test:ci` | 0 | **110 files, 3,050 tests passed; 118.5 s**. No optical test timed out, so no isolated rerun was needed. No timeout or assertion was changed. |
+| `npm run build` | 0 | Passed (`tsc -p tsconfig.game.json --noEmit && vite build`) |
+| `npx playwright test` (dev server, port 5173) | 0 | **59 passed, 7.1 min** |
+| `PLAYWRIGHT_PREVIEW=1 npx playwright test game.spec.ts persistence.spec.ts keyboard.spec.ts` (`vite preview`, port 4173) | 0 | **48 passed, 7.9 min** |
+| `git status --short src/optical` | 0 | Empty output: no change under `src/optical`, so `codebook.v1.json` is unchanged. |
+
+Working-tree changes at the time of the run were only `.kiro/specs/qroker-playable-game/tasks.md`,
+`tasks.meta.json`, `docs/practice-mode.md` and `scripts/verify-task.mjs`; none is under `src/optical`.
+
+### Evidence classes
+
+- **Real browser (automated Playwright Chromium):** the two Playwright runs above, against `npm run dev` and `npm run preview`.
+- **happy-dom (fake DOM):** the UI smoke, privacy/accessibility and placement suites inside `test:ci`.
+- **Model (headless engine):** `E2E_SEEDS=200` game, property and boundary tests inside `test:ci`.
+- **Manual play: not done.** I could not drive a browser by hand. The Playwright runs are automation, not a manual game in `npm run dev` or `npm run preview`.
+
+### Definition of Milestone P1, item by item (this run)
+
+| # | Item | Status | Evidence class |
+| --- | --- | --- | --- |
+| 1 | Setup to ranking with one human and three AI, provisional scoring banner | Verified by automation. Manual play not verified. | Real browser (`game.spec.ts`, dev and preview), happy-dom (`smoke.test.ts`) |
+| 2 | Private Guess entry and Pass_Device_Gate, no AI Guess display, reveal points | Verified by automation. Not verified by hand. | happy-dom (`privacy-a11y.test.ts`), real browser (`game.spec.ts`, `persistence.spec.ts`) |
+| 3 | Seed entry/generation and display, rematch, replay-same-seed, resume after reload from a versioned save | Verified by automation. | Real browser (`persistence.spec.ts`, dev and preview), happy-dom |
+| 4 | `npm run dev` starts the app; `npm run build` then `npm run preview` serves it; commands documented in `docs/practice-mode.md` | Verified for Vite dev and Vite preview by Playwright's web server. A different static server on `dist/` was not run. The documentation was not re-read for this item. | Real browser |
+| 5 | At least 200 Seeds against 3 AI Seats, no rejected Action or invariant violation, termination (Property 21) | Verified, N=200 across all six strategy/visibility configurations. | Model |
+| 6 | happy-dom UI smoke tests play a full game (21.2) and check privacy and accessibility (21.3) | Verified, passing inside `test:ci`. | happy-dom (not a real browser) |
+| 7 | Properties 1 to 29 of P1 tasks, boundary test, Korean/English table completeness, unchanged and passing `src/optical` suite | Verified: all 110 files passed in `test:ci`; no change under `src/optical`. | Model and happy-dom |
+
+### Not verified in this run
+
+- A manual game in a browser with `npm run dev`, and another with `npm run preview`.
+- Browsers other than Chromium, real touch devices, screen readers, and a fresh `npm ci`.
+- Items 1 and 2 as human-played experience; they rest on automated tests only.
+
+Result: automated checks for all seven items passed. Milestone P1 is **not fully signed off** because the two manual plays were not done.
