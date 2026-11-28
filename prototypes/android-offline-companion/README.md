@@ -1,64 +1,69 @@
-# QRoker Offline 0.2.27 · Android 점수판
+# QRoker Scorekeeper for Android
 
-실물 QRoker 카드 네 장의 중앙 무늬를 스캔해 **내 예측과 점수**를 기기에 기록합니다. Android 8.0 이상에서 사용할 수 있습니다. 웹게임은 휴대전화 없이도 [브라우저에서 바로 실행](https://goalan70-eng.github.io/qroker-kiroween/)할 수 있습니다.
+[한국어 안내](README.ko.md)
 
-| 설치할 기기 | 다운로드 |
-| --- | --- |
-| 처음 설치하거나 기본 APK로 설치했던 기기 | [QRoker-Offline.apk](https://github.com/goalan70-eng/qroker-kiroween/releases/download/kiroween-2026-beta/QRoker-Offline.apk) |
-| 예전 보관본 또는 보관본용 업데이트로 설치했던 기기 | [QRoker-Offline-ArchiveUpdate.apk](https://github.com/goalan70-eng/qroker-kiroween/releases/download/kiroween-2026-beta/QRoker-Offline-ArchiveUpdate.apk) |
+Use the Android app to keep your own score when playing with QRoker-marked cards. To try the game without cards or a second device, [play in your browser](https://goalan70-eng.github.io/qroker-kiroween/).
 
-두 파일은 기능이 같고 서명만 다릅니다. 출처를 모르면 기본 APK로 먼저 업데이트하세요. 서명이 맞지 않으면 기존 앱을 둔 채 보관본용 APK를 여세요. 기존 앱을 삭제하면 기기에 저장된 점수도 지워집니다.
+## Install on Android 8 or later
 
-## 스캔과 채점
+For a first installation, download and open the [standard APK (0.2.27)](https://github.com/goalan70-eng/qroker-kiroween/releases/download/kiroween-2026-final/QRoker-Offline.apk). The app opens in English. Use **⋮ → Language** on the scoreboard to switch between English and Korean. Tap **?** for the illustrated rules.
 
-1. **Scan code / 코드 인식**을 누르고 카메라 권한을 허용하세요. 점수표 아래에 카메라가 열립니다. 네 장이 만나는 무늬 전체를 흰 테두리 안에 넣고 십자선을 중앙에 맞춘 뒤 **Lock code / 이 코드 고정**을 누르세요.
-2. 고정되면 휴대전화를 내려놓고 **4~52의 정수**를 입력해 채점하세요. 고정만으로는 회차가 생기지 않습니다. 잘못 겨눴으면 **다시 스캔**을 누르세요. 저장에 실패하면 같은 입력값으로 다시 시도할 수 있습니다.
-3. 회차를 누르면 내 예측과 획득 점수를 확인할 수 있습니다. 상대에게 정답을 알려주지 않도록 앱 화면에서는 카드 이름과 정답 합을 숨깁니다. 같은 네 장은 순서를 바꿔도 한 판에 한 번만 채점합니다. 네 장 중 한 장이라도 다른 카드로 바뀌어 새 코드가 완성되면 합이 같아도 따로 기록합니다. 예를 들어 두 조합의 윗줄이 각각 5♥·9♦와 9♥·5♦이고 아랫줄이 모두 J♣·2♠라면, 두 합은 27이고 각각 채점할 수 있습니다.
-4. **?**에서 그림이 있는 게임 설명을, **⋮ → Language / 언어**에서 영어와 한국어를 선택할 수 있습니다. **새 게임**을 확인하면 기존 점수와 중복 기록을 함께 지웁니다.
+If you already have scores on your phone, update over the installed app to keep them. If Android reports a signature mismatch, leave the app installed and use the [archive-signed update](https://github.com/goalan70-eng/qroker-kiroween/releases/download/kiroween-2026-final/QRoker-Offline-ArchiveUpdate.apk). Uninstalling clears local scores.
 
-카드 합을 정확히 맞히면 10점입니다. 오차가 1~5이면 차례로 5·4·3·2·1점, 그보다 크면 0점입니다. 앱은 개인 점수를 기록하며 테이블의 승자와 종료 시점은 플레이어가 결정합니다.
+## Score your first code
 
-## 공개 소스로 빌드
+If your demo pack includes `QRoker-completed-codes-A4.pdf`, open page 1 on a second screen or print that page on A4 at 100%. The four cards are already arranged. Start at step 2 and enter **27** to earn **10 points** on a fresh scorecard.
 
-[심사판 소스](https://github.com/goalan70-eng/qroker-kiroween/tree/kiroween-2026-beta)를 받아 Windows에 JDK 21, Android SDK Platform 36.1, Build Tools 36.1.0, Python 3을 준비하세요. 저장소 루트에서 다음을 실행하고 경로를 설치 위치에 맞게 바꾸세요.
+1. Arrange four QRoker cards so their marked corners form a square at the center. An ordinary deck has no QRoker markers.
+2. On **My scores**, tap **Scan code** and allow camera access. Fit the whole marker inside the white frame, center the crosshair on the join, then tap **Lock code**.
+3. Once the code is locked, put the phone down. Enter a whole-number guess from **4 to 52** and tap **Score**. For a different group, tap **Rescan** before scoring.
+4. Tap the new round to see your guess and points. An exact guess earns **10**. Missing by one to five earns **5, 4, 3, 2 or 1** respectively. The app keeps the answer and card identities private.
+
+Each set of four cards scores once per game on your scorecard. A different set can score even if its sum is the same. **New game** clears your rounds and the list of scored sets after confirmation. For a worked example using six cards and two equal sums, see the [print and scan checklist](../../docs/validation/offline-reader-real-device.md).
+
+The two release APKs provide the same features and differ only in signing key. Locking a code does not create a round. If a save fails, you can retry with the same guess. Reordering the same four cards still counts as the same set. For example, with J♣ and 2♠ in the bottom row, a top row of 5♥ and 9♦ and a top row of 9♥ and 5♦ form distinct groups. Each sums to 27 and can be scored separately. A miss by more than five earns 0 points. The app keeps a personal scorecard. Players at the table determine the winner and when to stop.
+
+## Build from source
+
+On Windows, install JDK 21, Android SDK Platform 36.1, Build Tools 36.1.0 and Python 3. From the repository root, adjust the two paths to match your installation and run:
 
 ```powershell
 cd prototypes/android-offline-companion
 .\build.ps1 -Sdk 'C:\Android\Sdk' -Jdk 'C:\Java\jdk-21'
 ```
 
-결과는 `dist/QRoker-Offline.apk`입니다. 공개 빌드는 포함된 광학 좌표를 사용하고 디코더 검사를 실행합니다. 별도 촬영 자료를 쓰는 `OfflineTest`는 해당 자료를 `-Source`로 지정할 때 실행합니다. 첫 빌드에서 생성되는 서명 키는 기기의 공개 배포본을 업데이트하는 데 사용할 수 없습니다.
+The build uses the included optical coordinates, runs decoder checks and writes `dist/QRoker-Offline.apk`. A new local signing key produces a separate build that cannot update a release-signed installation. See the [verification history by version](#verification-history-by-version) for earlier emulator and synthetic results.
 
-[실물 카드 시험표](../../docs/validation/offline-reader-real-device-ko.md)에는 스캔·중복·재시작의 기대 결과를 적었습니다. 0.2.27로 인쇄 카드를 촬영한 다섯 항목의 관찰 결과는 아직 미시험입니다.
+The [judging source](https://github.com/goalan70-eng/qroker-kiroween/tree/kiroween-2026-final) includes the optical coordinates. The optional `OfflineTest` requires separate camera fixtures supplied with `-Source`. The [physical-card checklist](../../docs/validation/offline-reader-real-device.md) gives expected results for scanning, duplicates and restart. All five printed-card observations for 0.2.27 were still untested in this record.
 
-## 이전 버전별 검증 기록
+## Verification history by version
 
-아래 기록은 각 버전에서 수행한 시험입니다. 0.2.23부터는 사용자가 버튼으로 코드를 고정한 뒤 예측합니다.
+These observations belong to the versions named below. Starting with 0.2.23, the player locks a code with a button before entering a guess.
 
-0.2.12에서는 저장된 기록을 읽을 수 없는 동안 총점을 숨기고, 앱으로 돌아오면 기록을 다시 읽는다. Android API 36 에뮬레이터에서 파일을 일시적으로 읽을 수 없게 했다가 10점 기록을 복원했을 때, 같은 점수판에 총점 10점이 표시되고 스캔 버튼이 다시 활성화됐다. 다른 점수판에서 먼저 한 회차를 채점한 경우에도 다음 카메라 판독에서 열린 예측창의 제목이 1회차에서 2회차로 바뀌고 입력한 27은 유지됐다.
+**0.2.12.** The app hides the total while saved history is unreadable and reloads it on return. On an Android API 36 emulator, the test temporarily made the file unreadable and then restored a 10-point record. The same scoreboard displayed 10 points and re-enabled scanning. When another scoreboard scored a round first, the next camera read updated the open guess dialog from round 1 to round 2 and retained the entered value of 27.
 
-0.2.11은 예측창을 연 뒤 새로 받은 영상에서 같은 조합을 확인하면 입력을 허용한다. 카메라 미리보기는 계속 표시하고 판독용 촬영은 처리 속도에 맞춘다. Android API 36 가상 후면 카메라에 합계 27인 카드를 보여 주고 앱을 매번 새로 실행했을 때, 첫 유효한 예측으로 10점을 얻은 횟수는 0.2.10에서 4회 중 1회, 0.2.11에서 8회 중 8회였다. 수정본에서는 직접 27을 입력하는 경우와 53의 경고를 확인하고 27로 고치는 경우를 각각 4회 시험했다. 실물 카드와 휴대전화 카메라로는 이 비교를 진행하지 않았다.
+**0.2.11.** After opening the guess dialog, the app enables input once a fresh image confirms the same group. Camera previews continue, while captures for decoding are paced to match processing speed. On an Android API 36 virtual rear camera showing a group worth 27, each trial started by relaunching the app. The first valid guess earned 10 points in 1 of 4 runs on 0.2.10 and 8 of 8 runs on 0.2.11. The revised build was tested four times by entering 27 directly and four times by entering 53, observing the warning and correcting it to 27. This comparison used no physical cards or phone camera.
 
-같은 0.2.11 APK의 한국어 화면에서 카드 제거·다른 조합으로 교체·마커 가림 영상을 순서대로 재생했다. 이전 입력은 지워졌고, 카드를 다시 비추고 팝업을 취소한 뒤에도 0회차·0점이었다.
+The same 0.2.11 APK, using its Korean UI, played back scenes in which a card was removed, replaced with a different group, and the marker was occluded. The previous input cleared. After the cards reappeared and the popup was cancelled, the scorecard still showed 0 rounds and 0 points.
 
-0.2.10에서는 새 게임 확인창을 연 뒤 다른 점수판에서 기록을 변경하면 최신 기록을 표시하고 다시 확인을 받는다. Android API 36 에뮬레이터에서 10점이던 판에 한 회차가 더해진 경우에는 2회차·20점, 다른 게임을 시작해 같은 조합으로 다시 채점한 경우에는 1회차·10점이 저장 파일에 유지됐다. 변경이 없는 점수판에서는 새 게임 확인 후 0회차·0점으로 초기화됐다.
+**0.2.10.** If another scoreboard changes the record after the new-game confirmation opens, the dialog shows the latest record and asks for confirmation again. On an Android API 36 emulator, adding a round to a 10-point game preserved 2 rounds and 20 points in the save file. Starting another game and scoring the same group again preserved 1 round and 10 points. On an unchanged scoreboard, confirming a new game reset the record to 0 rounds and 0 points.
 
-0.2.9는 확정용 이미지와 해당 촬영의 성공 알림을 모두 받아야 점수를 저장한다. JVM 시험에서 이미지 판독 뒤 촬영 실패를 전달했을 때 0.2.8은 10점을 저장했고 0.2.9는 0건·0점을 유지했다. 재시도한 촬영은 한 번만 채점됐다. Android API 36 에뮬레이터에서는 0.2.8 위에 업데이트하고 가상 후면 카메라로 합성 카드 네 장을 읽어 예측 27, 정답 27, 총점 10점을 확인했다.
+**0.2.9.** Saving requires both the confirmation image and the success notification for that capture. In a JVM test that delivered a capture failure after decoding the image, 0.2.8 saved 10 points and 0.2.9 retained 0 entries and 0 points. A retried capture scored exactly once. On an Android API 36 emulator, the test updated over 0.2.8 and read four synthetic cards through the virtual rear camera. The guess was 27, the answer was 27 and the total was 10 points.
 
-0.2.8에서는 같은 조합의 판독이 1초 이상 끊기면 이전 예측을 취소한다. Android API 36 에뮬레이터에서 판독 결과 전달을 1.15초 늦췄을 때 0.2.7은 기존 예측을 10점으로 기록했고, 0.2.8은 입력란을 비우고 0점을 유지했다. 카메라 권한을 설정에서만 허용할 수 있는 상태에서는 설정 버튼을 눌러 앱 정보 화면에 진입하는 것도 확인했다. 합성 회전 336건과 수평 흔들림 144건에서 잘못된 카드 수락은 없었다. 흔들림을 적용한 완성 조합 117건 중 86건은 판독을 거부했다.
+**0.2.8.** If recognition of the same group is interrupted for at least 1 second, the previous guess is cancelled. On an Android API 36 emulator with recognition results delayed by 1.15 seconds, 0.2.7 scored the previous guess for 10 points. In 0.2.8 the field cleared and the total stayed at 0. When camera access could only be granted in system settings, the settings button opened the app info screen. There were no incorrect card accepts across 336 synthetic rotation cases and 144 horizontal motion-blur cases. Of 117 complete groups with blur, the reader rejected 86.
 
-0.2.4를 설치한 Android API 36 에뮬레이터에서 합계 27의 판독 결과를 앱에 전달했다. 입력란에 270을 넣고 확정하면 범위 오류와 총점 0점이 유지됐다. 확정 촬영의 실패를 전달하면 입력창이 닫혔고, 다시 읽었을 때 입력란은 비어 있었다. 새로 입력한 27은 이전 요청의 실패 알림이 늦게 도착해도 10점으로 한 번 기록됐다. 구버전 점수 백업을 재사용하는 경우를 포함해 회귀 검사 80개를 통과했다. 회전 336건과 수평 흔들림 144건의 합성 판독 결과는 0.2.3과 같았다.
+**0.2.4.** An Android API 36 emulator running 0.2.4 received a decoded sum of 27. Entering 270 and confirming produced a range error and left the total at 0. Delivering a confirmation capture failure closed the dialog, and the next read opened an empty field. A newly entered 27 scored 10 points once, even when a failure callback from the earlier request arrived late. All 80 regression checks passed, including reuse of a score backup from an older version. The 336 synthetic rotation and 144 horizontal motion-blur cases matched 0.2.3.
 
-0.2.3에서 정답 칸을 잘못된 숫자, 문자, 빈칸으로 바꾼 세 경우 모두 두 회차의 합계 20점이 복구됐다. 복구 저장을 막고 세 번 새 프로세스로 열었을 때 모두 20점이 표시 가능한 상태였고 원본 백업은 한 개였다. 저장 장애를 해제하고 다시 열자 복구본이 저장됐다. 확정용 프레임 뒤로 0·2·3·4·30개 판독 결과가 먼저 도착한 모의 시험에서는 모두 정확한 프레임으로 한 번만 10점이 기록됐다. 이전과 동일한 회전 336건과 수평 흔들림 144건의 합성 판독 결과도 각각 일치했다.
+**0.2.3.** In each of three cases, the correct-answer field was replaced with a wrong number, text or an empty value. All three recovered two rounds totaling 20 points. With recovery writes blocked, three fresh processes could each display 20 points and only one original backup existed. After writes were re-enabled, reopening saved the recovered copy. In simulations where 0, 2, 3, 4 or 30 later recognition results arrived ahead of the confirmation-frame result, the exact frame scored 10 points only once in every case. Results for the same 336 synthetic rotation cases and 144 horizontal motion-blur cases also matched the earlier run.
 
-0.2.2는 합성 프레임과 점수 기록 검사 64개를 통과했다. 카메라 촬영 알림이 먼저 오거나 늦게 와도, 확인 도중 카드가 사라지거나 다른 조합으로 바뀌면 이전 예측을 취소했다. 서로 다른 두 점수판에서 동시에 확정한 회차는 모두 저장됐고, 같은 조합은 한 번만 집계됐다. Android API 36 에뮬레이터에서 기본 APK와 보관본용 APK를 각각 0.2.1 위에 설치한 뒤 기존 10점 회차가 유지되는지 확인했다. 기본 APK에서는 카메라 권한 창을 뒤로 닫고 앱에서 다시 눌렀을 때 시스템 권한 창이 다시 열렸다.
+**0.2.2.** All 64 synthetic-frame and score-record checks passed. With camera capture notifications arriving early or late, a group disappearing or changing during confirmation cancelled the previous guess. Rounds confirmed concurrently from two scoreboards were both saved, while the same group counted only once. On an Android API 36 emulator, both the standard APK and the archive-signed APK were installed over their respective 0.2.1 versions. The existing 10-point round persisted in each case. On the standard APK, dismissing the camera permission prompt with Back and requesting access again in the app reopened the system prompt.
 
-0.2.1 판독기로 1280×960 합성 카메라 화면을 검사했다. 중앙에 합계 28, 옆에 27이 있는 16개 화면에서 모두 28을 읽었고, 옆에만 27이 있는 16개 화면에서는 모두 입력을 거부했다. 확정 전에 중앙 조합이 사라지면 기록이 추가되지 않았다. 카드 폭 59픽셀에 0.7픽셀 가우시안 흐림을 적용한 13개 조합은 12개를 읽었다. 같은 크기에서 1.2픽셀로 흐리게 하면 모두 거부했다. 조준된 양면 도안 시험 1,105건에서는 앞면·좌우 교환 뒷면 442건을 정확히 읽었고, 고정 위치 뒷면·카드 누락 663건을 모두 거부했다. 이 시험은 휴대전화로 실물을 촬영할 때의 성공률을 측정하지 않는다.
+**0.2.1.** The reader was tested on 1280×960 synthetic camera frames. Across 16 frames with a group totaling 28 in the center and one totaling 27 to the side, it read 28 every time. It rejected all 16 frames containing only the off-center 27. If the center group disappeared before confirmation, no record was added. With cards 59 pixels wide and Gaussian blur of 0.7 pixels, 12 of 13 groups were read. At a blur of 1.2 pixels and the same size, all were rejected. Across 1,105 aimed double-sided artwork cases, all 442 front and left-right-swapped back cases read correctly, and all 663 fixed-position back and missing-card cases were rejected. This test did not measure the physical-phone success rate.
 
-0.2.0 빌드의 판독기로 메인 웹게임의 같은 조합을 기본 보드, 2배 보드, 돋보기 두 크기에서 읽었다. 네 캡처 모두 카드 ID 네 개와 합계 28이 일치했다. 1.5 mm 여백 양면 도안의 17개 합성 조건에서는 앞면 219/221회, 각 행의 좌우를 맞바꾼 뒷면 221/221회 정확히 읽었다. 앞면의 두 거부는 중앙 그림자 조건이었다. 위치를 고정한 뒷면 221회와 카드 누락 442회는 모두 거부했다. 기존 30 mm 도안도 완성 조합 160회와 누락·빈 장면 320회의 기대 결과가 일치했다. 이 수치는 이미지에 대한 결과이며 실제 휴대전화와 인쇄물의 판독률은 별도로 측정해야 한다.
+**0.2.0.** The reader decoded the same group from four main web-game captures: the default board, a 2× board and two magnifier sizes. All four returned the same four card IDs and sum of 28. Across 17 synthetic conditions using double-sided artwork with a 1.5 mm margin, it read 219/221 fronts and 221/221 backs with left and right cards swapped in each row. The two front rejections occurred under a central shadow. It rejected all 221 fixed-position backs and all 442 missing-card cases. The existing 30 mm artwork also matched expectations on 160 complete groups and 320 missing-card or empty scenes. These figures measure image decoding. Physical-phone and printed-card read rates require separate measurements.
 
-60° 저조도 합성 프레임의 기준 정답은 27이다. 회귀 테스트는 원본과 분기별 90° 회전, 제한 범위 밝기, 같은 입력에서 한 장이 빠졌을 때의 판독, 점수 저장·재로딩·삭제를 검사한다. 실제 인쇄물과 휴대전화 기종별 인식률, 판독 지연은 별도 실물 시험 항목이다.
+The reference answer for the 60° low-light synthetic frame is 27. Regression tests cover the original frame and quarter-turn rotations, limited-range luminance, removing one card from the same input, and saving, reloading and deleting scores. Recognition rates and decoding latency for physical prints on different phones are separate test items.
 
-2026-11-20 검증에서 JVM 회귀 검사 19개가 통과했다. 비행기 모드에서 Wi-Fi를 끈 Android API 36 에뮬레이터로 합성 장면을 후면 카메라에 입력했다. 예측 전 정답이 숨겨지고, 27을 제출하면 정답 27과 10점이 기록되며, 프로세스를 강제 종료하고 다시 실행했을 때 총점과 기록이 유지되고, 확인 삭제가 총점을 0점으로 되돌리는 것을 확인했다. 합성 장면의 마커는 테스트 카메라의 촬영 범위 안에 들어오도록 위치를 이동했다.
+**2026-11-20 verification.** All 19 JVM regression checks passed. An Android API 36 emulator in airplane mode with Wi-Fi off received a synthetic scene through its rear camera. The answer stayed hidden before the guess. Submitting 27 recorded the answer of 27 and 10 points. After a forced stop and restart, both the total and history persisted. Confirming deletion reset the total to 0. The marker in the synthetic scene was repositioned to fit the test camera’s field of view.
 
-[Kiro 인수인계와 Codex 후속 기록](../../docs/optical-v2/android-prototype-handoff.md) · [52장 검증 결과와 재현 절차](tests/deck-audit-report.md) · [추측 취소·중복 채점 에뮬레이터 시험](tests/guess-flow-report.md)
+[Handoff and Codex follow-up](../../docs/optical-v2/android-prototype-handoff.en.md) · [52-card audit and reproduction](tests/deck-audit-report.en.md) · [Guess cancellation and duplicate scoring](tests/guess-flow-report.en.md)

@@ -84,6 +84,7 @@
   transform-origin: 50% 50%;
 }
 
+.card-face__print,
 .card-face__art {
   position: absolute;
   inset: 0;
@@ -91,8 +92,16 @@
   height: 100%;
   display: block;
   object-fit: contain;
-  background: white;
+  background-color: white;
   pointer-events: none;
+}
+
+/* Draw the complete web fragments in one layer, including the physical trim area. */
+.card-face__print::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--card-marks, none) center / 100% 100% no-repeat;
 }
 
 .card-face__rank {
@@ -107,7 +116,6 @@
 
 .card-face--up { font-family: Georgia, "Times New Roman", serif; }
 .card-face--hand {
-  border-radius: .38rem;
   background-color: #fffcf3;
 }
 .card-face--hand .card-face__rank,

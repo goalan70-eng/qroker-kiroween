@@ -53,12 +53,25 @@ def back_for(front, artwork, *, margin_mm=1.5, mirror_markers=False):
     return ET.tostring(back, encoding="utf-8", xml_declaration=True)
 
 
+def with_cut_guide(front):
+    # The approved physical outline is already in the artwork. Paint behind its
+    # opaque face so only the outside half of the hairline is visible on paper.
+    root = ET.fromstring(front)
+    trim = root.find(f"{NS}defs/{NS}clipPath[@id='qroker-trim']/{NS}rect")
+    if trim is None or float(trim.get("rx", 0)) <= 0:
+        raise ValueError("Expected a rounded physical trim rectangle")
+    guide = ET.Element(NS + "rect", {**trim.attrib, "fill": "none",
+                                     "stroke": "#909090", "stroke-width": "0.8"})
+    root.insert(list(root).index(root.find(NS + "g")), guide)
+    return ET.tostring(root, encoding="utf-8")
+
+
 def image_tag(svg):
     data = base64.b64encode(svg).decode("ascii")
     return f'<img src="data:image/svg+xml;base64,{data}">'
 
 
-def print_html(faces, register_duplex=False):
+def print_html(faces, register_duplex=False, *, support=None):
     sheets = []
     for start in range(0, len(CARDS), 9):
         for side in ("front", "back"):
@@ -72,7 +85,16 @@ def print_html(faces, register_duplex=False):
                          'd="M-1.4 0H-.4M0 -1.4V-.4M63.9 0h1M63.5 -1.4v1'
                          'M-1.4 88.9h1M0 89.3v1M63.9 88.9h1M63.5 89.3v1" '
                          'fill="none" stroke="#777" stroke-width=".12"/></svg>') if side == "front" else ""
-                cards.append(f'<div class="card" style="left:{x}mm;top:{y}mm">{image_tag(faces[side][name])}{marks}</div>')
+                art = faces[side][name]
+                if side == "front":
+                    art = with_cut_guide(art)
+                cards.append(f'<div class="card" style="left:{x}mm;top:{y}mm">{image_tag(art)}{marks}</div>')
+            if side == "front" and support is not None and start + 9 > len(CARDS):
+                # The last front sheet has two spare slots. Place four removable
+                # centre pieces there for use under the junctions after cutting.
+                data = base64.b64encode(support).decode("ascii")
+                cards.append('<aside>중앙 받침 15 mm · 네 장의 접합부 아래에 놓으세요.'
+                             '<div>' + f'<img src="data:image/png;base64,{data}">' * 4 + '</div></aside>')
             label = "앞면" if side == "front" else "뒷면"
             # The entire back page will be reflected in PDF coordinates. Undo that
             # reflection locally for the label and for the final face-local SVGs.
@@ -84,6 +106,8 @@ section{position:relative;width:210mm;height:297mm;break-after:page;overflow:hid
 section:last-child{break-after:auto}header{position:absolute;top:3.1mm;width:100%;text-align:center;font:8pt sans-serif}
 .card{position:absolute;width:63.5mm;height:88.9mm}.card img{display:block;width:100%;height:100%}
 .marks{position:absolute;top:-2mm;left:-2mm;width:67.5mm;height:92.9mm}
+aside{position:absolute;left:78mm;top:211mm;font:8pt sans-serif}
+aside div{display:flex;gap:3mm;margin-top:3mm}aside img{width:15mm;height:15mm;outline:.12mm dashed #888}
 .preflip .card img,.preflip header{transform:scaleX(-1)}
 </style>''' + "".join(sheets) + "</html>"
 
@@ -145,7 +169,7 @@ def main():
     with tempfile.TemporaryDirectory() as tmp:
         work = Path(tmp)
         sheet = work / "sheets.html"
-        sheet.write_text(print_html(faces, args.register_duplex), encoding="utf-8")
+        sheet.write_text(print_html(faces, args.register_duplex, support=staged["support.png"]), encoding="utf-8")
         pdf = work / "QRoker-center-grid-duplex-A4.pdf"
         subprocess.run(["node", "-e", """
 const {chromium} = require('playwright');

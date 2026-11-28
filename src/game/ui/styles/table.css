@@ -3,7 +3,6 @@
   display: block;
   box-sizing: border-box;
   aspect-ratio: 5 / 7;
-  border-radius: 5%;
   box-shadow: 0 2px 3px #12282180;
 }
 .game-layout:has(.scoreboard--seated) .game-score-slot,
@@ -116,7 +115,6 @@
   width: clamp(2.75rem, 4.8cqw, 6rem);
   aspect-ratio: 5 / 7;
   --deck-depth: max(0px, calc((var(--deck-count) - 1) * .045rem));
-  border-radius: 7%;
 }
 .deck-stack:not(:has(.table-card-back)) { outline: 1px dashed #afba9d; }
 .deck-stack:has(.table-card-back)::before {

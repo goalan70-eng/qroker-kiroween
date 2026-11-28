@@ -29,7 +29,7 @@
 import type { StringKey, StringParams } from '../../i18n';
 import { visibleFragmentCorners } from '../../core/view';
 import type { Corner, CardId, Orientation, Owner, Rank, Suit } from '../../core/types';
-import { backStyle } from '../back-art';
+import { backArt, backStyle } from '../back-art';
 import { createH } from '../dom';
 import type { CreateDoc, HFunction } from '../dom';
 
@@ -51,6 +51,7 @@ export interface CardFaceInput {
 export interface CardFaceModel {
   readonly faceUp: boolean;
   readonly artworkUrl?: string;
+  readonly cornerArtworkUrl?: string;
   readonly fragmentCorners?: readonly Corner[];
   readonly owner: Owner;
   readonly orientation: Orientation;
@@ -154,7 +155,7 @@ export function cardFaceModel(input: CardFaceInput): CardFaceModel {
   const isFaceRank = FACE_RANKS.includes(rank);
   return {
     faceUp: true,
-    ...(artworkUrl ? { artworkUrl } : { fragmentCorners: visibleFragmentCorners(suit, orientation) }),
+    ...(artworkUrl ? { artworkUrl, cornerArtworkUrl: backArt(card) } : { fragmentCorners: visibleFragmentCorners(suit, orientation) }),
     owner,
     orientation,
     size,
@@ -187,10 +188,9 @@ const PIP_ROWS: Readonly<Record<string, readonly number[]>> = {
 
 export function renderFaceArt(h: HFunction, face: CardFaceModel): HTMLElement | null {
   if (!face.artworkUrl) return null;
-  return h('img', {
-    class: 'card-face__art',
-    attrs: { src: face.artworkUrl, alt: '', draggable: 'false' },
-  });
+  return h('span', { class: 'card-face__print', attrs: backStyle(face.cornerArtworkUrl) },
+    h('img', { class: 'card-face__art', attrs: { src: face.artworkUrl, alt: '', draggable: 'false' } }),
+  );
 }
 
 export function renderFragments(h: HFunction, face: CardFaceModel): HTMLElement[] {

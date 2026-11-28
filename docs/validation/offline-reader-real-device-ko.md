@@ -1,13 +1,15 @@
 # QRoker Offline 0.2.27 실물 카드 시험
 
+[English](offline-reader-real-device.md)
+
 기종 ______ · Android 버전 ______ · 시험일 ______ · 조명 ______ · 시작 회차 ______ · 시작 총점 ______
 
-[설치 파일 선택 안내](../../prototypes/android-offline-companion/README.md)에 따라 APK를 고른다. 기존 기록이 있으면 아래 두 조합을 아직 채점하지 않은 시험 기기나 별도 Android 사용자 프로필을 사용한다.
+[설치 파일 선택 안내](../../prototypes/android-offline-companion/README.ko.md)에 따라 APK를 고른다. 기존 기록이 있으면 아래 두 조합을 아직 채점하지 않은 시험 기기나 별도 Android 사용자 프로필을 사용한다.
 
-이 시험은 별도로 보관하는 1.5 mm 양면 카드 도안과 받침을 사용한다. 공개 APK는 [심사판 배포 페이지](https://github.com/goalan70-eng/qroker-kiroween/releases/tag/kiroween-2026-beta)에서 받을 수 있다.
+이 시험의 기준 도안은 둥근 꼭짓점 네 개가 만나 중앙 모자에 작은 흰 틈이 생기는 버전이다. 기준 카드 모음은 `QRoker-52-cards-rounded-center-A4-2pages.pdf`(SHA-256 `BD3BD05D530D395F4672DD7913EFEA106577CB39F11A90865FFE427AD828000E`)이다. 공개 APK는 [심사판 배포 페이지](https://github.com/goalan70-eng/qroker-kiroween/releases/tag/kiroween-2026-final)에서 받을 수 있다.
 
-- 로컬 도안 폴더 `prototypes/screen-playtest/deliverables/black-white-registered-15mm/`에서 `QRoker-1.5mm-duplex-A4.pdf`를 실제 크기(100%)로 출력한다. 5♥·9♥는 1쪽, 5♦는 3쪽, 9♦는 5쪽, J♣·2♠는 9쪽이다.
-- 같은 폴더의 `QRoker-1.5mm-duplex-SVG.zip`에 있는 `support.png`를 가로 15 mm로 출력해 재단한 네 장의 접합부 아래에 둔다. 아래 표의 위·아랫줄 순서로 놓고 중앙 모자 무늬를 맞춘다.
+- 실물 크기로 시험하려면 로컬 도안 폴더 `prototypes/screen-playtest/deliverables/black-white-registered-15mm/`의 `QRoker-52-rounded-center-by-suit-A4-8pages.pdf`를 A4 단면, 실제 크기(100%)로 출력한다. A와 C만 시험할 때는 1쪽(5♥·9♥), 3쪽(5♦·9♦), 6쪽(J♣), 7쪽(2♠)을 고른다.
+- 출력물 하단의 기준선이 50 mm인지 자로 확인한다. 카드 경계의 둥근 선을 따라 재단하고, 평평한 흰 종이 위에 아래 표 순서로 네 장을 맞붙인다. 접합부의 작은 틈에는 흰 종이가 보이게 둔다.
 
 | 앞면 배치 | 윗줄 (왼쪽 → 오른쪽) | 아랫줄 (왼쪽 → 오른쪽) | 정답 합 |
 |---|---|---|---:|

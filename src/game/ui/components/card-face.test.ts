@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { CardId, Orientation, Owner } from '../../core/types';
 import { resetLanguage, setLanguage, t } from '../../i18n';
 import type { Lang } from '../../i18n';
+import { backArt } from '../back-art';
 import { createH } from '../dom';
 import { ROTATED_MARKER, SUIT_GLYPHS, cardFaceModel, cardFaceName, renderCardFace } from './card-face';
 import type { CardFaceInput } from './card-face';
@@ -267,6 +268,7 @@ describe('renderCardFace, face-up', () => {
         const face = render({ card, owner: 'P0', orientation, ownerLabel: 'P0' });
         const images = subtreeElements(face).filter(el => el.tagName === 'img');
         expect(images).toHaveLength(1);
+        expect(subtreeElements(face).find(el => el.getAttribute('class') === 'card-face__print')?.getAttribute('style')).toContain(backArt(card));
         expect(images[0]?.getAttribute('src')).toContain(`/${rank}${suit}.svg`);
         expect(subtreeElements(face).some(el => el.getAttribute('class')?.includes('card-face__fragment'))).toBe(false);
       }

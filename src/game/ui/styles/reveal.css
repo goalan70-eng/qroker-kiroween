@@ -66,6 +66,13 @@
   --card-unit: clamp(2.75rem, 5vw, 3.4rem);
   display: block;
 }
+/* Match the board's 5:7 pixel grid so adjacent rotated fragments meet on a raster edge. */
+@supports (width: round(nearest, 42px, 5px)) {
+  .reveal-card .card-face--hand {
+    inline-size: round(nearest, var(--card-unit), 5px);
+    block-size: calc(round(nearest, var(--card-unit), 5px) * var(--card-height-ratio));
+  }
+}
 .reveal-points caption, .scoreboard-table caption {
   text-align: start;
   font: bold 1.2rem var(--font-display);

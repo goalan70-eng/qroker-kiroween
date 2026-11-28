@@ -56,7 +56,6 @@
   position: absolute;
   inset: 0;
   border: 1px solid #d2c5a3;
-  border-radius: 6%;
   box-shadow: 0 .6rem 1.4rem rgb(4 23 14 / 27%);
 }
 .setup-deck::before {

@@ -18,3 +18,4 @@ test-results/
 # Machine-local card artwork, print inputs, and historical worktree evidence
 /local-optical-previews/
 /local-archive/
+/debug.log

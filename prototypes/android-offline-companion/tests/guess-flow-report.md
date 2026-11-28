@@ -11,8 +11,10 @@
 
 검증한 APK SHA-256은 `7da19fe4d390eabddf9eb44ff4c1074cc36f4a819bb2f13ef9331af3de81bb36`이다. 기존 JVM 검사 19개도 통과했다. 첫 세 결과를 얻은 뒤 별도 Android 테스트가 동일 에뮬레이터의 전면 화면을 얻어 실행이 중단됐다. 마지막 항목은 독립 ADB 서버와 장치에서 이어서 확인했다. 입력 이벤트를 연속 실행하도록 자동화를 보정했으며 앱 소스 변경 없이 검증했다.
 
-- [제거·교체·가림 실행 로그](../build/guess-flow/emulator-guess-flow.txt) 및 [가림 복귀 화면 구조](../build/guess-flow/recovered-no-score.xml)
-- [중복 채점 실행 로그](../build/guess-flow/emulator-duplicate.txt) 및 [재시작 후 화면 구조](../build/guess-flow/duplicate-after-restart.xml)
+에뮬레이터 시험에서 생성한 로컬 파일
+
+- 제거·교체·가림 실행 로그 (`../build/guess-flow/emulator-guess-flow.txt`) 및 가림 복귀 화면 구조 (`../build/guess-flow/recovered-no-score.xml`)
+- 중복 채점 실행 로그 (`../build/guess-flow/emulator-duplicate.txt`) 및 재시작 후 화면 구조 (`../build/guess-flow/duplicate-after-restart.xml`)
 
 ## 재현
 

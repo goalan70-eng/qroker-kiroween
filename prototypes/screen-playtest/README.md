@@ -1,23 +1,31 @@
-# QRoker 화면 판독 시제품
+# QRoker screen-scanning prototype
 
-이 폴더는 모니터의 고정 샘플과 카드 제거 조건을 재현하는 실험용입니다. 일반 플레이에는 [메인 웹게임](https://goalan70-eng.github.io/qroker-kiroween/)을, 실물 카드 채점에는 [Android 0.2.27 설치 안내](../android-offline-companion/README.md)를 사용하세요. 아래의 로컬 입력과 빌드 절차는 화면 판독 시제품에 해당합니다.
+[한국어 안내 및 실험 기록](README.ko.md)
 
-PC에서 기존 QRoker 게임을 플레이하고 Android 휴대전화로 PC 화면의 코드를 판독한다. 웹은 기존 게임 엔진·UI·저장 방식을 사용한다. 게임의 실제 배치는 엔진이 해당 코드를 공개한 뒤 **카메라로 코드 보기**에서 확인할 수 있다. 고정 샘플은 **카메라 판독 연습**에서 바로 열 수 있다.
+This lab prototype displays a fixed four-card pattern on a monitor. For the judging build, [play the browser game](https://goalan70-eng.github.io/qroker-kiroween/) or [install the Android scorekeeper](../android-offline-companion/README.md). For printed cards, use the [print and scan checklist](../../docs/validation/offline-reader-real-device.md).
 
-## 웹게임 규칙
+## Try the monitor sample
 
-각자 손패 3장으로 시작한다. 첫 배치부터 새 조합을 하나도 완성하지 못하면 공용 덱에서 1장을 뽑는다. 새 조합을 완성하면 뽑지 않는다. 덱의 마지막 카드를 뽑으면 그 즉시 현재 점수로 게임을 끝낸다.
+If you have the local test kit, open `deliverables/QRoker-Web.html` on a computer and choose **Practice scanning**. Use the separate **ScreenCheck** test APK to read the center of the pattern. The four sample cards are 5♥, 9♦, J♣ and 2♠. Their sum is 27. **Remove one card** lets you check how the reader responds to an incomplete pattern. ScreenCheck has its own scores and a different scan flow from the released Android scorekeeper.
 
-드로우 처리 후 손패가 비거나, 네 사람이 이번 판에 완성한 서로 다른 조합이 누적 5개 이상이면 게임이 끝난다. 한 번에 두 조합이 생기면 두 조합 모두 전원이 추측하고 채점한다. 손패를 비운 사람만 보너스 5점을 받는다. 최종 점수가 가장 높은 사람이 이기며 동점은 공동 순위다.
+The lab build uses local artwork and camera fixtures. See [Build locally](#build-locally) and [Reproduce the tests](#reproduce-the-tests) for the input names, PowerShell commands and synthetic test procedure.
 
-## 로컬 빌드
+## Play and score
 
-저장소 의존성이 설치된 Windows에서 Python 3, Node.js, PowerShell과 [Android 컴패니언의 도구 환경](../android-offline-companion/README.md)을 사용한다. 재현에는 두 로컬 입력이 필요하다.
+Play the existing QRoker game on a PC and use the Android phone to read the code on the PC display. The web build uses the existing engine, UI and save format. Once the engine reveals a code, open the camera view to see the actual arrangement from that game. **Practice scanning** opens a fixed sample immediately.
 
-- `-Deck`에는 최신 모자 중앙 격자형 52장 패키지 `kennard-52-center-grid.zip`을 지정한다.
-- `-Source`에는 기존 30 mm 인쇄안의 `joker-uniform-bars-30mm-layout.json`과 `uniform-bars-retest-input.json`이 있는 폴더를 지정한다.
+Each player starts with three cards. Starting with the first placement, draw one card from the shared deck whenever a placement completes no new group. A placement that completes a new group earns no draw. Drawing the last card ends the game immediately at the current scores.
 
-두 빌드 모두 입력 지문을 확인한다. 시제품에서 사용하는 조커 원본·파생 카드 이미지와 촬영 자료는 별도로 갖고 있어야 한다.
+After resolving the draw, the game also ends if a hand is empty or the four players have completed at least five distinct groups in total. When one placement forms two groups, everyone guesses and scores both. Only the player who empties their hand earns the five-point bonus. The highest final score wins, with tied players sharing the rank.
+
+## Build locally
+
+Use Windows with the repository dependencies installed, Python 3, Node.js, PowerShell and the [Android companion toolchain](../android-offline-companion/README.md). Supply both local inputs:
+
+- For `-Deck`, use `kennard-52-center-grid.zip`, the 52-card package with the revised grid at the center of the hat artwork.
+- For `-Source`, use the directory containing the existing 30 mm print layout files `joker-uniform-bars-30mm-layout.json` and `uniform-bars-retest-input.json`.
+
+Both builds verify input fingerprints. The original Joker artwork, derived card images and camera fixtures are separate local inputs. From this prototype directory, run:
 
 ```powershell
 $deckZip = '../../local-optical-previews/web-game/kennard-deck/center-grid/kennard-52-center-grid.zip'
@@ -26,25 +34,23 @@ $layoutDirectory = '../../local-optical-previews/mosaic-camera-print/full-joker'
 ./build-android.ps1 -Source $layoutDirectory
 ```
 
-`deliverables/QRoker-Web.html`은 메인 게임의 배치·예측 타이머와 효과음을 포함한 카메라 시험판이다. 타이머는 설정에서 조정할 수 있다. 빌드한 HTML을 서버 없이 열 수 있다. 함께 빌드한 `deliverables/QRoker-ScreenCheck.apk`를 설치하고 카메라 권한을 허용한다. 이전 화면 검증 앱을 업데이트하려면 동일한 로컬 서명 키를 `-SigningKey`로 지정한다. 기존 점수 기록 앱과 화면 검증 앱은 서로 다른 앱 ID와 기록을 사용한다.
+Open `deliverables/QRoker-Web.html` directly without a server. This camera test build includes the main game’s placement and guess timers and sound effects. The timers can be adjusted in settings. Install the companion build `deliverables/QRoker-ScreenCheck.apk` and allow camera access. To update an earlier ScreenCheck installation, pass the same local signing key to `-SigningKey`. The regular scorekeeper and ScreenCheck have different app IDs and separate records.
 
-1. 웹의 **카메라 판독 연습**을 열고, 휴대전화 점수판에서 **코드 인식**을 눌러 코드 전체를 비춘다.
-2. 예측 27을 제출하면 정답 27과 10점이 표시된다.
-3. 확정 전에 웹의 **한 장 빼기**를 눌러 입력이 닫히는지 확인한다.
+1. Open **Practice scanning** on the web. On the phone’s scoreboard, tap **Scan code** and frame the entire code.
+2. Submit 27. ScreenCheck displays the correct answer of 27 and awards 10 points.
+3. On another attempt, choose **Remove one card** on the web before confirming and check that the input closes.
 
-## 시험 재현
+## Reproduce the tests
 
-설치된 Playwright Chromium과 Android 빌드의 JDK를 사용한다.
+Use the installed Playwright Chromium and the JDK from the Android build.
 
 ```powershell
 node ./verify-web.cjs --isolate-marker
 & "$jdk/bin/java.exe" -cp android-build/jvm com.qroker.offline.VerifyScreen evidence/marker-isolation
 ```
 
-브라우저 시험은 같은 실제 카드 배치에서 중앙 코드만 남긴 화면과 중앙 코드만 가린 화면을 만든다. Android에 사용한 판독 코드를 JVM에서 실행해 PNG·JPEG 모두에서 네 카드 ID와 합계를 확인한다. 카드 누락과 기존 추측 취소, 채점 기록 재로딩도 검사한다. Android 빌드는 복제 막대의 일부가 지워졌을 때의 식별 및 판독 거부를 따로 시험한다.
+From the same in-game card arrangement, the browser test produces a view showing only the center code and another hiding only that code. It runs the Android reader on the JVM and checks the four card IDs and sum in both PNG and JPEG images. It also checks missing cards, cancellation of a previous guess and reloading of score records. The Android build separately tests identification and rejection when parts of the replicated bars are erased.
 
-오프라인 에뮬레이터에는 별도 화면 검증 APK를 설치했다. Android 시스템 UI가 멈춰 해당 시제품의 가상 카메라 시험을 완료하지 못했다. 화면 촬영 성공은 소유자가 보고했으며, 기기별 모니터 촬영과 실물 인쇄 조건의 성능은 별도 검증이 필요하다.
+The separate ScreenCheck APK was installed on an offline emulator. Android System UI stopped responding, so the prototype’s virtual-camera test could not be completed. The owner reported a successful screen scan. Performance across phone models, monitors and printed cards still requires separate verification.
 
-도안, 촬영 화면, 설치 파일, 서명 키는 로컬 빌드 자료로 유지한다.
-
-최신 배열과 직전 배열의 비교 및 추측 취소 시험은 [합성 스트레스 검증](stress/README.md)에 기록했다.
+Artwork, camera captures, installers and signing keys are kept as local build assets. The [synthetic stress report](stress/README.en.md) compares the revised and previous layouts and records the guess-cancellation tests.
