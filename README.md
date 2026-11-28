@@ -1,5 +1,7 @@
 # QRoker
 
+> Designed and iteratively verified with **Kiro** ([specs](.kiro/specs), [steering](.kiro/steering), [hooks](.kiro/hooks)) across the Optical V1 architecture, browser game foundation, and privacy/reveal checks.
+
 Each QRoker card has two marked corners. Place a card so that four marked corners meet in the middle of a 2×2 square. Everyone privately predicts the sum of the four ranks. Each prediction earns points independently, so two exact guesses earn 10 points each.
 
 **[Play QRoker in your browser](https://goalan70-eng.github.io/qroker-kiroween/)** · [한국어 안내](README.ko.md) · [Rules and scoring](PROJECT_BRIEF.md) · [Try a code in two moves](docs/practice-mode.md#make-your-first-code-in-two-moves)
@@ -33,8 +35,14 @@ npm run build:standalone
 
 Use Node.js 24 and npm. Open `dist/QRoker.html`, or run `npm run build` to generate the static site in `dist/web/`. The public source includes the game's 52 marked card faces. [Running and testing the game](docs/practice-mode.md)
 
-## Development and credits
+## Built with Kiro and credits
 
-Kiro checked the handoff between players and the timing of the reveal, including all 24 prediction orders at the engine level. The verification record identifies the browser cases separately. Codex worked on implementation and release packaging. [Detailed Kiro test record (English)](docs/validation/kiro-private-guess-reveal-en.md) · [Development log](https://github.com/goalan70-eng/qroker-kiroween/blob/kiroween-2026-final/docs/kiroween-development-log.md)
+Kiro drove QRoker's spec-first design and core foundation across three specifications ([`.kiro/specs/`](.kiro/specs)), workspace steering rules ([`.kiro/steering/`](.kiro/steering)), and six command-only hooks ([`.kiro/hooks/`](.kiro/hooks)):
 
-The software is licensed under the GNU AGPL-3.0-only. Card illustrations, help artwork and sounds have their own credits. [Software license](LICENSE) · [Artwork and sound credits](https://github.com/goalan70-eng/qroker-kiroween/blob/kiroween-2026-final/docs/submission/credits.md)
+- **Core specs and implementation (`tasks.meta.json`)**: Kiro's `qroker-game` spec (37 tasks with execution history, 36 marked complete at `kiroween-2026-final`) built the frozen 52-card Optical V1 codebook, marker detection/decoding pipeline, and synthetic optical validation (including a 168,000-trial geometry sweep with zero false accepts and 63,024 bit-flip checks, documented with limits in [`OPTICAL-STATUS.md`](docs/optical/OPTICAL-STATUS.md)). Its `qroker-playable-game` spec (58 tasks with execution history, 76 marked complete at the same tag) built the pure TypeScript game engine, AI opponents, headless simulation harness, versioned offline save/resume persistence, localization, UI shell, placement interaction, Playwright E2E baseline, and CI workflow. A third spec (`qroker-optical-v2`) documents the Optical V2 proposal.
+- **Ongoing Kiro specs, handoff, balance experiments, and verification**: Even during later iterations, Kiro authored the [Android companion handoff specification (sections 0–10)](docs/optical-v2/android-prototype-handoff.en.md), finalized the Rules v4 three-card and [deck-exhaustion specifications](docs/validation/deck-exhaustion-rule-verification.md), ran [Blind-mode and AI balance experiments](docs/validation/kiro-ai-completion-opportunities-results.md), and drafted the ScreenCheck playtest checklist. Project steering enforces seat-specific views (`boundaries.test.ts`), keeps private predictions out of shared views, and protects the frozen V1 codebook. Kiro also verified player handoffs, reveal timing, all 24 prediction submission orders at the engine level, and simultaneous multi-code scoring in Chromium, keeping engine and browser evidence separate.
+- **Follow-up work with Codex**: Codex contributed follow-up acceptance tests, owner-approved rule and UI updates (including rules v4 and Blind mode), the offline Android scorekeeper, and release packaging. Kiro and Codex records are kept distinct.
+
+[Kiro specs](.kiro/specs) · [Steering](.kiro/steering) · [Hooks](.kiro/hooks) · [Detailed Kiro test record (English)](docs/validation/kiro-private-guess-reveal-en.md) · [Development log](docs/kiroween-development-log.md)
+
+The software is licensed under the GNU AGPL-3.0-only. Card illustrations, help artwork and sounds have their own credits. [Software license](LICENSE) · [Artwork and sound credits](docs/submission/credits.md)
